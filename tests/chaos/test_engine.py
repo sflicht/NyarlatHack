@@ -36,6 +36,13 @@ class EngineTests(unittest.TestCase):
             self.assertLessEqual(len(text),65536,"unexpectedly large event log")
             self.events = [json.loads(x) for x in text.splitlines()]
         return json.loads(result.stdout)
+    def test_nonfood_only_blocks_hunger(self):
+        s=self.execute(dict(REQUEST,mutation="hunger_rate",value=2,duration=5,telegraph=3),"nonfood")
+        self.assertEqual(s["spent"],0)
+        s=self.execute(dict(REQUEST,mutation="ward_efficacy",value=50,duration=5,telegraph=2),"nonfood")
+        self.assertEqual(s["ward"],1)
+        s=self.execute(REQUEST,"nonfood")
+        self.assertEqual(s["spent"],1)
     def test_empty_mailbox_no_effect(self):
         s=self.execute(); self.assertEqual((s['spent'],s['ward'],s['hunger'],s['telegraphs']),(0,3,3,0))
         self.assertEqual([e['event'] for e in self.events],['safe_point','safe_point'])

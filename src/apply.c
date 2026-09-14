@@ -4,6 +4,7 @@
 
 #include <math.h>
 #include "hack.h"
+#include "chaos.h"
 #include "artifact.h"
 #include "xhity.h"
 #ifdef OVLB
@@ -12040,6 +12041,7 @@ doUseUpgradeKit(struct obj **optr)
 int
 doapply()
 {
+    chaos_event("apply", "attempt", "");
 	struct obj *obj;
 	int res = MOVE_DEFAULT;
 	int waslabile = FALSE;

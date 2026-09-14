@@ -3,6 +3,7 @@
 /* NetHack may be freely redistributed.  See license for details. */
 
 #include "hack.h"
+#include "chaos.h"
 
 #include "artifact.h"
 /* #define DEBUG */	/* uncomment to enable new eat code debugging */
@@ -2788,6 +2789,7 @@ struct obj *otmp;
 int
 doeat()		/* generic "eat" command funtion (see cmd.c) */
 {
+    chaos_event("eat", "attempt", "");
 	register struct obj *otmp;
 	int basenutrit;			/* nutrition of full item */
 	int nutrit;			/* nutrition available */
@@ -4071,7 +4073,7 @@ gethungry()	/* as time goes by - called by moveloop() and domove() */
 		/* ordinary food consumption */
 		if(Race_if(PM_INCANTIFIER))
 			u.uen -= hunger;
-		else u.uhunger -= hunger;
+		else u.uhunger -= chaos_food(hunger);
 
 		if(uwep && (
 			uwep->oartifact == ART_GARNET_ROD || (uwep->oartifact == ART_TENSA_ZANGETSU && !is_undead(youracedata)))

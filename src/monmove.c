@@ -3,6 +3,7 @@
 /* NetHack may be freely redistributed.  See license for details. */
 
 #include "hack.h"
+#include "chaos.h"
 #include "mfndpos.h"
 #include "artifact.h"
 #include "xhity.h"
@@ -208,19 +209,19 @@ struct monst *mtmp;
 			 || (u.umonnum == PM_GHOUL && x == mtmp->mux && y == mtmp->muy && mtmp->mtyp == PM_GUG)
 			 || (mat && mat->mtyp == PM_GHOUL && mtmp->mtyp == PM_GUG)
 			 || (mat && mat->mtyp == PM_MOVANIC_DEVA && (is_animal(mtmp->data) || is_plant(mtmp->data)))
-			 || (wardAt == HEPTAGRAM && scaryHept(num_wards_at(x,y), mtmp))
-			 || (wardAt == GORGONEION && scaryGorg(num_wards_at(x,y), mtmp))
-			 || (wardAt == CIRCLE_OF_ACHERON && scaryCircle(num_wards_at(x,y), mtmp))
-			 || (wardAt == PENTAGRAM && scaryPent(num_wards_at(x,y), mtmp))
-			 || (wardAt == HEXAGRAM && scaryHex(num_wards_at(x,y), mtmp))
-			 || (wardAt == HAMSA && scaryHam(num_wards_at(x,y), mtmp))
-			 || (wardAt == ELDER_SIGN && scarySign(num_wards_at(x,y), mtmp))
+			 || (wardAt == HEPTAGRAM && scaryHept(chaos_ward_count(num_wards_at(x,y)), mtmp))
+			 || (wardAt == GORGONEION && scaryGorg(chaos_ward_count(num_wards_at(x,y)), mtmp))
+			 || (wardAt == CIRCLE_OF_ACHERON && scaryCircle(chaos_ward_count(num_wards_at(x,y)), mtmp))
+			 || (wardAt == PENTAGRAM && scaryPent(chaos_ward_count(num_wards_at(x,y)), mtmp))
+			 || (wardAt == HEXAGRAM && scaryHex(chaos_ward_count(num_wards_at(x,y)), mtmp))
+			 || (wardAt == HAMSA && scaryHam(chaos_ward_count(num_wards_at(x,y)), mtmp))
+			 || (wardAt == ELDER_SIGN && scarySign(chaos_ward_count(num_wards_at(x,y)), mtmp))
 			 || (sobj_at(DIMENSIONAL_LOCK, x, y) && scarySign(1, mtmp))
-			 || (wardAt == ELDER_ELEMENTAL_EYE && scaryEye(num_wards_at(x,y), mtmp))
-			 || (wardAt == SIGN_OF_THE_SCION_QUEEN && scaryQueen(num_wards_at(x,y), mtmp))
-			 || (wardAt == CARTOUCHE_OF_THE_CAT_LORD && scaryCat(num_wards_at(x,y), mtmp))
-			 || (wardAt == WINGS_OF_GARUDA && scaryWings(num_wards_at(x,y), mtmp))
-			 || (wardAt == YELLOW_SIGN && scaryYellow(num_wards_at(x,y), mtmp))
+			 || (wardAt == ELDER_ELEMENTAL_EYE && scaryEye(chaos_ward_count(num_wards_at(x,y)), mtmp))
+			 || (wardAt == SIGN_OF_THE_SCION_QUEEN && scaryQueen(chaos_ward_count(num_wards_at(x,y)), mtmp))
+			 || (wardAt == CARTOUCHE_OF_THE_CAT_LORD && scaryCat(chaos_ward_count(num_wards_at(x,y)), mtmp))
+			 || (wardAt == WINGS_OF_GARUDA && scaryWings(chaos_ward_count(num_wards_at(x,y)), mtmp))
+			 || (wardAt == YELLOW_SIGN && scaryYellow(chaos_ward_count(num_wards_at(x,y)), mtmp))
 			 || (scaryElb(mtmp) && sengr_at("Elbereth", x, y))
 			 || (scaryLol(mtmp) && sengr_at("Lolth", x, y) && (mtmp->m_lev < u.ulevel || u.ualign.record-- > 0))
 			 || (scaryTou(mtmp) && toustefna_at(x,y))

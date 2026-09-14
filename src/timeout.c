@@ -5,6 +5,7 @@
 #pragma clang diagnostic ignored "-Wint-to-void-pointer-cast"
 
 #include "hack.h"
+#include "chaos.h"
 #include "artifact.h"
 
 #include "lev.h"	/* for checking save modes */
@@ -1084,6 +1085,8 @@ boolean wakeup_msg;
 		return; //expel and end
 	}
 	stop_occupation();
+    chaos_event("sleep", "attempt", "");
+    chaos_safe("sleep");
 	nomul(how_long, "sleeping");
 	/* generally don't notice sounds while sleeping */
 	if (wakeup_msg && multi == how_long) {

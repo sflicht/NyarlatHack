@@ -5,6 +5,7 @@
 #define NEED_VARARGS	/* comment line for pre-compiled headers */
 
 #include "hack.h"
+#include "chaos.h"
 #include "artifact.h"
 
 #ifndef NO_SIGNAL
@@ -1300,6 +1301,7 @@ int how;
 
 die:
 	program_state.gameover = 1;
+    chaos_event("death", "result", how == QUIT ? "quit" : how == ESCAPED ? "escaped" : how == ASCENDED ? "ascended" : "died");
 	/* in case of a subsequent panic(), there's no point trying to save */
 	program_state.something_worth_saving = 0;
 #ifdef DUMP_LOG

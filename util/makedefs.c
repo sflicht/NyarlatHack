@@ -461,6 +461,9 @@ make_version()
 	 * groupings are just for convenience.
 	 */
 	version.feature_set = (unsigned long)(0L
+#ifdef CHAOS
+            | (1L << 26) /* NyarlatHack player save extension v1 */
+#endif
 		/* levels and/or topology (0..4) */
 #ifdef REINCARNATION
 			| (1L <<  1)

@@ -141,7 +141,7 @@ int chaos_admit(struct chaos_state *s, const struct chaos_request *r, long turn,
     chaos_expire(s,turn);
     if(!eligible || turn < 0 || turn > LONG_MAX - 50 ||
        (r->kind == CHAOS_WARD && sanity > 80) ||
-       (r->kind == CHAOS_HUNGER && sanity > 90)) return CHAOS_INELIGIBLE;
+       (r->kind == CHAOS_HUNGER && (sanity > 90 || eligible != 1))) return CHAOS_INELIGIBLE;
     if(s->effects[r->kind].value) return CHAOS_ACTIVE;
     cost = chaos_cost(r->kind);
     if(cost > chaos_budget(s,sanity)) return CHAOS_BUDGET;

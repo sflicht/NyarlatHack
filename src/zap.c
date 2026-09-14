@@ -3,6 +3,7 @@
 /* NetHack may be freely redistributed.  See license for details. */
 
 #include "hack.h"
+#include "chaos.h"
 #include "artifact.h"
 
 #include "xhity.h"
@@ -2688,6 +2689,7 @@ static NEARDATA const char zap_syms[] = { ARMOR_CLASS, WAND_CLASS, TOOL_CLASS, R
 int
 dozap()
 {
+    chaos_event("zap", "attempt", "");
 	register struct obj *obj;
 	int damage;
 

@@ -8,6 +8,7 @@
 #include <time.h>
 #include <errno.h>    
 #include "hack.h"
+#include "chaos.h"
 #include "artifact.h"
 #include "xhity.h"
 #include "hashmap.h"
@@ -1831,7 +1832,9 @@ moveloop()
 	// printBodies();
 	// printSanAndInsight();
 	// printEtraits();
+    chaos_start();
     for(;;) {/////////////////////////MAIN LOOP/////////////////////////////////
+    chaos_observe();
 	if (!iflags.debug_fuzzer) gosleep();
     hpDiff = u.uhp;
 	get_nh_event();

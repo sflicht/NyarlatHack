@@ -11,6 +11,7 @@
 #include <math.h>
 
 #include "hack.h"
+#include "chaos.h"
 #include "mfndpos.h"
 
 #include "artifact.h"
@@ -6679,6 +6680,7 @@ xkilled(mtmp, dest)
 		change_luck(mtmp->mvar_lucksucker);
 	}
 	if (dest & 1) {
+        chaos_event("kill", "attempt", "");
 		static boolean sflm_message = FALSE;
 	    const char *verb = (banish_kill_mon(mtmp) && !has_template(mtmp, SPARK_SKELETON)) ? "banish" : (mtmp->mflamemarked && !Infuture) ? "burn" : nonliving(mtmp->data) ? "destroy" : "kill";
 

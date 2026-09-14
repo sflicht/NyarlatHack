@@ -25,6 +25,7 @@ void chaos_state_init(struct chaos_state *);
 int chaos_state_valid(const struct chaos_state *);
 int chaos_budget(const struct chaos_state *, int);
 void chaos_expire(struct chaos_state *, long);
+/* eligibility: 0 unconscious/dead, 1 ordinary food, 2 conscious non-food. */
 int chaos_admit(struct chaos_state *, const struct chaos_request *, long, int, int);
 int chaos_rule(const struct chaos_state *, int, long, int);
 #endif

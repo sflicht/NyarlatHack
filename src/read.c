@@ -3,6 +3,7 @@
 /* NetHack may be freely redistributed.  See license for details. */
 
 #include "hack.h"
+#include "chaos.h"
 
 #include "artifact.h"
 
@@ -43,6 +44,7 @@ static void FDECL(learn_spell_aphanactonan, (int));
 int
 doread()
 {
+    chaos_event("read", "attempt", "");
 	register struct obj *scroll;
 	register boolean confused;
 	char class_list[MAXOCLASSES+2];

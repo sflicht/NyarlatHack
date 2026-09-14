@@ -5,6 +5,7 @@
 /* Contains code for 'd', 'D' (drop), '>', '<' (up, down) */
 
 #include "hack.h"
+#include "chaos.h"
 #include "lev.h"
 #include "artifact.h"
 
@@ -1336,6 +1337,7 @@ int portal;
 
 	fd = currentlevel_rewrite();
 	if (fd < 0) return;
+    chaos_event("level_leave", "result", "");
 
 	if (falling) /* assuming this is only trap door or hole */
 	    impact_drop((struct obj *)0, u.ux, u.uy, newlevel->dlevel, TRUE);
@@ -1918,6 +1920,8 @@ misc_levelport:
 		}
 	}
 	level.lastmove = timeline;
+    chaos_event("level_enter", "result", "");
+    chaos_safe("level_enter");
 #ifdef INSURANCE
 	save_currentstate();
 #endif

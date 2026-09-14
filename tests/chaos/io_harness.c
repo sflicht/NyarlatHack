@@ -19,6 +19,7 @@ int main(int argc, char **argv) {
     chaos_state_init(&f.s); f.c.turn=10; f.c.sanity=0; f.c.insight=0; f.c.eligible=1;
     if(!strcmp(f.mode,"poor")) f.s.spent=12;
     if(!strcmp(f.mode,"ineligible")) f.c.eligible=0;
+    if(!strcmp(f.mode,"nonfood")) f.c.eligible=2;
     chaos_io_open(&f.io,argv[1]);
     chaos_io_safe(&f.io,&f.s,&f.c,"level_enter",show,&f);
     if(!strcmp(f.mode,"restore")) {

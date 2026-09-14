@@ -440,6 +440,9 @@ restgamestate(int fd, unsigned int *stuckid, unsigned int *steedid, unsigned int
 	amii_setpens(amii_numcolors);	/* use colors from save file */
 #endif
 	mread(fd, (genericptr_t) &u, sizeof(struct you));
+#ifdef CHAOS
+	if (!chaos_state_valid(&u.chaos)) return FALSE;
+#endif
 	mread(fd, (genericptr_t) &youmonst, sizeof(struct monst));
 	if (youmonst.light)
 		rest_lightsource(LS_MONSTER, &youmonst, youmonst.light, fd, FALSE);

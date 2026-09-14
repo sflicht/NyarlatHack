@@ -3,6 +3,7 @@
 /* NetHack may be freely redistributed.  See license for details. */
 
 #include "hack.h"
+#include "chaos.h"
 #include "xhity.h"
 #include "gods.h"
 #include "godlist.h"
@@ -2564,6 +2565,8 @@ dopray()
 
     /* set up p_type and p_alignment */
     if (!can_pray(TRUE)) return MOVE_CANCELLED;
+    chaos_event("pray", "attempt", "confirmed");
+    chaos_safe("pray");
 	
 	u.lastprayed = moves;
 	u.lastprayresult = PRAY_INPROG;

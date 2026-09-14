@@ -21,6 +21,13 @@ GAMELIBS = $(shell $(PKG_CONFIG) --libs ncursesw) -lm
 
 -include local.mk
 
+CHAOS ?= 1
+ifeq ($(CHAOS),1)
+CPPFLAGS += -DCHAOS
+else ifneq ($(CHAOS),0)
+$(error CHAOS must be 0 or 1)
+endif
+
 CPPFLAGS += -Wno-knr-promoted-parameter
 CPPFLAGS += -Iinclude
 CPPFLAGS += -DDLB
@@ -77,6 +84,9 @@ SRCOBJ = allmain.o alloc.o apply.o artifact.o astar.o attrib.o ball.o bones.o	\
          u_init.o unicode.o vault.o version.o vision.o weapon.o 	\
          were.o wield.o windows.o wizard.o worm.o worn.o write.o 	\
          xhity.o xhityhelpers.o zap.o 
+ifeq ($(CHAOS),1)
+SRCOBJ += chaos_protocol.o chaos_io.o chaos_engine.o
+endif
 SYSUNIXOBJ = unixmain.o unixres.o unixunix.o
 SYSSHAREOBJ = ioctl.o unixtty.o
 WINTTYOBJ = getline.o termcap.o topl.o wintty.o
@@ -127,6 +137,14 @@ AUTO_BIN += util/tilemap
 
 ALL_O = $(GAME_O) $(RECOVER_O) $(MAKEDEFS_O) $(DLB_O) $(DGN_COMP_O)	\
         $(LEV_COMP_O) $(TILEMAP_O)
+
+# A flag switch invalidates every object, including save-version generators.
+.PHONY: chaos-force
+.chaos-build: chaos-force
+	@printf '%s\n' '$(CHAOS)' > $@.tmp
+	@cmp -s $@.tmp $@ || mv $@.tmp $@
+	@rm -f $@.tmp
+$(ALL_O): .chaos-build
 
 ##### BASIC RULES AND AUTOMATIC DEPENDENCY GENERATION #####
 
