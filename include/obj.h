@@ -12,6 +12,9 @@
 
 #ifndef OBJ_H
 #define OBJ_H
+#ifdef CHAOS
+#include "chaos_curio.h"
+#endif
 
 enum {
 	OPROP_NONE = 0,
@@ -145,6 +148,9 @@ struct obj {
 	};
 	struct obj *cobj;	/* contents list for containers */
 	unsigned o_id;
+#ifdef CHAOS
+    unsigned char curio_tag; /* enum chaos_curio_tag; zero is ordinary */
+#endif
 	xchar ox,oy;
 	int otyp;		/* object class number */
 	unsigned owt;	/* object weight */

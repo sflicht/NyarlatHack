@@ -441,7 +441,8 @@ restgamestate(int fd, unsigned int *stuckid, unsigned int *steedid, unsigned int
 #endif
 	mread(fd, (genericptr_t) &u, sizeof(struct you));
 #ifdef CHAOS
-	if (!chaos_state_valid(&u.chaos) || !chaos_haunt_valid(&u.haunt)) return FALSE;
+	if (!chaos_state_valid(&u.chaos) || !chaos_haunt_valid(&u.haunt)
+            || !chaos_curio_valid(&u.curio)) return FALSE;
 #endif
 	mread(fd, (genericptr_t) &youmonst, sizeof(struct monst));
 	if (youmonst.light)
