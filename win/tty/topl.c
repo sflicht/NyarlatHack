@@ -140,22 +140,39 @@ redotoplin(str)
 		more();
 }
 
-STATIC_OVL void
-remember_topl()
+static void
+remember_message(const char *text)
 {
     register struct WinDesc *cw = wins[WIN_MESSAGE];
     int idx = cw->maxrow;
-    unsigned len = strlen(toplines) + 1;
+    unsigned len = strlen(text) + 1;
 
     if (len > (unsigned)cw->datlen[idx]) {
 	if (cw->data[idx]) free(cw->data[idx]);
-	len += (8 - (len & 7));		/* pad up to next multiple of 8 */
+	len += (8 - (len & 7));
 	cw->data[idx] = (char *)alloc(len);
 	cw->datlen[idx] = (short)len;
     }
-    Strcpy(cw->data[idx], toplines);
+    Strcpy(cw->data[idx], text);
     cw->maxcol = cw->maxrow = (idx + 1) % cw->rows;
 }
+
+STATIC_OVL void
+remember_topl()
+{
+    remember_message(toplines);
+}
+
+#ifdef CHAOS
+/* Cosmetic history insertion: no rendering, topline changes or More prompts. */
+void tty_chaos_echo(const char *text)
+{
+    const unsigned char *p = (const unsigned char *)text;
+    if (!text || strlen(text) >= BUFSZ || !wins[WIN_MESSAGE] || wins[WIN_MESSAGE]->rows < 1) return;
+    for (; *p; ++p) if (*p < 32 || *p == 127) return;
+    remember_message(text);
+}
+#endif
 
 void
 addtopl(s)

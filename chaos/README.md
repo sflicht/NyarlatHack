@@ -1,5 +1,10 @@
 # The Crawling Chaos director
 
+For the implemented constrained-runtime encounter, harmless history echoes, and
+the user-selected GPT-5.6 Luna / ChatGPT OAuth route, see
+[the First Haunting guide](../docs/milestone2.md). The generic HTTP model backend
+described below is an optional alternative, not an automatic fallback.
+
 Python 3.11+; standard library only. Run `python3 -m chaos --help` from the
 repository root. No package installation or model key is needed for offline
 play. An application programming interface (API) key is needed only for the
@@ -137,7 +142,9 @@ point or while a previous request remains unacknowledged.
 - A logged pre-admission and a saved game are not a cross-process atomic
   transaction. Unsaved crashes can leave admissions without applied effects.
 - Private same-user files are the intended trust boundary. This is not a hardened
-  multi-user game server. Runtime scripting and Dreamland echoes are future work.
+  multi-user game server. The narrow runtime and Dreamland history echoes are
+  documented separately in [Milestone 2](../docs/milestone2.md); the generic
+  Tier 2 transport described here does not accept executable scripts.
 
 Details: [engine protocol](../docs/chaos-protocol.md) and
 [validation](../docs/milestone1-validation.md).

@@ -21,7 +21,12 @@ def main(argv=None):
         description="The Crawling Chaos — bounded engine-protocol v1 director"
     )
     sub = parser.add_subparsers(dest="command", required=True)
-    for name in ("pack", "random", "replay", "model"):
+    installer = sub.add_parser(
+        "haunt", help="install one Lua candidate; game validates it"
+    )
+    installer.add_argument("--run-dir", required=True)
+    installer.add_argument("--source", type=Path, required=True)
+    for name in ("pack", "random", "replay", "model", "oauth"):
         p = sub.add_parser(name)
         p.add_argument(
             "--run-dir", required=True, help="existing owned mode-0700 run directory"
@@ -44,7 +49,9 @@ def main(argv=None):
             )
         if name == "random":
             p.add_argument("--seed", type=int, default=0)
-        if name in ("random", "model"):
+        if name == "oauth":
+            p.add_argument("--ledger", type=Path, required=True)
+        if name in ("random", "model", "oauth"):
             p.add_argument(
                 "--ordinary-food",
                 action="store_true",
@@ -81,6 +88,11 @@ def main(argv=None):
             )
     args = parser.parse_args(argv)
     try:
+        if args.command == "haunt":
+            from .haunt import install
+
+            print(json.dumps(install(args.source, args.run_dir)))
+            return 0
         if args.command == "pack":
             raw = (Path(__file__).parent / "packs" / f"{args.name}.json").read_bytes()
             r = parse_request(raw)
@@ -90,6 +102,10 @@ def main(argv=None):
             backend = RandomBackend(args.seed, args.ordinary_food)
         elif args.command == "replay":
             backend = ScheduleBackend(load_replay(args.journal, args.accepted_events))
+        elif args.command == "oauth":
+            from .oauth import OAuthBackend
+
+            backend = OAuthBackend(args.ledger, ordinary_food=args.ordinary_food)
         else:
             from .model import ModelBackend
 
@@ -116,7 +132,7 @@ def main(argv=None):
         )
         print(json.dumps(result, sort_keys=True))
         return 0
-    except (ValueError, OSError, KeyError) as exc:
+    except Exception as exc:
         # Static error class only: raw paths, model text, HTTP bodies may contain controls/secrets.
         print(
             "chaos: failed closed ("

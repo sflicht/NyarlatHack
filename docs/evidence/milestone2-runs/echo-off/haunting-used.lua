@@ -1,0 +1,1 @@
+return function(c) while true do end end

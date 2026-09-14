@@ -1,0 +1,15 @@
+cc -g -DCHAOS -I/usr/include/lua5.4  -Wno-knr-promoted-parameter -Iinclude -DDLB -Wall -Wno-comment -Wno-unused-variable -Wno-misleading-indentation -Wno-unused-but-set-variable -Wno-unused-function -Wno-unused-label -Wno-unknown-pragmas -Wno-missing-braces -Wno-format-overflow -std=gnu17 -MMD -MP -c -o src/chaos_haunt.o src/chaos_haunt.c
+cd util && ./makedefs -a  # include/date.h
+cc -g -DCHAOS -I/usr/include/lua5.4  -Wno-knr-promoted-parameter -Iinclude -DDLB -Wall -Wno-comment -Wno-unused-variable -Wno-misleading-indentation -Wno-unused-but-set-variable -Wno-unused-function -Wno-unused-label -Wno-unknown-pragmas -Wno-missing-braces -Wno-format-overflow -std=gnu17 -MMD -MP -c -o src/version.o src/version.c
+cc -Wno-knr-promoted-parameter src/allmain.o src/alloc.o src/apply.o src/artifact.o src/astar.o src/attrib.o src/ball.o src/bones.o src/botl.o src/cmd.o src/crown.o src/dbridge.o src/decl.o src/detect.o src/dig.o src/display.o src/dlb.o src/do.o src/do_name.o src/do_wear.o src/dog.o src/dogmove.o src/dokick.o src/dothrow.o src/drawing.o src/dungeon.o src/eat.o src/end.o src/engrave.o src/enlighten.o src/exper.o src/explode.o src/extralev.o src/files.o src/fountain.o src/hack.o src/hacklib.o src/invent.o src/light.o src/lock.o src/mail.o src/makemon.o src/mapglyph.o src/mcastu.o src/mextra.o src/minion.o src/mklev.o src/mkmap.o src/mkmaze.o src/mkobj.o src/mkroom.o src/mon.o src/mondata.o src/monmove.o src/monst.o src/monstr.o src/mplayer.o src/mthrowu.o src/muse.o src/music.o src/mutations.o src/o_init.o src/objects.o src/objnam.o src/oextra.o src/options.o src/pager.o src/pickup.o src/pline.o src/polyself.o src/potion.o src/pray.o src/priest.o src/projectile.o src/quest.o src/questpgr.o src/read.o src/recover.o src/rect.o src/region.o src/research.o src/restore.o src/rip.o src/rnd.o src/role.o src/rumors.o src/save.o src/seduce.o src/shk.o src/shknam.o src/sit.o src/sounds.o src/sp_lev.o src/spell.o src/steal.o src/steed.o src/string.o src/teleport.o src/testing.o src/thoughtglyph.o src/tile.o src/timeout.o src/topten.o src/track.o src/trap.o src/u_init.o src/unicode.o src/vault.o src/version.o src/vision.o src/weapon.o src/were.o src/wield.o src/windows.o src/wizard.o src/worm.o src/worn.o src/write.o src/xhity.o src/xhityhelpers.o src/zap.o src/chaos_protocol.o src/chaos_io.o src/chaos_engine.o src/chaos_lua.o src/chaos_shadow.o src/chaos_haunt.o sys/unix/unixmain.o sys/unix/unixres.o sys/unix/unixunix.o sys/share/ioctl.o sys/share/unixtty.o win/tty/getline.o win/tty/termcap.o win/tty/topl.o win/tty/wintty.o win/curses/cursdial.o win/curses/cursinit.o win/curses/cursmain.o win/curses/cursmesg.o win/curses/cursmisc.o win/curses/cursstat.o win/curses/curswins.o win/curses/cursinvt.o  -lncursesw -ltinfo  -lm -llua5.4  -o src/dnethack
+mkdir -p dnethackdir
+install src/dnethack dnethackdir
+install util/recover dnethackdir
+install -m 644 dat/nhdat dat/license dnethackdir
+touch dnethackdir/perm
+touch dnethackdir/record
+touch dnethackdir/logfile
+touch dnethackdir/xlogfile
+touch dnethackdir/livelog
+mkdir -p dnethackdir/save
+mkdir -p dnethackdir/dumplog

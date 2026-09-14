@@ -1,0 +1,2 @@
+# Preserve exact terminal evidence; do not treat control bytes as source text.
+docs/evidence/milestone2-runs/**/terminal.raw -diff -text

@@ -1,0 +1,22 @@
+{
+  "review_id": "deleg_d789b630",
+  "scope": "All 39 staged files against 28bf1b192; read-only review before publication",
+  "passed": false,
+  "security_concerns": [],
+  "logic_errors": [
+    {
+      "file": "src/chaos_haunt.c",
+      "issue": "Transport failure disabled lifecycle/history maintenance but left the admitted script active.",
+      "failure_path": "An absent run directory or event-log failure caused tick(-1) to return before history updates and permanent level-change expiry. Returning to the original level could resume the script.",
+      "parent_reproduction": "Both new linked-engine tests failed before the fix: last_turn=10, history_x=5, player_x=6. Both pass after moving the transport check to admission only."
+    }
+  ],
+  "suggestions": [
+    {
+      "file": "chaos/oauth.py",
+      "issue": "Sync the ledger directory after atomic replacement.",
+      "parent_disposition": "Added a failing test that requires directory sync before inference, then added directory fsync. The new test passes. No extra live model request was made."
+    }
+  ],
+  "followup": "Focused independent re-review required before publication; this initial failure is retained rather than overwritten."
+}

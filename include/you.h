@@ -15,6 +15,7 @@
 #include "engrave.h"
 #ifdef CHAOS
 #include "chaos_protocol.h"
+#include "chaos_haunt.h"
 #endif
 
 /*** Substructures ***/
@@ -397,6 +398,7 @@ struct you {
 #ifdef CHAOS
     /* Player-only savegamestate image; never serialized into bones. */
     struct chaos_state chaos;
+    struct chaos_haunt_state haunt;
 #endif
 	xchar ux, uy;
 	schar dx, dy, dz;	/* direction of move (or zap or ... ) */

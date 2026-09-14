@@ -78,6 +78,31 @@ class OAuthTests(unittest.TestCase):
             ).generate("s", "u")
         self.assertEqual(json.loads(self.ledger.read_text())["attempts"], 1)
 
+    def test_directory_sync_precedes_inference(self):
+        import os
+        import stat
+        from unittest.mock import patch
+
+        synced = []
+        real_fsync = os.fsync
+        real_create = self.client.chat.completions.create
+
+        def sync(fd):
+            real_fsync(fd)
+            if stat.S_ISDIR(os.fstat(fd).st_mode):
+                synced.append(True)
+
+        def create(**kwargs):
+            self.assertTrue(
+                synced, "reservation directory was not synced before inference"
+            )
+            return real_create(**kwargs)
+
+        self.client.chat.completions.create = create
+        with patch("chaos.oauth.os.fsync", side_effect=sync):
+            self.Backend(self.ledger, client_factory=self.factory).generate("s", "u")
+        self.assertEqual(len(self.calls), 1)
+
     def test_bounds_and_no_secret_copy(self):
         b = self.Backend(self.ledger, client_factory=self.factory)
         with self.assertRaises(ValueError):

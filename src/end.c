@@ -1300,6 +1300,7 @@ int how;
      */
 
 die:
+    chaos_shadow_end(how < PANICKED); /* final death, after lifesaving; no child death-file writes */
 	program_state.gameover = 1;
     chaos_event("death", "result", how == QUIT ? "quit" : how == ESCAPED ? "escaped" : how == ASCENDED ? "ascended" : "died");
 	/* in case of a subsequent panic(), there's no point trying to save */

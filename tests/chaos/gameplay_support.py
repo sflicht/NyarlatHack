@@ -20,7 +20,9 @@ ANSI = re.compile(rb"\x1b\[[0-?]*[ -/]*[@-~]")
 
 
 class Game:
-    def __init__(self, source, preload, observe=True, wizard=False, root=None):
+    def __init__(
+        self, source, preload, observe=True, wizard=False, root=None, echoes=True
+    ):
         self.root = Path(root or tempfile.mkdtemp(prefix="nyarlathack-game-test-"))
         self.game = self.root / "game"
         self.run = self.root / "run"
@@ -36,6 +38,7 @@ class Game:
         self.preload = str(preload)
         self.observe = observe
         self.wizard = wizard
+        self.echoes = echoes
         self.pid = self.fd = None
         self.raw = bytearray()
         self.inputs = []
@@ -85,6 +88,12 @@ class Game:
             {
                 "wizard": self.wizard,
                 "observe": self.observe,
+                "echoes": self.echoes,
+                "haunting_source_sha256": hashlib.sha256(
+                    (self.run / "haunting.lua").read_bytes()
+                ).hexdigest()
+                if (self.run / "haunting.lua").exists()
+                else None,
                 "terminal": [24, 80],
                 "inputs_begin": len(self.inputs),
                 "sha256": {
@@ -110,6 +119,7 @@ class Game:
                 NETHACKOPTIONS="name:ChaosReview,role:Wizard,race:human,gender:male,align:neutral,windowtype:tty,!news,!legacy,time",
             )
             env.pop("NYARLATHACK_RUN_DIR", None)
+            env["NYARLATHACK_ECHOES"] = "1" if self.echoes else "0"
             if self.observe:
                 env["NYARLATHACK_RUN_DIR"] = str(self.run)
             args = ["./dnethack"] + (["-D", "-u", "wizard"] if self.wizard else [])

@@ -24,8 +24,8 @@ static void finish_child(void) {
     if(running) (void)write(3,running,sizeof *running);
     _exit(0);
 }
-void chaos_shadow_death(void) {
-    if(running) {running->ok=0;running->died=1;finish_child();}
+void chaos_shadow_end(int died) {
+    if(running) {running->ok=0;running->died=!!died;finish_child();}
 }
 static int sandbox(void) {
 #if defined(__linux__) && defined(__x86_64__)

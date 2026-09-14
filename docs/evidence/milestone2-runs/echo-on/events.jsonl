@@ -1,0 +1,8 @@
+{"v":1,"seq":1,"turn":1,"safe":0,"event":"session","phase":"result","detail":"new","sanity":100,"insight":0,"budget":2,"spent":0,"reserved":0,"last_id":0}
+{"v":1,"seq":2,"turn":1,"safe":0,"event":"level_enter","phase":"result","detail":"","sanity":100,"insight":0,"budget":2,"spent":0,"reserved":0,"last_id":0}
+{"v":1,"seq":3,"turn":1,"safe":1,"event":"safe_point","phase":"result","detail":"level_enter","sanity":100,"insight":0,"budget":2,"spent":0,"reserved":0,"last_id":0}
+{"v":1,"seq":4,"turn":1,"safe":1,"event":"sanity","phase":"result","detail":"","sanity":60,"insight":0,"budget":6,"spent":0,"reserved":0,"last_id":0}
+{"v":1,"seq":5,"turn":1,"safe":2,"event":"safe_point","phase":"result","detail":"sanity_threshold","sanity":60,"insight":0,"budget":6,"spent":0,"reserved":0,"last_id":0}
+{"v":1,"seq":6,"turn":4,"safe":2,"event":"backtrack","phase":"result","detail":"","sanity":60,"insight":0,"budget":6,"spent":0,"reserved":0,"last_id":0}
+{"v":1,"seq":7,"turn":4,"safe":2,"event":"haunting","phase":"result","detail":"rejected","sanity":60,"insight":0,"budget":6,"spent":0,"reserved":0,"last_id":0}
+{"v":1,"seq":8,"turn":5,"safe":2,"event":"death","phase":"result","detail":"quit","sanity":60,"insight":0,"budget":6,"spent":0,"reserved":0,"last_id":0}

@@ -2,12 +2,17 @@
 
 A dNetHack fork whose rules can respond to the player's actions.
 
-**Milestone 1: playable Tier 2 prototype.** The C engine now accepts bounded rule
-changes from a separate Python director, **the Crawling Chaos**. A **whisper**
-is one validated request. The director chooses; the engine decides whether it
-is eligible and executes it. Generated scripts and source rewriting are absent.
+**Milestone 2: The First Haunting.** The C engine accepts bounded requests from
+a separate Python director, **the Crawling Chaos**, and now supports one narrowly
+constrained Lua movement encounter. A **whisper** is a validated request; the
+engine remains authoritative. GPT-5.6 Luna through ChatGPT OAuth has generated
+an exact-source candidate that passed shadow validation and real-game replay.
 
-## What works now
+See [the First Haunting guide](docs/milestone2.md) for the playable echo hound,
+cosmetic Dreamland echoes, subscription connection, evidence and limitations.
+This is not general source rewriting or an unrestricted scripting system.
+
+## Tier 2 foundation (Milestone 1)
 
 - [x] **Event stream:** newline-delimited JavaScript Object Notation (JSON)
   observations for eating, reading, zapping, applying, prayer, kills, level
@@ -40,16 +45,17 @@ is eligible and executes it. Generated scripts and source rewriting are absent.
   save/restore preserves active and pending whispers and rejects incompatible
   save layouts. Linked-engine tests measure both real rule changes and expiry.
 
-The model connection has been tested with a **local fake HTTP (Hypertext
-Transfer Protocol) server**, not a live language model. Live-model gameplay,
-long-run balance and adversarial public-server hosting remain unvalidated.
+The generic model connection retains its local fake HTTP (Hypertext Transfer
+Protocol) tests. The separate pinned ChatGPT OAuth route has now been exercised
+with real GPT-5.6 Luna calls. Long-run balance and adversarial public-server
+hosting remain unvalidated.
 
 ## Build
 
 On Debian/Ubuntu, install the compiler and build dependencies:
 
 ```sh
-sudo apt-get install bison flex build-essential libncursesw5-dev pkg-config
+sudo apt-get install bison flex build-essential libncursesw5-dev pkg-config liblua5.4-dev
 make -j4 install CHAOS=1
 cd dnethackdir
 ./dnethack
@@ -102,21 +108,27 @@ nor the test fixtures are enabled in the normal game. See
 [validation evidence and limitations](docs/milestone1-validation.md) and
 [the exact protocol](docs/chaos-protocol.md).
 
-## Deferred: constrained runtime scripting and the Dreamlands
+## The First Haunting: constrained runtime and Dreamlands
 
-Tier 3 remains unimplemented. The proposed **Dreamlands** would test candidate
-scripts in a separate game simulation before admission. Such bounded testing
-would provide evidence, not prove universal safety or fairness.
+```sh
+RUN=$(mktemp -d)
+python3 -m chaos haunt --run-dir "$RUN" --source chaos/packs/luna-footsteps.lua
+(cd dnethackdir && NYARLATHACK_RUN_DIR="$RUN" ./dnethack -D -u wizard)
+```
 
-**Dreamland echoes are an explicit future design requirement:** actual shadow
-activity, including rejected timelines, should sometimes produce purely
-cosmetic recollections in the main game. Those echoes must not change turns,
-randomness, player state, budgets or prompts, nor reveal hidden information.
-They are separate from mandatory mutation warnings. See
-[Tier 3 notes](docs/tier3-notes.md).
+In the terminal window port, choose a human Wizard with no inheritance, set
+Sanity to 60 using `#setsanity`, and backtrack across open floor. An eligible
+candidate runs first in a forked, headless, system-call-restricted copy of the
+C simulation. If its targeted trial passes, a warning precedes an echo hound
+whose movement follows delayed footsteps. Use Ctrl-P to see a cosmetic dream
+fragment in message history. No model call is made by installing the saved pack.
 
-No script-bearing bones files, public-server deployment or between-lives C
-rewriting is included.
+The verified surface is one movement handler, one candidate per game, and
+targeted shadow trials—not the complete normal turn loop or proof of safety for
+every dungeon. Echo insertion changes history only, not gameplay or unsolicited
+prompts. Continuous script generation, all-window-port rendering, script-bearing
+bones, public hosting and between-lives C rewriting remain deferred.
+See [Milestone 2](docs/milestone2.md) and the original [Tier 3 notes](docs/tier3-notes.md).
 
 ## Lineage and licence
 

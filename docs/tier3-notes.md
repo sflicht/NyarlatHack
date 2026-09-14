@@ -1,4 +1,8 @@
-# Deferred Tier 3 notes — no implementation authorized
+# Original Tier 3 design notes
+
+Historical proposal. The user subsequently authorized the narrow First Haunting
+milestone; its implemented scope and evidence are in [milestone2.md](milestone2.md).
+The statements below describe the original proposal, not current authorization.
 
 The Dreamlands may sometimes echo actual shadow-run events into the main game,
 including events from rejected timelines. Gate echoes on sleep, low Sanity,

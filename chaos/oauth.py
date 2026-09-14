@@ -81,6 +81,11 @@ class OAuthBackend:
                     f.flush()
                     os.fsync(f.fileno())
                 os.replace(name, self.ledger)
+                directory = os.open(self.ledger.parent, os.O_RDONLY | os.O_DIRECTORY)
+                try:
+                    os.fsync(directory)
+                finally:
+                    os.close(directory)
             finally:
                 if os.path.exists(name):
                     os.unlink(name)
@@ -143,7 +148,13 @@ class OAuthBackend:
                     extra_body={"reasoning": {"effort": "low"}},
                 )
                 usage = {}
-                for field in ("input_tokens", "output_tokens", "total_tokens"):
+                for field in (
+                    "input_tokens",
+                    "output_tokens",
+                    "prompt_tokens",
+                    "completion_tokens",
+                    "total_tokens",
+                ):
                     value = getattr(response.usage, field, None)
                     if type(value) is int and value >= 0:
                         usage[field] = value

@@ -1,0 +1,11 @@
+You design exactly one bounded NyarlatHack monster movement program in Lua 5.4.
+Return only one JSON object {"source":"...Lua source..."}; no markdown, tool calls, or other fields.
+The supplied summary comes from actual player-visible events. Backtracking was observed.
+Create an uncanny but learnable echo-hound: pursue a delayed trace of the player's footsteps, not their present position. The player can mislead it by changing direction.
+Source must be at most 4096 UTF-8 bytes and return a function taking one table c.
+c.mx,c.my: this creature's coordinates. c.state: integer 0..1000000 persisted explicitly.
+c.history: a dense array of 1..8 copied player positions {x=integer,y=integer}, OLDEST FIRST.
+Use the position three observations before the newest one; clamp to the first position when history is shorter. Compute a single sign step toward that target in each axis.
+Return exactly {dx=integer,dy=integer,state=integer}. dx/dy must be -1,0,1. state must stay within 0..1000000; it may count decisions with bounded modulo arithmetic.
+There are NO standard libraries or global functions. No math, table, string, pairs, next, print, assert, pcall, load, require, os, io, debug, coroutines or metatables. Use Lua operators and ordinary control flow only. No unbounded loops or recursion. An instruction/memory limit is enforced. Each decision uses a fresh interpreter; only the returned integer state persists. The C engine validates every movement against legal candidate tiles. Blocked movement is a wait. No attacks, damage, terrain, file access, network or arbitrary state changes are available.
+This is a candidate for real isolated shadow validation, not permission to bypass it.

@@ -23,7 +23,8 @@ GAMELIBS = $(shell $(PKG_CONFIG) --libs ncursesw) -lm
 
 CHAOS ?= 1
 ifeq ($(CHAOS),1)
-CPPFLAGS += -DCHAOS
+CPPFLAGS += -DCHAOS $(shell $(PKG_CONFIG) --cflags lua5.4)
+GAMELIBS += $(shell $(PKG_CONFIG) --libs lua5.4)
 else ifneq ($(CHAOS),0)
 $(error CHAOS must be 0 or 1)
 endif
@@ -85,7 +86,7 @@ SRCOBJ = allmain.o alloc.o apply.o artifact.o astar.o attrib.o ball.o bones.o	\
          were.o wield.o windows.o wizard.o worm.o worn.o write.o 	\
          xhity.o xhityhelpers.o zap.o 
 ifeq ($(CHAOS),1)
-SRCOBJ += chaos_protocol.o chaos_io.o chaos_engine.o
+SRCOBJ += chaos_protocol.o chaos_io.o chaos_engine.o chaos_lua.o chaos_shadow.o chaos_haunt.o
 endif
 SYSUNIXOBJ = unixmain.o unixres.o unixunix.o
 SYSSHAREOBJ = ioctl.o unixtty.o

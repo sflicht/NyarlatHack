@@ -1,0 +1,9 @@
+{
+  "requested_model": "gpt-5.6-luna",
+  "provider": "openai-codex",
+  "live_model": true,
+  "source_sha256": "a85674af6e816967aac0f0af4f100c6555965bdfa165980a1dd473cdc72e83ea",
+  "events_sha256": "bdf342d09ef5b7456655294815264ec9b07357307ec26f7d272b3e71b63f629b",
+  "source_file": "/home/hermes/.local/share/nyarlathack/milestone2/luna-candidate-1/haunting.lua",
+  "validation": "candidate only; engine shadow validation still required"
+}

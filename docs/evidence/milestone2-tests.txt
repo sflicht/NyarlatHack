@@ -1,0 +1,77 @@
+test_atomic_mailbox_resume_no_clobber (test_director.DirectorTests.test_atomic_mailbox_resume_no_clobber) ... ok
+test_budgets_and_seeded_eligibility (test_director.DirectorTests.test_budgets_and_seeded_eligibility) ... ok
+test_cli_pack_real_c_admission (test_director.DirectorTests.test_cli_pack_real_c_admission) ... ok
+test_reader_partial_tail_retains_bytes (test_director.DirectorTests.test_reader_partial_tail_retains_bytes) ... ok
+test_reader_rejects_invalid_and_overlong (test_director.DirectorTests.test_reader_rejects_invalid_and_overlong) ... ok
+test_reader_rewrite_truncation_and_caps (test_director.DirectorTests.test_reader_rewrite_truncation_and_caps) ... ok
+test_replay_requires_ack_and_projects_fields (test_director.DirectorTests.test_replay_requires_ack_and_projects_fields) ... ok
+test_run_resume_stale_and_finite_no_events (test_director.DirectorTests.test_run_resume_stale_and_finite_no_events) ... ok
+test_schema_strict (test_director.DirectorTests.test_schema_strict) ... ok
+test_summary_redaction_and_rollback (test_director.DirectorTests.test_summary_redaction_and_rollback) ... ok
+test_explicit_endpoint_env_and_limits (test_director_model.ModelTests.test_explicit_endpoint_env_and_limits) ... ok
+test_fixture_valid_bounded_context_and_call_cap (test_director_model.ModelTests.test_fixture_valid_bounded_context_and_call_cap) ... ok
+test_malformed_duplicate_extra_and_schedule_rejected (test_director_model.ModelTests.test_malformed_duplicate_extra_and_schedule_rejected) ... ok
+test_no_budget_no_requests_and_no_event_hammer (test_director_model.ModelTests.test_no_budget_no_requests_and_no_event_hammer) ... ok
+test_redirects_and_oversize_rejected (test_director_model.ModelTests.test_redirects_and_oversize_rejected) ... ok
+test_run_deadline_limits_inflight_model_request (test_director_model.ModelTests.test_run_deadline_limits_inflight_model_request) ... ok
+test_timeout_no_retry (test_director_model.ModelTests.test_timeout_no_retry) ... ok
+test_budget_and_ineligible (test_engine.EngineTests.test_budget_and_ineligible) ... ok
+test_empty_mailbox_no_effect (test_engine.EngineTests.test_empty_mailbox_no_effect) ... ok
+test_event_failure_is_fail_closed (test_engine.EngineTests.test_event_failure_is_fail_closed) ... ok
+test_future_is_pending_then_applies_once (test_engine.EngineTests.test_future_is_pending_then_applies_once) ... ok
+test_hunger_rule_and_expiry (test_engine.EngineTests.test_hunger_rule_and_expiry) ... ok
+test_journal_failure_is_fail_closed (test_engine.EngineTests.test_journal_failure_is_fail_closed) ... ok
+test_mailbox_symlink_rejected (test_engine.EngineTests.test_mailbox_symlink_rejected) ... ok
+test_malformed_never_telegraphs (test_engine.EngineTests.test_malformed_never_telegraphs) ... ok
+test_nonfood_only_blocks_hunger (test_engine.EngineTests.test_nonfood_only_blocks_hunger) ... ok
+test_reentrant_poll_is_ignored (test_engine.EngineTests.test_reentrant_poll_is_ignored) ... ok
+test_restore_active_and_pending (test_engine.EngineTests.test_restore_active_and_pending) ... ok
+test_telegraph_before_real_rule_effect (test_engine.EngineTests.test_telegraph_before_real_rule_effect) ... ok
+test_telegraph_failure_is_fail_closed (test_engine.EngineTests.test_telegraph_failure_is_fail_closed) ... ok
+GAMEPLAY_ARTIFACTS=/tmp/nyarlathack-acceptance-q3adf2y4
+test_accepted_hunger_schedule_replays_in_real_game (test_gameplay.GameplayTests.test_accepted_hunger_schedule_replays_in_real_game) ... ok
+test_incompatible_saves_rejected_both_directions (test_gameplay.GameplayTests.test_incompatible_saves_rejected_both_directions) ... ok
+test_real_linked_hunger_and_ward_effects_expire (test_gameplay.GameplayTests.test_real_linked_hunger_and_ward_effects_expire) ... ok
+test_real_save_active_and_pending_roundtrip (test_gameplay.GameplayTests.test_real_save_active_and_pending_roundtrip) ... ok
+test_stock_inactive_and_on_empty_equal (test_gameplay.GameplayTests.test_stock_inactive_and_on_empty_equal) ... ok
+test_existing_output_stops_before_model_call (test_generation_preflight.GenerationPreflightTests.test_existing_output_stops_before_model_call) ... ok
+test_install_preserves_exact_source_and_refuses_overwrite (test_haunt_install.HauntInstallTests.test_install_preserves_exact_source_and_refuses_overwrite) ... ok
+test_absent_run_directory_keeps_lifecycle (test_haunt_lifecycle.HauntLifecycleTests.test_absent_run_directory_keeps_lifecycle) ... ok
+test_failed_event_log_keeps_lifecycle (test_haunt_lifecycle.HauntLifecycleTests.test_failed_event_log_keeps_lifecycle) ... ok
+test_generated_candidate_exact_source_and_replay (test_haunting.HauntingTests.test_generated_candidate_exact_source_and_replay) ... HAUNTING_ARTIFACTS=/tmp/nyarl-haunting-test-fqtv_b7f
+ok
+test_handwritten_haunting_shadow_and_restore (test_haunting.HauntingTests.test_handwritten_haunting_shadow_and_restore) ... HAUNTING_ARTIFACTS=/tmp/nyarl-haunting-test-xsum_0i7
+ok
+test_invalid_source_cannot_poison_player_save (test_haunting.HauntingTests.test_invalid_source_cannot_poison_player_save) ... HAUNTING_ARTIFACTS=/tmp/nyarl-haunting-test-k327amw_
+ok
+test_rejected_shadow_echo_has_no_gameplay_effect (test_haunting.HauntingTests.test_rejected_shadow_echo_has_no_gameplay_effect) ... HAUNTING_ARTIFACTS=/tmp/nyarl-haunting-test-3lx09yr9
+ok
+test_restore_without_run_directory_preserves_play (test_haunting.HauntingTests.test_restore_without_run_directory_preserves_play) ... HAUNTING_ARTIFACTS=/tmp/nyarl-haunting-test-kleq4vly
+ok
+test_build_toggle (test_hooks.HookTests.test_build_toggle) ... ok
+test_persistent_player_state (test_hooks.HookTests.test_persistent_player_state) ... ok
+test_real_rule_seams (test_hooks.HookTests.test_real_rule_seams) ... ok
+test_safe_seams (test_hooks.HookTests.test_safe_seams) ... ok
+test_bounds_errors_and_no_capabilities (test_lua.LuaTests.test_bounds_errors_and_no_capabilities) ... ok
+test_embedded_nul_in_result_key_is_rejected (test_lua.LuaTests.test_embedded_nul_in_result_key_is_rejected) ... ok
+test_fresh_vm_no_hidden_persistent_globals (test_lua.LuaTests.test_fresh_vm_no_hidden_persistent_globals) ... ok
+test_handwritten_and_generated_follow_delayed_not_current_position (test_lua.LuaTests.test_handwritten_and_generated_follow_delayed_not_current_position) ... ok
+test_pure_movement_and_state (test_lua.LuaTests.test_pure_movement_and_state) ... ok
+test_bounds_and_no_secret_copy (test_oauth.OAuthTests.test_bounds_and_no_secret_copy) ... ok
+test_directory_sync_precedes_inference (test_oauth.OAuthTests.test_directory_sync_precedes_inference) ... ok
+test_failure_consumes_reservation_and_routes_fail_closed (test_oauth.OAuthTests.test_failure_consumes_reservation_and_routes_fail_closed) ... ok
+test_pinned_route_no_tools_and_persistent_cap (test_oauth.OAuthTests.test_pinned_route_no_tools_and_persistent_cap) ... ok
+test_event_escaping (test_protocol.ProtocolTests.test_event_escaping) ... ok
+test_integer_grammar (test_protocol.ProtocolTests.test_integer_grammar) ... ok
+test_malformed_and_size (test_protocol.ProtocolTests.test_malformed_and_size) ... ok
+test_missing_every_field (test_protocol.ProtocolTests.test_missing_every_field) ... ok
+test_schema_bounds (test_protocol.ProtocolTests.test_schema_bounds) ... ok
+test_state_budget_dedup_expiry_persistence (test_protocol.ProtocolTests.test_state_budget_dedup_expiry_persistence) ... ok
+test_unknown_duplicate_fields (test_protocol.ProtocolTests.test_unknown_duplicate_fields) ... ok
+test_valid_registry (test_protocol.ProtocolTests.test_valid_registry) ... ok
+test_isolation_and_timeout (test_shadow.ShadowTests.test_isolation_and_timeout) ... ok
+
+----------------------------------------------------------------------
+Ran 66 tests in 52.330s
+
+OK

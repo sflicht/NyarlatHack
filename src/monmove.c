@@ -4,6 +4,7 @@
 
 #include "hack.h"
 #include "chaos.h"
+#include "chaos_haunt.h"
 #include "mfndpos.h"
 #include "artifact.h"
 #include "xhity.h"
@@ -2942,6 +2943,14 @@ not_special:
 	    coord poss[9];
 
 	    cnt = mfndpos(mtmp, poss, info, flag);
+        {
+            int choice = chaos_haunt_pick(mtmp, poss, cnt);
+            if (choice != -2) {
+                if (choice < 0) return 0;
+                nix=poss[choice].x; niy=poss[choice].y; chi=choice; mmoved=1;
+                goto chaos_selected;
+            }
+        }
 	    chcnt = 0;
 	    jcnt = min(MTSZ, cnt-1);
 	    chi = -1;
@@ -3103,6 +3112,7 @@ not_special:
 	    }
 	}
 
+chaos_selected:
 	if(mmoved) {
 	    register int j;
 
@@ -3189,6 +3199,7 @@ not_special:
 	        return 3;
 	    remove_monster(omx, omy);
 	    place_monster(mtmp, nix, niy);
+        chaos_haunt_commit(mtmp);
 		mtmp->mprev_dir.x = sgn(nix - omx);
 		mtmp->mprev_dir.y = sgn(niy - omy);
 		mtmp->mlast_movement = monstermoves;

@@ -60,7 +60,8 @@ int chaos_lua_step(const char *source,size_t n,const struct chaos_lua_context *c
     while(lua_next(L,-2)) {
         int bit=0;const char *key;
         if(lua_type(L,-2)!=LUA_TSTRING || !lua_isinteger(L,-1)) {status=3;break;}
-        key=lua_tostring(L,-2);
+        { size_t length; key=lua_tolstring(L,-2,&length);
+          if(memchr(key,0,length)){status=3;break;} }
         lua_Integer value=lua_tointeger(L,-1);
         if(!strcmp(key,"dx")) {bit=1;if(value < -1 || value>1){status=3;break;}out.dx=(int)value;}
         else if(!strcmp(key,"dy")) {bit=2;if(value < -1 || value>1){status=3;break;}out.dy=(int)value;}

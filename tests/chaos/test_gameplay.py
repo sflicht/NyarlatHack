@@ -93,6 +93,9 @@ class GameplayTests(unittest.TestCase):
                 "-lncursesw",
                 "-ltinfo",
                 "-lm",
+                *subprocess.check_output(
+                    ["pkg-config", "--libs", "lua5.4"], text=True
+                ).split(),
                 "-o",
                 str(b / "rules"),
             ],
