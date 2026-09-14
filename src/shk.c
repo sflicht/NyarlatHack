@@ -3,6 +3,7 @@
 /* NetHack may be freely redistributed.  See license for details. */
 
 #include "hack.h"
+#include "chaos_curio.h"
 
 
 /*#define DEBUG*/
@@ -2030,6 +2031,10 @@ boolean itemize;
 {
 	register struct obj *obj = *obj_p;
 	long ltmp, quan, save_quan;
+#ifdef CHAOS
+    unsigned char save_curio_tag = obj->curio_tag;
+    boolean inert_curio = chaos_curio_tagged(obj) && !chaos_curio_matches(obj);
+#endif
 #ifdef GOLDOBJ
 	long umoney = money_cnt(invent);
 #endif
@@ -2062,6 +2067,11 @@ boolean itemize;
 	    /* dealing with ordinary unpaid item */
 	    quan = obj->quan;
 	}
+#ifdef CHAOS
+    /* All billing views below belong to the original object, including the
+     * second quantity override and the successful-purchase message. */
+    if (inert_curio) obj->curio_tag = CHAOS_CURIO_INERT_REMNANT;
+#endif
 	obj->quan = quan;	/* to be used by doname() */
 	obj->unpaid = 0;	/* ditto */
 	ltmp = bp->price * quan;
@@ -2096,6 +2106,9 @@ boolean itemize;
 	if (buy != PAY_BUY) {
 	    /* restore unpaid object to original state */
 	    obj->quan = save_quan;
+#ifdef CHAOS
+        if (inert_curio) obj->curio_tag = save_curio_tag;
+#endif
 	    obj->unpaid = 1;
 	    return buy;
 	}
@@ -2108,6 +2121,9 @@ boolean itemize;
 			"paid for %s at a cost of %ld gold piece%s.%s" :
 			"bought %s for %ld gold piece%s.%s", ltmp, "");
 	obj->quan = save_quan;		/* restore original count */
+#ifdef CHAOS
+    if (inert_curio) obj->curio_tag = save_curio_tag;
+#endif
 	/* quan => amount just bought, save_quan => remaining unpaid count */
 	if (consumed) {
 	    if (quan != bp->bquan) {
@@ -2862,10 +2878,20 @@ speak:
 	    }
 	    if(ininv) {
 		long quan = obj->quan;
+#ifdef CHAOS
+                unsigned char save_curio_tag = obj->curio_tag;
+                boolean inert_curio = chaos_curio_tagged(obj)
+                    && !chaos_curio_matches(obj);
+                /* xname needs singular grammar, not a new curio binding. */
+                if (inert_curio) obj->curio_tag = CHAOS_CURIO_INERT_REMNANT;
+#endif
 		obj->quan = 1L; /* fool xname() into giving singular */
 		pline("%s; only %ld %s %s.\"", buf, ltmp,
 			(quan > 1L) ? "per" : "for this", xname(obj));
 		obj->quan = quan;
+#ifdef CHAOS
+                if (inert_curio) obj->curio_tag = save_curio_tag;
+#endif
 	    } else
 		pline("%s will cost you %ld %s%s.",
 			The(xname(obj)), ltmp, currency(ltmp),

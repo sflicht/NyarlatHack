@@ -5,6 +5,7 @@
 #include "chaos_curio.h"
 #include <assert.h>
 #include <stdio.h>
+#include "native_rng.h"
 
 static int creates, fail_create, shadow;
 /* Controlled getbones early-return, explicitly not a real bones file. */
@@ -46,10 +47,12 @@ static void fixture(void) {
     upstairs_room=&rooms[1]; xupstair=14; yupstair=5;
     levl[14][5].typ=STAIRS;
 }
-int main(void) {
-    struct chaos_curio_state before; struct obj *o; int i, expected, actual;
+int main(int argc, char **argv) {
+    struct chaos_curio_state before; struct obj *o; int i, expected;
     unsigned excluded[]={LFILE_EXISTS,VISITED,FORGOTTEN,LFILE_EXISTS|VISITED};
 
+    test_rng_control();
+    if (argc>1) test_rng_negative_control(argv[1]);
     init_objects();
     init_gods(); urace.malenum=PM_HUMAN; urole.malenum=PM_WIZARD;
     u.umonnum=u.umonster=PM_HUMAN; youmonst.data=&mons[PM_HUMAN];
@@ -100,8 +103,11 @@ int main(void) {
     for(i=0;i<3;i++) {
         fixture(); memset(&u.curio,0,sizeof u.curio);
         if(i) { u.curio.version=1; u.curio.phase=i==1?CHAOS_CURIO_REJECTED:CHAOS_CURIO_EXPIRED; }
-        srandom(123); expected=rn2(100000); srandom(123);
-        generation(0,1,0); actual=rn2(100000); assert(actual==expected && !creates && !fobj);
+        expected=test_rng_begin();
+        generation(0,1,0);
+        test_rng_unchanged(expected);
+        assert(!creates);
+        assert(!fobj);
     }
     fixture(); rooms[0].rtype=rooms[1].rtype=SHOPBASE;
     generation(0,1,0); assert(!creates && u.curio.phase==CHAOS_CURIO_ADMITTED);

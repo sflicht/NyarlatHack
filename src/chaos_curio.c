@@ -56,6 +56,50 @@ int chaos_curio_valid(const struct chaos_curio_state *s)
 }
 
 #ifdef CHAOS
+int chaos_curio_tagged(const struct obj *obj)
+{
+    return obj && obj->curio_tag != CHAOS_CURIO_ORDINARY;
+}
+
+/* Cached printable identity only: no VM, ownership search, or mutable state. */
+int chaos_curio_matches(const struct obj *obj)
+{
+    unsigned i;
+    int nonblank = 0;
+    if (!chaos_curio_tagged(obj) || obj->curio_tag != CHAOS_CURIO_GENERATED
+        || obj->otyp != WHISTLE || obj->quan != 1L
+        || u.curio.phase != CHAOS_CURIO_PLACED || !u.curio.owner
+        || obj->o_id != u.curio.owner) return 0;
+    for (i = 0; i < sizeof u.curio.name; ++i) {
+        unsigned char c = (unsigned char) u.curio.name[i];
+        if (!c) return nonblank;
+        if (c < 32 || c > 126) return 0;
+        if (c != ' ') nonblank = 1;
+    }
+    return 0;
+}
+
+const char *chaos_curio_name(const struct obj *obj)
+{
+    return chaos_curio_matches(obj) ? u.curio.name : "inert curio";
+}
+
+void chaos_curio_inspect(const struct obj *obj, char text[161])
+{
+    const struct obj *held;
+    struct chaos_curio_lua_context c;
+    char result[161];
+    strcpy(text, "This curio is inert.");
+    if (!chaos_curio_matches(obj) || u.curio.disabled) return;
+    /* where alone can be stale or forged; require actual chain membership. */
+    for (held = invent; held && held != obj; held = held->nobj) ;
+    if (!held || obj->where != OBJ_INVENT || !chaos_curio_valid(&u.curio)) return;
+    c.sanity = u.usanity; c.insight = u.uinsight;
+    c.charges = u.curio.charges; c.state = u.curio.state;
+    if (!chaos_lua_curio_inspect(u.curio.source, u.curio.source_len, &c, result))
+        strcpy(text, result);
+}
+
 /* Not saved: a capability for this one mklev invocation, never for restore.
  * Nested/duplicate begin or prepare invalidates the outer capability too. */
 static struct {

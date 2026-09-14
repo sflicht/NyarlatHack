@@ -4,6 +4,7 @@
 
 #include <math.h>
 #include "hack.h"
+#include "chaos_curio.h"
 #include "artifact.h"
 
 #define NOINVSYM	'#'
@@ -2028,6 +2029,10 @@ void
 fully_identify_obj(otmp)
 struct obj *otmp;
 {
+    if (chaos_curio_tagged(otmp)) {
+        otmp->known = otmp->dknown = otmp->bknown = otmp->rknown = otmp->sknown = 1;
+        return;
+    }
     makeknown(otmp->otyp);
 	if (otmp->obj_material == GEMSTONE && otmp->sub_material)
 		makeknown(otmp->sub_material);
@@ -2177,9 +2182,18 @@ long quan;		/* if non-0, print this quantity, not obj->quan */
 #endif
     boolean use_invlet = flags.invlet_constant && let != CONTAINED_SYM;
     long savequan = 0;
+#ifdef CHAOS
+    unsigned char save_curio_tag = obj ? obj->curio_tag : 0;
+    boolean inert_curio = chaos_curio_tagged(obj) && !chaos_curio_matches(obj);
+#endif
 
     if (quan && obj) {
 	savequan = obj->quan;
+#ifdef CHAOS
+        /* As in singular(), a presentation quantity must not bind an inert
+         * original.  Retain the pointer for equipped-item grammar. */
+        if (inert_curio) obj->curio_tag = CHAOS_CURIO_INERT_REMNANT;
+#endif
 	obj->quan = quan;
     }
 
@@ -2194,7 +2208,7 @@ long quan;		/* if non-0, print this quantity, not obj->quan */
 		(dot && use_invlet ? obj->invlet : let),
 		(txt ? txt : doname(obj)), cost, currency(cost));
 #ifndef GOLDOBJ
-    } else if (obj && obj->oclass == COIN_CLASS) {
+    } else if (obj && obj->oclass == COIN_CLASS && !chaos_curio_tagged(obj)) {
 	Sprintf(li, "%ld gold piece%s%s", obj->quan, plur(obj->quan),
 		(dot ? "." : ""));
 #endif
@@ -2204,7 +2218,12 @@ long quan;		/* if non-0, print this quantity, not obj->quan */
 		(use_invlet ? obj->invlet : let),
 		(txt ? txt : doname(obj)), (dot ? "." : ""));
     }
-    if (savequan) obj->quan = savequan;
+    if (quan && obj) {
+        obj->quan = savequan; /* zero is a saved quantity, not a sentinel */
+#ifdef CHAOS
+        if (inert_curio) obj->curio_tag = save_curio_tag;
+#endif
+    }
 
     return li;
 }
@@ -2231,7 +2250,8 @@ ddoinv()
 				winid datawin = create_nhwindow(NHW_MENU);
 				putstr(datawin, ATR_NONE, doname(otmp));
 				describe_item(otmp, otmp->otyp, otmp->oartifact, &datawin);
-				checkfile(encyc_xname(otmp), 0, FALSE, TRUE, &datawin);
+				if (!chaos_curio_tagged(otmp))
+					checkfile(encyc_xname(otmp), 0, FALSE, TRUE, &datawin);
 				display_nhwindow(datawin, TRUE);
 				destroy_nhwindow(datawin);
 				return MOVE_INSTANT;
@@ -2267,7 +2287,9 @@ struct obj *obj;
 	any.a_void = (genericptr_t)doapply;
 	/* Rather a mess for 'a', as it means so many different things
 	   with so many different objects */
-	if (obj->otyp == CREAM_PIE)
+    if (chaos_curio_tagged(obj))
+        add_menu(win, NO_GLYPH, &any, 'a', 0, ATR_NONE, "Apply", MENU_UNSELECTED);
+    else if (obj->otyp == CREAM_PIE)
 		add_menu(win, NO_GLYPH, &any, 'a', 0, ATR_NONE,
 				"Hit yourself with this cream pie", MENU_UNSELECTED);
 	else if (obj->otyp == BULLWHIP || obj->otyp == VIPERWHIP)
@@ -2524,9 +2546,9 @@ struct obj *obj;
 			obj->oclass == GEM_CLASS || obj->oclass == RING_CLASS)
 		add_menu(win, NO_GLYPH, &any, 'E', 0, ATR_NONE,
 				"Write on the floor with this object", MENU_UNSELECTED);
-	/* I: describe item, works on any items whose actual name is known */
+	/* I: describe generated identity without globally identifying its carrier. */
 	any.a_void = (genericptr_t)dotypeinv;
-	if (objects[obj->otyp].oc_name_known)
+	if (chaos_curio_tagged(obj) || objects[obj->otyp].oc_name_known)
 		add_menu(win, NO_GLYPH, &any, 'I', 0, ATR_NONE,
 				"Describe this item", MENU_UNSELECTED);
 	/* p: pay for unpaid items */
@@ -2732,7 +2754,8 @@ struct obj *obj;
 		winid datawin = create_nhwindow(NHW_MENU);
 		putstr(datawin, ATR_NONE, doname(obj));
 		describe_item(obj, obj->otyp, obj->oartifact, &datawin);
-		checkfile(encyc_xname(obj), 0, FALSE, TRUE, &datawin);
+		if (!chaos_curio_tagged(obj))
+			checkfile(encyc_xname(obj), 0, FALSE, TRUE, &datawin);
 		display_nhwindow(datawin, TRUE);
 		destroy_nhwindow(datawin);
 		return 0;
@@ -2841,6 +2864,14 @@ int otyp;
 int oartifact;
 winid *datawin;
 {
+#ifdef CHAOS
+    if (chaos_curio_tagged(obj)) {
+        char text[161];
+        chaos_curio_inspect(obj, text);
+        putstr(*datawin, ATR_NONE, text);
+        return;
+    }
+#endif
 	if (obj)
 	{
 		otyp = obj->otyp;

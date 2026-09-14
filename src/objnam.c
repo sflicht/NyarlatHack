@@ -3,6 +3,7 @@
 /* NetHack may be freely redistributed.  See license for details. */
 
 #include "hack.h"
+#include "chaos_curio.h"
 #include "artifact.h"
 #include "xhity.h"
 
@@ -509,6 +510,11 @@ char *
 obj_descname(obj)
 struct obj * obj;
 {
+#ifdef CHAOS
+    /* Generated identity is literal, not a native appearance to singularize. */
+    if (chaos_curio_tagged(obj))
+        return doxname(obj, FALSE, TRUE, FALSE, FALSE);
+#endif
 	char *buf = nextobuf();
 	int saved_known =  obj->known;                       /* exact nature known */
 	int saved_bknown = obj->bknown;                      /* blessing or curse known */
@@ -1935,6 +1941,29 @@ boolean getting_obj_base_desc;
 	if (obj && obj->oartifact) oart = &artilist[(obj)->oartifact];
 
 	buf = nextobuf() + PREFIX;	/* leave room for "17 -3 " */
+#ifdef CHAOS
+    if (chaos_curio_tagged(obj)) {
+        const char *name = chaos_curio_name(obj);
+        const char *buc = obj->bknown
+            ? (obj->blessed ? "blessed " : obj->cursed ? "cursed " : "uncursed ") : "";
+        buf[0] = 0;
+        if (dofull && !getting_obj_base_desc) {
+            if (!ignore_oquan && obj->quan != 1L) Sprintf(buf, "%ld ", obj->quan);
+            else Strcpy(buf, strchr("AEIOUaeiou", *( *buc ? buc : name)) ? "an " : "a ");
+            Strcat(buf, buc);
+        }
+        Strcat(buf, name);
+        if (dofull && !getting_obj_base_desc) {
+            /* Non-unit quantities cannot have a bound generated identity. */
+            if (!ignore_oquan && obj->quan != 1L) Strcat(buf, "s");
+            if (obj == uwep) Strcat(buf, " (weapon in hand)");
+            else if (obj == uswapwep) Strcat(buf, " (alternate weapon)");
+            else if (obj == uquiver) Strcat(buf, " (in quiver)");
+            else if (obj->owornmask) Strcat(buf, " (being worn)");
+        }
+        return buf;
+    }
+#endif
 	if (useJNames && iflags.role_obj_names && Alternate_item_name(typ, Japanese_items))
 		actualn = Alternate_item_name(typ, Japanese_items);
 	if (useJNames && iflags.obscure_role_obj_names && Alternate_item_name(typ, ObscureJapanese_items))
@@ -2736,6 +2765,11 @@ boolean ignore_oquan;
 char *
 encyc_xname(struct obj *obj)
 {
+#ifdef CHAOS
+    /* Tagged identity takes precedence over native property-specific names. */
+    if (chaos_curio_tagged(obj))
+        return xname_bland(obj);
+#endif
 	if(obj->known && check_oprop(obj, OPROP_GSSDW) && !obj->oartifact)
 		return "gith silver sword";
 	return xname_bland(obj);
@@ -2824,6 +2858,9 @@ not_fully_identified_dummy_flags(struct obj *otmp, int qflags)
 boolean
 not_fully_identified(struct obj *otmp)
 {
+    if (chaos_curio_tagged(otmp))
+        return !(otmp->known && otmp->dknown && otmp->bknown
+                 && otmp->rknown && otmp->sknown);
 #ifdef GOLDOBJ
     /* gold doesn't have any interesting attributes [yet?] */
     if (otmp->oclass == COIN_CLASS) return FALSE;	/* always fully ID'd */
@@ -2865,6 +2902,11 @@ boolean ignore_oquan;	/* to force singular */
 {
 	char *nambuf = nextobuf();
 
+#ifdef CHAOS
+    /* All corpse callers, including cxname and singular, share this bypass. */
+    if (chaos_curio_tagged(otmp))
+        return xname2(otmp, ignore_oquan);
+#endif
 	Sprintf(nambuf, "%s corpse", mons[otmp->corpsenm].mname);
 
 	if (ignore_oquan || otmp->quan < 2)
@@ -2951,15 +2993,29 @@ char *FDECL((*func), (OBJ_P));
 {
 	long savequan;
 	char *nam;
+#ifdef CHAOS
+    unsigned char save_curio_tag = otmp->curio_tag;
+    boolean inert_curio = chaos_curio_tagged(otmp)
+        && !chaos_curio_matches(otmp);
+#endif
 
 	/* Note: using xname for corpses will not give the monster type */
 	if (otmp->otyp == CORPSE && func == xname)
 		return corpse_xname(otmp, TRUE);
 
 	savequan = otmp->quan;
+#ifdef CHAOS
+    /* Identity belongs to the original object, not the unit-quantity view.
+     * Keep the same pointer for equipped grammar and honor arbitrary naming
+     * callbacks, but never let presentation normalization bind an inert tag. */
+    if (inert_curio) otmp->curio_tag = CHAOS_CURIO_INERT_REMNANT;
+#endif
 	otmp->quan = 1L;
 	nam = (*func)(otmp);
 	otmp->quan = savequan;
+#ifdef CHAOS
+    if (inert_curio) otmp->curio_tag = save_curio_tag;
+#endif
 	return nam;
 }
 
@@ -3323,6 +3379,11 @@ char *
 ysimple_name(obj)
 struct obj *obj;
 {
+#ifdef CHAOS
+    /* Keep ownership grammar without replacing a tagged object's identity. */
+    if (chaos_curio_tagged(obj))
+        return yname(obj);
+#endif
 	char *outbuf = nextobuf();
 	char *s = shk_your(outbuf, obj);	/* assert( s == outbuf ); */
 	int space_left = BUFSZ - strlen(s) - sizeof " ";
@@ -6452,6 +6513,11 @@ const char *
 cloak_simple_name(cloak)
 struct obj *cloak;
 {
+#ifdef CHAOS
+    /* Wrong-carrier tags are inert, not native cloak subtypes. */
+    if (chaos_curio_tagged(cloak))
+        return xname(cloak);
+#endif
     if (cloak) {
 	switch (cloak->otyp) {
 	case ROBE:

@@ -3,6 +3,7 @@
 /* NetHack may be freely redistributed.  See license for details. */
 
 #include "hack.h"
+#include "chaos_curio.h"
 
 #include "artifact.h"
 
@@ -563,6 +564,7 @@ register struct obj *obj;
 	const char *aname;
 	short objtyp;
 
+    if (chaos_curio_tagged(obj)) return;
 	Sprintf(qbuf, "What do you want to name %s %s?",
 		is_plural(obj) ? "these" : "this", xname(obj));
 	getlin(qbuf, buf);
@@ -602,6 +604,7 @@ const char *name;
 	int lth;
 	char buf[PL_PSIZ];
 
+    if (chaos_curio_tagged(obj)) return obj;
 	lth = *name ? (int)(strlen(name) + 1) : 0;
 	if (lth > PL_PSIZ) {
 		lth = PL_PSIZ;
@@ -922,6 +925,7 @@ register struct obj *obj;
 	struct obj otemp;
 	register char **str1;
 
+    if (chaos_curio_tagged(obj)) return;
 	if (!obj->dknown) return; /* probably blind */
 	otemp = *obj;
 	otemp.oextra_p = NULL;

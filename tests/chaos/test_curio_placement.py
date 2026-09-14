@@ -6,6 +6,7 @@ import subprocess
 import tempfile
 import unittest
 from gameplay_support import ROOT, Game
+from native_rng import controlled_rng_objects, verify_native_fixture
 
 
 @unittest.skipUnless(
@@ -88,6 +89,7 @@ class CurioPlacementTests(unittest.TestCase):
             + sorted((ROOT / "win/tty").glob("*.o"))
             + sorted((ROOT / "win/curses").glob("*.o"))
         )
+        objects = controlled_rng_objects(objects, artifacts)
         exe = artifacts / "curio-placement"
         command = [
             "cc",
@@ -110,6 +112,4 @@ class CurioPlacementTests(unittest.TestCase):
         ]
         (artifacts / "build-command.txt").write_text(repr(command))
         subprocess.run(command, check=True, timeout=45)
-        result = subprocess.run([str(exe)], capture_output=True, text=True, timeout=15)
-        (artifacts / "native.txt").write_text(result.stdout + result.stderr)
-        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        verify_native_fixture(self, exe, artifacts)
