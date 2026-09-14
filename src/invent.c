@@ -5951,6 +5951,8 @@ STATIC_OVL boolean
 mergable(otmp, obj)	/* returns TRUE if obj  & otmp can be merged */
 	register struct obj *otmp, *obj;
 {
+	/* Protective identity survives invalid bindings and even wrong carriers. */
+	if (chaos_curio_tagged(otmp) || chaos_curio_tagged(obj)) return FALSE;
 	if (obj->otyp != otmp->otyp) return FALSE;
 //#ifdef GOLDOBJ
 	/* coins of the same kind will always merge */
