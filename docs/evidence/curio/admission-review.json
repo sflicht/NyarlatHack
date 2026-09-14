@@ -1,0 +1,26 @@
+{
+  "task": "curio-admission-expiry",
+  "spec": {
+    "review": "deleg_320d2192",
+    "passed": true,
+    "gaps": []
+  },
+  "quality": {
+    "review": "deleg_c5fa30c0",
+    "passed": true,
+    "security_concerns": [],
+    "logic_errors": []
+  },
+  "corrected_source_policy": "Exact valid Lua source bytes; printable ASCII constraints apply only to display output.",
+  "parent_full_suite": {
+    "collected": 180,
+    "passed": 179,
+    "skipped": 1
+  },
+  "independent_admission_tests": 12,
+  "followups": [
+    "Absent-source retry, placed non-expiry, shadow suppression.",
+    "Additional source-read/close/interrupted-write fault coverage."
+  ],
+  "scope": "Admission and unplaced expiry only; physical placement and object use not implemented yet."
+}

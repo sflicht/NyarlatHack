@@ -39,4 +39,11 @@ struct chaos_curio_state {
     char source[CHAOS_CURIO_SOURCE + 1];
 };
 int chaos_curio_valid(const struct chaos_curio_state *);
+/* Engine safe-point adapter supplies a healthy dir only after actual advance.
+ * A negative dir services unplaced expiry only, without transport. */
+#ifdef CHAOS
+void chaos_curio_safe(int dir);
+#else
+#define chaos_curio_safe(dir) ((void)0)
+#endif
 #endif
