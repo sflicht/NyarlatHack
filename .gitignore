@@ -55,3 +55,6 @@ mat
 
 *.md
 *.json
+# NyarlatHack: upstream ignores *.md and *.json; we need both.
+!*.md
+!*.json
