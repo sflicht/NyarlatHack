@@ -43,7 +43,16 @@ int chaos_curio_valid(const struct chaos_curio_state *);
  * A negative dir services unplaced expiry only, without transport. */
 #ifdef CHAOS
 void chaos_curio_safe(int dir);
+/* Transient generation capability: capture original ledger flags at remake. */
+void chaos_curio_prepare(unsigned ledger_flags);
+void chaos_curio_begin(void);
+void chaos_curio_ordinary(void);
+void chaos_curio_finish(int generated);
 #else
 #define chaos_curio_safe(dir) ((void)0)
+#define chaos_curio_prepare(flags) ((void)0)
+#define chaos_curio_begin() ((void)0)
+#define chaos_curio_ordinary() ((void)0)
+#define chaos_curio_finish(generated) ((void)0)
 #endif
 #endif

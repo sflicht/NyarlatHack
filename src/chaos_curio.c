@@ -3,6 +3,7 @@
 #ifdef CHAOS
 #include "hack.h"
 #include "chaos.h"
+#include "mkroom.h"
 #include <errno.h>
 #include <fcntl.h>
 #include <sys/stat.h>
@@ -55,6 +56,95 @@ int chaos_curio_valid(const struct chaos_curio_state *s)
 }
 
 #ifdef CHAOS
+/* Not saved: a capability for this one mklev invocation, never for restore.
+ * Nested/duplicate begin or prepare invalidates the outer capability too. */
+static struct {
+    int prepared, active, eligible, ordinary;
+    d_level level;
+} placement;
+
+void chaos_curio_prepare(unsigned ledger_flags)
+{
+    int conflict = placement.prepared || placement.active;
+    placement.prepared = 1;
+    placement.eligible = !conflict && !chaos_shadow_active()
+        && !(ledger_flags & (LFILE_EXISTS | VISITED | FORGOTTEN));
+    placement.ordinary = 0;
+    placement.level = u.uz;
+}
+
+void chaos_curio_begin(void)
+{
+    placement.eligible = placement.prepared && !placement.active
+        && placement.eligible && on_level(&placement.level, &u.uz)
+        && !chaos_shadow_active() && u.curio.phase == CHAOS_CURIO_ADMITTED
+        && u.uz.dnum == 0 && u.uz.dlevel >= 2 && u.uz.dlevel <= 3;
+    placement.prepared = 0;
+    placement.active = 1;
+    placement.ordinary = 0;
+}
+
+void chaos_curio_ordinary(void)
+{
+    if (placement.active && placement.eligible && !Is_rogue_level(&u.uz))
+        placement.ordinary = 1;
+}
+
+/* SPECIALIZATION leaves ordinary rectangular roomno unset. Irregular rooms
+ * require topology membership; rectangular rooms explicitly exclude subrooms
+ * and their borders, matching native somexy rather than inside_room alone. */
+static int curio_room_cell(struct mkroom *r, int x, int y)
+{
+    int i;
+    if (r->rtype != OROOM || x < r->lx || x > r->hx
+        || y < r->ly || y > r->hy || levl[x][y].edge) return 0;
+    if (r->irregular && levl[x][y].roomno != (r - rooms) + ROOMOFFSET)
+        return 0;
+    for (i = 0; i < r->nsubrooms; ++i)
+        if (inside_room(r->sbrooms[i], x, y)) return 0;
+    return 1;
+}
+
+void chaos_curio_finish(int generated)
+{
+    int eligible = placement.active && placement.eligible && placement.ordinary
+        && generated && on_level(&placement.level, &u.uz);
+    int x, y, r, bestx = 0, besty = 0, best = COLNO * ROWNO * 4;
+    struct obj *obj;
+    memset(&placement, 0, sizeof placement); /* consume even bones/failure */
+    if (!eligible || chaos_shadow_active() || u.curio.phase != CHAOS_CURIO_ADMITTED
+        || u.uz.dnum != 0 || u.uz.dlevel < 2 || u.uz.dlevel > 3
+        || Is_special(&u.uz) || Is_rogue_level(&u.uz)
+        || dungeons[u.uz.dnum].proto[0] || level.flags.is_maze_lev) return;
+    /* One fixed-size scan; upstairs room first, then distance, stable ties.
+     * ROOM excludes stairs, doors, water, altars and other reserved furniture. */
+    for (x = 1; x < COLNO; ++x) for (y = 0; y < ROWNO; ++y) {
+        if (levl[x][y].typ != ROOM || t_at(x,y) || m_at(x,y)
+            || level.objects[x][y] || *in_rooms(x,y,SHOPBASE)) continue;
+        for (r = 0; r < nroom; ++r) if (curio_room_cell(&rooms[r],x,y)) {
+            int score = (&rooms[r] == upstairs_room ? 0 : COLNO * ROWNO)
+                + distmin(x,y,xupstair,yupstair);
+            if (score < best) { best = score; bestx = x; besty = y; }
+            break;
+        }
+    }
+    if (!bestx) { chaos_event("curio", "result", "placement_unavailable"); return; }
+    obj = mksobj(WHISTLE, MKOBJ_NOINIT); /* one attempt, no reroll/repair */
+    if (!obj) {
+        u.curio.phase = CHAOS_CURIO_EXPIRED;
+        chaos_event("curio", "result", "placement_failed");
+        return;
+    }
+    obj->quan = 1L;
+    obj->nomerge = 1;
+    obj->curio_tag = CHAOS_CURIO_GENERATED;
+    place_object(obj, bestx, besty);
+    u.curio.owner = obj->o_id;
+    u.curio.phase = CHAOS_CURIO_PLACED;
+    /* Physical placement is not a claim that the player has seen the object. */
+    chaos_event("curio", "result", "placed");
+}
+
 static int curio_private(int fd)
 {
     struct stat st;

@@ -1,0 +1,26 @@
+{
+  "task": "curio-fresh-level-placement",
+  "spec": {
+    "review": "deleg_440ab461",
+    "passed": true,
+    "blocking_gaps": []
+  },
+  "quality": {
+    "review": "deleg_2db15aaf",
+    "passed": true,
+    "security_concerns": [],
+    "logic_errors": []
+  },
+  "parent_full_suite": {
+    "collected": 182,
+    "passed": 181,
+    "skipped": 1
+  },
+  "independent_placement_tests": 2,
+  "remaining_coverage": [
+    "Actual bones-file loading and discarded-level reconstruction.",
+    "Ordinary nonwizard discovery.",
+    "Explicit duplicate prepare/prepare-active/identity-change-after-begin, coordinate ties, and admitted-ineligible RNG assertions."
+  ],
+  "scope": "Physical placement only; inspection/use and carrier hardening remain pending."
+}
