@@ -100,6 +100,50 @@ void chaos_curio_inspect(const struct obj *obj, char text[161])
         strcpy(text, result);
 }
 
+/* Local execution is independent of admission transport and placement. */
+int chaos_curio_apply(struct obj *obj, int *move_result)
+{
+    const struct obj *held;
+    struct chaos_curio_lua_context c;
+    struct chaos_curio_lua_intent intent;
+    int starting_sanity;
+    char receipt[80];
+    if (!chaos_curio_tagged(obj)) return 0;
+    *move_result = MOVE_CANCELLED;
+    /* Structural/binding failures are inert, not a reason to disable a
+     * different legitimate owner or silently repair a corrupted record. */
+    if (!chaos_curio_matches(obj) || u.curio.disabled
+        || u.curio.charges <= 0 || obj->where != OBJ_INVENT) goto inert;
+    for (held = invent; held && held != obj; held = held->nobj) ;
+    if (!held || !chaos_curio_valid(&u.curio)) goto inert;
+    c.sanity = u.usanity; c.insight = u.uinsight;
+    c.charges = u.curio.charges; c.state = u.curio.state;
+    /* The bounded pure API validates the ENTIRE intent before returning.
+     * Runtime program failure disables only the established executable owner. */
+    if (chaos_lua_curio_apply(u.curio.source, u.curio.source_len, &c, &intent)) {
+        u.curio.disabled = 1;
+        goto inert;
+    }
+    pline("The curio requests a Sanity change of %+d; native limits may reduce it. This spends one use.",
+          intent.sanity_delta);
+    pline("%s", intent.text);
+    --u.curio.charges;
+    u.curio.state = intent.state;
+    starting_sanity = u.usanity;
+    /* FALSE suppresses the extra acute-madness check, not native glyphs or
+     * health/energy recalculation (nor all possible native consequences). */
+    change_usanity(intent.sanity_delta, FALSE);
+    Sprintf(receipt, "applied requested=%d actual=%d",
+            intent.sanity_delta, u.usanity - starting_sanity);
+    /* A failed final receipt must never refund or reopen this use. */
+    chaos_event("curio", "result", receipt);
+    *move_result = MOVE_STANDARD;
+    return 1;
+inert:
+    pline("This curio is inert.");
+    return 1;
+}
+
 /* Not saved: a capability for this one mklev invocation, never for restore.
  * Nested/duplicate begin or prepare invalidates the outer capability too. */
 static struct {

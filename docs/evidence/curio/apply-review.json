@@ -1,0 +1,29 @@
+{
+  "task": "curio-apply-execution-5a",
+  "spec_review": {
+    "id": "deleg_0b2e0896",
+    "passed": true,
+    "independent_targeted_execution": true
+  },
+  "quality_review": {
+    "id": "deleg_6f873587",
+    "passed": true,
+    "independent_targeted_execution": false,
+    "execution_limit": "Targeted command held pending environment-setting approval; assessment is code review, not an independent test rerun."
+  },
+  "reviewed_diff_sha256": "33218cff1a88891b66883af96bc6078c9a6d20456224436bb3c894fe1b830896",
+  "parent_full_suite": {
+    "passed": 186,
+    "skipped": 1
+  },
+  "followups": [
+    "Dedicated native glyph-transition test.",
+    "Real-terminal Apply and full-turn-loop coverage.",
+    "Event-wrapper comment should distinguish initial uninitialized transport from receipt modes."
+  ],
+  "remaining_scope": [
+    "Merging and Andromalius offering exclusion.",
+    "Sale and billing protection.",
+    "Copy/polymorph/bones lifecycle and integrated acceptance."
+  ]
+}

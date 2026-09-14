@@ -48,6 +48,8 @@ int chaos_curio_tagged(const struct obj *);
 int chaos_curio_matches(const struct obj *);
 const char *chaos_curio_name(const struct obj *);
 void chaos_curio_inspect(const struct obj *, char text[161]);
+/* Every nonzero tag is handled, even when execution is forbidden. */
+int chaos_curio_apply(struct obj *, int *move_result);
 void chaos_curio_safe(int dir);
 /* Transient generation capability: capture original ledger flags at remake. */
 void chaos_curio_prepare(unsigned ledger_flags);
@@ -56,6 +58,7 @@ void chaos_curio_ordinary(void);
 void chaos_curio_finish(int generated);
 #else
 #define chaos_curio_tagged(obj) 0
+#define chaos_curio_apply(obj, move_result) 0
 #define chaos_curio_safe(dir) ((void)0)
 #define chaos_curio_prepare(flags) ((void)0)
 #define chaos_curio_begin() ((void)0)

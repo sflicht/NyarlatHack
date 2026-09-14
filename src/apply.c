@@ -5,6 +5,7 @@
 #include <math.h>
 #include "hack.h"
 #include "chaos.h"
+#include "chaos_curio.h"
 #include "artifact.h"
 #include "xhity.h"
 #ifdef OVLB
@@ -12074,6 +12075,7 @@ doapply()
 
 	obj = getobj(class_list, "use or apply");
 	if(!obj) return MOVE_CANCELLED;
+	if (chaos_curio_apply(obj, &res)) return res;
 
 	waslabile = objects[obj->otyp].oc_merge; //Some functions leave a stale pointer here if they merge the item
 	
