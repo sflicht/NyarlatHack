@@ -1,0 +1,18 @@
+{
+  "task": "pure-curio-lua",
+  "spec": {
+    "id": "deleg_19af175f",
+    "passed": true,
+    "gaps": []
+  },
+  "quality": {
+    "id": "deleg_efede820",
+    "passed": true,
+    "security_concerns": [],
+    "logic_errors": [],
+    "suggestion": "Add non-tail-recursive stack-exhaustion and large multiple-return cases in later robustness coverage."
+  },
+  "parent_scoped_tests": 22,
+  "reviewer_scoped_tests": 22,
+  "limits": "Pure interpreter interface only; no native object integration, game build, exhaustive allocator fault injection or live inference."
+}
