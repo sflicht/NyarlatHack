@@ -49,6 +49,18 @@ remains allowed; conflicting history/mailboxes are not overwritten or retimed.
 Its regressions failed before the correction and passed afterward. See the
 evidence summary for final quality re-review status.
 
+## Post-merge live acknowledgement follow-up
+
+A stronger check of the actual terminal evidence found a director diagnostic
+between a live telegraph and its later acknowledgement. Successful game exit
+alone had missed that liveness failure. Issue #3 was reopened. Both director
+loops now retain an exact locally known request and wait through the matching
+telegraph interval without marking acceptance or weakening startup checks.
+Changed mail and incompatible progress remain errors. The strengthened native
+assertion requires an empty director error log after ordinary save/restore.
+See [`evidence/live-ack/summary.json`](evidence/live-ack/summary.json) for the
+follow-up tests and review status; earlier evidence is preserved unchanged.
+
 ## Evidence and limits
 
 See [`evidence/review-foundations/summary.json`](evidence/review-foundations/summary.json)

@@ -3,3 +3,5 @@ docs/evidence/milestone2-runs/**/terminal.raw -diff -text
 docs/evidence/review-foundations/runs/**/terminal.raw -diff -text
 # Preserve unittest's literal progress lines in captured evidence.
 docs/evidence/review-foundations/*.log whitespace=-blank-at-eol
+docs/evidence/live-ack/runs/**/terminal.raw -diff -text
+docs/evidence/live-ack/*.log whitespace=-blank-at-eol

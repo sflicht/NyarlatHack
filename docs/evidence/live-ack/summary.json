@@ -1,0 +1,31 @@
+{
+  "baseline": "40c0bb3433c1b33ee1e13498a0ada6131b8c5e7c",
+  "tests_run": 134,
+  "passed": 133,
+  "skipped": 1,
+  "native_director_error_logs_empty": true,
+  "artifact_count": 16,
+  "artifact_files": [
+    "pack-restore/terminal.raw",
+    "short-director/terminal.raw",
+    "pack-restore/inputs.json",
+    "short-director/inputs.json",
+    "pack-restore/manifest.json",
+    "short-director/manifest.json",
+    "pack-restore/run/events.jsonl",
+    "short-director/run/events.jsonl",
+    "pack-restore/run/whisper.json",
+    "short-director/run/whisper.json",
+    "pack-restore/run/whispers.jsonl",
+    "short-director/run/whispers.jsonl",
+    "pack-restore/run/director.log",
+    "short-director/run/director.log",
+    "pack-restore/game/xlogfile",
+    "short-director/game/xlogfile"
+  ],
+  "quality_review": "passed",
+  "live_model_calls": 0,
+  "protocol_C_save_changes": false,
+  "spec_review": "passed",
+  "secret_scan_findings": 0
+}

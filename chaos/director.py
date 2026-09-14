@@ -226,17 +226,43 @@ class Mailbox:
         with os.fdopen(fd, "rb") as f:
             return parse_request(f.read(513))
 
-    def pending(self, state):
+    def pending(self, state, *, known=None):
+        """Resolve ACK evidence, with a narrow live-only pre-ACK wait.
+
+        ``known`` is a copy of the exact request previously observed as future
+        or published by this loop, never reconstructed from a consumed mailbox.
+        The engine emits its telegraph after consuming last_id but before the
+        warning UI returns and writes the ACK. That window is pending, NOT
+        acceptance, and is bounded by the caller's existing runtime deadline.
+        Startup callers omit ``known`` and retain strict reconciliation.
+        """
         r = self.existing()
+        if known is not None and r != known:
+            raise ValueError("mailbox changed while awaiting exact ACK evidence")
         if r is None:
             return None
         a = state.acks.get(r["id"])
         if a and a["request"] == r:
             return None
         if r["id"] <= state.last_id:
+            e = state.latest
+            if (
+                known is not None
+                and a is None
+                and state.last_id == r["id"]
+                and state.safe == r["at"]
+                and e["event"] == "telegraph"
+                and e["phase"] == "result"
+                and e["detail"] == r["mutation"]
+            ):
+                return r
             raise ValueError(
                 "consumed mailbox lacks exact ACK evidence; manual reconciliation required"
             )
+        if a:
+            raise ValueError("mailbox lacks exact ACK evidence")
+        if r["at"] < state.safe or (known is None and r["at"] == state.safe):
+            raise ValueError("pending request has missed its safe index")
         return r
 
     def submit(self, request, state):
@@ -377,6 +403,7 @@ def run(
     state = State()
     submitted = 0
     last_choice = None
+    known_pending = None
     reason = "runtime_cap"
     with Mailbox(directory) as box:
         while time.monotonic() < deadline:
@@ -385,7 +412,8 @@ def run(
             if state.ended:
                 reason = "death"
                 break
-            pending = box.pending(state)
+            pending = box.pending(state, known=known_pending)
+            known_pending = dict(pending) if pending is not None else None
             if not pending:
                 if isinstance(backend, ScheduleBackend):
                     r = backend.next(state)
@@ -408,6 +436,7 @@ def run(
                     if time.monotonic() >= deadline:
                         break
                     box.submit(r, state)
+                    known_pending = dict(r)
                     submitted += 1
                     if install_only:
                         reason = "installed_pending_ack"

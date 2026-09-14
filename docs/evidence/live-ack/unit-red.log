@@ -1,0 +1,204 @@
+test_advanced_safe_after_live_wait_is_not_still_inflight (test_live_ack.LiveAckTests.test_advanced_safe_after_live_wait_is_not_still_inflight) ... 
+  test_advanced_safe_after_live_wait_is_not_still_inflight (test_live_ack.LiveAckTests.test_advanced_safe_after_live_wait_is_not_still_inflight) (loop='director') ... FAIL
+  test_advanced_safe_after_live_wait_is_not_still_inflight (test_live_ack.LiveAckTests.test_advanced_safe_after_live_wait_is_not_still_inflight) (loop='launcher') ... FAIL
+test_initial_consumed_missing_ack_is_strict_in_all_entrypoints (test_live_ack.LiveAckTests.test_initial_consumed_missing_ack_is_strict_in_all_entrypoints) ... ok
+test_launcher_readiness_rechecks_consumed_after_observe (test_live_ack.LiveAckTests.test_launcher_readiness_rechecks_consumed_after_observe) ... ok
+test_live_conflicts_fail_without_overwriting_or_retiming (test_live_ack.LiveAckTests.test_live_conflicts_fail_without_overwriting_or_retiming) ... ok
+test_missing_live_ack_stops_at_runtime_cap_without_acceptance (test_live_ack.LiveAckTests.test_missing_live_ack_stops_at_runtime_cap_without_acceptance) ... 
+  test_missing_live_ack_stops_at_runtime_cap_without_acceptance (test_live_ack.LiveAckTests.test_missing_live_ack_stops_at_runtime_cap_without_acceptance) (loop='director') ... ERROR
+  test_missing_live_ack_stops_at_runtime_cap_without_acceptance (test_live_ack.LiveAckTests.test_missing_live_ack_stops_at_runtime_cap_without_acceptance) (loop='launcher') ... ERROR
+test_split_native_telegraph_partial_ack_then_next_proposal (test_live_ack.LiveAckTests.test_split_native_telegraph_partial_ack_then_next_proposal) ... 
+  test_split_native_telegraph_partial_ack_then_next_proposal (test_live_ack.LiveAckTests.test_split_native_telegraph_partial_ack_then_next_proposal) (loop='director', existing=None, backend='schedule') ... ERROR
+  test_split_native_telegraph_partial_ack_then_next_proposal (test_live_ack.LiveAckTests.test_split_native_telegraph_partial_ack_then_next_proposal) (loop='director', existing=None, backend='random') ... ERROR
+  test_split_native_telegraph_partial_ack_then_next_proposal (test_live_ack.LiveAckTests.test_split_native_telegraph_partial_ack_then_next_proposal) (loop='director', existing={'v': 1, 'id': 1, 'mutation': 'ambient', 'value': 1, 'duration': 0, 'telegraph': 1, 'at': 1}, backend='schedule') ... ERROR
+  test_split_native_telegraph_partial_ack_then_next_proposal (test_live_ack.LiveAckTests.test_split_native_telegraph_partial_ack_then_next_proposal) (loop='director', existing={'v': 1, 'id': 1, 'mutation': 'ambient', 'value': 1, 'duration': 0, 'telegraph': 1, 'at': 1}, backend='random') ... ERROR
+  test_split_native_telegraph_partial_ack_then_next_proposal (test_live_ack.LiveAckTests.test_split_native_telegraph_partial_ack_then_next_proposal) (loop='launcher', existing=None, backend='schedule') ... ERROR
+  test_split_native_telegraph_partial_ack_then_next_proposal (test_live_ack.LiveAckTests.test_split_native_telegraph_partial_ack_then_next_proposal) (loop='launcher', existing=None, backend='random') ... ERROR
+  test_split_native_telegraph_partial_ack_then_next_proposal (test_live_ack.LiveAckTests.test_split_native_telegraph_partial_ack_then_next_proposal) (loop='launcher', existing={'v': 1, 'id': 1, 'mutation': 'ambient', 'value': 1, 'duration': 0, 'telegraph': 1, 'at': 1}, backend='schedule') ... ERROR
+  test_split_native_telegraph_partial_ack_then_next_proposal (test_live_ack.LiveAckTests.test_split_native_telegraph_partial_ack_then_next_proposal) (loop='launcher', existing={'v': 1, 'id': 1, 'mutation': 'ambient', 'value': 1, 'duration': 0, 'telegraph': 1, 'at': 1}, backend='random') ... ERROR
+
+======================================================================
+ERROR: test_missing_live_ack_stops_at_runtime_cap_without_acceptance (test_live_ack.LiveAckTests.test_missing_live_ack_stops_at_runtime_cap_without_acceptance) (loop='director')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/hermes/nyarlathack/tests/chaos/test_live_ack.py", line 143, in test_missing_live_ack_stops_at_runtime_cap_without_acceptance
+    result = self.run_loop(loop, step)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/hermes/nyarlathack/tests/chaos/test_live_ack.py", line 66, in run_loop
+    return director.run(self.path, backend, max_runtime=1, poll=.125)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/hermes/nyarlathack/chaos/director.py", line 388, in run
+    pending = box.pending(state)
+              ^^^^^^^^^^^^^^^^^^
+  File "/home/hermes/nyarlathack/chaos/director.py", line 237, in pending
+    raise ValueError(
+ValueError: consumed mailbox lacks exact ACK evidence; manual reconciliation required
+
+======================================================================
+ERROR: test_missing_live_ack_stops_at_runtime_cap_without_acceptance (test_live_ack.LiveAckTests.test_missing_live_ack_stops_at_runtime_cap_without_acceptance) (loop='launcher')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/hermes/nyarlathack/tests/chaos/test_live_ack.py", line 143, in test_missing_live_ack_stops_at_runtime_cap_without_acceptance
+    result = self.run_loop(loop, step)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/hermes/nyarlathack/tests/chaos/test_live_ack.py", line 70, in run_loop
+    launcher._offline_loop(
+  File "/home/hermes/nyarlathack/chaos/launcher.py", line 193, in _offline_loop
+    pending = box.pending(state)
+              ^^^^^^^^^^^^^^^^^^
+  File "/home/hermes/nyarlathack/chaos/director.py", line 237, in pending
+    raise ValueError(
+ValueError: consumed mailbox lacks exact ACK evidence; manual reconciliation required
+
+======================================================================
+ERROR: test_split_native_telegraph_partial_ack_then_next_proposal (test_live_ack.LiveAckTests.test_split_native_telegraph_partial_ack_then_next_proposal) (loop='director', existing=None, backend='schedule')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/hermes/nyarlathack/tests/chaos/test_live_ack.py", line 125, in test_split_native_telegraph_partial_ack_then_next_proposal
+    result = self.run_loop(loop, step, backend)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/hermes/nyarlathack/tests/chaos/test_live_ack.py", line 66, in run_loop
+    return director.run(self.path, backend, max_runtime=1, poll=.125)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/hermes/nyarlathack/chaos/director.py", line 388, in run
+    pending = box.pending(state)
+              ^^^^^^^^^^^^^^^^^^
+  File "/home/hermes/nyarlathack/chaos/director.py", line 237, in pending
+    raise ValueError(
+ValueError: consumed mailbox lacks exact ACK evidence; manual reconciliation required
+
+======================================================================
+ERROR: test_split_native_telegraph_partial_ack_then_next_proposal (test_live_ack.LiveAckTests.test_split_native_telegraph_partial_ack_then_next_proposal) (loop='director', existing=None, backend='random')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/hermes/nyarlathack/tests/chaos/test_live_ack.py", line 125, in test_split_native_telegraph_partial_ack_then_next_proposal
+    result = self.run_loop(loop, step, backend)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/hermes/nyarlathack/tests/chaos/test_live_ack.py", line 66, in run_loop
+    return director.run(self.path, backend, max_runtime=1, poll=.125)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/hermes/nyarlathack/chaos/director.py", line 388, in run
+    pending = box.pending(state)
+              ^^^^^^^^^^^^^^^^^^
+  File "/home/hermes/nyarlathack/chaos/director.py", line 237, in pending
+    raise ValueError(
+ValueError: consumed mailbox lacks exact ACK evidence; manual reconciliation required
+
+======================================================================
+ERROR: test_split_native_telegraph_partial_ack_then_next_proposal (test_live_ack.LiveAckTests.test_split_native_telegraph_partial_ack_then_next_proposal) (loop='director', existing={'v': 1, 'id': 1, 'mutation': 'ambient', 'value': 1, 'duration': 0, 'telegraph': 1, 'at': 1}, backend='schedule')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/hermes/nyarlathack/tests/chaos/test_live_ack.py", line 125, in test_split_native_telegraph_partial_ack_then_next_proposal
+    result = self.run_loop(loop, step, backend)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/hermes/nyarlathack/tests/chaos/test_live_ack.py", line 66, in run_loop
+    return director.run(self.path, backend, max_runtime=1, poll=.125)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/hermes/nyarlathack/chaos/director.py", line 388, in run
+    pending = box.pending(state)
+              ^^^^^^^^^^^^^^^^^^
+  File "/home/hermes/nyarlathack/chaos/director.py", line 237, in pending
+    raise ValueError(
+ValueError: consumed mailbox lacks exact ACK evidence; manual reconciliation required
+
+======================================================================
+ERROR: test_split_native_telegraph_partial_ack_then_next_proposal (test_live_ack.LiveAckTests.test_split_native_telegraph_partial_ack_then_next_proposal) (loop='director', existing={'v': 1, 'id': 1, 'mutation': 'ambient', 'value': 1, 'duration': 0, 'telegraph': 1, 'at': 1}, backend='random')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/hermes/nyarlathack/tests/chaos/test_live_ack.py", line 125, in test_split_native_telegraph_partial_ack_then_next_proposal
+    result = self.run_loop(loop, step, backend)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/hermes/nyarlathack/tests/chaos/test_live_ack.py", line 66, in run_loop
+    return director.run(self.path, backend, max_runtime=1, poll=.125)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/hermes/nyarlathack/chaos/director.py", line 388, in run
+    pending = box.pending(state)
+              ^^^^^^^^^^^^^^^^^^
+  File "/home/hermes/nyarlathack/chaos/director.py", line 237, in pending
+    raise ValueError(
+ValueError: consumed mailbox lacks exact ACK evidence; manual reconciliation required
+
+======================================================================
+ERROR: test_split_native_telegraph_partial_ack_then_next_proposal (test_live_ack.LiveAckTests.test_split_native_telegraph_partial_ack_then_next_proposal) (loop='launcher', existing=None, backend='schedule')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/hermes/nyarlathack/tests/chaos/test_live_ack.py", line 125, in test_split_native_telegraph_partial_ack_then_next_proposal
+    result = self.run_loop(loop, step, backend)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/hermes/nyarlathack/tests/chaos/test_live_ack.py", line 70, in run_loop
+    launcher._offline_loop(
+  File "/home/hermes/nyarlathack/chaos/launcher.py", line 193, in _offline_loop
+    pending = box.pending(state)
+              ^^^^^^^^^^^^^^^^^^
+  File "/home/hermes/nyarlathack/chaos/director.py", line 237, in pending
+    raise ValueError(
+ValueError: consumed mailbox lacks exact ACK evidence; manual reconciliation required
+
+======================================================================
+ERROR: test_split_native_telegraph_partial_ack_then_next_proposal (test_live_ack.LiveAckTests.test_split_native_telegraph_partial_ack_then_next_proposal) (loop='launcher', existing=None, backend='random')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/hermes/nyarlathack/tests/chaos/test_live_ack.py", line 125, in test_split_native_telegraph_partial_ack_then_next_proposal
+    result = self.run_loop(loop, step, backend)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/hermes/nyarlathack/tests/chaos/test_live_ack.py", line 70, in run_loop
+    launcher._offline_loop(
+  File "/home/hermes/nyarlathack/chaos/launcher.py", line 193, in _offline_loop
+    pending = box.pending(state)
+              ^^^^^^^^^^^^^^^^^^
+  File "/home/hermes/nyarlathack/chaos/director.py", line 237, in pending
+    raise ValueError(
+ValueError: consumed mailbox lacks exact ACK evidence; manual reconciliation required
+
+======================================================================
+ERROR: test_split_native_telegraph_partial_ack_then_next_proposal (test_live_ack.LiveAckTests.test_split_native_telegraph_partial_ack_then_next_proposal) (loop='launcher', existing={'v': 1, 'id': 1, 'mutation': 'ambient', 'value': 1, 'duration': 0, 'telegraph': 1, 'at': 1}, backend='schedule')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/hermes/nyarlathack/tests/chaos/test_live_ack.py", line 125, in test_split_native_telegraph_partial_ack_then_next_proposal
+    result = self.run_loop(loop, step, backend)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/hermes/nyarlathack/tests/chaos/test_live_ack.py", line 70, in run_loop
+    launcher._offline_loop(
+  File "/home/hermes/nyarlathack/chaos/launcher.py", line 193, in _offline_loop
+    pending = box.pending(state)
+              ^^^^^^^^^^^^^^^^^^
+  File "/home/hermes/nyarlathack/chaos/director.py", line 237, in pending
+    raise ValueError(
+ValueError: consumed mailbox lacks exact ACK evidence; manual reconciliation required
+
+======================================================================
+ERROR: test_split_native_telegraph_partial_ack_then_next_proposal (test_live_ack.LiveAckTests.test_split_native_telegraph_partial_ack_then_next_proposal) (loop='launcher', existing={'v': 1, 'id': 1, 'mutation': 'ambient', 'value': 1, 'duration': 0, 'telegraph': 1, 'at': 1}, backend='random')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/hermes/nyarlathack/tests/chaos/test_live_ack.py", line 125, in test_split_native_telegraph_partial_ack_then_next_proposal
+    result = self.run_loop(loop, step, backend)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/hermes/nyarlathack/tests/chaos/test_live_ack.py", line 70, in run_loop
+    launcher._offline_loop(
+  File "/home/hermes/nyarlathack/chaos/launcher.py", line 193, in _offline_loop
+    pending = box.pending(state)
+              ^^^^^^^^^^^^^^^^^^
+  File "/home/hermes/nyarlathack/chaos/director.py", line 237, in pending
+    raise ValueError(
+ValueError: consumed mailbox lacks exact ACK evidence; manual reconciliation required
+
+======================================================================
+FAIL: test_advanced_safe_after_live_wait_is_not_still_inflight (test_live_ack.LiveAckTests.test_advanced_safe_after_live_wait_is_not_still_inflight) (loop='director')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/hermes/nyarlathack/tests/chaos/test_live_ack.py", line 201, in test_advanced_safe_after_live_wait_is_not_still_inflight
+    self.assertEqual(self.sleeps, 2)
+AssertionError: 1 != 2
+
+======================================================================
+FAIL: test_advanced_safe_after_live_wait_is_not_still_inflight (test_live_ack.LiveAckTests.test_advanced_safe_after_live_wait_is_not_still_inflight) (loop='launcher')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/hermes/nyarlathack/tests/chaos/test_live_ack.py", line 201, in test_advanced_safe_after_live_wait_is_not_still_inflight
+    self.assertEqual(self.sleeps, 2)
+AssertionError: 1 != 2
+
+----------------------------------------------------------------------
+Ran 6 tests in 0.083s
+
+FAILED (failures=2, errors=10)
