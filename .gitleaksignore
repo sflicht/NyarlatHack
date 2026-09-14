@@ -1,0 +1,4 @@
+# Exact historical false positives: source-file SHA-256 checksums, independently recomputed.
+# No directory-wide or future-commit exemptions. See docs/quality-control.md.
+ec53bef97fa66371bd058d954b5bc9a5179b9305:docs/evidence/milestone2-summary.json:generic-api-key:163
+ec53bef97fa66371bd058d954b5bc9a5179b9305:docs/evidence/milestone2-summary.json:generic-api-key:191
