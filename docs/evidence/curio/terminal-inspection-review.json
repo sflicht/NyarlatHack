@@ -1,0 +1,22 @@
+{
+  "task": "curio-terminal-inspection",
+  "spec_review": "deleg_96208ace",
+  "quality_review": "deleg_3c07600d",
+  "passed": true,
+  "reviewed_diff_sha256": "2efc22da4c91f08918021c6de39ed322f30f25d228cb84cc88f30949a35c5f73",
+  "independent_focused_tests": 3,
+  "parent_full_suite": {
+    "passed": 185,
+    "skipped": 1
+  },
+  "coverage": "Actual native Game PTY inspection in both inventory modes; scoped before/after state and RNG assertions with negative controls.",
+  "limits": [
+    "Injected object, not admission or natural discovery.",
+    "Inspection-only source is not the model-authored Apply demonstration.",
+    "RNG receipt repeats a first draw after the actual purity assertion."
+  ],
+  "nonblocking_followups": [
+    "Automate protected-input digest recheck after gameplay.",
+    "Derive mode-comparison return fields from observed receipts."
+  ]
+}
