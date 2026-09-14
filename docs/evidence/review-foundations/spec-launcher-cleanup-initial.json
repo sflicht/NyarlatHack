@@ -1,0 +1,18 @@
+{
+  "review_id": "deleg_1d29a97f",
+  "passed": false,
+  "scope": "Launcher and bounded whisper cleanup specification review",
+  "cleanup_passed": true,
+  "gap": {
+    "issue": 3,
+    "severity": "medium",
+    "finding": "An incomplete existing event log was accepted before game startup and default pack publication",
+    "reproduced": true,
+    "required": "Reject pre-existing partial history without modifying it; preserve live partial-record buffering"
+  },
+  "parent_fix": "Check EventReader.tail both in parent preflight and first child-loop iteration before publication/readiness",
+  "regressions": ["Truncated and unterminated existing histories reject", "Partial history injected between preflight and handshake rejects", "Partial records arriving during live observation complete normally"],
+  "red_log": "/tmp/nyarl-launcher-partial-red.log",
+  "green_log": "/tmp/nyarl-launcher-partial-green.log",
+  "followup_spec_review": "pending"
+}

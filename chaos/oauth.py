@@ -12,6 +12,7 @@ import time
 from urllib.parse import urlsplit
 from .director import secure_open, eligible
 from .protocol import parse_request
+from .response import normalize_whisper_response
 
 MODEL = "gpt-5.6-luna"
 PROVIDER = "openai-codex"
@@ -193,20 +194,19 @@ class OAuthBackend:
         if not options:
             return None
         prompt = (Path(__file__).parent / "prompts/director.txt").read_text()
-        request = parse_request(
-            self.generate(
-                prompt,
-                json.dumps(
-                    {
-                        "assigned_id": ident,
-                        "assigned_at": at,
-                        "eligible": options,
-                        "summary": json.loads(state.summary()),
-                    },
-                    separators=(",", ":"),
-                ),
-            )
+        content = self.generate(
+            prompt,
+            json.dumps(
+                {
+                    "assigned_id": ident,
+                    "assigned_at": at,
+                    "eligible": options,
+                    "summary": json.loads(state.summary()),
+                },
+                separators=(",", ":"),
+            ),
         )
+        request = parse_request(normalize_whisper_response(content, cap=8192))
         if (
             request["id"] != ident
             or request["at"] != at

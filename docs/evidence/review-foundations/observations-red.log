@@ -1,0 +1,115 @@
+test_coalesced_thresholds_in_both_directions (test_observations.NativeObservationTests.test_coalesced_thresholds_in_both_directions) ... ok
+test_native_cancel_has_no_safe_point (test_observations.NativeObservationTests.test_native_cancel_has_no_safe_point) ... FAIL
+test_status_selection_and_clamp (test_observations.NativeObservationTests.test_status_selection_and_clamp) ... ERROR
+test_prayer_disclosure_is_exact_and_old_logs_work (test_observations.ObservationSchemaTests.test_prayer_disclosure_is_exact_and_old_logs_work) ... FAIL
+test_reject_invalid_vitals (test_observations.ObservationSchemaTests.test_reject_invalid_vitals) ... 
+  test_reject_invalid_vitals (test_observations.ObservationSchemaTests.test_reject_invalid_vitals) (values=None) ... FAIL
+  test_reject_invalid_vitals (test_observations.ObservationSchemaTests.test_reject_invalid_vitals) (values={}) ... FAIL
+  test_reject_invalid_vitals (test_observations.ObservationSchemaTests.test_reject_invalid_vitals) (values={'hp': 7, 'hp_max': 20, 'power': 2, 'power_max': 10, 'otyp': 999}) ... FAIL
+  test_reject_invalid_vitals (test_observations.ObservationSchemaTests.test_reject_invalid_vitals) (values={'hp': True, 'hp_max': 20, 'power': 2, 'power_max': 10}) ... FAIL
+  test_reject_invalid_vitals (test_observations.ObservationSchemaTests.test_reject_invalid_vitals) (values={'hp': -1, 'hp_max': 20, 'power': 2, 'power_max': 10}) ... FAIL
+  test_reject_invalid_vitals (test_observations.ObservationSchemaTests.test_reject_invalid_vitals) (values={'hp': 7, 'hp_max': 20, 'power': 'secret', 'power_max': 10}) ... FAIL
+  test_reject_invalid_vitals (test_observations.ObservationSchemaTests.test_reject_invalid_vitals) (values={'hp': 7, 'hp_max': 2147483648, 'power': 2, 'power_max': 10}) ... FAIL
+test_vitals_whitelist_and_history (test_observations.ObservationSchemaTests.test_vitals_whitelist_and_history) ... ERROR
+
+======================================================================
+ERROR: test_status_selection_and_clamp (test_observations.NativeObservationTests.test_status_selection_and_clamp)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/hermes/nyarlathack/tests/chaos/test_observations.py", line 56, in test_status_selection_and_clamp
+    self.assertEqual(by_name["read"]["vitals"],VITALS)
+                     ~~~~~~~~~~~~~~~^^^^^^^^^^
+KeyError: 'vitals'
+
+======================================================================
+ERROR: test_vitals_whitelist_and_history (test_observations.ObservationSchemaTests.test_vitals_whitelist_and_history)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/hermes/nyarlathack/tests/chaos/test_observations.py", line 20, in test_vitals_whitelist_and_history
+    self.assertEqual(summary["observed"]["vitals"], VITALS)
+                     ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^
+KeyError: 'vitals'
+
+======================================================================
+FAIL: test_native_cancel_has_no_safe_point (test_observations.NativeObservationTests.test_native_cancel_has_no_safe_point)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/hermes/nyarlathack/tests/chaos/test_observations.py", line 63, in test_native_cancel_has_no_safe_point
+    self.assertEqual([(e["phase"],e["detail"],e["safe"]) for e in prayers],[("result","cancelled",1)])
+AssertionError: Lists differ: [] != [('result', 'cancelled', 1)]
+
+Second list contains 1 additional elements.
+First extra element 0:
+('result', 'cancelled', 1)
+
+- []
++ [('result', 'cancelled', 1)]
+
+======================================================================
+FAIL: test_prayer_disclosure_is_exact_and_old_logs_work (test_observations.ObservationSchemaTests.test_prayer_disclosure_is_exact_and_old_logs_work)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/hermes/nyarlathack/tests/chaos/test_observations.py", line 35, in test_prayer_disclosure_is_exact_and_old_logs_work
+    self.assertEqual(record.get("prayer"),expected)
+AssertionError: None != 'confirmed'
+
+======================================================================
+FAIL: test_reject_invalid_vitals (test_observations.ObservationSchemaTests.test_reject_invalid_vitals) (values=None)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/hermes/nyarlathack/tests/chaos/test_observations.py", line 27, in test_reject_invalid_vitals
+    with self.subTest(values=values), self.assertRaises(ValueError):
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_reject_invalid_vitals (test_observations.ObservationSchemaTests.test_reject_invalid_vitals) (values={})
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/hermes/nyarlathack/tests/chaos/test_observations.py", line 27, in test_reject_invalid_vitals
+    with self.subTest(values=values), self.assertRaises(ValueError):
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_reject_invalid_vitals (test_observations.ObservationSchemaTests.test_reject_invalid_vitals) (values={'hp': 7, 'hp_max': 20, 'power': 2, 'power_max': 10, 'otyp': 999})
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/hermes/nyarlathack/tests/chaos/test_observations.py", line 27, in test_reject_invalid_vitals
+    with self.subTest(values=values), self.assertRaises(ValueError):
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_reject_invalid_vitals (test_observations.ObservationSchemaTests.test_reject_invalid_vitals) (values={'hp': True, 'hp_max': 20, 'power': 2, 'power_max': 10})
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/hermes/nyarlathack/tests/chaos/test_observations.py", line 27, in test_reject_invalid_vitals
+    with self.subTest(values=values), self.assertRaises(ValueError):
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_reject_invalid_vitals (test_observations.ObservationSchemaTests.test_reject_invalid_vitals) (values={'hp': -1, 'hp_max': 20, 'power': 2, 'power_max': 10})
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/hermes/nyarlathack/tests/chaos/test_observations.py", line 27, in test_reject_invalid_vitals
+    with self.subTest(values=values), self.assertRaises(ValueError):
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_reject_invalid_vitals (test_observations.ObservationSchemaTests.test_reject_invalid_vitals) (values={'hp': 7, 'hp_max': 20, 'power': 'secret', 'power_max': 10})
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/hermes/nyarlathack/tests/chaos/test_observations.py", line 27, in test_reject_invalid_vitals
+    with self.subTest(values=values), self.assertRaises(ValueError):
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_reject_invalid_vitals (test_observations.ObservationSchemaTests.test_reject_invalid_vitals) (values={'hp': 7, 'hp_max': 2147483648, 'power': 2, 'power_max': 10})
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/hermes/nyarlathack/tests/chaos/test_observations.py", line 27, in test_reject_invalid_vitals
+    with self.subTest(values=values), self.assertRaises(ValueError):
+AssertionError: ValueError not raised
+
+----------------------------------------------------------------------
+Ran 6 tests in 0.402s
+
+FAILED (failures=9, errors=2)

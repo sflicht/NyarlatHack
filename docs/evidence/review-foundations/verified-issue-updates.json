@@ -1,0 +1,80 @@
+[
+  {
+    "number": 1,
+    "title": "feat(engine): add one high-frequency mutation a default game can feel",
+    "url": "https://github.com/sflicht/NyarlatHack/issues/1",
+    "verified": true
+  },
+  {
+    "number": 2,
+    "title": "feat(engine): retune cruelty so the Chaos does not go silent after ambient",
+    "url": "https://github.com/sflicht/NyarlatHack/issues/2",
+    "verified": true
+  },
+  {
+    "number": 3,
+    "title": "feat(chaos): one-command play that still keeps the two-process protocol",
+    "url": "https://github.com/sflicht/NyarlatHack/issues/3",
+    "verified": true
+  },
+  {
+    "number": 4,
+    "title": "feat(engine): enrich events without leaking secrets the player cannot see",
+    "url": "https://github.com/sflicht/NyarlatHack/issues/4",
+    "verified": true
+  },
+  {
+    "number": 5,
+    "title": "docs/test(engine): specify exact safe-point targeting and coalesced Sanity observations",
+    "url": "https://github.com/sflicht/NyarlatHack/issues/5",
+    "verified": true
+  },
+  {
+    "number": 6,
+    "title": "perf: measure log costs without weakening rewrite detection or durability",
+    "url": "https://github.com/sflicht/NyarlatHack/issues/6",
+    "verified": true
+  },
+  {
+    "number": 7,
+    "title": "feat(chaos): normalize one response fence without semantic repair or retries",
+    "url": "https://github.com/sflicht/NyarlatHack/issues/7",
+    "verified": true
+  },
+  {
+    "number": 8,
+    "title": "test: hook string searches must not stand in for physics when the registry grows",
+    "url": "https://github.com/sflicht/NyarlatHack/issues/8",
+    "verified": true
+  },
+  {
+    "number": 9,
+    "title": "proposal: The Thousand Masks \u2014 engine-owned aspects of the Crawling Chaos",
+    "url": "https://github.com/sflicht/NyarlatHack/issues/9",
+    "verified": true
+  },
+  {
+    "number": 10,
+    "title": "proposal: Scripture that lies \u2014 bounded, persistent corruption of authoritative text",
+    "url": "https://github.com/sflicht/NyarlatHack/issues/10",
+    "verified": true
+  },
+  {
+    "number": 11,
+    "title": "proposal: Contaminated testimony \u2014 opt-in, non-executable inheritance through bones",
+    "url": "https://github.com/sflicht/NyarlatHack/issues/11",
+    "verified": true
+  },
+  {
+    "number": 12,
+    "title": "proposal: The other party at the altar \u2014 constrained whispers riding prayer outcomes",
+    "url": "https://github.com/sflicht/NyarlatHack/issues/12",
+    "verified": true
+  },
+  {
+    "number": 13,
+    "title": "proposal: Broaden the Dreamlands \u2014 real shadow worlds with strictly cosmetic scars",
+    "url": "https://github.com/sflicht/NyarlatHack/issues/13",
+    "verified": true
+  }
+]

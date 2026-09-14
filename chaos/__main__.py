@@ -2,7 +2,9 @@
 
 import argparse
 import json
+import os
 from pathlib import Path
+import signal
 import sys
 
 from .director import (
@@ -21,6 +23,9 @@ def main(argv=None):
         description="The Crawling Chaos — bounded engine-protocol v1 director"
     )
     sub = parser.add_subparsers(dest="command", required=True)
+    from .launcher import add_parser
+
+    add_parser(sub)
     installer = sub.add_parser(
         "haunt", help="install one Lua candidate; game validates it"
     )
@@ -88,6 +93,10 @@ def main(argv=None):
             )
     args = parser.parse_args(argv)
     try:
+        if args.command == "play":
+            from .launcher import play
+
+            return play(args)
         if args.command == "haunt":
             from .haunt import install
 
@@ -144,4 +153,10 @@ def main(argv=None):
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    status = main()
+    if status < 0:
+        # Preserve the child's signal status, but only after supervisor cleanup.
+        if -status != signal.SIGKILL:
+            signal.signal(-status, signal.SIG_DFL)
+        os.kill(os.getpid(), -status)
+    sys.exit(status)

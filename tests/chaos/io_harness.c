@@ -18,6 +18,7 @@ int main(int argc, char **argv) {
     assert(argc == 3); memset(&f,0,sizeof f); f.mode=argv[2];
     chaos_state_init(&f.s); f.c.turn=10; f.c.sanity=0; f.c.insight=0; f.c.eligible=1;
     if(!strcmp(f.mode,"poor")) f.s.spent=12;
+    if(!strcmp(f.mode,"late")) f.s.safe=1;
     if(!strcmp(f.mode,"ineligible")) f.c.eligible=0;
     if(!strcmp(f.mode,"nonfood")) f.c.eligible=2;
     chaos_io_open(&f.io,argv[1]);

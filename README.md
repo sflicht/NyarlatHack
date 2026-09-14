@@ -18,7 +18,9 @@ This is not general source rewriting or an unrestricted scripting system.
   observations for eating, reading, zapping, applying, prayer, kills, level
   transitions, sleep, Sanity, Insight and final termination. Actions are generic
   attempts, not claims of success or disclosures of unidentified items. Sanity
-  and Insight changes are observed at turn-loop boundaries.
+  and Insight changes are observed at turn-loop boundaries. The review-foundation
+  extension adds player-known status vitals and explicit prayer cancellation;
+  model context still excludes hidden identities and arbitrary detail strings.
 - [x] **Bounded mutation application programming interface (API):**
   `ward_efficacy` halves completed ward counts in monster fear checks;
   `hunger_rate` doubles ordinary food consumption; `ambient` displays a fixed
@@ -72,14 +74,16 @@ builds; stock saves require a stock-compatible build.
 From the repository root:
 
 ```sh
-RUN=$(mktemp -d)
-python3 -m chaos pack ambient --run-dir "$RUN" --install-only
-(cd dnethackdir && NYARLATHACK_RUN_DIR="$RUN" ./dnethack)
+python3 -m chaos play
 ```
 
 The initial level-entry safe point admits the ambient request and displays its
-warning and message. `--install-only` confirms publication, **not acceptance**;
-the game records acceptance in the run directory's `events.jsonl`.
+warning and message. The launcher prints and preserves a private run directory,
+supervises a separate offline director, and leaves play running if that director
+finishes early. Readiness confirms publication, **not acceptance**; the game
+records acceptance in `events.jsonl`. Use `--backend random --seed 7` for the
+random director. No model or credentials are needed. Explicit restore and the
+manual two-terminal alternative are documented in the director guide.
 
 See [the director guide](chaos/README.md) for the ward/hunger demonstration,
 random director, model configuration, replay and operational limits.

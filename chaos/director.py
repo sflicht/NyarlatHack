@@ -14,6 +14,7 @@ import time
 from .protocol import (
     FIELDS,
     REGISTRY,
+    VITALS,
     encode_request,
     parse_event,
     parse_request,
@@ -126,7 +127,15 @@ class State:
         if self.ended:
             raise ValueError("events after final death")
         self.latest = e
-        self.recent.append({k: e[k] for k in ("event", "phase", "turn", "safe")})
+        recent = {k: e[k] for k in ("event", "phase", "turn", "safe")}
+        if "vitals" in e:
+            recent["vitals"] = {k: e["vitals"][k] for k in VITALS}
+        if e["event"] == "pray" and (e["phase"], e["detail"]) in (
+            ("attempt", "confirmed"),
+            ("result", "cancelled"),
+        ):
+            recent["prayer"] = e["detail"]
+        self.recent.append(recent)
         self.active = {k: v for k, v in self.active.items() if v > e["turn"]}
         if e["event"] == "ack" and e["id"]:
             # Repeated duplicate ACKs must not erase accepted evidence.
@@ -156,7 +165,8 @@ class State:
         return self.latest["safe"] if self.latest else 0
 
     def summary(self):
-        # No detail, ACK extras, journal, or arbitrary source keys reach a model.
+        # No arbitrary detail, ACK extras, journal, or source keys reach a model.
+        # Only exact prayer disclosure enums and validated status vitals are added.
         observed = (
             {
                 k: self.latest[k]
@@ -173,6 +183,8 @@ class State:
             if self.latest
             else {}
         )
+        if self.latest and "vitals" in self.latest:
+            observed["vitals"] = {k: self.latest["vitals"][k] for k in VITALS}
         return json.dumps(
             {"observed": observed, "recent": list(self.recent)},
             separators=(",", ":"),

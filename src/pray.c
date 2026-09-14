@@ -2552,8 +2552,10 @@ dopray()
 
 	/* Confirm accidental slips of Alt-P */
     if (flags.prayconfirm)
-	if (yn("Are you sure you want to pray?") == 'n')
+	if (yn("Are you sure you want to pray?") == 'n') {
+	    chaos_event("pray", "result", "cancelled");
 	    return MOVE_CANCELLED;
+	}
 
 	if(u.sealsActive&SEAL_AMON) unbind(SEAL_AMON,TRUE);
     u.uconduct.gnostic++;
