@@ -1,0 +1,53 @@
+test_advanced_safe_after_live_wait_is_not_still_inflight (test_live_ack.LiveAckTests.test_advanced_safe_after_live_wait_is_not_still_inflight) ... ok
+test_initial_consumed_missing_ack_is_strict_in_all_entrypoints (test_live_ack.LiveAckTests.test_initial_consumed_missing_ack_is_strict_in_all_entrypoints) ... ok
+test_initial_overdue_pending_is_not_adopted_as_live (test_live_ack.LiveAckTests.test_initial_overdue_pending_is_not_adopted_as_live) ... ok
+test_launcher_readiness_rechecks_consumed_after_observe (test_live_ack.LiveAckTests.test_launcher_readiness_rechecks_consumed_after_observe) ... ok
+test_live_conflicts_fail_without_overwriting_or_retiming (test_live_ack.LiveAckTests.test_live_conflicts_fail_without_overwriting_or_retiming) ... ok
+test_missing_live_ack_stops_at_runtime_cap_without_acceptance (test_live_ack.LiveAckTests.test_missing_live_ack_stops_at_runtime_cap_without_acceptance) ... ok
+test_rejected_ack_after_live_wait_is_not_schedule_acceptance (test_live_ack.LiveAckTests.test_rejected_ack_after_live_wait_is_not_schedule_acceptance) ... ok
+test_split_native_telegraph_partial_ack_then_next_proposal (test_live_ack.LiveAckTests.test_split_native_telegraph_partial_ack_then_next_proposal) ... ok
+test_atomic_mailbox_resume_no_clobber (test_director.DirectorTests.test_atomic_mailbox_resume_no_clobber) ... ok
+test_budgets_and_seeded_eligibility (test_director.DirectorTests.test_budgets_and_seeded_eligibility) ... ok
+test_cli_pack_real_c_admission (test_director.DirectorTests.test_cli_pack_real_c_admission) ... ok
+test_reader_partial_tail_retains_bytes (test_director.DirectorTests.test_reader_partial_tail_retains_bytes) ... ok
+test_reader_rejects_invalid_and_overlong (test_director.DirectorTests.test_reader_rejects_invalid_and_overlong) ... ok
+test_reader_rewrite_truncation_and_caps (test_director.DirectorTests.test_reader_rewrite_truncation_and_caps) ... ok
+test_replay_requires_ack_and_projects_fields (test_director.DirectorTests.test_replay_requires_ack_and_projects_fields) ... ok
+test_run_resume_stale_and_finite_no_events (test_director.DirectorTests.test_run_resume_stale_and_finite_no_events) ... ok
+test_schema_strict (test_director.DirectorTests.test_schema_strict) ... ok
+test_summary_redaction_and_rollback (test_director.DirectorTests.test_summary_redaction_and_rollback) ... ok
+test_all_packs_and_explicit_fresh_path (test_launcher.LauncherTests.test_all_packs_and_explicit_fresh_path) ... ok
+test_bad_options_never_start_game (test_launcher.LauncherTests.test_bad_options_never_start_game) ... ok
+test_conflicting_mailbox_arriving_before_handshake_rejected (test_launcher.LauncherTests.test_conflicting_mailbox_arriving_before_handshake_rejected) ... ok
+test_default_pack_fresh_private_directory_args_and_exit (test_launcher.LauncherTests.test_default_pack_fresh_private_directory_args_and_exit) ... ok
+test_director_death_does_not_stop_game_or_release_session_lock (test_launcher.LauncherTests.test_director_death_does_not_stop_game_or_release_session_lock) ... ok
+test_director_runtime_cap_keeps_game_and_lock_alive (test_launcher.LauncherTests.test_director_runtime_cap_keeps_game_and_lock_alive) ... ok
+test_game_exec_failure_reaps_director_and_releases_lock (test_launcher.LauncherTests.test_game_exec_failure_reaps_director_and_releases_lock) ... ok
+test_game_inherits_terminal (test_launcher.LauncherTests.test_game_inherits_terminal) ... ok
+test_game_sigkill_status_preserved (test_launcher.LauncherTests.test_game_sigkill_status_preserved) ... ok
+test_game_signal_status_preserved (test_launcher.LauncherTests.test_game_signal_status_preserved) ... ok
+test_incomplete_history_rejected_before_publication_or_game (test_launcher.LauncherTests.test_incomplete_history_rejected_before_publication_or_game) ... ok
+test_invalid_directories_and_executable_never_start_game (test_launcher.LauncherTests.test_invalid_directories_and_executable_never_start_game) ... ok
+test_invalid_existing_state_fails_before_game (test_launcher.LauncherTests.test_invalid_existing_state_fails_before_game) ... ok
+test_live_partial_record_is_retained_until_complete (test_launcher.LauncherTests.test_live_partial_record_is_retained_until_complete) ... ok
+test_lock_contention_fails_before_game (test_launcher.LauncherTests.test_lock_contention_fails_before_game) ... ok
+test_matching_future_pending_pack_and_random_restore_succeed (test_launcher.LauncherTests.test_matching_future_pending_pack_and_random_restore_succeed) ... ok
+test_normal_death_event_is_not_a_director_error (test_launcher.LauncherTests.test_normal_death_event_is_not_a_director_error) ... ok
+test_partial_history_arriving_before_handshake_rejected (test_launcher.LauncherTests.test_partial_history_arriving_before_handshake_rejected) ... ok
+test_pending_pack_conflicts_rejected_with_evidence_preserved (test_launcher.LauncherTests.test_pending_pack_conflicts_rejected_with_evidence_preserved) ... ok
+test_preflight_schedule_failure_never_starts_game (test_launcher.LauncherTests.test_preflight_schedule_failure_never_starts_game) ... ok
+test_random_offline_seed_and_reuse_preserve_data (test_launcher.LauncherTests.test_random_offline_seed_and_reuse_preserve_data) ... ok
+test_random_seed_produces_repeatable_real_subprocess_proposals (test_launcher.LauncherTests.test_random_seed_produces_repeatable_real_subprocess_proposals) ... ok
+test_supervisor_signals_forward_and_reap (test_launcher.LauncherTests.test_supervisor_signals_forward_and_reap) ... ok
+test_symlink_journal_fails_before_game (test_launcher.LauncherTests.test_symlink_journal_fails_before_game) ... ok
+test_unresponsive_game_is_killed_and_reaped_after_signal (test_launcher.LauncherTests.test_unresponsive_game_is_killed_and_reaped_after_signal) ... ok
+test_wrong_owner_never_starts_game (test_launcher.LauncherTests.test_wrong_owner_never_starts_game) ... skipped 'ownership fixture needs chown'
+test_wrong_uid_validation_without_privileged_chown (test_launcher.LauncherTests.test_wrong_uid_validation_without_privileged_chown) ... ok
+LAUNCHER_GAMEPLAY_ARTIFACTS=/tmp/nyarl-launcher-gameplay-dfxl1aor
+test_game_continues_after_director_runtime_expires (test_launcher_gameplay.LauncherGameplayTests.test_game_continues_after_director_runtime_expires) ... ok
+test_one_command_pack_admission_save_restore_and_cleanup (test_launcher_gameplay.LauncherGameplayTests.test_one_command_pack_admission_save_restore_and_cleanup) ... ok
+
+----------------------------------------------------------------------
+Ran 47 tests in 11.438s
+
+OK (skipped=1)

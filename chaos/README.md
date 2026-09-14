@@ -81,6 +81,18 @@ in `events.jsonl` and admissions in `whispers.jsonl`. The single mailbox is
 `whisper.json`; never overwrite it before its exact acknowledgement arrives.
 The sidecar enforces a single cooperating writer using a lock file.
 
+An already-running director retains a copy of its exact outstanding request.
+The engine consumes its identifier and emits a telegraph before presentation
+finishes and the acknowledgement is written. During that narrow live interval,
+the director waits only while the mailbox is unchanged and the observed
+telegraph, mutation, safe index and last identifier match the known request.
+This is **not acceptance**: the mailbox cannot be overwritten and no retry or
+retiming is permitted. A matching acknowledgement is still required to proceed;
+the existing runtime cap bounds a missing acknowledgement. Changed/deleted mail,
+mismatched acknowledgements and incompatible progress fail closed. Startup has
+no trusted live-request copy and retains strict reconciliation checks.
+
+
 A request published before startup with `--at 1` targets initial level entry.
 The output `installed_pending_ack` means only that the file was published.
 An actual `ack` event with `status: accepted` confirms game acceptance.

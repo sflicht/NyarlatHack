@@ -1,0 +1,8 @@
+{
+  "review_id": "deleg_61b0e258",
+  "passed": true,
+  "gaps": [],
+  "independent_tests": 11,
+  "scope": "Live-ACK specification review; startup invariants, exact known-payload wait, bounded runtime, no acceptance inferred from telegraph",
+  "limitations": "Native/full-suite execution remained parent evidence; no independent broad rerun"
+}

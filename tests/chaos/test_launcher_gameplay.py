@@ -69,6 +69,7 @@ class LauncherGameplayTests(unittest.TestCase):
             pass
         self.assertTrue((game.run / "events.jsonl").is_file())
         self.assertIn(b"director stopped; run data retained", game.raw)
+        self.assertEqual((game.run / "director.log").read_text(), "")
 
     def test_game_continues_after_director_runtime_expires(self):
         game = self.game("short-director", ["--max-runtime", "0.05"])

@@ -182,6 +182,7 @@ def _offline_loop(box, backend, reader, state, args, ready):
     """
     deadline = time.monotonic() + args.max_runtime
     submitted, last_choice = 0, None
+    known_pending = None
     first = True
     while time.monotonic() < deadline or first:
         for event in reader.read():
@@ -190,9 +191,10 @@ def _offline_loop(box, backend, reader, state, args, ready):
             raise ValueError("incomplete event history before game startup")
         if state.ended:
             return
-        pending = box.pending(state)
+        pending = box.pending(state, known=known_pending)
         if first:
             _validate_startup_pending(backend, state, pending)
+        known_pending = dict(pending) if pending is not None else None
         done = False
         if not pending:
             request = None
@@ -211,6 +213,7 @@ def _offline_loop(box, backend, reader, state, args, ready):
                     done = True
                 else:
                     box.submit(request, state)
+                    known_pending = dict(request)
                     submitted += 1
         if first:
             os.write(ready, b"R")  # Ready means valid state + initial pack publication.

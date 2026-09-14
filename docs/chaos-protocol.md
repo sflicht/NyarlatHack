@@ -158,6 +158,19 @@ Reasons: `ok`, `schema`, `oversize`, `duplicate`, `schedule`, `budget`, `active`
 plus `v`, `turn`, `safe`; it records status `admitted`. `telegraph`/`result`
 precedes `ack` accepted; `expiry`/`result` records effect name.
 
+## Live acknowledgement boundary
+
+An already-running director retains a copy of its exact outstanding request.
+The engine consumes its identifier and emits a telegraph before presentation
+finishes and the acknowledgement is written. During that narrow live interval,
+the director waits only while the mailbox is unchanged and the observed
+telegraph, mutation, safe index and last identifier match the known request.
+This is **not acceptance**: the mailbox cannot be overwritten and no retry or
+retiming is permitted. A matching acknowledgement is still required to proceed;
+the existing runtime cap bounds a missing acknowledgement. Changed/deleted mail,
+mismatched acknowledgements and incompatible progress fail closed. Startup has
+no trusted live-request copy and retains strict reconciliation checks.
+
 ## Replay boundary
 
 A reproducible run requires engine binary/data version, both RNG seeds and

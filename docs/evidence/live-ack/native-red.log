@@ -1,0 +1,17 @@
+LAUNCHER_GAMEPLAY_ARTIFACTS=/tmp/nyarl-launcher-gameplay-2t1ezjsl
+test_one_command_pack_admission_save_restore_and_cleanup (test_launcher_gameplay.LauncherGameplayTests.test_one_command_pack_admission_save_restore_and_cleanup) ... FAIL
+
+======================================================================
+FAIL: test_one_command_pack_admission_save_restore_and_cleanup (test_launcher_gameplay.LauncherGameplayTests.test_one_command_pack_admission_save_restore_and_cleanup)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/hermes/nyarlathack/tests/chaos/test_launcher_gameplay.py", line 72, in test_one_command_pack_admission_save_restore_and_cleanup
+    self.assertEqual((game.run / "director.log").read_text(), "")
+AssertionError: 'chaos: offline director stopped (ValueError)\n' != ''
+- chaos: offline director stopped (ValueError)
+
+
+----------------------------------------------------------------------
+Ran 1 test in 2.391s
+
+FAILED (failures=1)
