@@ -1,0 +1,72 @@
+test_pending_pack_conflicts_rejected_with_evidence_preserved (test_launcher.LauncherTests.test_pending_pack_conflicts_rejected_with_evidence_preserved) ... 
+  test_pending_pack_conflicts_rejected_with_evidence_preserved (test_launcher.LauncherTests.test_pending_pack_conflicts_rejected_with_evidence_preserved) (index=0) ... FAIL
+  test_pending_pack_conflicts_rejected_with_evidence_preserved (test_launcher.LauncherTests.test_pending_pack_conflicts_rejected_with_evidence_preserved) (index=1) ... FAIL
+  test_pending_pack_conflicts_rejected_with_evidence_preserved (test_launcher.LauncherTests.test_pending_pack_conflicts_rejected_with_evidence_preserved) (index=2) ... FAIL
+  test_pending_pack_conflicts_rejected_with_evidence_preserved (test_launcher.LauncherTests.test_pending_pack_conflicts_rejected_with_evidence_preserved) (index=3) ... FAIL
+  test_pending_pack_conflicts_rejected_with_evidence_preserved (test_launcher.LauncherTests.test_pending_pack_conflicts_rejected_with_evidence_preserved) (index=4) ... FAIL
+test_conflicting_mailbox_arriving_before_handshake_rejected (test_launcher.LauncherTests.test_conflicting_mailbox_arriving_before_handshake_rejected) ... {"args": [], "cwd": "/tmp/tmp2ndnkf4h/game root", "run": "/tmp/tmp2ndnkf4h/startup-conflict", "locked": true, "tty": false, "pid": 4020252, "director": [4020251], "mailbox": true}
+FAIL
+test_matching_future_pending_pack_and_random_restore_succeed (test_launcher.LauncherTests.test_matching_future_pending_pack_and_random_restore_succeed) ... ok
+
+======================================================================
+FAIL: test_pending_pack_conflicts_rejected_with_evidence_preserved (test_launcher.LauncherTests.test_pending_pack_conflicts_rejected_with_evidence_preserved) (index=0)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/hermes/nyarlathack/tests/chaos/test_launcher.py", line 277, in test_pending_pack_conflicts_rejected_with_evidence_preserved
+    self.assertEqual(result.returncode, 2, result.stderr)
+AssertionError: 0 != 2 : chaos: run directory "/tmp/tmpu56u5nqk/pending-conflict-0" (preserved on exit)
+chaos: director stopped; run data retained
+
+
+======================================================================
+FAIL: test_pending_pack_conflicts_rejected_with_evidence_preserved (test_launcher.LauncherTests.test_pending_pack_conflicts_rejected_with_evidence_preserved) (index=1)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/hermes/nyarlathack/tests/chaos/test_launcher.py", line 277, in test_pending_pack_conflicts_rejected_with_evidence_preserved
+    self.assertEqual(result.returncode, 2, result.stderr)
+AssertionError: 0 != 2 : chaos: run directory "/tmp/tmpu56u5nqk/pending-conflict-1" (preserved on exit)
+chaos: director stopped; run data retained
+
+
+======================================================================
+FAIL: test_pending_pack_conflicts_rejected_with_evidence_preserved (test_launcher.LauncherTests.test_pending_pack_conflicts_rejected_with_evidence_preserved) (index=2)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/hermes/nyarlathack/tests/chaos/test_launcher.py", line 277, in test_pending_pack_conflicts_rejected_with_evidence_preserved
+    self.assertEqual(result.returncode, 2, result.stderr)
+AssertionError: 0 != 2 : chaos: run directory "/tmp/tmpu56u5nqk/pending-conflict-2" (preserved on exit)
+chaos: director stopped; run data retained
+
+
+======================================================================
+FAIL: test_pending_pack_conflicts_rejected_with_evidence_preserved (test_launcher.LauncherTests.test_pending_pack_conflicts_rejected_with_evidence_preserved) (index=3)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/hermes/nyarlathack/tests/chaos/test_launcher.py", line 277, in test_pending_pack_conflicts_rejected_with_evidence_preserved
+    self.assertEqual(result.returncode, 2, result.stderr)
+AssertionError: 0 != 2 : chaos: run directory "/tmp/tmpu56u5nqk/pending-conflict-3" (preserved on exit)
+chaos: director stopped; run data retained
+
+
+======================================================================
+FAIL: test_pending_pack_conflicts_rejected_with_evidence_preserved (test_launcher.LauncherTests.test_pending_pack_conflicts_rejected_with_evidence_preserved) (index=4)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/hermes/nyarlathack/tests/chaos/test_launcher.py", line 277, in test_pending_pack_conflicts_rejected_with_evidence_preserved
+    self.assertEqual(result.returncode, 2, result.stderr)
+AssertionError: 0 != 2 : chaos: run directory "/tmp/tmpu56u5nqk/pending-conflict-4" (preserved on exit)
+chaos: director stopped; run data retained
+
+
+======================================================================
+FAIL: test_conflicting_mailbox_arriving_before_handshake_rejected (test_launcher.LauncherTests.test_conflicting_mailbox_arriving_before_handshake_rejected)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/hermes/nyarlathack/tests/chaos/test_launcher.py", line 314, in test_conflicting_mailbox_arriving_before_handshake_rejected
+    self.assertEqual(result, 2)
+AssertionError: 0 != 2
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.789s
+
+FAILED (failures=6)

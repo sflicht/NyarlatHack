@@ -16,6 +16,7 @@ EVENTS = frozenset(
 REASONS = frozenset(
     "ok schema oversize duplicate schedule budget active ineligible log_failure".split()
 )
+VITALS = ("hp", "hp_max", "power", "power_max")
 NUMBERS = (
     "v",
     "seq",
@@ -114,6 +115,12 @@ def parse_event(raw):
         raise ValueError("invalid event budget or sanity")
     if e["reserved"] > e["spent"]:
         raise ValueError("invalid reservation")
+    if "vitals" in e:
+        vitals = e["vitals"]
+        if type(vitals) is not dict or set(vitals) != set(VITALS):
+            raise ValueError("invalid vitals fields")
+        for key in VITALS:
+            integer(vitals[key], -MAX_INT if key == "power" else 0)
     if e["event"] == "ack":
         for k in ("id", "value", "duration", "telegraph", "at", "cost", "expires"):
             integer(e.get(k))

@@ -126,6 +126,15 @@ class EngineTests(unittest.TestCase):
         self.assertEqual((s["spent"], s["telegraphs"], s["last_id"]), (1, 1, 1))
         self.assertEqual(self.events[-1]["status"], "accepted")
 
+    def test_missed_index_rejects_without_retiming(self):
+        s = self.execute(REQUEST, "late")
+        self.assertEqual((s["spent"], s["telegraphs"], s["last_id"]), (0, 0, 1))
+        self.assertEqual(
+            [e["detail"] for e in self.events if e["event"] == "ack"],
+            ["schedule", "duplicate"],
+        )
+        self.assertEqual((self.path / "whispers.jsonl").read_bytes(), b"")
+
     def test_budget_and_ineligible(self):
         for mode, reason in [("poor", "budget"), ("ineligible", "ineligible")]:
             with self.subTest(mode=mode):

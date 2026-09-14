@@ -10,7 +10,62 @@ repository root. No package installation or model key is needed for offline
 play. An application programming interface (API) key is needed only for the
 explicit `model` command.
 
-## First run: fixed ambient whisper
+## One-command offline play
+
+After building, from the repository root:
+
+```sh
+python3 -m chaos play
+python3 -m chaos play --backend random --seed 7
+```
+
+The default publishes the ambient pack before starting the game. The supervisor
+prints a fresh private run directory and keeps it for save/restore and evidence.
+The game uses your terminal; the offline director is a separate child process.
+No model call or credentials are involved. An actual `ack` with `accepted` in
+`events.jsonl`, not launcher readiness, proves that the game admitted a request.
+
+Use `--game-root /path/to/install` for another installation; keep its executable
+and matching `nhdat` together. Put literal game arguments after `--`, for example:
+
+```sh
+python3 -m chaos play --pack hunger --at 2 -- -D -u wizard
+```
+
+That demonstration still needs an eligible ordinary-food character and Sanity 60
+as described below; the launcher does not waive engine eligibility.
+
+For restore, keep the matching save/game installation and explicitly reuse the
+printed directory with the same pack/ID/index or random configuration:
+
+```sh
+python3 -m chaos play --reuse-run-dir /the/printed/path
+```
+
+`--run-dir /new/path` creates a new directory and rejects one that already exists.
+Do not reuse a run directory for an unrelated new game. Existing ended, malformed
+or conflicting state fails closed; incomplete pre-existing event records are
+rejected without deleting or repairing the log. Partial records during active
+game observation remain buffered until complete. An older-save rollback still needs manual
+reconciliation. An already acknowledged matching pack is not applied again. A pending request
+must still target a future index; for a fixed pack it must exactly match the
+selected next request. Conflicts fail before startup without overwriting the
+mailbox, deleting history or retiming. These checks also run before child
+readiness, not only in parent preflight.
+
+The supervisor holds the single-writer lock until the game exits, even when the
+director finishes its pack or reaches its default 300-second runtime. A later
+director failure does not stop gameplay. Normal game save/quit is the preferred
+exit path. Interrupt, termination or hangup signals initiate bounded supervisor
+shutdown; a child that will not exit is killed after the grace period. This is
+not an automatic-save guarantee, and an uncatchable supervisor kill cannot run
+cleanup. Director diagnostics go to the private `director.log`.
+
+This is a POSIX (Portable Operating System Interface) launcher, tested on Linux. `play` currently supports only offline
+pack/random modes; explicit model/OAuth commands below remain separate. Provider
+configuration is not universally interchangeable and never silently falls back.
+
+## Manual alternative: fixed ambient whisper
 
 ```sh
 RUN=$(mktemp -d)
@@ -91,8 +146,10 @@ record/replay of arbitrary sessions and arbitrary save rollbacks is not shipped.
 
 ## Optional model backend
 
-No live model call was made during this milestone. The tests use a clearly
-identified local fake HTTP (Hypertext Transfer Protocol) server.
+The generic connection is tested with a clearly identified local fake HTTP
+(Hypertext Transfer Protocol) server, not every advertised compatible provider.
+The separate pinned Luna OAuth route was live-tested for First Haunting; that
+does not establish long-run balance or generic-provider interoperability.
 
 Configure the full HTTPS (HTTP over Transport Layer Security) chat-completions
 endpoint, model identifier, and **name** of the environment variable holding
@@ -115,7 +172,11 @@ on name resolution. Add `--ordinary-food` for a food-using character.
 The model receives only a bounded whitelist of player-observable event fields
 and the eligible registry. It cannot send prose to the terminal, execute code,
 choose files, assign prices or change its assigned schedule. Responses must
-match the engine's strict request schema. Redirects and automatic retries are
+match the engine's strict request schema. Whisper adapters may remove surrounding
+whitespace and one complete enclosing bare or `json` Markdown fence; they do not
+salvage prose, repair fields, change identifiers or retime requests. Local
+cleanup adds no model call and never normalizes exact Lua-generation source.
+Redirects and automatic retries are
 not allowed. Failures count toward the configured call allowance. Keys and raw
 response bodies are not printed. Provider-specific billing caps are not inferred
 from the call cap. Use provider-side spending limits as well.

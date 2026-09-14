@@ -21,10 +21,11 @@ upstream files.** Prefer:
 
 ## Current milestone
 
-**Milestone 1 — Tier 2.** See the checklist in `README.md`. Tier 3 (embedded
-scripting, "the Dreamlands") is *not* to be started, prototyped, or "just
-sketched in a branch" until Milestone 1 has a playable build and a passing
-replay test. Ideas for it go in `docs/tier3-notes.md`, not in `src/`.
+**Baseline: Milestone 2 — First Haunting, published.** Milestone 1 already has
+a playable build and passing controlled replay evidence. The constrained Lua
+encounter and narrow Dreamlands trial are implemented; see `docs/milestone2.md`.
+Current work addresses the reviewed foundations. Broader scripting, budgets
+and simulation scope must follow their issue contracts, not bypass them.
 
 ## Vocabulary
 
@@ -42,7 +43,8 @@ Use these words consistently in code, comments, commits and docs.
   may spend, a function of the player's lost Sanity.
 - **safe point** — a moment the engine polls the mailbox: level change,
   prayer, sleep, Sanity threshold.
-- **the Dreamlands** — Tier 3's shadow-dungeon verifier. Not yet.
+- **the Dreamlands** — Tier 3's isolated shadow trial; currently one targeted
+  encounter, not full-dungeon validation.
 
 ## Architecture rules (non-negotiable)
 

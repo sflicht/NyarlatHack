@@ -12,6 +12,11 @@ static int food_metabolism(void) {
 static struct chaos_context context(void) {
     struct chaos_context c;
     c.turn = moves; c.sanity = u.usanity; c.insight = u.uinsight;
+    /* Same health selection/clamp as bot2str; no names or RNG calls. */
+    c.hp = Upolyd ? u.mh : u.uhp;
+    if (c.hp < 0) c.hp = 0;
+    c.hp_max = Upolyd ? u.mhmax : u.uhpmax;
+    c.power = u.uen; c.power_max = u.uenmax;
     c.eligible = program_state.gameover || multi < 0 ? 0 : food_metabolism() ? 1 : 2;
     return c;
 }

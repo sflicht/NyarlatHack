@@ -1,0 +1,49 @@
+test_incomplete_history_rejected_before_publication_or_game (test_launcher.LauncherTests.test_incomplete_history_rejected_before_publication_or_game) ... 
+  test_incomplete_history_rejected_before_publication_or_game (test_launcher.LauncherTests.test_incomplete_history_rejected_before_publication_or_game) (index=0) ... FAIL
+  test_incomplete_history_rejected_before_publication_or_game (test_launcher.LauncherTests.test_incomplete_history_rejected_before_publication_or_game) (index=1) ... FAIL
+  test_incomplete_history_rejected_before_publication_or_game (test_launcher.LauncherTests.test_incomplete_history_rejected_before_publication_or_game) (index=2) ... FAIL
+test_partial_history_arriving_before_handshake_rejected (test_launcher.LauncherTests.test_partial_history_arriving_before_handshake_rejected) ... {"args": [], "cwd": "/tmp/tmpcbn8w1g3/game root", "run": "/tmp/tmpcbn8w1g3/startup-partial", "locked": true, "tty": false, "pid": 4017154, "director": [4017153], "mailbox": true}
+FAIL
+
+======================================================================
+FAIL: test_incomplete_history_rejected_before_publication_or_game (test_launcher.LauncherTests.test_incomplete_history_rejected_before_publication_or_game) (index=0)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/hermes/nyarlathack/tests/chaos/test_launcher.py", line 253, in test_incomplete_history_rejected_before_publication_or_game
+    self.assertEqual(result.returncode, 2, result.stderr)
+AssertionError: 0 != 2 : chaos: run directory "/tmp/tmpy0hkg9l2/partial-0" (preserved on exit)
+chaos: director stopped; run data retained
+
+
+======================================================================
+FAIL: test_incomplete_history_rejected_before_publication_or_game (test_launcher.LauncherTests.test_incomplete_history_rejected_before_publication_or_game) (index=1)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/hermes/nyarlathack/tests/chaos/test_launcher.py", line 253, in test_incomplete_history_rejected_before_publication_or_game
+    self.assertEqual(result.returncode, 2, result.stderr)
+AssertionError: 0 != 2 : chaos: run directory "/tmp/tmpy0hkg9l2/partial-1" (preserved on exit)
+chaos: director stopped; run data retained
+
+
+======================================================================
+FAIL: test_incomplete_history_rejected_before_publication_or_game (test_launcher.LauncherTests.test_incomplete_history_rejected_before_publication_or_game) (index=2)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/hermes/nyarlathack/tests/chaos/test_launcher.py", line 253, in test_incomplete_history_rejected_before_publication_or_game
+    self.assertEqual(result.returncode, 2, result.stderr)
+AssertionError: 0 != 2 : chaos: run directory "/tmp/tmpy0hkg9l2/partial-2" (preserved on exit)
+chaos: director stopped; run data retained
+
+
+======================================================================
+FAIL: test_partial_history_arriving_before_handshake_rejected (test_launcher.LauncherTests.test_partial_history_arriving_before_handshake_rejected)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/hermes/nyarlathack/tests/chaos/test_launcher.py", line 272, in test_partial_history_arriving_before_handshake_rejected
+    self.assertEqual(result, 2)
+AssertionError: 0 != 2
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.382s
+
+FAILED (failures=4)

@@ -1,0 +1,10 @@
+{
+  "review_id": "deleg_aa39460a",
+  "passed": true,
+  "gaps": [],
+  "scope": "Focused specification re-review of launcher incomplete-history correction",
+  "independent_tests": {"run": 4, "result": "passed", "skipped": 0},
+  "coverage": ["Parent preflight rejects incomplete history", "First child iteration rejects incomplete history before publication/readiness", "Rejected event history remains byte-for-byte unchanged", "Live partial records remain buffered and are processed after completion"],
+  "clarification": "Readiness failure may append a diagnostic to director.log; preservation refers to event history, not every log file.",
+  "transcript": "/home/hermes/.hermes/cache/delegation/live/deleg_aa39460a/task-0.log"
+}

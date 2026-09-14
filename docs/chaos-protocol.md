@@ -1,6 +1,8 @@
 # Crawling Chaos engine protocol v1
 
-Status: engine contract for Milestone 1; no arbitrary text or code execution.
+Status: Tier 2 engine contract with review-foundation observation extensions.
+This mailbox does not accept executable code; the separate First Haunting
+Lua admission path is documented in `milestone2.md`.
 All new engine code is under the NetHack General Public License (`dat/license`).
 
 ## Transport and activation
@@ -53,6 +55,8 @@ Malformed requests have acknowledgement ID 0 and consume no ID.
 remain pending without acknowledgement; missed indices reject `schedule`.
 Publish ahead of time: a sidecar observing safe point N should target a later
 index, not race the current poll. The game never pauses awaiting a director.
+There is no `at: 0` sentinel or late-request repair. The launcher may publish
+a fixed pack before game startup, but it does not change an assigned index.
 
 ## Registry (engine-owned prices and messages)
 
@@ -110,6 +114,16 @@ Each event is one JSON object plus newline. Envelope fields are:
 strings), `sanity`, `insight`, `budget`, `spent`, `reserved`, `last_id` (integers).
 No inventory IDs, hidden dungeon state, RNG seed or draws are present.
 
+New writers also include `vitals`, a bounded object containing exactly `hp`,
+`hp_max`, `power`, and `power_max`: player-known hit points and energy, using
+the same values shown by the status line. Health selects the current polymorph
+form when applicable and clamps negative current health to zero, exactly as
+`bot2str` does. Power may be negative, as in the status display. Python validates
+32-bit integer bounds (no booleans); only power may be negative. No naming,
+identification, hallucination rendering or random draws are needed. Readers
+accept older events without this optional object. This transient observation
+extension does not change the player save layout or request schema.
+
 Action `event`s: `eat`, `read`, `zap`, `apply`, `pray`, `kill`, `level_enter`,
 `level_leave`, `sanity`, `insight`, `death`, `sleep`; `phase` is `attempt` or
 `result`. An attempt is not a success (cancellation, lifesaving and failed
@@ -117,12 +131,22 @@ commands exist). Generic action details intentionally omit item/monster
 identities instead of risking identification/hallucination RNG side effects.
 `death` reports final termination, including quit/escape as indicated by detail.
 `session`/`result` begins a process; it is not a new-game reset on restore.
+An explicit negative response to the prayer confirmation prompt emits
+`pray`/`result` with detail `cancelled`, without a new safe point or turn.
+The existing eligible prayer emits `pray`/`attempt` with detail `confirmed`;
+it does not claim that the god granted a benefit. The director exposes only
+these exact phase/detail combinations as a `prayer` enum. It still drops all
+other detail strings, acknowledgement extras and arbitrary keys from model
+context; validated vitals are retained in the bounded recent history.
 
 Safe points: `safe_point`/`result`, detail `level_enter`, `pray`, `sleep`, or
 `sanity_threshold`. Initial level entry counts. Prayer polling occurs only after
 confirmation and prayer eligibility; sleep polling occurs immediately before
 sleep. Sanity thresholds are 20-point buckets observed at a turn boundary;
 changes inside callbacks are deferred to that boundary (no reentrant admission).
+Crossings coalesce: at most one threshold safe point per observation window,
+in either direction, even across multiple buckets. A second observation with
+unchanged Sanity creates none. This deliberately avoids a burst of admissions.
 All safe points expire effects before admission. `safe` increases even with no
 mailbox; the snapshot is emitted immediately before polling.
 

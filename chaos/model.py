@@ -10,6 +10,7 @@ from urllib.parse import urlsplit
 
 from .director import eligible
 from .protocol import parse_request, strict_json
+from .response import normalize_whisper_response
 
 
 class ModelBackend:
@@ -148,7 +149,9 @@ class ModelBackend:
             message = choices[0].get("message")
             if type(message) is not dict or type(message.get("content")) is not str:
                 raise ValueError("model response content invalid")
-            request = parse_request(message["content"])
+            request = parse_request(
+                normalize_whisper_response(message["content"], cap=self.max_response)
+            )
             if (
                 request["id"] != ident
                 or request["at"] != at

@@ -11,6 +11,7 @@ import select
 import shutil
 import signal
 import struct
+import sys
 import tempfile
 import termios
 import time
@@ -21,7 +22,14 @@ ANSI = re.compile(rb"\x1b\[[0-?]*[ -/]*[@-~]")
 
 class Game:
     def __init__(
-        self, source, preload, observe=True, wizard=False, root=None, echoes=True
+        self,
+        source,
+        preload,
+        observe=True,
+        wizard=False,
+        root=None,
+        echoes=True,
+        launcher_options=None,
     ):
         self.root = Path(root or tempfile.mkdtemp(prefix="nyarlathack-game-test-"))
         self.game = self.root / "game"
@@ -39,6 +47,7 @@ class Game:
         self.observe = observe
         self.wizard = wizard
         self.echoes = echoes
+        self.launcher_options = launcher_options
         self.pid = self.fd = None
         self.raw = bytearray()
         self.inputs = []
@@ -123,6 +132,22 @@ class Game:
             if self.observe:
                 env["NYARLATHACK_RUN_DIR"] = str(self.run)
             args = ["./dnethack"] + (["-D", "-u", "wizard"] if self.wizard else [])
+            if self.launcher_options is not None:
+                env["PYTHONPATH"] = str(ROOT)
+                args = [
+                    sys.executable,
+                    "-m",
+                    "chaos",
+                    "play",
+                    "--reuse-run-dir",
+                    str(self.run),
+                    "--game-root",
+                    str(self.game),
+                    *self.launcher_options,
+                    "--",
+                    *args[1:],
+                ]
+                os.execve(sys.executable, args, env)
             os.execve("./dnethack", args, env)
         self.pid, self.fd = pid, fd
         fcntl.ioctl(fd, termios.TIOCSWINSZ, struct.pack("HHHH", 24, 80, 0, 0))

@@ -58,8 +58,10 @@ static int event(struct chaos_io *io, struct chaos_state *s, const struct chaos_
        !chaos_quote(d,sizeof d,detail,strlen(detail))) return 0;
     n=snprintf(line,sizeof line,
         "{\"v\":1,\"seq\":%ld,\"turn\":%ld,\"safe\":%ld,\"event\":%s,\"phase\":%s,\"detail\":%s,"
-        "\"sanity\":%d,\"insight\":%d,\"budget\":%d,\"spent\":%d,\"reserved\":%d,\"last_id\":%d%s}\n",
-        s->seq+1,c->turn,s->safe,a,b,d,c->sanity,c->insight,chaos_budget(s,c->sanity),s->spent,s->reserved,s->last_id,extra);
+        "\"sanity\":%d,\"insight\":%d,\"budget\":%d,\"spent\":%d,\"reserved\":%d,\"last_id\":%d,"
+        "\"vitals\":{\"hp\":%d,\"hp_max\":%d,\"power\":%d,\"power_max\":%d}%s}\n",
+        s->seq+1,c->turn,s->safe,a,b,d,c->sanity,c->insight,chaos_budget(s,c->sanity),s->spent,s->reserved,s->last_id,
+        c->hp,c->hp_max,c->power,c->power_max,extra);
     if(n < 0 || (size_t)n >= sizeof line || !append(io,io->events,line)) return 0;
     ++s->seq; return 1;
 }

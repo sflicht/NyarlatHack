@@ -1,0 +1,77 @@
+{
+  "baseline": "ec53bef97fa66371bd058d954b5bc9a5179b9305",
+  "status": "verified release candidate; use enclosing Git revision for source identity",
+  "generated_eastern": "2026-09-14T12:14:03.240542-04:00",
+  "tests_run": 126,
+  "passed": 125,
+  "skipped": 1,
+  "skip_reason": "privileged chown fixture; mocked wrong-owner check and native permission/lock tests passed",
+  "build_modes": [
+    "CHAOS=0",
+    "CHAOS=1"
+  ],
+  "compiler_warnings": 0,
+  "compiler_errors": 0,
+  "live_game_inference_performed": false,
+  "game_ledger_attempts": 2,
+  "secret_scan_findings": 0,
+  "binaries": [
+    {
+      "mode": "on",
+      "file": "dnethack",
+      "sha256": "01d2731ea8488ef796ac7024891f77016fc9484467b340af3c06763ee7d20490"
+    },
+    {
+      "mode": "on",
+      "file": "nhdat",
+      "sha256": "6e5300274c9e31a343294e63f4005d66e32c7b7c260e0cca4e91a48cc1913251"
+    },
+    {
+      "mode": "on",
+      "file": "license",
+      "sha256": "93a3ae2cb8dee482daddfaebe53bcffe5b114b603def19b4dca21621cbc5a747"
+    },
+    {
+      "mode": "off",
+      "file": "dnethack",
+      "sha256": "9755a055e3370f3720b24f21144d279bf48e33bddf22c44e169be1db853ed5c9"
+    },
+    {
+      "mode": "off",
+      "file": "nhdat",
+      "sha256": "0f6e194353ef46080445ed26a4cbc2cccbad3d751d978f88f5cbb12d84f64b38"
+    },
+    {
+      "mode": "off",
+      "file": "license",
+      "sha256": "93a3ae2cb8dee482daddfaebe53bcffe5b114b603def19b4dca21621cbc5a747"
+    }
+  ],
+  "launcher_artifacts": [
+    "pack-restore/terminal.raw",
+    "short-director/terminal.raw",
+    "pack-restore/inputs.json",
+    "short-director/inputs.json",
+    "pack-restore/manifest.json",
+    "short-director/manifest.json",
+    "pack-restore/run/events.jsonl",
+    "short-director/run/events.jsonl",
+    "pack-restore/run/whispers.jsonl",
+    "short-director/run/whispers.jsonl",
+    "pack-restore/run/whisper.json",
+    "short-director/run/whisper.json",
+    "pack-restore/run/director.log",
+    "short-director/run/director.log",
+    "pack-restore/game/xlogfile",
+    "short-director/game/xlogfile"
+  ],
+  "launcher_artifact_count": 16,
+  "quality_review": "passed: full review plus focused correction re-review",
+  "reviews": [
+    "spec-observations.json",
+    "spec-launcher-cleanup-initial.json",
+    "spec-launcher-followup.json",
+    "quality-initial.json",
+    "quality-followup.json"
+  ]
+}

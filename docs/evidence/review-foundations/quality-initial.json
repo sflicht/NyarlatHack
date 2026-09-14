@@ -1,0 +1,17 @@
+{
+  "review_id": "deleg_cd951580",
+  "passed": false,
+  "security_concerns": [],
+  "scope": "Full 24-file quality/correctness/security diff review against ec53bef97",
+  "logic_errors": [{
+    "path": "chaos/launcher.py",
+    "severity": "blocking",
+    "finding": "Existing pending mailbox bypassed selected-pack and past-index startup validation",
+    "reproductions": ["same-ID different-payload pending pack starts fixture game", "pending at=1 with observed safe=2 starts fixture game"],
+    "correction": "Shared startup reconciliation in parent preflight and first child-loop iteration; no overwrite or retiming"
+  }],
+  "regression_red_log": "/tmp/nyarl-launcher-pending-red.log",
+  "regression_green_log": "/tmp/nyarl-launcher-pending-green.log",
+  "followup_quality_review": "pending",
+  "transcript": "/home/hermes/.hermes/cache/delegation/live/deleg_cd951580/task-0.log"
+}
