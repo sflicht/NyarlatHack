@@ -141,7 +141,9 @@ controlled wall clock/timezone, initial options/role/race/gender/alignment,
 player inputs and their order, terminal dimensions, starting save/bones/data,
 and exact accepted request turn/**safe index**. Raw seed + whisper text alone
 is insufficient. Stock `setrandom` seeds `random` from clock plus `/dev/urandom`
-and `rand` from clock; time also affects moon/night rules. The test harness uses
+and `rand` from clock; `check_reseed` later reads fresh entropy for both seeds
+and reseeding intervals. All these entropy reads must also be controlled or
+recorded. Time affects moon/night rules. The test harness uses
 an explicitly test-only preload interposer for stock and instrumented builds.
 Private diagnostics and manifests are never director events. Full gameplay
 replay/regression evidence is separate from protocol unit tests.

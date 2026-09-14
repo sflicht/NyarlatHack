@@ -1,119 +1,128 @@
 # NyarlatHack
 
-*d² ≠ 0.*
+A dNetHack fork whose rules can respond to the player's actions.
 
-NyarlatHack is a fork of [dNetHack](https://nethackwiki.com/wiki/DNetHack)
-(the [dNAO](https://github.com/Chris-plus-alphanumericgibberish/dNAO) sources,
-NetHack 3.4.3 lineage) in which a language model — **the Crawling Chaos** —
-watches what the player does and alters the dungeon's actual rules in response.
-Not the flavour text: the spawn tables, the monster behaviour, the reliability
-of your wards, the meaning of your spoilers.
+**Milestone 1: playable Tier 2 prototype.** The C engine now accepts bounded rule
+changes from a separate Python director, **the Crawling Chaos**. A **whisper**
+is one validated request. The director chooses; the engine decides whether it
+is eligible and executes it. Generated scripts and source rewriting are absent.
 
-dNetHack already has a Sanity stat, a Madman role, Binder spirits, shoggoths
-and priests of Ghaunadaur. It already whispers that the rules you learned are
-lying to you. NyarlatHack makes that literally true, and makes *your* choices
-the reason.
+## What works now
 
-## Design in one paragraph
+- [x] **Event stream:** newline-delimited JavaScript Object Notation (JSON)
+  observations for eating, reading, zapping, applying, prayer, kills, level
+  transitions, sleep, Sanity, Insight and final termination. Actions are generic
+  attempts, not claims of success or disclosures of unidentified items. Sanity
+  and Insight changes are observed at turn-loop boundaries.
+- [x] **Bounded mutation application programming interface (API):**
+  `ward_efficacy` halves completed ward counts in monster fear checks;
+  `hunger_rate` doubles ordinary food consumption; `ambient` displays a fixed
+  message. These are the initial supported registry, not every example in the
+  original proposal. Spawn weighting and other categories are not implemented.
+- [x] **Mailbox and safe points:** one bounded request at level entry, confirmed
+  prayer, pre-sleep, or observed Sanity thresholds. No waiting for a model.
+- [x] **Engine-owned cruelty budget:** costs depend on mutation type; capacity
+  grows as Sanity falls. The current conservative prototype uses a **lifetime**
+  spending allowance of at most 12 points. Expiry does not refund spending.
+  Consequently the director can run out of interventions early; this is not
+  tuned game balance.
+- [x] **Telegraphs:** fixed warnings precede admitted effects. Invalid requests
+  fail closed; no model-generated terminal text or executable commands.
+- [x] **Python director:** hand-authored packs, seeded random proposals,
+  acknowledgement-backed schedule replay, and an opt-in OpenAI-compatible model
+  connection. No credentials or network are needed for the offline modes.
+- [x] **Regression and bounded replay tests:** actual terminal sessions compare
+  stock, inactive and empty-mailbox play; an accepted hunger schedule replays
+  identically under explicitly controlled clock, entropy, options and inputs.
+  This is **not** a claim that arbitrary ordinary play can be reproduced from a
+  starting seed alone.
+- [x] **Playable build:** built with director support on and off; actual
+  save/restore preserves active and pending whispers and rejects incompatible
+  save layouts. Linked-engine tests measure both real rule changes and expiry.
 
-The C engine stays deterministic and stays in charge. It emits a structured
-event stream (what you killed, ate, read, prayed for, where your Sanity went).
-A sidecar process — the Crawling Chaos — reads that stream, consults a language
-model, and returns **whispers**: mutations drawn from a finite, validated,
-engine-defined action space. The engine applies whispers only at safe points
-(level change, prayer, sleep, Sanity thresholds), logs every one alongside the
-RNG seed so any run can be replayed exactly, and never lets the model touch
-memory, code, or state directly. The model *chooses*; the engine *executes*.
+The model connection has been tested with a **local fake HTTP (Hypertext
+Transfer Protocol) server**, not a live language model. Live-model gameplay,
+long-run balance and adversarial public-server hosting remain unvalidated.
 
-## Fairness is a mechanic, not an apology
+## Build
 
-Roguelikes tolerate cruelty but not arbitrariness. Three rules keep this a game:
+On Debian/Ubuntu, install the compiler and build dependencies:
 
-1. **Every whisper telegraphs.** A message, an engraving, a dream, a change in
-   the "You hear…" ambience — something fires before the effect does. The
-   player can learn *that* the world bends and *where*.
-2. **Cruelty has a budget, and the budget is your Sanity.** At full Sanity the
-   Chaos can barely nudge the dungeon. As Sanity falls its latitude grows. Only
-   your own madness makes the world unreliable.
-3. **Determinism survives.** Seed + whisper log = the same game. Bugs are
-   reproducible; runs are shareable; the director can be swapped for a replay.
-
-## Roadmap
-
-### Milestone 1 — Tier 2: the director over a bounded mutation API  ← *current*
-
-The Crawling Chaos picks from a menu the engine already knows how to honour.
-
-- [ ] **Event stream.** Engine appends JSON-lines events to a per-game file at
-      existing seams (kill, eat, read/zap/apply, pray, level enter/leave,
-      Sanity/Insight change, death). Zero behaviour change; the game plays
-      identically with the stream on.
-- [ ] **Mutation API in C.** A registry of named mutations with typed
-      parameters and bounds, e.g. `spawn_bias(class, weight)`,
-      `ward_efficacy(ward, pct)`, `intrinsic_duration(intr, scale)`,
-      `ambient(msg_id)`, `disposition(shk|priest, delta)`,
-      `levelgen_param(key, value)`. Each is validated on load and applied through
-      the engine's existing code paths — never by poking structs from outside.
-- [ ] **Mailbox + safe points.** Engine polls a whisper file at level change,
-      prayer, sleep, and Sanity thresholds; applies valid whispers; logs them.
-- [ ] **Sanity budget.** Each mutation carries a cruelty cost; the budget the
-      director may spend is a function of lost Sanity.
-- [ ] **Telegraph requirement.** A whisper without a registered telegraph is
-      rejected at load.
-- [ ] **The Crawling Chaos (sidecar).** Python process: tails the event stream,
-      builds a compact game summary, prompts a model with the mutation schema
-      and the budget, validates the response against the schema, writes the
-      whisper file. Pluggable model backend; a `replay` backend that just
-      re-emits a logged whisper file; a `random` backend for testing without a
-      model.
-- [ ] **Replay + regression.** `seed + whispers.jsonl` reproduces a run
-      headlessly. A small bot-driven smoke test proves the engine with the
-      stream and mailbox on behaves identically to upstream when no whispers
-      arrive.
-- [ ] **A playable build** with a handful of hand-written whisper packs
-      (no model needed) so the mechanics can be felt before the model is wired
-      in.
-
-### Milestone 2 — Tier 3 (constrained runtime): the Dreamlands
-
-Later. The director stops picking from a menu and starts *composing*: small
-sandboxed scripts (Lua is the leading candidate; NetHack 3.7's `nhlua.c` is
-the crib sheet) registered against ~10 engine hooks — monster decision, attack
-resolution, object use, level enter, prayer, Sanity change. Whitelisted
-getters/setters only; instruction and memory caps; game RNG in place of
-`math.random`; any script error means the mutation "fails to manifest" and
-reality shudders but holds. Before a script goes live it runs in **the
-Dreamlands** — a forked headless copy of the game — where a bot plays a few
-hundred turns and property checks (stairs reachable, no instant death, damage
-per turn under cap, script terminates) accept or reject it. Not before
-Milestone 1 ships.
-
-### Explicitly out of scope for now
-
-- Rewriting C source between lives (the "rule drift across deaths" idea).
-- Whispers riding along in bones files. Delicious; opt-in; later.
-- Any public-server deployment.
-
-## Building
-
-Same as dNetHack. On Debian/Ubuntu:
-
-```
-apt install bison flex build-essential libncursesw5-dev pkg-config
-make install          # builds into ./dnethackdir
-cd dnethackdir && ./dnethack
+```sh
+sudo apt-get install bison flex build-essential libncursesw5-dev pkg-config
+make -j4 install CHAOS=1
+cd dnethackdir
+./dnethack
 ```
 
-`./dnethack -D -u wizard` for wizard mode. Options live in `~/.dnethackrc`.
-The NyarlatHack sidecar will live under `chaos/` and have its own README.
+`CHAOS=1` is the default build. Without `NYARLATHACK_RUN_DIR`, the game performs
+no director input/output. `make -j4 install CHAOS=0` removes director support;
+changing the flag rebuilds the affected objects. **Keep each binary paired with
+its matching `nhdat` game data.** Saves are not interchangeable across these
+builds; stock saves require a stock-compatible build.
+
+## Try one whisper, with no model
+
+From the repository root:
+
+```sh
+RUN=$(mktemp -d)
+python3 -m chaos pack ambient --run-dir "$RUN" --install-only
+(cd dnethackdir && NYARLATHACK_RUN_DIR="$RUN" ./dnethack)
+```
+
+The initial level-entry safe point admits the ambient request and displays its
+warning and message. `--install-only` confirms publication, **not acceptance**;
+the game records acceptance in the run directory's `events.jsonl`.
+
+See [the director guide](chaos/README.md) for the ward/hunger demonstration,
+random director, model configuration, replay and operational limits.
+
+## Verification
+
+Fast protocol/director tests (real-game tests are explicitly skipped):
+
+```sh
+python3 -m unittest discover -s tests/chaos -p 'test_*.py' -v
+```
+
+Full acceptance, after building `CHAOS=1`; supply an unmodified stock build
+installation containing `dnethack`, `nhdat`, and `license`:
+
+```sh
+NYARLATHACK_STOCK_DIR=/absolute/path/to/stock-install \
+NYARLATHACK_GAME_TESTS=1 \
+python3 -m unittest discover -s tests/chaos -p 'test_*.py' -v
+```
+
+The terminal harness is Linux-specific and uses a test-only preload library.
+It records actual input bytes, terminal output, event logs, score logs and
+binary/data hashes in temporary artifact directories. Neither the test clock
+nor the test fixtures are enabled in the normal game. See
+[validation evidence and limitations](docs/milestone1-validation.md) and
+[the exact protocol](docs/chaos-protocol.md).
+
+## Deferred: constrained runtime scripting and the Dreamlands
+
+Tier 3 remains unimplemented. The proposed **Dreamlands** would test candidate
+scripts in a separate game simulation before admission. Such bounded testing
+would provide evidence, not prove universal safety or fairness.
+
+**Dreamland echoes are an explicit future design requirement:** actual shadow
+activity, including rejected timelines, should sometimes produce purely
+cosmetic recollections in the main game. Those echoes must not change turns,
+randomness, player state, budgets or prompts, nor reveal hidden information.
+They are separate from mandatory mutation warnings. See
+[Tier 3 notes](docs/tier3-notes.md).
+
+No script-bearing bones files, public-server deployment or between-lives C
+rewriting is included.
 
 ## Lineage and licence
 
-Upstream is tracked as the `upstream` remote (`compat-3.26.0` branch);
-NyarlatHack's `main` branches from upstream commit `a6f0a1c43`. Everything
-upstream is © the dNetHack and NetHack authors under the NetHack General Public
-License (see `dat/license`); NyarlatHack additions are released under the same
-licence.
-
-The name: Nyarlathotep is the Crawling Chaos — the one Outer God who takes a
-thousand forms, walks among mortals, and *speaks*.
+Based on [dNetHack](https://nethackwiki.com/wiki/DNetHack), using the
+[dNAO sources](https://github.com/Chris-plus-alphanumericgibberish/dNAO), with
+full upstream history preserved. `upstream` tracks `compat-3.26.0`; NyarlatHack
+branched at `a6f0a1c43`. NyarlatHack additions use the NetHack General Public
+License, as does the game; retain upstream notices and see `dat/license`.
+The original installation README remains available as `README`.

@@ -1,5 +1,7 @@
 # Milestone 1 C integration checkpoint
 
+Historical checkpoint. Later acceptance results are in [milestone1-validation.md](milestone1-validation.md); the remaining gates below describe this earlier checkpoint, not current completion.
+
 Implemented: bounded opt-in transport; fixed ambient messages; real ward-count
 and ordinary-food-consumption hooks; confirmed-prayer, pre-sleep, level-entry
 and observed Sanity-bucket safe points; generic action attempts and state events.

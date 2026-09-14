@@ -1,0 +1,22 @@
+{
+  "status": "passed",
+  "suite_command": "NYARLATHACK_GAME_TESTS=1 python3 -m unittest discover -s tests/chaos -p 'test_*.py' -v",
+  "tests": 47,
+  "failures": 0,
+  "skipped": 0,
+  "recorded_eastern": "2026-09-14T00:14:10-04:00",
+  "raw_game_evidence": "/home/hermes/.local/share/nyarlathack/evidence/nyarlathack-acceptance-o61fnz7b",
+  "binary_sha256": "3f2e8f760e59162a0635fcccfe3ab7cb156d7ffd19a6bd212cdd943310eb4abe",
+  "nhdat_sha256": "9a542d03bd2e49b7cbf1ecd5c2c7990c71a644dd420458e65a9e03ae36b600d6",
+  "added_code_scan": {
+    "shell_execution": 0,
+    "dynamic_evaluation": 0,
+    "unsafe_deserialization": 0,
+    "literal_credential": 1,
+    "reviewed_redaction_fixture_literals": 1,
+    "unexpected_findings": 0
+  },
+  "review": "parent inline review and contract-derived tests; no final independent reviewer agent",
+  "live_model_tested": false,
+  "scope": "bounded Linux terminal scenarios and linked engine fixtures; not arbitrary-run replay or universal balance proof"
+}

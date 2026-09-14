@@ -1,0 +1,143 @@
+# The Crawling Chaos director
+
+Python 3.11+; standard library only. Run `python3 -m chaos --help` from the
+repository root. No package installation or model key is needed for offline
+play. An application programming interface (API) key is needed only for the
+explicit `model` command.
+
+## First run: fixed ambient whisper
+
+```sh
+RUN=$(mktemp -d)
+python3 -m chaos pack ambient --run-dir "$RUN" --install-only
+(cd dnethackdir && NYARLATHACK_RUN_DIR="$RUN" ./dnethack)
+```
+
+The directory must exist, belong to you, and be private (mode 0700).
+`mktemp -d` supplies that. Use a fresh directory for each new game. Keep the
+path when restoring that game; do not share one mailbox between games.
+The engine logs newline-delimited JavaScript Object Notation (JSON) events
+in `events.jsonl` and admissions in `whispers.jsonl`. The single mailbox is
+`whisper.json`; never overwrite it before its exact acknowledgement arrives.
+The sidecar enforces a single cooperating writer using a lock file.
+
+A request published before startup with `--at 1` targets initial level entry.
+The output `installed_pending_ack` means only that the file was published.
+An actual `ack` event with `status: accepted` confirms game acceptance.
+
+## Demonstrate an actual rule change
+
+The `ward` and `hunger` packs need lower Sanity than a fresh ordinary character
+has. For a reproducible demonstration, use the game's built-in wizard mode:
+
+```sh
+RUN=$(mktemp -d)
+python3 -m chaos pack hunger --run-dir "$RUN" --at 2 --install-only
+(cd dnethackdir && NYARLATHACK_RUN_DIR="$RUN" ./dnethack -D -u wizard)
+```
+
+Choose a human Wizard, no inheritance. Type `#setsanity`, press Enter, then
+enter `60`. The observed Sanity change creates safe point 2 and admits the
+hunger request. Normal food consumption doubles for the pack's duration.
+Use `pack ward` instead for weakened ward protection. The available pack names
+are `ambient`, `silence`, `ward`, and `hunger`; `silence` is a different fixed
+ambient message, not a command to mute the director.
+
+## Random director
+
+Use a second terminal, with the **same absolute run directory** as the game:
+
+```sh
+python3 -m chaos random --run-dir /absolute/private/run --seed 7 \
+  --max-runtime 300 --max-submissions 12
+```
+
+Add `--ordinary-food` only when the player uses ordinary food metabolism; it
+permits hunger proposals. The engine independently rejects ineligible forms.
+The random director has its own seeded generator; it does not consume game
+randomness. Requests target the next safe index. If the player outruns a
+proposal, the engine rejects it rather than applying it at a different time.
+
+## Replay an accepted schedule
+
+Stop the old director, use a fresh run directory, and retain both files from
+the source run:
+
+```sh
+python3 -m chaos replay /source/run/whispers.jsonl \
+  --accepted-events /source/run/events.jsonl \
+  --run-dir /new/private/run --max-runtime 300
+```
+
+Start the new game using `/new/private/run`. The replay director requires
+matching accepted acknowledgements: the admission journal is written before
+presentation and is **not by itself proof that an effect happened**. Replayed
+requests retain their original identifiers and safe indices; missed/rejected
+schedules fail rather than silently retime.
+
+This replays **requests, not player inputs or the whole game environment**.
+For identical gameplay, the engine/data, initial options and state, player
+inputs, terminal size, clock/timezone and **all entropy reads** must match.
+dNetHack periodically reseeds from system randomness after startup, so a
+starting seed alone cannot reproduce ordinary play. The acceptance harness
+supplies a controlled environment and records inputs; it verified a real
+accepted hunger run twice with identical output and score logs. Unrestricted
+record/replay of arbitrary sessions and arbitrary save rollbacks is not shipped.
+
+## Optional model backend
+
+No live model call was made during this milestone. The tests use a clearly
+identified local fake HTTP (Hypertext Transfer Protocol) server.
+
+Configure the full HTTPS (HTTP over Transport Layer Security) chat-completions
+endpoint, model identifier, and **name** of the environment variable holding
+your API key. Set the key privately, not in a command saved to shell history:
+
+```sh
+timeout 310s python3 -m chaos model \
+  --run-dir /absolute/private/run \
+  --endpoint https://YOUR_PROVIDER/v1/chat/completions \
+  --model YOUR_MODEL --api-key-env YOUR_PRIVATE_KEY_VARIABLE \
+  --max-calls 4 --timeout 10 --max-runtime 300
+```
+
+Replace uppercase placeholders with your chosen configuration. This example
+is not an endorsement of, or a verified live integration with, a provider.
+The outer `timeout` supplies a process wall-clock cap, including operating-system
+name resolution; internal network timeouts alone are not a universal hard limit
+on name resolution. Add `--ordinary-food` for a food-using character.
+
+The model receives only a bounded whitelist of player-observable event fields
+and the eligible registry. It cannot send prose to the terminal, execute code,
+choose files, assign prices or change its assigned schedule. Responses must
+match the engine's strict request schema. Redirects and automatic retries are
+not allowed. Failures count toward the configured call allowance. Keys and raw
+response bodies are not printed. Provider-specific billing caps are not inferred
+from the call cap. Use provider-side spending limits as well.
+
+Default limits: 4 model calls; 10-second request timeout; 8,192-byte message
+context; 16,384-byte response; 256 requested output tokens; 300-second director
+runtime; 12 submissions; 50,000 events; 16 MiB of event input (MiB means
+1,048,576 bytes). No new request is issued without a fresh eligible decision
+point or while a previous request remains unacknowledged.
+
+## Safety and lifecycle limits
+
+- The engine currently allows at most 12 lifetime cruelty points; ambient costs
+  1, hunger 3 and ward weakening 4. Capacity starts at 2 and gains one for each
+  ten Sanity points lost. Expiry releases active reservation but **does not refund
+  lifetime spending**. This is conservative prototype policy, not tuned balance.
+- Effects last at most 50 game turns, do not stack by type, and cannot be refreshed
+  while active. Ordinary food eligibility is checked again when hunger is used.
+- Player state survives actual save/restore. If restoring an older save makes
+  the event stream go backward relative to already-observed history, the sidecar
+  stops for reconciliation; it does not guess which history to discard.
+- An absent director or mailbox does not block play. Transport failures stop
+  new admissions; previously admitted effects continue to expiry.
+- A logged pre-admission and a saved game are not a cross-process atomic
+  transaction. Unsaved crashes can leave admissions without applied effects.
+- Private same-user files are the intended trust boundary. This is not a hardened
+  multi-user game server. Runtime scripting and Dreamland echoes are future work.
+
+Details: [engine protocol](../docs/chaos-protocol.md) and
+[validation](../docs/milestone1-validation.md).
