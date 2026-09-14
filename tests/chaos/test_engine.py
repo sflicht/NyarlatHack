@@ -86,7 +86,8 @@ class EngineTests(unittest.TestCase):
     def test_reentrant_poll_is_ignored(self):
         s=self.execute(REQUEST,'reentrant'); self.assertEqual((s['safe'],s['spent'],s['telegraphs']),(2,1,1))
     def test_telegraph_failure_is_fail_closed(self):
-        s=self.execute(REQUEST,'fail_ui'); self.assertEqual(s['spent'],0)
+        s=self.execute(dict(REQUEST,at=2),'fail_ui'); self.assertEqual(s['spent'],0)
+        self.assertEqual(s['last_id'],1)
     def test_restore_active_and_pending(self):
         s=self.execute(dict(REQUEST,mutation='ward_efficacy',value=50,duration=5,telegraph=2),'restore')
         self.assertEqual((s['spent'],s['ward'],s['telegraphs']),(4,1,1))

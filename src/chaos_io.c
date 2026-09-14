@@ -119,6 +119,8 @@ void chaos_io_safe(struct chaos_io *io, struct chaos_state *s, const struct chao
     result=chaos_admit(&next,&r,c->turn,c->sanity,c->eligible);
     if(result == CHAOS_FUTURE) goto out;
     if(result != CHAOS_OK) { s->last_id=next.last_id; ack(io,s,c,&r,result); goto out; }
+    /* Targeted valid requests consume their ID even if logging/UI fails. */
+    s->last_id=next.last_id;
     fields(extra,sizeof extra,&r,"admitted",r.duration ? c->turn+r.duration : 0);
     snprintf(log,sizeof log,"{\"v\":1,\"turn\":%ld,\"safe\":%ld%s}\n",c->turn,s->safe,extra);
     if(!append(io,io->journal,log) ||
