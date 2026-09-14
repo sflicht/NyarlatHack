@@ -1,5 +1,6 @@
 """Real terminal game driver. Artifacts and copies stay outside the source tree."""
 
+import errno
 import fcntl
 import hashlib
 import json
@@ -53,33 +54,132 @@ class Game:
         self.inputs = []
         self.exitcode = None
         self.sessions = []
+        self._reader_pid = None
+        self._input_checkpoint = None
 
-    def read(self, initial=1.0):
+    @staticmethod
+    def _read_count(pid):
+        fields = dict(
+            line.split(":", 1)
+            for line in Path(f"/proc/{pid}/io").read_text().splitlines()
+        )
+        return int(fields["rchar"])
+
+    def _input_ready(self):
+        """Observe a native stdin read, not a quiet PTY or supervisor wait.
+
+        tty_nhgetch() flushes stdout before getchar()/read(0). This boundary
+        works without CHAOS observations, including stock and restore paths.
+        /proc/syscall alone also reports reads in SIGSTOPped tasks, so require
+        sleeping state and an empty tty input queue. After send(), require read
+        progress too: the previous read may still be asleep while the PTY line
+        discipline is delivering the newly written bytes.
+        """
         assert self.fd is not None
+        read_syscall = {"x86_64": "0", "aarch64": "63"}.get(os.uname().machine)
+        if read_syscall is None:
+            raise AssertionError("input readiness: unsupported Linux syscall ABI")
+        pending = [self.pid]
+        while pending:
+            pid = pending.pop()
+            proc = Path(f"/proc/{pid}")
+            try:
+                pending.extend(
+                    map(int, (proc / f"task/{pid}/children").read_text().split())
+                )
+                if not (proc / "exe").samefile(self.game / "dnethack"):
+                    continue
+                if self._input_checkpoint is not None:
+                    reader, count = self._input_checkpoint
+                    if pid != reader or self._read_count(pid) < count:
+                        continue
+                # Establish consumption before sampling the current read: an old
+                # read(0) plus later rchar progress can otherwise hide a pipe wait.
+                call = (proc / "syscall").read_text().split()
+                state = (proc / "stat").read_text().rsplit(")", 1)[1].split()[0]
+                if state != "S" or call[:2] != [read_syscall, "0x0"]:
+                    continue
+                # Open only during the check; retaining a slave fd hides EOF.
+                fd = os.open(proc / "fd/0", os.O_RDONLY | os.O_NONBLOCK | os.O_NOCTTY)
+                try:
+                    # Linux TIOCGPTPEER (_IO('T', 0x41)) opens this master's
+                    # actual slave, without guessing names across devpts mounts.
+                    peer = fcntl.ioctl(
+                        self.fd,
+                        0x5441,
+                        os.O_RDONLY | os.O_NONBLOCK | os.O_NOCTTY | os.O_CLOEXEC,
+                    )
+                    try:
+                        same_terminal = os.path.samestat(os.fstat(fd), os.fstat(peer))
+                    finally:
+                        os.close(peer)
+                    if not same_terminal:
+                        continue
+                    queued = fcntl.ioctl(fd, termios.FIONREAD, struct.pack("i", 0))
+                    if not os.isatty(fd) or struct.unpack("i", queued)[0]:
+                        continue
+                finally:
+                    os.close(fd)
+                self._reader_pid = pid
+                return True
+            except (FileNotFoundError, ProcessLookupError):
+                # fork/exec/exit can race the proc walk; retry until the deadline.
+                continue
+            except PermissionError as exc:
+                # Exiting tasks can lose their mm between exe and syscall reads.
+                # Let PTY EOF win that race; persistent denial still fails closed.
+                self._readiness_error = "readable Linux /proc required: " + str(exc)
+        return False
+
+    def read(self, initial=3.0):
+        assert self.fd is not None and self.pid is not None
+        self._readiness_error = "game is not blocked reading terminal stdin"
         data = bytearray()
         deadline = time.monotonic() + initial
-        while time.monotonic() < deadline:
-            if not select.select(
-                [self.fd], [], [], max(0, deadline - time.monotonic())
-            )[0]:
-                break
-            try:
-                part = os.read(self.fd, 65536)
-            except OSError:
-                break
-            if not part:
-                break
-            data.extend(part)
-            deadline = time.monotonic() + 0.10
-            if len(data) > 1000000:
-                raise AssertionError("terminal output exceeded limit")
-        self.raw.extend(data)
+        try:
+            while time.monotonic() < deadline:
+                if select.select([self.fd], [], [], 0)[0]:
+                    try:
+                        part = os.read(self.fd, 65536)
+                    except OSError as exc:
+                        if exc.errno == errno.EIO:  # Linux PTY slave closed.
+                            break
+                        raise
+                    if not part:
+                        break
+                    data.extend(part)
+                    if len(data) > 1000000:
+                        raise AssertionError("terminal output exceeded limit")
+                    continue
+                if self._input_ready():
+                    # Output can arrive between the drain and the proc snapshot.
+                    # Once the game is waiting for input, drain its final flush.
+                    if select.select([self.fd], [], [], 0)[0]:
+                        continue
+                    break
+                select.select(
+                    [self.fd], [], [], min(0.01, max(0, deadline - time.monotonic()))
+                )
+            else:
+                raise AssertionError(
+                    "terminal input readiness timed out ("
+                    + self._readiness_error
+                    + "): "
+                    + repr(bytes(data[-500:]))
+                )
+        finally:
+            self.raw.extend(data)
         return ANSI.sub(b"", bytes(data))
 
     def send(self, value):
         assert self.fd is not None
         if isinstance(value, str):
             value = value.encode()
+        if self._reader_pid is not None:
+            self._input_checkpoint = (
+                self._reader_pid,
+                self._read_count(self._reader_pid) + len(value),
+            )
         self.inputs.append(value.hex())
         os.write(self.fd, value)
         return self.read()
@@ -93,6 +193,8 @@ class Game:
 
     def start(self):
         assert self.pid is None
+        self._reader_pid = None
+        self._input_checkpoint = None
         self.sessions.append(
             {
                 "wizard": self.wizard,

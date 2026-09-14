@@ -59,8 +59,18 @@ NYARLATHACK_GAME_TESTS=1 \
 python3 -m unittest discover -s tests/chaos -p 'test_*.py' -v
 ```
 
-Real terminal and process fixtures are Linux-specific. A fixture needing
-privileged ownership changes may be skipped; the suite also tests ownership
-validation without privilege. Model tests use fake clients/local test servers,
+Real terminal and process fixtures are Linux-specific. The terminal driver
+requires readable descendant-process information under `/proc`, plus Linux
+`TIOCGPTPEER` support to identify the driven terminal's actual slave. Unsupported
+kernels fail closed with an operating-system error, without a quiet-time
+fallback. The driver recognizes x86-64 and AArch64 read-system-call numbers;
+verification so far is on x86-64, not AArch64. It waits for the actual game to
+block on terminal input, not an arbitrary quiet-output interval; if readiness
+cannot be established before the fixed deadline, it reports a timeout. This includes
+stock/no-observation runs and games started through the launcher supervisor.
+Strict input, terminal-output, event and score-log replay comparisons remain
+unchanged. A fixture needing privileged ownership changes may be skipped;
+the suite also tests ownership validation without privilege. Model tests use
+fake clients/local test servers,
 not live-provider validation. Always inspect the actual run and its skip/failure
 summary before reporting success.
