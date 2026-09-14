@@ -90,6 +90,10 @@ random director, model configuration, replay and operational limits.
 
 ## Verification
 
+[GitHub Actions quality checks](https://github.com/sflicht/NyarlatHack/actions/workflows/quality.yml)
+run lint, both native build modes, offline/native tests, and secret-history
+scanning without model credentials. See [quality-control scope](docs/quality-control.md).
+
 Fast protocol/director tests (real-game tests are explicitly skipped):
 
 ```sh
