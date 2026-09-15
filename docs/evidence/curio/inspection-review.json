@@ -1,0 +1,22 @@
+{
+  "task": "curio-native-naming-identification-inspection",
+  "specification_review": "deleg_d03ff332",
+  "quality_re_review": "deleg_ef86f7c4",
+  "quality_passed": true,
+  "security_concerns": [],
+  "logic_errors": [],
+  "reviewed_diff_sha256": "c7f8fe84c9bdc5d41b346972c890fa2aa0dc0f240e351cb8429fd775648ac634",
+  "parent_full_suite": {
+    "passed": 182,
+    "skipped": 1
+  },
+  "independent_focused_methods": 3,
+  "named_inspection_cases": 42,
+  "public_object_string_helpers_audited": 29,
+  "limits": [
+    "Controlled window-port inspection; physical terminal verification is the next sub-slice.",
+    "Wizard placement is not ordinary discovery.",
+    "Actual Apply execution, lifecycle, bones and shop hardening remain pending.",
+    "Full off-mode build and integrated hosted acceptance remain pending."
+  ]
+}

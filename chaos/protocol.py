@@ -11,7 +11,7 @@ REGISTRY = {
     "hunger_rate": (3, 90, 3),
 }
 EVENTS = frozenset(
-    "eat read zap apply pray kill level_enter level_leave sanity insight death sleep session safe_point ack telegraph expiry haunting haunt_step backtrack".split()
+    "eat read zap apply pray kill level_enter level_leave sanity insight death sleep session safe_point ack telegraph expiry haunting haunt_step backtrack curio".split()
 )
 REASONS = frozenset(
     "ok schema oversize duplicate schedule budget active ineligible log_failure".split()

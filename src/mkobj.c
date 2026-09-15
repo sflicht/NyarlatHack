@@ -3,6 +3,7 @@
 /* NetHack may be freely redistributed.  See license for details. */
 
 #include "hack.h"
+#include "chaos_curio.h"
 #include "prop.h"
 #include "artifact.h"
 
@@ -500,6 +501,12 @@ long num;
 
 	if (obj->cobj || num <= 0L || obj->quan <= num)
 	    panic("splitobj");	/* can't split containers */
+#ifdef CHAOS
+	/* A splittable tagged stack was already invalid.  Neither half may
+	 * gain authority when its quantity becomes one; retain protection. */
+	if (chaos_curio_tagged(obj))
+	    obj->curio_tag = CHAOS_CURIO_INERT_REMNANT;
+#endif
 	otmp = newobj(0);
 	*otmp = *obj;		/* copies whole structure */
 	/* invalidate pointers */
@@ -544,6 +551,12 @@ duplicate_obj(struct obj *obj, boolean same_chain)
 
 	otmp = newobj(0);
 	*otmp = *obj;		/* copies whole structure */
+#ifdef CHAOS
+	/* A new ID alone is not permanent revocation (IDs can collide).
+	 * Recursive contents copies use this same seam; leave the source alone. */
+	if (chaos_curio_tagged(otmp))
+	    otmp->curio_tag = CHAOS_CURIO_INERT_REMNANT;
+#endif
 	/* invalidate pointers */
 	otmp->light = (struct ls_t *)0;
 	otmp->timed = (struct timer *)0;
@@ -671,6 +684,8 @@ register struct obj *otmp;
 {
 	register struct obj *dummy;
 
+	/* Reject before allocating a billing copy or changing the original. */
+	if (chaos_curio_tagged(otmp)) return;
 	if (otmp->unpaid)
 	    subfrombill(otmp, shop_keeper(*u.ushops));
 	dummy = newobj(0);

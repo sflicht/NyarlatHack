@@ -1,0 +1,26 @@
+{
+  "task": "curio-merge-and-Andromalius-exclusion-5b",
+  "spec_review": {
+    "id": "deleg_5424f213",
+    "passed": true
+  },
+  "quality_review": {
+    "id": "deleg_c31b4686",
+    "passed": true
+  },
+  "independent_review_execution": "Neither review performed a fresh test rerun; tool approval boundary honored. Both inspected source and retained native evidence.",
+  "reviewed_diff_sha256": "a6ef43f5d7ed61754a755fbca84edceb8c5a82a2e2921fafc5e8ae27e7a8e190",
+  "parent_full_suite": {
+    "passed": 188,
+    "skipped": 1
+  },
+  "nonblocking_followups": [
+    "Assert shallow-copy fixture objects have no owned auxiliary state/contents/timers/lights.",
+    "Prefer saved IDs over consumed-object pointer comparisons.",
+    "Optional Pen-of-the-Void/live-rat ritual variants."
+  ],
+  "limits": [
+    "Not shop/billing/lifecycle approval.",
+    "Wallet conversion and weapon recombination are distinct from object stack merging."
+  ]
+}

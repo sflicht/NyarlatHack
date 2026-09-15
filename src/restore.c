@@ -209,6 +209,12 @@ boolean ghostly, frozen;
 		if(!first) first = otmp;
 		else otmp2->nobj = otmp;
 		mread(fd, (genericptr_t) otmp, sizeof(struct obj));
+#ifdef CHAOS
+		/* Revoke foreign identity before extras, timers or ID remapping.
+		 * Ordinary save/unload restoration must retain the original tag. */
+		if (ghostly && otmp->curio_tag)
+		    otmp->curio_tag = CHAOS_CURIO_INERT_REMNANT;
+#endif
 		if(otmp->mp){
 			otmp->mp = malloc(sizeof(struct mask_properties));
 			mread(fd, (genericptr_t) otmp->mp, (unsigned) sizeof(struct mask_properties));
@@ -441,7 +447,8 @@ restgamestate(int fd, unsigned int *stuckid, unsigned int *steedid, unsigned int
 #endif
 	mread(fd, (genericptr_t) &u, sizeof(struct you));
 #ifdef CHAOS
-	if (!chaos_state_valid(&u.chaos) || !chaos_haunt_valid(&u.haunt)) return FALSE;
+	if (!chaos_state_valid(&u.chaos) || !chaos_haunt_valid(&u.haunt)
+            || !chaos_curio_valid(&u.curio)) return FALSE;
 #endif
 	mread(fd, (genericptr_t) &youmonst, sizeof(struct monst));
 	if (youmonst.light)

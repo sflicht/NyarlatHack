@@ -9,10 +9,16 @@ or inference allowance.
 
 - **Python lint and format:** pinned Ruff checks `chaos`, `tests/chaos`, and
   `scripts` using Python 3.11.
-- **Native builds and offline tests:** Ubuntu 24.04 builds `CHAOS=0`, preserves
-  that executable with its matching `nhdat` and `license`, then builds
-  `CHAOS=1`. The complete unittest suite runs with real-game tests enabled and
-  the freshly built off-mode installation as its comparison baseline.
+- **Native builds and offline tests:** Ubuntu 24.04 checks out full history at
+  the job's exact revision (including the pull-request merge revision).
+  `scripts/prepare_native_ci.py` builds the reviewed pre-curio `CHAOS=1` revision
+  `4610d90612e3c255b37786e385d86f981b016bc2` in an independent local clone,
+  then current `CHAOS=0` and `CHAOS=1`, sequentially with at most two make jobs.
+  It requires the fixed selector-test baseline
+  `fd7a91deb1dc33244e0f72a47d3a4ec584255852` to be available too.
+  The complete unittest discovery runs **once**, with real-game tests enabled,
+  the authenticated old-on tuple, a writable disposable stock tuple, and
+  explicit `source-build` fixture selection backed by this run's receipts.
 - **Secret history scan:** checksum-pinned Gitleaks scans reachable Git history,
   including merge diffs, with redacted output and inline allow comments ignored.
 
@@ -48,16 +54,73 @@ secret is absent.
 
 ## Local equivalents
 
-```sh
+```bash
+set -euo pipefail
 ruff check chaos tests/chaos scripts
 ruff format --check chaos tests/chaos scripts
-make -j2 install CHAOS=0
-# Preserve dnethack, nhdat and license together in an external directory.
-make -j2 install CHAOS=1
-NYARLATHACK_STOCK_DIR=/absolute/path/to/off-build \
-NYARLATHACK_GAME_TESTS=1 \
-python3 -m unittest discover -s tests/chaos -p 'test_*.py' -v
+# Use a fresh disposable full-history checkout: builds modify this checkout.
+# Select a reviewed full revision independently, not from a receipt.
+root=/absolute/path/to/disposable-checkout
+revision=FULL_REVIEWED_LOWERCASE_40_HEX_REVISION
+out=/absolute/path/to/nonexistent-private-output
+/usr/bin/python3 "$root/scripts/prepare_native_ci.py" \
+  --root "$root" --output-dir "$out" --expected-revision "$revision"
+cd "$root"
+umask 077
+: > "$out/full-suite.log"
+# Keep the log private without changing intentionally public negative fixtures.
+umask 022
+env -i PATH=/usr/bin:/bin HOME="$out/home" LANG=C.UTF-8 TZ=America/New_York \
+  PKG_CONFIG_LIBDIR=/usr/lib/x86_64-linux-gnu/pkgconfig:/usr/share/pkgconfig \
+  MAIL="$out/MAIL" TMPDIR="$out/fixtures" PYTHONDONTWRITEBYTECODE=1 \
+  NYARLATHACK_STOCK_DIR="$out/stock" NYARLATHACK_GAME_TESTS=1 \
+  NYARLATHACK_PRECURIO_DIR="$out/precurio" \
+  NYARLATHACK_NATIVE_FIXTURE_MODE=source-build \
+  NYARLATHACK_NATIVE_BUILD_RECEIPT="$out/system-gcc13" \
+  NYARLATHACK_NATIVE_EXPECTED_REVISION="$revision" \
+  /usr/bin/python3 -m unittest discover -s tests/chaos -p 'test_*.py' -v \
+  2>&1 | tee "$out/full-suite.log"
 ```
+
+The preparer rejects existing/symlinked/overlapping output paths, shallow history,
+revision mismatch, tracked changes, hidden index flags, and any `local.mk`.
+It creates private `0700` directories and `0600` receipts and empty `MAIL`.
+Every build uses exactly `/usr/bin/make -j2 clean` then `install`, with explicit
+`CHAOS=0` or `CHAOS=1`, `CC=/usr/bin/cc`, and `PKG_CONFIG=/usr/bin/pkg-config`.
+No caller `MAKEFLAGS`, compiler overrides or provider credentials enter the build.
+Only the existing five-field system build environment is supplied; `HOME` is
+measured from the runtime, with the other values fixed to the reviewed profile.
+
+The supported compiler remains **exactly**
+`cc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0`, with the existing pkg-config flag
+profile and native calibration pins unchanged. Installing Ubuntu dependencies
+is not proof the hosted image still supplies that compiler. A mismatch records
+its actual version and fails before make; it is a compatibility blocker, not
+permission to fabricate a version or relax the verifier. Hosted build/test
+execution of this preparation still requires independent verification.
+
+`system-gcc13` contains measured compiler/flags, command exits and logs, tuple
+hashes/sizes, headers, objects, ELF notes, and tracked-input preservation records.
+Its completion lists only current modes `[0, 1]`; `old-on` has separate real
+historical build receipts and `old-checkout.json` binds the literal revision.
+A failed command cannot produce a successful mode manifest. Final source
+selection uses the unchanged verifier; static native calibration still occurs
+inside the suite, not as a claim in preparation metadata.
+
+`off-archive` files remain `0444`. Distinct copies in `stock` and `precurio`
+use executable `0755` and data/license `0644`, so the existing cross-format
+save tests can overwrite their own `copy2` copies in either direction. No
+shared historical installation is touched or made writable. The isolated old
+clone remains under the private output directory; no worktree cleanup or
+shared-object/hardlink clone is used.
+
+The suite uses system Python (3.11+), system tool `PATH`, an empty private home,
+and a private `TMPDIR` to retain fixture diagnostics without importing ambient
+credentials. Uploads select build receipts/logs and fixture JSON/JSONL, raw
+terminal output, logs and text only, for seven days even on failure; binaries,
+object files, Git directories and the private home are not uploaded. Any ledgers
+in those offline fixture records belong to fake clients, not live Luna calls.
+Never add a live credential directory or real provider ledger to these globs.
 
 Real terminal and process fixtures are Linux-specific. The terminal driver
 requires readable descendant-process information under `/proc`, plus Linux

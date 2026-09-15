@@ -3,6 +3,7 @@
 /* NetHack may be freely redistributed.  See license for details. */
 
 #include "hack.h"
+#include "chaos_curio.h"
 
 #ifdef USER_SOUNDS
 # ifdef USER_SOUNDS_REGEX
@@ -3716,7 +3717,8 @@ int tx,ty;
 			else rat = 0;
 			
 			for(otmp = level.objects[tx][ty]; otmp; otmp = otmp->nexthere)
-				if(!otmp->oartifact){
+				/* Exclude every tagged carrier from either offering position. */
+				if(!otmp->oartifact && !chaos_curio_tagged(otmp)){
 					if(!o1){
 						if(otmp->otyp == SACK){ o1 = otmp; t1 = 0;}
 						else if(otmp->otyp == UNIVERSAL_KEY){ o1 = otmp; t1 = 1;}

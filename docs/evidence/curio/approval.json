@@ -1,0 +1,10 @@
+{
+  "status": "approved",
+  "message_id": "1549133159038189651",
+  "message_url": "https://discord.com/channels/1547076777720160298/1548884673344577627/1549133159038189651",
+  "verbatim_response": "Approved",
+  "baseline": "84e2951355cdb68a4f8e959e9ce5907fb4bb7bcd",
+  "decision_pdf_sha256": "08935f36cd3c92901a13c9ed72de3cb3ed39efbae415269c8b7254e28df3892f",
+  "original_design_sha256": "613e27b410f220561aeb7a34453fc5a1878941fad0e4cbc007201dd61e5b1c5e",
+  "scope": "Generated Curio first implementation slice, including save-format break; at most two new Luna/openai-codex attempts under existing shared authorization."
+}

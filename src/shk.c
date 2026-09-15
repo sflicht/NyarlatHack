@@ -3,6 +3,7 @@
 /* NetHack may be freely redistributed.  See license for details. */
 
 #include "hack.h"
+#include "chaos_curio.h"
 
 
 /*#define DEBUG*/
@@ -44,6 +45,7 @@ STATIC_DCL long FDECL(cost_per_charge, (struct monst *,struct obj *,BOOLEAN_P));
 STATIC_DCL long FDECL(cheapest_item, (struct monst *));
 STATIC_DCL int FDECL(dopayobj, (struct monst *, struct bill_x *,
 			    struct obj **, int, BOOLEAN_P));
+STATIC_DCL boolean FDECL(financial_unpaid, (struct obj *));
 STATIC_DCL long FDECL(stolen_container, (struct obj *, struct monst *, long,
 				     BOOLEAN_P));
 STATIC_DCL void FDECL(shk_names_obj,
@@ -351,7 +353,8 @@ register struct monst *shkp;
 	register long total = 0L;
 
 	while(ct--){
-		total += bp->price * bp->bquan;
+		if (!chaos_curio_tagged(bp_to_obj(bp)))
+		    total += bp->price * bp->bquan;
 		bp++;
 	}
 	return(total);
@@ -602,6 +605,14 @@ struct obj * otmp;	/* optional: item not in your inventory that is being stolen 
 	eshkp = ESHK(shkp);
 	rouse_shk(shkp, TRUE);
 	total = (addupbill(shkp) + eshkp->debit);
+    /* A recognized invalid row alone is not a robbery or a reason to
+     * consume credit.  Unattributable scalar debt retains native handling. */
+    if (!total) {
+        int i;
+        for (i = 0; i < eshkp->billct; ++i)
+            if (chaos_curio_tagged(bp_to_obj(&eshkp->bill_p[i])))
+                return FALSE;
+    }
 	if (eshkp->credit >= total) {
 	    Your("credit of %ld %s is used to cover your shopping bill.",
 		 eshkp->credit, currency(eshkp->credit));
@@ -871,7 +882,8 @@ struct eshk *eshkp;
 	long debt = eshkp->debit;
 
 	for (bp = eshkp->bill_p, ct = eshkp->billct; ct > 0; bp++, ct--)
-	    debt += bp->price * bp->bquan;
+	    if (!chaos_curio_tagged(bp_to_obj(bp)))
+	        debt += bp->price * bp->bquan;
 	return debt;
 }
 
@@ -1028,7 +1040,13 @@ register struct obj *obj, *merge;
 	if (Has_contents(obj)) delete_contents(obj);
 
 	shkp = 0;
-	if (obj->unpaid) {
+	/* Destruction, not raw deallocation: save release can leave fmon and
+	 * cobj dangling.  Retire only this object's rows on live shopkeepers. */
+	if (chaos_curio_tagged(obj)) {
+	    for (shkp = fmon; shkp; shkp = shkp->nmon)
+	        if (shkp->isshk) sub_one_frombill(obj, shkp);
+	    shkp = 0;
+	} else if (obj->unpaid) {
 	    /* look for a shopkeeper who owns this object */
 	    for (shkp = next_shkp(fmon, TRUE, TRUE); shkp;
 		    shkp = next_shkp(shkp->nmon, TRUE, TRUE))
@@ -1043,7 +1061,7 @@ register struct obj *obj, *merge;
 		 *	  upon player location doesn't make much sense.
 		 */
 
-	if ((bp = onbill(obj, shkp, FALSE)) != 0) {
+	if (!chaos_curio_tagged(obj) && (bp = onbill(obj, shkp, FALSE)) != 0) {
 		if(!merge){
 			bp->useup = 1;
 			obj->unpaid = 0;	/* only for doinvbill */
@@ -1177,7 +1195,8 @@ register struct monst *shkp;
 		ESHK(shkp)->surcharge = FALSE;
 		while (ct-- > 0) {
 			register long reduction = (bp->price + 3L) / 4L;
-			bp->price -= reduction;		/* undo 33% increase */
+			if (!chaos_curio_tagged(bp_to_obj(bp)))
+			    bp->price -= reduction;	/* undo 33% increase */
 			bp++;
 		}
 	}
@@ -1198,7 +1217,8 @@ register struct monst *shkp;
 		ESHK(shkp)->surcharge = TRUE;
 		while (ct-- > 0) {
 			register long surcharge = (bp->price + 2L) / 3L;
-			bp->price += surcharge;
+			if (!chaos_curio_tagged(bp_to_obj(bp)))
+			    bp->price += surcharge;
 			bp++;
 		}
 	}
@@ -1327,11 +1347,14 @@ register struct monst *shkp;
 {
 	register int ct = ESHK(shkp)->billct;
 	register struct bill_x *bp = ESHK(shkp)->bill_p;
-	register long gmin = (bp->price * bp->bquan);
+	register long gmin = 0L;
+	boolean found = FALSE;
 
 	while(ct--){
-		if(bp->price * bp->bquan < gmin)
+		if (chaos_curio_tagged(bp_to_obj(bp))) { bp++; continue; }
+		if(!found || bp->price * bp->bquan < gmin)
 			gmin = bp->price * bp->bquan;
+		found = TRUE;
 		bp++;
 	}
 	return(gmin);
@@ -1742,6 +1765,8 @@ proceed:
 
 		    /* find the object on one of the lists */
 		    if ((otmp = bp_to_obj(bp)) != 0) {
+			/* Skip before normalizing consumed-object quantity. */
+			if (chaos_curio_tagged(otmp)) { tmp++; continue; }
 			/* if completely used up, object quantity is stale;
 			   restoring it to its original value here avoids
 			   making the partly-used-up code more complicated */
@@ -2030,12 +2055,19 @@ boolean itemize;
 {
 	register struct obj *obj = *obj_p;
 	long ltmp, quan, save_quan;
+#ifdef CHAOS
+    unsigned char save_curio_tag = obj->curio_tag;
+    boolean inert_curio = chaos_curio_tagged(obj) && !chaos_curio_matches(obj);
+#endif
 #ifdef GOLDOBJ
 	long umoney = money_cnt(invent);
 #endif
 	int buy;
 	boolean stashed_gold = (hidden_gold() > 0L),
 		consumed = (which == 0);
+
+    /* Defensive malformed record: skip, without paying or destroying it. */
+    if (chaos_curio_tagged(obj)) return PAY_SKIP;
 
 	if(!obj->unpaid && !bp->useup){
 		impossible("Paid object on bill??");
@@ -2062,6 +2094,11 @@ boolean itemize;
 	    /* dealing with ordinary unpaid item */
 	    quan = obj->quan;
 	}
+#ifdef CHAOS
+    /* All billing views below belong to the original object, including the
+     * second quantity override and the successful-purchase message. */
+    if (inert_curio) obj->curio_tag = CHAOS_CURIO_INERT_REMNANT;
+#endif
 	obj->quan = quan;	/* to be used by doname() */
 	obj->unpaid = 0;	/* ditto */
 	ltmp = bp->price * quan;
@@ -2096,6 +2133,9 @@ boolean itemize;
 	if (buy != PAY_BUY) {
 	    /* restore unpaid object to original state */
 	    obj->quan = save_quan;
+#ifdef CHAOS
+        if (inert_curio) obj->curio_tag = save_curio_tag;
+#endif
 	    obj->unpaid = 1;
 	    return buy;
 	}
@@ -2108,6 +2148,9 @@ boolean itemize;
 			"paid for %s at a cost of %ld gold piece%s.%s" :
 			"bought %s for %ld gold piece%s.%s", ltmp, "");
 	obj->quan = save_quan;		/* restore original count */
+#ifdef CHAOS
+    if (inert_curio) obj->curio_tag = save_curio_tag;
+#endif
 	/* quan => amount just bought, save_quan => remaining unpaid count */
 	if (consumed) {
 	    if (quan != bp->bquan) {
@@ -2189,6 +2232,12 @@ int croaked;
 	boolean take = FALSE, taken = FALSE;
 	int roomno = *u.ushops;
 	char takes[BUFSZ];
+	int i, billct = 0;
+
+	/* Keep ordinary (including unresolved) rows, but a recognized exempt
+	 * row cannot trigger debt repossession.  In-shop inheritance stays native. */
+	for (i = 0; i < eshkp->billct; ++i)
+	    if (!chaos_curio_tagged(bp_to_obj(&eshkp->bill[i]))) billct++;
 
 	/* the simplifying principle is that first-come */
 	/* already took everything you had.		*/
@@ -2208,7 +2257,7 @@ int croaked;
 	/* get one case out of the way: you die in the shop, the */
 	/* shopkeeper is peaceful, nothing stolen, nothing owed. */
 	if(roomno == eshkp->shoproom && inhishop(shkp) &&
-	    !eshkp->billct && !eshkp->robbed && !eshkp->debit &&
+	    !billct && !eshkp->robbed && !eshkp->debit &&
 	     NOTANGRY(shkp) && !eshkp->following) {
 		if (invent)
 			pline("%s gratefully inherits all your possessions.",
@@ -2217,7 +2266,7 @@ int croaked;
 		goto clear;
 	}
 
-	if (eshkp->billct || eshkp->debit || eshkp->robbed) {
+	if (billct || eshkp->debit || eshkp->robbed) {
 		if (roomno == eshkp->shoproom && inhishop(shkp))
 		    loss = addupbill(shkp) + eshkp->debit;
 		if (loss < eshkp->robbed) loss = eshkp->robbed;
@@ -2430,6 +2479,7 @@ register struct monst *shkp;	/* if angry, impose a surcharge */
 {
 	register long tmp = getprice(obj, FALSE, TRUE);
 
+    if (chaos_curio_tagged(obj)) return 0L;
 	if (!tmp) tmp = 5L;
 	/* shopkeeper may notice if the player isn't very knowledgeable -
 	   especially when gem prices are concerned */
@@ -2517,7 +2567,7 @@ register boolean unpaid_only;
 
 	/* the price of contained objects */
 	for (otmp = obj->cobj; otmp; otmp = otmp->nobj) {
-	    if (otmp->oclass == COIN_CLASS) continue;
+	    if (otmp->oclass == COIN_CLASS && !chaos_curio_tagged(otmp)) continue;
 	    /* the "top" container is evaluated by caller */
 	    if (usell) {
 		if (saleable(shkp, otmp) &&
@@ -2547,7 +2597,7 @@ register struct obj *obj;
 
 	/* accumulate contained gold */
 	for (otmp = obj->cobj; otmp; otmp = otmp->nobj)
-	    if (otmp->oclass == COIN_CLASS)
+	    if (otmp->oclass == COIN_CLASS && !chaos_curio_tagged(otmp))
 		value += otmp->quan;
 	    else if (Has_contents(otmp))
 		value += contained_gold(otmp);
@@ -2565,9 +2615,9 @@ register boolean sale;
 
 	/* the "top" container is treated in the calling fn */
 	for (otmp = obj->cobj; otmp; otmp = otmp->nobj) {
-	    if (otmp->oclass == COIN_CLASS) continue;
+	    if (otmp->oclass == COIN_CLASS && !chaos_curio_tagged(otmp)) continue;
 
-	    if (!otmp->unpaid && !(sale && saleable(shkp, otmp)))
+	    if (!chaos_curio_tagged(otmp) && !otmp->unpaid && !(sale && saleable(shkp, otmp)))
 		otmp->no_charge = 1;
 
 	    if (Has_contents(otmp))
@@ -2583,9 +2633,9 @@ register struct obj *obj;
 
 	/* the "top" container is treated in the calling fn */
 	for (otmp = obj->cobj; otmp; otmp = otmp->nobj) {
-	    if (otmp->oclass == COIN_CLASS) continue;
+	    if (otmp->oclass == COIN_CLASS && !chaos_curio_tagged(otmp)) continue;
 
-	    if (otmp->no_charge)
+	    if (!chaos_curio_tagged(otmp) && otmp->no_charge)
 		otmp->no_charge = 0;
 
 	    if (Has_contents(otmp))
@@ -2603,6 +2653,7 @@ register struct monst *shkp;
 {
 	long tmp = getprice(obj, TRUE, FALSE) * obj->quan;
 
+    if (chaos_curio_tagged(obj)) return 0L;
 	obj->sknown = TRUE;
 	
 	if ((Role_if(PM_TOURIST) && u.ulevel < (MAXULEV/2))
@@ -2642,6 +2693,7 @@ register struct obj *unp_obj;	/* known to be unpaid */
 	register struct bill_x *bp = (struct bill_x *)0;
 	register struct monst *shkp;
 
+    if (chaos_curio_tagged(unp_obj)) return 0L;
 	for(shkp = next_shkp(fmon, TRUE, TRUE); shkp;
 					shkp = next_shkp(shkp->nmon, TRUE, TRUE))
 	    if ((bp = onbill(unp_obj, shkp, TRUE)) != 0) break;
@@ -2666,6 +2718,7 @@ register boolean dummy;
 	register int bct;
 	register char roomno = *u.ushops;
 
+    if (chaos_curio_tagged(obj)) return;
 	if (!roomno) return;
 	if (!(shkp = shop_keeper(roomno))) return;
 	if (!inhishop(shkp)) return;
@@ -2723,7 +2776,7 @@ register struct monst *shkp;
 	register struct obj *otmp;
 
 	for (otmp = obj->cobj; otmp; otmp = otmp->nobj) {
-		if (otmp->oclass == COIN_CLASS) continue;
+		if (otmp->oclass == COIN_CLASS && !chaos_curio_tagged(otmp)) continue;
 
 		/* the "top" box is added in addtobill() */
 		if (!otmp->no_charge)
@@ -2746,7 +2799,7 @@ const char *arg;
 	char *obj_name, fmtbuf[BUFSZ];
 	boolean was_unknown = !obj->dknown;
 
-	obj->dknown = TRUE;
+	if (!chaos_curio_tagged(obj)) obj->dknown = TRUE;
 	/* Use real name for ordinary weapons/armor, and spell-less
 	 * scrolls/books (that is, blank and mail), but only if the
 	 * object is within the shk's area of interest/expertise.
@@ -2785,6 +2838,18 @@ register boolean ininv, dummy, silent;
 	if(!(shkp = shop_keeper(roomno))) return;
 
 	if(!inhishop(shkp)) return;
+
+    /* Exemption is object-local: an anomalous tagged container does not
+     * make ordinary descendants free.  Do not mutate or quote its carrier. */
+    if (chaos_curio_tagged(obj)) {
+        if (container) {
+            bill_box_content(obj, ininv, dummy, shkp);
+            picked_container(obj);
+            gltmp = contained_gold(obj);
+            if (gltmp) costly_gold(obj->ox, obj->oy, gltmp);
+        }
+        return;
+    }
 
 	if(/* perhaps we threw it away earlier */
 		 onbill(obj, shkp, FALSE) ||
@@ -2862,10 +2927,20 @@ speak:
 	    }
 	    if(ininv) {
 		long quan = obj->quan;
+#ifdef CHAOS
+                unsigned char save_curio_tag = obj->curio_tag;
+                boolean inert_curio = chaos_curio_tagged(obj)
+                    && !chaos_curio_matches(obj);
+                /* xname needs singular grammar, not a new curio binding. */
+                if (inert_curio) obj->curio_tag = CHAOS_CURIO_INERT_REMNANT;
+#endif
 		obj->quan = 1L; /* fool xname() into giving singular */
 		pline("%s; only %ld %s %s.\"", buf, ltmp,
 			(quan > 1L) ? "per" : "for this", xname(obj));
 		obj->quan = quan;
+#ifdef CHAOS
+                if (inert_curio) obj->curio_tag = save_curio_tag;
+#endif
 	    } else
 		pline("%s will cost you %ld %s%s.",
 			The(xname(obj)), ltmp, currency(ltmp),
@@ -2887,6 +2962,7 @@ register struct obj *obj, *otmp;
 	register long tmp;
 	register struct monst *shkp = shop_keeper(*u.ushops);
 
+	if (chaos_curio_tagged(obj) || chaos_curio_tagged(otmp)) return;
 	if(!shkp || !inhishop(shkp)) {
 		impossible("splitbill: no resident shopkeeper??");
 		return;
@@ -2923,6 +2999,19 @@ register struct monst *shkp;
 {
 	register struct bill_x *bp;
 
+    if (chaos_curio_tagged(obj)) {
+        int i = 0;
+        /* No dummy for consumed quantity of a recognized exempt object.
+         * Use native swap-removal; leave its physical state untouched. */
+        /* bill_p can be NULL or the out-of-shop sentinel; bill owns rows. */
+        if (shkp) while (i < ESHK(shkp)->billct) {
+            bp = &ESHK(shkp)->bill[i];
+            if (bp->bo_id == obj->o_id)
+                *bp = ESHK(shkp)->bill[--ESHK(shkp)->billct];
+            else ++i;
+        }
+        return;
+    }
 	if((bp = onbill(obj, shkp, FALSE)) != 0) {
 		register struct obj *otmp;
 
@@ -2968,7 +3057,7 @@ register struct monst *shkp;
 
 	if (Has_contents(obj))
 	    for(otmp = obj->cobj; otmp; otmp = otmp->nobj) {
-		if(otmp->oclass == COIN_CLASS) continue;
+		if(otmp->oclass == COIN_CLASS && !chaos_curio_tagged(otmp)) continue;
 
 		if (Has_contents(otmp))
 		    subfrombill(otmp, shkp);
@@ -2980,6 +3069,19 @@ register struct monst *shkp;
 #endif /*OVLB*/
 #ifdef OVL3
 
+/* Financial mode selection is object-local; native inventory UI counts stay
+ * untouched.  Exempt shells can still contain ordinary unpaid goods. */
+STATIC_OVL boolean
+financial_unpaid(obj)
+struct obj *obj;
+{
+    for (; obj; obj = obj->nobj)
+        if ((!chaos_curio_tagged(obj) && obj->unpaid)
+            || (Has_contents(obj) && financial_unpaid(obj->cobj)))
+            return TRUE;
+    return FALSE;
+}
+
 STATIC_OVL long
 stolen_container(obj, shkp, price, ininv)
 register struct obj *obj;
@@ -2989,6 +3091,7 @@ register boolean ininv;
 {
 	register struct obj *otmp;
 
+    if (!chaos_curio_tagged(obj)) {
 	if(ininv && obj->unpaid)
 	    price += get_cost(obj, shkp);
 	else {
@@ -2996,12 +3099,14 @@ register boolean ininv;
 		price += get_cost(obj, shkp);
 	    obj->no_charge = 0;
 	}
+    }
 
 	/* the price of contained objects, if any */
 	for(otmp = obj->cobj; otmp; otmp = otmp->nobj) {
 
-	    if(otmp->oclass == COIN_CLASS) continue;
+	    if(otmp->oclass == COIN_CLASS && !chaos_curio_tagged(otmp)) continue;
 
+        if (chaos_curio_tagged(otmp) && !Has_contents(otmp)) continue;
 	    if (!Has_contents(otmp)) {
 		if(ininv) {
 		    if(otmp->unpaid)
@@ -3031,13 +3136,14 @@ register boolean peaceful, silent;
 	register long value = 0L, gvalue = 0L;
 	register struct monst *shkp = shop_keeper(*in_rooms(x, y, SHOPBASE));
 
+    if (chaos_curio_tagged(obj) && !Has_contents(obj)) return 0L;
 	if (!shkp || !inhishop(shkp))
 	    return (0L);
 
-	if(obj->oclass == COIN_CLASS) {
+	if(obj->oclass == COIN_CLASS && !chaos_curio_tagged(obj)) {
 	    gvalue += obj->quan;
 	} else if (Has_contents(obj)) {
-	    register boolean ininv = !!count_unpaid(obj->cobj);
+	    register boolean ininv = financial_unpaid(obj->cobj);
 
 	    value += stolen_container(obj, shkp, value, ininv);
 	    if(!ininv) gvalue += contained_gold(obj);
@@ -3131,8 +3237,12 @@ xchar x, y;
 	register struct eshk *eshkp;
 	long ltmp = 0L, cltmp = 0L, gltmp = 0L, offer;
 	boolean saleitem, cgold = FALSE, container = Has_contents(obj);
-	boolean isgold = (obj->oclass == COIN_CLASS);
+	boolean exempt = chaos_curio_tagged(obj);
+	boolean isgold = (!exempt && obj->oclass == COIN_CLASS);
 	boolean only_partially_your_contents = FALSE;
+
+    /* Contents take part in ONE native aggregate transaction. */
+    if (exempt && !container) return;
 
 	if(!(shkp = shop_keeper(*in_rooms(x, y, SHOPBASE))) ||
 	   !inhishop(shkp)) return;
@@ -3152,10 +3262,10 @@ xchar x, y;
 	}
 
 	saleitem = saleable(shkp, obj);
-	if(obj->ostolen){
+	if(!exempt && obj->ostolen){
 		verbalize("That item is stolen.");
 	}
-	obj->sknown = TRUE;
+	if (!exempt) obj->sknown = TRUE;
 	
 	if(!isgold && !obj->unpaid && saleitem)
 	    ltmp = set_cost(obj, shkp);
@@ -3165,15 +3275,15 @@ xchar x, y;
 	/* get one case out of the way: nothing to sell, and no gold */
 	if(!isgold &&
 	   ((offer + gltmp) == 0L || sell_how == SELL_DONTSELL)) {
-		register boolean unpaid = (obj->unpaid ||
-				  (container && count_unpaid(obj->cobj)));
+		register boolean unpaid = ((!exempt && obj->unpaid) ||
+				  (container && financial_unpaid(obj->cobj)));
 
 		if(container) {
 			dropped_container(obj, shkp, FALSE);
-			obj->no_charge = (!obj->unpaid && !saleitem);
-			if(obj->unpaid || count_unpaid(obj->cobj))
+			if (!exempt) obj->no_charge = (!obj->unpaid && !saleitem);
+			if((!exempt && obj->unpaid) || financial_unpaid(obj->cobj))
 			    subfrombill(obj, shkp);
-		} else obj->no_charge = 1;
+		} else if (!exempt) obj->no_charge = 1;
 
 		if(!unpaid && (sell_how != SELL_DONTSELL))
 		    pline("%s seems uninterested.", Monnam(shkp));
@@ -3230,7 +3340,7 @@ xchar x, y;
 		    if(!isgold) {
 			if (container)
 			    dropped_container(obj, shkp, FALSE);
-			obj->no_charge = (!obj->unpaid && !saleitem);
+			if (!exempt) obj->no_charge = (!obj->unpaid && !saleitem);
 			subfrombill(obj, shkp);
 		    }
 		    return;
@@ -3239,17 +3349,17 @@ xchar x, y;
 move_on:
 	if((!saleitem && !(container && cltmp > 0L))
 	   || eshkp->billct == BILLSZ
-	   || obj->oclass == BALL_CLASS
-	   || obj->oclass == CHAIN_CLASS || offer == 0L
-	   || get_ox(obj, OX_ESUM)
-	   || (obj->oclass == FOOD_CLASS && obj->oeaten)
-	   || (Is_candle(obj) &&
+	   || (!exempt && (obj->oclass == BALL_CLASS
+	   || obj->oclass == CHAIN_CLASS)) || offer == 0L
+	   || (!exempt && get_ox(obj, OX_ESUM))
+	   || (!exempt && obj->oclass == FOOD_CLASS && obj->oeaten)
+	   || (!exempt && Is_candle(obj) &&
 		   obj->age < 20L * (long)objects[obj->otyp].oc_cost)) {
 		pline("%s seems uninterested%s.", Monnam(shkp),
 			cgold ? " in the rest" : "");
 		if (container)
 		    dropped_container(obj, shkp, FALSE);
-		obj->no_charge = 1;
+		if (!exempt) obj->no_charge = 1;
 		return;
 	}
         
@@ -3280,9 +3390,9 @@ move_on:
 		    c = 'n';
 
 		if (c == 'y') {
-			obj->ostolen = FALSE;
-			obj->sknown = FALSE; /* won't know if it becomes stolen again.*/
-			obj->shopOwned = TRUE;
+			if (!exempt) obj->ostolen = FALSE;
+			if (!exempt) obj->sknown = FALSE; /* won't know if it becomes stolen again.*/
+			if (!exempt) obj->shopOwned = TRUE;
 		    shk_names_obj(shkp, obj, (sell_how != SELL_NORMAL) ?
 			    "traded %s for %ld zorkmid%s in %scredit." :
 			"relinquish %s and acquire %ld zorkmid%s in %scredit.",
@@ -3294,7 +3404,7 @@ move_on:
 		    if (c == 'q') sell_response = 'n';
 		    if (container)
 			dropped_container(obj, shkp, FALSE);
-		    obj->no_charge = (!obj->unpaid);
+		    if (!exempt) obj->no_charge = (!obj->unpaid);
 		    subfrombill(obj, shkp);
 		}
 	} else {
@@ -3327,18 +3437,18 @@ move_on:
 		 case 'q':  sell_response = 'n';
 		 case 'n':  if (container)
 				dropped_container(obj, shkp, FALSE);
-			    obj->no_charge = (!obj->unpaid);
+			    if (!exempt) obj->no_charge = (!obj->unpaid);
 			    subfrombill(obj, shkp);
 			    break;
 		 case 'a':  sell_response = 'y';
 		 case 'y':  if (container)
 				dropped_container(obj, shkp, TRUE);
-			    obj->no_charge = (!obj->unpaid && !saleitem);
+			    if (!exempt) obj->no_charge = (!obj->unpaid && !saleitem);
 			    subfrombill(obj, shkp);
 			    pay(-offer, shkp);
-				obj->ostolen = FALSE;
-				obj->sknown = FALSE; /*won't know if it becomes stolen again*/
-				obj->shopOwned = TRUE;
+				if (!exempt) obj->ostolen = FALSE;
+				if (!exempt) obj->sknown = FALSE; /*won't know if it becomes stolen again*/
+				if (!exempt) obj->shopOwned = TRUE;
 			    shk_names_obj(shkp, obj, (sell_how != SELL_NORMAL) ?
 				    (!ltmp && cltmp && only_partially_your_contents) ?
 			    	    "sold some items inside %s for %ld gold pieces%s.%s" :
@@ -3380,8 +3490,8 @@ int mode;		/* 0: deliver count 1: paged */
 
 	    for (bp = eshkp->bill_p, end_bp = &eshkp->bill_p[eshkp->billct];
 		    bp < end_bp; bp++)
-		if (bp->useup ||
-			((obj = bp_to_obj(bp)) != 0 && obj->quan < bp->bquan))
+		if (!chaos_curio_tagged(bp_to_obj(bp)) && (bp->useup ||
+			((obj = bp_to_obj(bp)) != 0 && obj->quan < bp->bquan)))
 		    cnt++;
 	    return cnt;
 	}
@@ -3394,6 +3504,7 @@ int mode;		/* 0: deliver count 1: paged */
 	for (bp = eshkp->bill_p, end_bp = &eshkp->bill_p[eshkp->billct];
 		bp < end_bp; bp++) {
 	    obj = bp_to_obj(bp);
+	    if (chaos_curio_tagged(obj)) continue;
 	    if(!obj) {
 		impossible("Bad shopkeeper administration.");
 		goto quit;
@@ -3446,6 +3557,7 @@ boolean shk_buying, shk_selling;
 {
 	register long tmp = (long) objects[obj->otyp].oc_cost;
 	
+    if (chaos_curio_tagged(obj)) return 0L;
 	/* adjust cost based on material */
 	if(obj->obj_material != objects[obj->otyp].oc_material){
 		long numerator = materials[obj->obj_material].cost;
@@ -4513,6 +4625,7 @@ boolean altusage; /* some items have an "alternate" use with different cost */
 {
 	long tmp = 0L;
 
+    if (chaos_curio_tagged(otmp)) return 0L;
 	if(!shkp || !inhishop(shkp)) return(0L); /* insurance */
 	tmp = get_cost(otmp, shkp);
 
@@ -4575,6 +4688,7 @@ boolean altusage;
 	const char *fmt, *arg1, *arg2;
 	long tmp;
 
+    if (chaos_curio_tagged(otmp)) return;
 	if (!otmp->unpaid || !*u.ushops ||
 		(otmp->spe <= 0 && objects[otmp->otyp].oc_charged))
 	    return;

@@ -3,6 +3,7 @@
 #include "chaos.h"
 #include "chaos_io.h"
 #include "chaos_haunt.h"
+#include "chaos_curio.h"
 
 static struct chaos_io io = { -1, -1, -1, 0, 0 };
 static int started, oldsanity, oldinsight;
@@ -44,9 +45,19 @@ void chaos_event(const char *name, const char *phase, const char *detail) {
 }
 void chaos_safe(const char *why) {
     struct chaos_context c;
-    if (!started || chaos_shadow_active()) return;
-    c = context();
-    chaos_io_safe(&io, &u.chaos, &c, why, show, 0);
+    long before;
+    static int busy;
+    if (busy || chaos_shadow_active()) return;
+    busy = 1;
+    before = u.chaos.safe;
+    if (started) {
+        c = context();
+        chaos_io_safe(&io, &u.chaos, &c, why, show, 0);
+    }
+    /* Preserve the legacy index/ID/ACK schedule. Expiry needs no transport. */
+    chaos_curio_safe(started && !io.failed && !io.busy
+                     && u.chaos.safe > before ? io.dir : -1);
+    busy = 0;
 }
 void chaos_start(void) {
     int fresh = u.chaos.version == 0;

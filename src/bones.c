@@ -69,6 +69,21 @@ int id;
 	}
 }
 
+#ifdef CHAOS
+/* saveobjchn serializes even OX_ESUM roots and their contents.  Keep this
+ * tag-only walk separate from the native reset policy which skips them. */
+static void
+inert_bones_curios(struct obj *ochain)
+{
+    struct obj *otmp;
+    for (otmp = ochain; otmp; otmp = otmp->nobj) {
+        if (otmp->curio_tag)
+            otmp->curio_tag = CHAOS_CURIO_INERT_REMNANT;
+        if (otmp->cobj) inert_bones_curios(otmp->cobj);
+    }
+}
+#endif
+
 STATIC_OVL void
 resetobjs(ochain,restore)
 struct obj *ochain;
@@ -76,6 +91,9 @@ boolean restore;
 {
 	struct obj *otmp;
 
+#ifdef CHAOS
+	inert_bones_curios(ochain);
+#endif
 	for (otmp = ochain; otmp; otmp = otmp->nobj) {
 		if (!restore) {
 			while (otmp && get_ox(otmp, OX_ESUM)) otmp = otmp->nobj;
@@ -657,6 +675,12 @@ struct obj *corpse;
 	}
 	resetobjs(fobj,FALSE);
 	resetobjs(level.buriedobjlist, FALSE);
+#ifdef CHAOS
+	/* Other savelev object roots have no native resetobjs policy. */
+	inert_bones_curios(billobjs);
+	for (ttmp = ftrap; ttmp; ttmp = ttmp->ntrap)
+	    inert_bones_curios(ttmp->ammo);
+#endif
 
 	/* Clear all memory from the level. */
 	for(x=0; x<COLNO; x++) for(y=0; y<ROWNO; y++) {

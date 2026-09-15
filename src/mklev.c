@@ -3,6 +3,7 @@
 /* NetHack may be freely redistributed.  See license for details. */
 
 #include "hack.h"
+#include "chaos_curio.h"
 /* #define DEBUG */	/* uncomment to enable code debugging */
 
 #ifdef DEBUG
@@ -1165,6 +1166,7 @@ makelevel()
 	}
 
 	/* otherwise, fall through - it's a "regular" level. */
+	chaos_curio_ordinary();
 
 #ifdef REINCARNATION
 	if (Is_rogue_level(&u.uz)) {
@@ -1656,7 +1658,8 @@ mklev()
 	struct mkroom *croom;
 
 	init_mapseen(&u.uz);
-	if(getbones()) return;
+	chaos_curio_begin();
+	if(getbones()) { chaos_curio_finish(0); return; }
 	in_mklev = TRUE;
 	makelevel();
 	bound_digging();
@@ -1684,6 +1687,7 @@ mklev()
 			u.s_f_y = rn2(ROWNO);
 		} while((!isok(u.s_f_x, u.s_f_y) || !ZAP_POS(levl[u.s_f_x][u.s_f_y].typ)) && limit-- > 0);
 	}
+	chaos_curio_finish(1);
 }
 
 void

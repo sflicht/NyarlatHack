@@ -1,0 +1,26 @@
+{
+  "task": "curio-state-tag-save-version",
+  "spec": {
+    "review": "deleg_bfb9ad75",
+    "passed": true,
+    "gaps": []
+  },
+  "quality": {
+    "review": "deleg_142251da",
+    "passed": true,
+    "security_concerns": [],
+    "logic_errors": [],
+    "suggestion": "Add end-to-end invalid-curio-record restore cleanup fixture during robustness acceptance."
+  },
+  "parent_full_suite": {
+    "collected": 168,
+    "passed": 167,
+    "skipped": 1
+  },
+  "independent_native_tests": 3,
+  "limitations": [
+    "No playable admission/placement/use/bones behavior yet.",
+    "Hosted tests require pinned pre-curio build provisioning.",
+    "Invalid-record restore cleanup is not yet exercised end-to-end."
+  ]
+}

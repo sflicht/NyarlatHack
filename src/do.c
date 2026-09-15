@@ -6,6 +6,7 @@
 
 #include "hack.h"
 #include "chaos.h"
+#include "chaos_curio.h"
 #include "lev.h"
 #include "artifact.h"
 
@@ -1416,6 +1417,7 @@ int portal;
 
 	if (!(level_info[new_ledger].flags & LFILE_EXISTS)) {
 remake:
+		chaos_curio_prepare(level_info[new_ledger].flags);
 		/* entering this level for first time; make it now */
 		if (level_info[new_ledger].flags & (FORGOTTEN|VISITED)) {
 		    impossible("goto_level: returning to discarded level?");

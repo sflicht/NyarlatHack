@@ -86,7 +86,7 @@ SRCOBJ = allmain.o alloc.o apply.o artifact.o astar.o attrib.o ball.o bones.o	\
          were.o wield.o windows.o wizard.o worm.o worn.o write.o 	\
          xhity.o xhityhelpers.o zap.o 
 ifeq ($(CHAOS),1)
-SRCOBJ += chaos_protocol.o chaos_io.o chaos_engine.o chaos_lua.o chaos_shadow.o chaos_haunt.o
+SRCOBJ += chaos_protocol.o chaos_io.o chaos_engine.o chaos_lua.o chaos_shadow.o chaos_haunt.o chaos_curio.o
 endif
 SYSUNIXOBJ = unixmain.o unixres.o unixunix.o
 SYSSHAREOBJ = ioctl.o unixtty.o

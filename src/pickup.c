@@ -7,6 +7,7 @@
  */
 
 #include "hack.h"
+#include "chaos_curio.h"
 
 STATIC_DCL void FDECL(simple_look, (struct obj *,BOOLEAN_P));
 #ifndef GOLDOBJ
@@ -1288,6 +1289,13 @@ boolean telekinesis;
 	    } else {
 		char qbuf[BUFSZ];
 		long savequan = obj->quan;
+#ifdef CHAOS
+                unsigned char save_curio_tag = obj->curio_tag;
+                boolean inert_curio = chaos_curio_tagged(obj)
+                    && !chaos_curio_matches(obj);
+                /* Preserve original identity through the load-prompt view. */
+                if (inert_curio) obj->curio_tag = CHAOS_CURIO_INERT_REMNANT;
+#endif
 
 		obj->quan = *cnt_p;
 		Strcpy(qbuf,
@@ -1298,6 +1306,9 @@ boolean telekinesis;
 			safe_qbuf(qbuf, sizeof(" . Continue?"),
 				doname(obj), an(simple_typename(obj->otyp)), "something"));
 		obj->quan = savequan;
+#ifdef CHAOS
+                if (inert_curio) obj->curio_tag = save_curio_tag;
+#endif
 		switch (ynq(qbuf)) {
 		case 'q':  result = -1; break;
 		case 'n':  result =  0; break;
@@ -1396,7 +1407,8 @@ boolean telekinesis;	/* not picking it up directly by hand */
 		    gold_capacity == 1L ? "one" : "some", obj->quan, where);
 		pline("%s %ld gold piece%s.",
 		    nearloadmsg, gold_capacity, plur(gold_capacity));
-		costly_gold(obj->ox, obj->oy, gold_capacity);
+		if (!chaos_curio_tagged(obj))
+		    costly_gold(obj->ox, obj->oy, gold_capacity);
 		u.ugold += gold_capacity;
 		obj->quan -= gold_capacity;
 	    } else {
@@ -1407,7 +1419,8 @@ boolean telekinesis;	/* not picking it up directly by hand */
 			  count, plur(count));
 		else
 		    prinv((char *) 0, obj, count);
-		costly_gold(obj->ox, obj->oy, count);
+		if (!chaos_curio_tagged(obj))
+		    costly_gold(obj->ox, obj->oy, count);
 		u.ugold += count;
 		if (count == obj->quan)
 		    delobj(obj);

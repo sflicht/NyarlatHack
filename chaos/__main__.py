@@ -18,14 +18,101 @@ from .director import (
 from .protocol import parse_request
 
 
+class _Parser(argparse.ArgumentParser):
+    def error(self, message):
+        # argparse's normal message echoes untrusted tokens/paths and controls.
+        self.exit(2, "chaos: failed closed (ValueError); use --help for syntax\n")
+
+
+def _curio_parser(sub):
+    p = sub.add_parser(
+        "curio",
+        help="offline saved-curio evidence; never inference or native admission",
+    )
+    commands = p.add_subparsers(dest="curio_command", required=True)
+    for op in ("install", "verify"):
+        p = commands.add_parser(
+            op,
+            help="exclusive pre-game installation"
+            if op == "install"
+            else "read-only exact installation verification; no repair",
+        )
+        p.add_argument("--run-dir", type=Path, required=True)
+        source = p.add_mutually_exclusive_group(required=True)
+        source.add_argument(
+            "--source", type=Path, help="saved 0600 file in owned 0700 parent"
+        )
+        source.add_argument(
+            "--bundle-root",
+            type=Path,
+            help="private stored bundles; requires --candidate-id",
+        )
+        p.add_argument(
+            "--candidate-id", help="exact lowercase source SHA-256; bundle mode only"
+        )
+    p = commands.add_parser(
+        "continuity", help="explicit offline journal operations; no automatic repair"
+    )
+    operations = p.add_subparsers(dest="continuity_command", required=True)
+    for op in ("init", "register", "bind", "observe", "notes"):
+        p = operations.add_parser(
+            op,
+            help={
+                "init": "initialize an EXISTING EMPTY owned 0700 journal root",
+                "register": "register a verified bundle, not a live authorship claim",
+                "bind": "bind a registered bundle to an exact installation",
+                "observe": "checkpoint stable offline native evidence; never infer admission from installation",
+                "notes": "read-only validated editorial notes; quoted fallible context",
+            }[op],
+        )
+        p.add_argument("--journal-root", type=Path, required=True)
+        if op in ("register", "bind", "observe"):
+            p.add_argument("--candidate-id", required=True)
+        if op == "register":
+            p.add_argument("--bundle-root", type=Path, required=True)
+        if op == "bind":
+            p.add_argument("--run-dir", type=Path, required=True)
+        if op == "notes":
+            p.add_argument("--limit", type=int, choices=range(7), default=6)
+
+
+def _curio_command(args):
+    if args.curio_command in ("install", "verify"):
+        from .curio_store import install_saved_source
+
+        return install_saved_source(
+            args.run_dir,
+            source_file=args.source,
+            bundle_root=args.bundle_root,
+            candidate_id=args.candidate_id,
+            mode="fresh" if args.curio_command == "install" else "verify",
+        )
+    from . import curio_continuity as continuity
+
+    op = args.continuity_command
+    if op == "notes":
+        return continuity.prior_notes(args.journal_root, limit=args.limit)
+    if op == "init":
+        continuity.create_journal(args.journal_root)
+    elif op == "register":
+        continuity.register(args.journal_root, args.bundle_root, args.candidate_id)
+    elif op == "bind":
+        continuity.bind_run(args.journal_root, args.candidate_id, args.run_dir)
+    else:
+        continuity.observe(args.journal_root, args.candidate_id)
+    # Operation acknowledgement only, not an invented lifecycle status.
+    return {"operation": op, "verified": True}
+
+
 def main(argv=None):
-    parser = argparse.ArgumentParser(
+    parser = _Parser(
         description="The Crawling Chaos — bounded engine-protocol v1 director"
     )
     sub = parser.add_subparsers(dest="command", required=True)
     from .launcher import add_parser
 
     add_parser(sub)
+    _curio_parser(sub)
     installer = sub.add_parser(
         "haunt", help="install one Lua candidate; game validates it"
     )
@@ -93,6 +180,9 @@ def main(argv=None):
             )
     args = parser.parse_args(argv)
     try:
+        if args.command == "curio":
+            print(json.dumps(_curio_command(args), sort_keys=True, ensure_ascii=True))
+            return 0
         if args.command == "play":
             from .launcher import play
 

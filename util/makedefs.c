@@ -463,6 +463,7 @@ make_version()
 	version.feature_set = (unsigned long)(0L
 #ifdef CHAOS
             | (1L << 26) /* NyarlatHack player save extension v1 */
+            | (1L << 29) /* Generated curio record + object tag; reject old CHAOS */
 #endif
 		/* levels and/or topology (0..4) */
 #ifdef REINCARNATION
