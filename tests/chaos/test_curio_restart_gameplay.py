@@ -36,17 +36,30 @@ def integer(data, field, schema, signed=False):
     )
 
 
-def saved_record(test, data, schema, charges, state, owner=None):
+def saved_record(
+    test,
+    data,
+    schema,
+    charges,
+    state,
+    owner=None,
+    *,
+    source=SOURCE,
+    name=b"Offline counter",
+    disabled=0,
+):
     """Fail closed: verified native header, unique exact source, bounded u image."""
     test.assertFalse(schema["external_compression"])
     test.assertFalse(schema["internal_compression"])
     test.assertGreaterEqual(len(data), schema["save_header_size"])
-    for name, value in schema["save_header_values"].items():
+    for header_name, value in schema["save_header_values"].items():
         test.assertEqual(
-            integer(data, schema["save_header"][name], schema), value, name
+            integer(data, schema["save_header"][header_name], schema),
+            value,
+            header_name,
         )
-    test.assertEqual(data.count(SOURCE), 1, "exact source must occur uniquely")
-    start = data.index(SOURCE) - schema["record"]["source"]["offset"]
+    test.assertEqual(data.count(source), 1, "exact source must occur uniquely")
+    start = data.index(source) - schema["record"]["source"]["offset"]
     test.assertGreaterEqual(start, schema["save_header_size"])
     record = data[start : start + schema["record_size"]]
     test.assertEqual(len(record), schema["record_size"])
@@ -69,19 +82,20 @@ def saved_record(test, data, schema, charges, state, owner=None):
     }
     test.assertEqual(fields["version"], schema["version"])
     test.assertEqual(fields["phase"], schema["placed"])
-    test.assertEqual(fields["source_len"], len(SOURCE))
+    test.assertEqual(fields["source_len"], len(source))
     test.assertGreater(fields["owner"], 0)
     if owner is not None:
         test.assertEqual(fields["owner"], owner, "owner changed")
     test.assertEqual(
-        (fields["charges"], fields["state"], fields["disabled"]), (charges, state, 0)
+        (fields["charges"], fields["state"], fields["disabled"]),
+        (charges, state, disabled),
     )
-    for name, expected in (("name", b"Offline counter"), ("source", SOURCE)):
-        f = schema["record"][name]
+    for field_name, expected in (("name", name), ("source", source)):
+        f = schema["record"][field_name]
         test.assertEqual(
             record[f["offset"] : f["offset"] + f["size"]],
             expected.ljust(f["size"], b"\0"),
-            name,
+            field_name,
         )
     you_start = start - schema["you"]["curio"]["offset"]
     test.assertGreaterEqual(you_start, schema["save_header_size"])
@@ -108,10 +122,13 @@ def saved_record(test, data, schema, charges, state, owner=None):
     return record, fields
 
 
-def assert_record_delta(test, before, after, schema, charges, state):
-    """Whole-byte oracle: only the two explicitly expected integer edits."""
+def assert_record_delta(test, before, after, schema, charges, state, *, disabled=None):
+    """Whole-byte oracle; disabled bytes stay untouched unless explicitly given."""
     expected = bytearray(before)
-    for name, value in (("charges", charges), ("state", state)):
+    edits = [("charges", charges), ("state", state)]
+    if disabled is not None:
+        edits.append(("disabled", disabled))
+    for name, value in edits:
         f = schema["record"][name]
         expected[f["offset"] : f["offset"] + f["size"]] = value.to_bytes(
             f["size"], schema["byteorder"], signed=True
