@@ -65,6 +65,68 @@ This is a POSIX (Portable Operating System Interface) launcher, tested on Linux.
 pack/random modes; explicit model/OAuth commands below remain separate. Provider
 configuration is not universally interchangeable and never silently falls back.
 
+## Explicit saved-curio launch (offline)
+
+A saved curio is a candidate Lua object program; installation does not mean the
+engine admitted it. Select either a plain source file or an existing bundle:
+
+```sh
+python3 -m chaos play --run-dir /new/private/run \
+  --curio-source /private/source.lua
+# Alternative: ID is the bundle's exact 64 lowercase hexadecimal source identity.
+python3 -m chaos play --run-dir /another/new/run \
+  --curio-bundle-root /private/bundles --curio-candidate-id "$ID"
+```
+
+The bundle root and selected ID directory must already exist, be owned by you,
+and have mode 0700. Bundle files must be owned regular mode-0600 single-link
+files: `raw-response.json`, `source.lua`, `continuity-note.txt`, and
+`manifest.json`. The launcher reparses the envelope and verifies the exact
+source, note and manifest; it does not repair Lua or normalize the ID. A plain
+source must be an owned mode-0600 single-link file in a private mode-0700 parent,
+with 1–4096 non-NUL bytes. Unsafe paths, symlinks and conflicting evidence reject;
+the launcher does not change supplied permissions to make them acceptable.
+
+`--curio-source` and `--curio-bundle-root` are mutually exclusive. Bundle root
+and candidate ID must be supplied together; an ID cannot accompany plain source.
+Validation finishes before creating a run directory. Omit both run flags for a
+fresh private directory, or supply `--run-dir` with a path that does not exist.
+Unlike standalone `curio install`, fresh `play` never adopts a precreated run.
+Installation and readback finish under the supervisor's held lock before either
+child starts.
+
+For a matching restore, keep the original private run path, matching save/game
+installation and director configuration, and explicitly repeat the same selection:
+
+```sh
+python3 -m chaos play --reuse-run-dir /another/new/run \
+  --curio-bundle-root /private/bundles --curio-candidate-id "$ID"
+```
+
+With either source form, reuse requires an existing safe `.director.lock`, exact
+`curio.lua` and `curio-install.json`, and matching `curio-used.lua` if present.
+This is verification only: no reinstall, repair, deletion of crash leftovers,
+receipt promotion or schedule retiming. The verification seam is read-only;
+subsequent ordinary director/game activity is not. A valid standalone bundle
+installation can also be explicitly verified this way before startup.
+
+The receipt retains status `candidate_installed_not_admitted`. Bundle selection
+records `supplied_raw_envelope`; plain selection records `supplied_source_file`,
+even when that file is a bundle's `source.lua`. These provenances are not
+interchangeable on restore. Neither proves model authorship, native admission,
+native save/source equality, historical raw-response/note identity or full
+continuity-journal consistency. No-selector play retains its **legacy unverified
+curio behavior**: it does not perform these curio checks, even with preexisting
+curio files. An earlier standalone verify is not continuous-lock launcher
+verification.
+
+There are no automatic continuity-journal operations. Explicit offline
+`bind_run`/`observe` operations remain separate and require stable evidence after
+**both children have exited**; binding after an initial save/exit is supported.
+The default ambient pack (including the pack named `silence`) is a real whisper,
+not an empty stream. Saved-curio launcher process tests use a handwritten fake
+executable fixture; native discovery, use and save/restore acceptance are separate.
+
 ## Manual alternative: fixed ambient whisper
 
 ```sh

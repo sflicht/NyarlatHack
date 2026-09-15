@@ -65,11 +65,22 @@ def add_parser(sub):
         type=Path,
         help="existing owned private directory for restore",
     )
-    p.add_argument(
+    curio = p.add_mutually_exclusive_group()
+    curio.add_argument(
         "--curio-source",
         type=Path,
         help="offline saved mode-0600 source in private 0700 parent; install before fresh play, "
         "VERIFY ONLY on restore (no repair); installation is not native admission",
+    )
+    curio.add_argument(
+        "--curio-bundle-root",
+        type=Path,
+        help="existing private saved-bundle root; requires --curio-candidate-id; "
+        "install before fresh play, VERIFY ONLY on restore (no repair)",
+    )
+    p.add_argument(
+        "--curio-candidate-id",
+        help="exact 64 lowercase hex source identity; requires --curio-bundle-root",
     )
     p.add_argument(
         "--game-root",
@@ -281,11 +292,13 @@ def _stop_director(pid):
 
 def _curio_preflight(args):
     source = getattr(args, "curio_source", None)
-    if source is None:
+    bundle_root = getattr(args, "curio_bundle_root", None)
+    candidate_id = getattr(args, "curio_candidate_id", None)
+    if source is None and bundle_root is None and candidate_id is None:
         return None
     from . import curio_store as store
 
-    prepared = store._source(source, None, None)
+    prepared = store._source(source, bundle_root, candidate_id)
     if args.reuse_run_dir is not None:
         # Mailbox normally creates a missing lock. Curio restore must not do so.
         # Validate the original path, before _directory resolves any symlinks.
