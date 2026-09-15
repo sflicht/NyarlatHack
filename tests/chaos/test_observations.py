@@ -6,15 +6,59 @@ from pathlib import Path
 import subprocess
 import tempfile
 import unittest
-from chaos.director import State
-from chaos.protocol import parse_event
-from test_director import event
+from chaos.director import EventReader, State
+from chaos.protocol import parse_event, parse_request
+from test_director import REQ, event
 
 ROOT = Path(__file__).resolve().parents[2]
 VITALS = dict(hp=7, hp_max=20, power=2, power_max=10)
 
 
 class ObservationSchemaTests(unittest.TestCase):
+    def test_legacy_unknown_envelope_keys_are_accepted_but_redacted(self):
+        # Synthetic compatibility fixture, not native output.
+        row = event(observation={"private": "SECRET"}, unknown="SECRET")
+        self.assertEqual(parse_event(json.dumps(row).encode()), row)
+        state = State()
+        state.ingest(row)
+        for hidden in ("observation", "private", "unknown", "SECRET"):
+            self.assertNotIn(hidden, state.summary())
+
+    def test_legacy_requests_still_require_exact_keys(self):
+        self.assertEqual(parse_request(json.dumps(REQ)), REQ)
+        for key in REQ:
+            row = dict(REQ)
+            del row[key]
+            with self.subTest(missing=key), self.assertRaises(ValueError):
+                parse_request(json.dumps(row))
+        with self.assertRaises(ValueError):
+            parse_request(json.dumps(dict(REQ, observation={})))
+
+    def test_legacy_consumers_reject_v2_enabled_marker(self):
+        # Synthetic proposed marker; deliberately independent of the v2 parser.
+        marker = event(
+            v=2,
+            event="observation",
+            phase="result",
+            detail="",
+            safe=0,
+            vitals=VITALS,
+            observation=dict(
+                operation="none", stage="enabled", root_seq=0, fact="none"
+            ),
+        )
+        raw = json.dumps(marker).encode()
+        with self.assertRaises(ValueError):
+            parse_event(raw)
+        with self.assertRaises(ValueError):
+            State().ingest(marker)
+        with tempfile.TemporaryDirectory(prefix="nyarl-obs12-legacy-") as tmp:
+            path = Path(tmp) / "events.jsonl"
+            path.write_bytes(raw + b"\n")
+            path.chmod(0o600)
+            with self.assertRaises(ValueError):
+                EventReader(path).read()
+
     def test_vitals_whitelist_and_history(self):
         state = State()
         state.ingest(
