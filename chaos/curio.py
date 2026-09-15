@@ -13,7 +13,7 @@ Public context is an exact dict: required sanity (int 0..100), insight (int
 player-observable values supplied by the host belong here; no discovery occurs.
 Prior notes are a list/tuple of at most six exact dicts with candidate_id
 (lowercase SHA-256 hex of exact source), status, and continuity_note. Status is
-one of authored/installed/admitted/rejected/placed. These are HOST metadata,
+one of authored/installed/admitted/rejected/placed/expired. These are HOST metadata,
 not fields the model envelope can assign. The caller must validate receipts,
 source identity and ordering before calling: this module checks schema, not
 persistence/status authenticity. Task 7b owns evidence and rollback handling.
@@ -53,7 +53,9 @@ _LITERARY_FILES = {
     "gilman": "gilman.txt",
     "hodgson": "hodgson.txt",
 }
-_STATUSES = frozenset({"authored", "installed", "admitted", "rejected", "placed"})
+_STATUSES = frozenset(
+    {"authored", "installed", "admitted", "rejected", "placed", "expired"}
+)
 _CANDIDATE_ID = re.compile(r"[0-9a-f]{64}")
 
 
