@@ -2099,6 +2099,13 @@ no_unwear:
 	/* ** we are now done adjusting the object ** */
 
 
+#ifdef CHAOS
+	/* The replacement is a fresh ordinary object, not a copy of the curio.
+	 * Core callers still own the old allocation: end its identity now, while
+	 * retaining protective handling if it is kept.  Leave the one-shot player
+	 * record (including source, state and remaining uses) untouched. */
+	if (obj->curio_tag) obj->curio_tag = CHAOS_CURIO_INERT_REMNANT;
+#endif
 	/* swap otmp for obj */
 	replace_object(obj, otmp);
 	if (obj_location == OBJ_INVENT) {
