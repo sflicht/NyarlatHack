@@ -5,6 +5,7 @@
 /* shknam.c -- initialize a shop */
 
 #include "hack.h"
+#include "chaos_curio.h"
 
 
 #ifndef OVLB
@@ -976,6 +977,7 @@ struct obj *obj;
 	
 	if(obj->ostolen || ESHK(shkp)->pbanned) return FALSE;
 
+    if (chaos_curio_tagged(obj)) return FALSE;
     if (shp->shoptype == GENERALSHOP) return TRUE;
     else for (i = 0; i < SIZE(shtypes[0].iprobs) && shp->iprobs[i].iprob; i++){
 		if (shp->iprobs[i].itype < 0 ?

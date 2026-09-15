@@ -1407,7 +1407,8 @@ boolean telekinesis;	/* not picking it up directly by hand */
 		    gold_capacity == 1L ? "one" : "some", obj->quan, where);
 		pline("%s %ld gold piece%s.",
 		    nearloadmsg, gold_capacity, plur(gold_capacity));
-		costly_gold(obj->ox, obj->oy, gold_capacity);
+		if (!chaos_curio_tagged(obj))
+		    costly_gold(obj->ox, obj->oy, gold_capacity);
 		u.ugold += gold_capacity;
 		obj->quan -= gold_capacity;
 	    } else {
@@ -1418,7 +1419,8 @@ boolean telekinesis;	/* not picking it up directly by hand */
 			  count, plur(count));
 		else
 		    prinv((char *) 0, obj, count);
-		costly_gold(obj->ox, obj->oy, count);
+		if (!chaos_curio_tagged(obj))
+		    costly_gold(obj->ox, obj->oy, count);
 		u.ugold += count;
 		if (count == obj->quan)
 		    delobj(obj);

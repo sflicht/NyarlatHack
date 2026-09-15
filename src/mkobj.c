@@ -3,6 +3,7 @@
 /* NetHack may be freely redistributed.  See license for details. */
 
 #include "hack.h"
+#include "chaos_curio.h"
 #include "prop.h"
 #include "artifact.h"
 
@@ -671,6 +672,8 @@ register struct obj *otmp;
 {
 	register struct obj *dummy;
 
+	/* Reject before allocating a billing copy or changing the original. */
+	if (chaos_curio_tagged(otmp)) return;
 	if (otmp->unpaid)
 	    subfrombill(otmp, shop_keeper(*u.ushops));
 	dummy = newobj(0);

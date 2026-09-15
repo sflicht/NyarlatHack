@@ -427,12 +427,10 @@ static void shop_regression(const char *which) {
     if (!strcmp(which,"shop-quote")) {
         before=o;
         addtobill(&o,TRUE,FALSE,FALSE);
-        fprintf(stderr,"shop quote: %s",output);
-        assert(strstr(output,"per inert curio.\"\n"));
-        assert(!strstr(output,"Counter"));
-        assert(o.quan==before.quan && o.curio_tag==before.curio_tag);
-        assert(o.unpaid && ESHK(&shk)->billct==1);
-        assert(ESHK(&shk)->bill[0].bquan==2);
+        expect_name(output,"");
+        assert(!memcmp(&before,&o,sizeof o));
+        assert(!o.unpaid && !ESHK(&shk)->billct);
+        assert(!ESHK(&shk)->debit && !ESHK(&shk)->credit);
     } else {
         memset(&bill,0,sizeof bill); bill.bo_id=o.o_id; bill.bquan=3; bill.price=7;
         o.unpaid=1; before=o;
@@ -441,25 +439,12 @@ static void shop_regression(const char *which) {
         if (!strcmp(which,"shop-poor")) ESHK(&shk)->credit=0;
         result=dopayobj(&shk,&bill,&op,!strcmp(which,"shop-refuse-used") ? 1 : 0,
                        strcmp(which,"shop-poor") != 0 && strcmp(which,"shop-paid") != 0);
-        if (!strcmp(which,"shop-paid")) {
-            expect_name(output,"The price is deducted from your credit.\n"
-                        "You paid for an inert curio at a cost of 7 gold pieces.\n");
-            assert(result==2 && ESHK(&shk)->credit==93);
-            assert(bill.bquan==2 && !bill.useup);
-            before.sknown=1; /* ordinary successful-purchase ID side effect */
-        } else if (!strcmp(which,"shop-refuse-used")) {
-            fprintf(stderr,"shop refusal: %s",output);
-            expect_name(output,"\"Pay for the other inert curio before buying these.\"\n");
-            assert(result==-1);
-        } else if (!strcmp(which,"shop-poor")) {
-            expect_name(output,"You don't have gold enough to pay for an inert curio.\n");
-            assert(result==0);
-        } else {
-            expect_name(question,"An inert curio for 7 zorkmids.  Pay?");
-            assert(result==-1);
-        }
+        expect_name(output,""); expect_name(question,"");
+        assert(result==-1);
+        assert(ESHK(&shk)->credit==(!strcmp(which,"shop-poor") ? 0 : 100));
+        assert(!ESHK(&shk)->debit && !ESHK(&shk)->robbed && !ESHK(&shk)->billct);
         assert(!memcmp(&before,&o,sizeof o)); assert(op==&o);
-        assert(bill.bquan==(!strcmp(which,"shop-paid") ? 2 : 3) && bill.price==7);
+        assert(bill.bquan==3 && bill.price==7 && !bill.useup);
     }
     assert(!memcmp(&curio,&u.curio,sizeof curio));
     test_rng_unchanged(next); rem_all_mx(&shk); fmon=0; rooms[0].resident=0;
