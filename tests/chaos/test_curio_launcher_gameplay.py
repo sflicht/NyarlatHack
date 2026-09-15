@@ -19,6 +19,7 @@ import unittest
 from unittest.mock import patch
 
 from gameplay_support import ANSI, ROOT, Game
+from native_fixture_selection import prepare
 from chaos import curio_continuity as continuity
 from chaos.curio_store import store_candidate
 from chaos.director import Mailbox
@@ -121,6 +122,7 @@ def decode_save(test, data, schema, source, charges, state, sanity):
 )
 class CurioLauncherGameplayTests(unittest.TestCase):
     def test_fresh_bundle_save_and_explicit_matching_launcher_restore(self):
+        selection = prepare(ROOT)
         self.assertEqual((ROOT / ".chaos-build").read_text().strip(), "1")
         self.assertEqual(
             sha((ROOT / "tests/chaos/gameplay_support.py").read_bytes()),
@@ -148,6 +150,9 @@ class CurioLauncherGameplayTests(unittest.TestCase):
                 "gameplay_support.py",
                 "replay_clock.c",
                 "curio_save_layout.c",
+                "native_fixture_selection.py",
+                "native_build_identity.py",
+                "native_build_calibration.py",
                 "test_curio_restart_gameplay.py",
                 "test_curio_gameplay.py",
             )
@@ -188,13 +193,8 @@ class CurioLauncherGameplayTests(unittest.TestCase):
         for name in ("gameplay_support.py", "replay_clock.c", "curio_save_layout.c"):
             shutil.copy2(ROOT / "tests/chaos" / name, root / name)
         shutil.copy2(__file__, root / Path(__file__).name)
-        # Pin the preserved installed CHAOS1 binary/data, not src/dnethack.
-        # These are fixture identities, not historical test results.
-        installed = {
-            "dnethack": "2d032ebc8f9773a18927f553a4cc7932e407953735980586a4349536ae55fbc0",
-            "nhdat": "b69e9b107ac4aa1a28ac50ab7ea47a5d35a4ed14fb298d0d71859e3519cffc25",
-            "license": "93a3ae2cb8dee482daddfaebe53bcffe5b114b603def19b4dca21621cbc5a747",
-        }
+        # Explicit historical pins OR verified source inputs; never fallback.
+        installed = selection.artifact_hashes
         for name, digest in installed.items():
             self.assertEqual(sha((ROOT / "dnethackdir" / name).read_bytes()), digest)
         dump(
@@ -204,10 +204,11 @@ class CurioLauncherGameplayTests(unittest.TestCase):
                 for n in ("dnethack", "nhdat", "license")
             },
         )
+        dump("helper-source-identity.json", selection.verify_helper_copy(root))
         clock, layout = root / "clock.so", root / "layout"
         commands = [
             [
-                "cc",
+                selection.compiler,
                 "-shared",
                 "-fPIC",
                 "-Wall",
@@ -219,7 +220,7 @@ class CurioLauncherGameplayTests(unittest.TestCase):
                 str(clock),
             ],
             [
-                "cc",
+                selection.compiler,
                 "-std=gnu17",
                 "-Wall",
                 "-Wextra",
@@ -234,13 +235,23 @@ class CurioLauncherGameplayTests(unittest.TestCase):
         ]
         dump("build-commands.json", commands)
         for command in commands:
-            result = subprocess.run(command, capture_output=True, timeout=30)
+            result = subprocess.run(
+                command, capture_output=True, timeout=30, env=selection.environment
+            )
             with (root / "build.log").open("ab") as log:
                 log.write(result.stdout + result.stderr)
             self.assertEqual(result.returncode, 0, result.stderr)
-        output = subprocess.check_output([str(layout)], timeout=5)
+        output = subprocess.check_output(
+            [str(layout)], timeout=5, env=selection.environment
+        )
         (root / "layout.json").write_bytes(output)
         schema = json.loads(output)
+        selection.validate_schema(schema)  # actual ELF vs source-matched reporter
+        dump("native-selection.json", selection.record())
+        dump(
+            "helper-identity.json",
+            {str(p): metadata(p) for p in (clock, layout)},
+        )
         bundles, journal = root / "bundles", root / "journal"
         bundles.mkdir(mode=0o700)
         journal.mkdir(mode=0o700)
@@ -265,7 +276,7 @@ class CurioLauncherGameplayTests(unittest.TestCase):
             candidate.candidate_id,
         ]
         g = Game(
-            ROOT / "dnethackdir",
+            selection.tuple_dir,
             clock,
             wizard=False,
             root=root / "session",
@@ -430,6 +441,7 @@ class CurioLauncherGameplayTests(unittest.TestCase):
             (dest / "fields.json").write_text(json.dumps(fields, indent=2))
             return saved_turn
 
+        dump("fresh-copy-identity.json", selection.verify_copy(g.game))
         g.start()
         pids = process_evidence("fresh")
         receipt = json.loads((g.run / "curio-install.json").read_text())
@@ -484,6 +496,7 @@ class CurioLauncherGameplayTests(unittest.TestCase):
         self.assertEqual((g.run / "events.jsonl").read_bytes(), native_before)
         g.launcher_fresh = False
         restore_start = len(g.raw)
+        dump("restore-copy-identity.json", selection.verify_copy(g.game))
         g.start()
         pids = process_evidence("restore")
         self.assertNotIn(b"An uncanny curio may appear", bytes(g.raw[restore_start:]))
