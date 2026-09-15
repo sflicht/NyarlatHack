@@ -3,6 +3,9 @@
 import json
 import unittest
 
+from unittest.mock import patch
+
+from chaos import episodes
 from chaos.episodes import parse_episode_event
 from chaos.protocol import parse_event
 from test_director import event
@@ -21,6 +24,420 @@ def obs(seq=3, operation="none", stage="enabled", root_seq=0, fact="none"):
             operation=operation, stage=stage, root_seq=root_seq, fact=fact
         ),
     )
+
+
+def wire(*rows):
+    return b"".join(json.dumps(row).encode() + b"\n" for row in rows)
+
+
+def session(seq=1, detail="new", **kw):
+    return event(seq, **dict(dict(event="session", detail=detail, safe=0), **kw))
+
+
+def enabled(seq=1):
+    return dict(obs(seq), safe=0)
+
+
+def action(rows, operation="whistling", fact="sound_high", terminal="completed"):
+    """Append one synthetic action and return its exact expected evidence."""
+    root = len(rows) + 1
+    rows.append(obs(root, operation, "started"))
+    notice = None
+    if fact is not None:
+        notice = len(rows) + 1
+        rows.append(obs(notice, operation, "notice", root, fact))
+    end = None
+    if terminal is not None:
+        end = len(rows) + 1
+        rows.append(obs(end, operation, terminal, root))
+    return dict(root_seq=root, notice_seq=notice, end_seq=end, fact=fact)
+
+
+class EpisodeProjectionTests(unittest.TestCase):
+    def project(self, *rows):
+        self.assertTrue(callable(getattr(episodes, "project_episodes", None)))
+        return episodes.project_episodes(wire(*rows))
+
+    def test_complete_history_chronology(self):
+        valid = (session(), event(2), event(3, event="session", detail="restore"))
+        self.project(*valid)
+        self.project(enabled(), session(2), enabled(3), session(4, "restore"))
+        bad_histories = [
+            (),
+            (event(),),
+            (session(detail="restore"),),
+            (session(phase="attempt"),),
+            (session(2),),
+            (session(), session(2)),
+            (session(), event(3)),
+            (session(), event(2), event(2)),
+            (session(), event(3), event(2)),
+            (enabled(),),
+            (enabled(), event(2)),
+            (enabled(), enabled(2), session(3)),
+            (session(), event(2, event="death"), event(3)),
+            (session(), event(2, event="death"), enabled(3)),
+            (session(), obs(2, "whistling", "started")),
+            (
+                enabled(),
+                session(2),
+                session(3, "restore"),
+                obs(4, "whistling", "started"),
+            ),
+        ]
+        for key in ("safe", "spent", "reserved", "last_id"):
+            bad_histories.append((session(**{key: 1}),))
+            bad_histories.append((dict(enabled(), **{key: 1}), session(2)))
+        for key in ("safe", "turn", "spent", "last_id"):
+            bad_histories.append((session(), event(2, **{key: 11}), event(3)))
+        for rows in bad_histories:
+            with self.subTest(rows=rows), self.assertRaises(ValueError):
+                self.project(*rows)
+
+    def test_raw_caps_and_malformed_history(self):
+        from chaos.director import DEFAULT_BYTES, DEFAULT_EVENTS
+
+        for raw in (
+            b"",
+            b"\n",
+            wire(session())[:-1],
+            b"\xff\n",
+            b"{}\n",
+            wire(session()) + b"{}",
+            b" " * DEFAULT_BYTES + b"\n",
+            b"{}\n" * (DEFAULT_EVENTS + 1),
+            "{}\n",
+            None,
+            wire(session(v=3)),
+            wire(session()) + b"\n",
+        ):
+            with self.subTest(raw=repr(raw)[:50]), self.assertRaises(ValueError):
+                episodes.project_episodes(raw)
+
+    def test_caps_before_parse_and_valid_event_ceiling(self):
+        from chaos.director import DEFAULT_BYTES, DEFAULT_EVENTS
+
+        for raw in (b" " * DEFAULT_BYTES + b"\n", b"{}\n" * (DEFAULT_EVENTS + 1)):
+            with patch.object(episodes, "parse_episode_event") as parser:
+                with self.assertRaisesRegex(ValueError, "history cap"):
+                    episodes.project_episodes(raw)
+                parser.assert_not_called()
+        raw = wire(session()) + b"".join(
+            wire(event(i)) for i in range(2, DEFAULT_EVENTS + 1)
+        )
+        self.assertEqual(episodes.project_episodes(raw)["episodes"], [])
+        with self.assertRaises(ValueError):
+            episodes.project_episodes(raw + wire(event(DEFAULT_EVENTS + 1)))
+
+    def test_full_validation_survives_window_eviction_and_restore(self):
+        rows = [enabled(), session(2)]
+        for _ in range(36):
+            action(rows)
+        rows.extend(
+            [
+                dict(enabled(len(rows) + 1), safe=1),
+                session(len(rows) + 2, "restore", safe=1),
+            ]
+        )
+        self.assertEqual(self.project(*rows)["episodes"], [])
+        rows[3] = obs(4, "whistling", "notice", 2, "sound_high")
+        with self.assertRaises(ValueError):
+            self.project(*rows)
+
+    def test_all_delivered_facts_project_without_identity_claims(self):
+        for operation, facts in (
+            (
+                "whistling",
+                (
+                    "sound_high",
+                    "sound_shrill",
+                    "sound_normal",
+                    "sound_strange",
+                    "sound_humming",
+                ),
+            ),
+            (
+                "fountain_drink",
+                ("water_refreshed", "water_foul", "detection_presented"),
+            ),
+        ):
+            for fact in facts:
+                rows = [enabled(), session(2)]
+                evidence = action(rows, operation, fact)
+                self.assertEqual(
+                    self.project(*rows)["episodes"],
+                    [
+                        dict(
+                            operation=operation,
+                            count=1,
+                            saturated=False,
+                            evidence=[evidence],
+                        )
+                    ],
+                )
+
+    def test_active_root_linkage(self):
+        root = obs(3, "whistling", "started")
+        notice = obs(4, "whistling", "notice", 3, "sound_high")
+        end = obs(5, "whistling", "completed", 3)
+        self.project(enabled(), session(2), root, notice, end)
+        self.project(enabled(), session(2), root)  # unfinished is legal
+        bad = [
+            [notice],
+            [root, dict(notice, turn=11)],
+            [root, obs(4, "fountain_drink", "notice", 3, "water_foul")],
+            [root, notice, dict(notice, seq=5)],
+            [root, obs(4, "whistling", "completed", 3), dict(notice, seq=5)],
+            [root, notice, end, dict(end, seq=6)],
+            [
+                root,
+                obs(4, "whistling", "started"),
+                dict(end, observation=dict(end["observation"], root_seq=3)),
+            ],
+            [root, obs(4, "whistling", "notice", 2, "sound_high")],
+            [root, obs(4, "whistling", "notice", 5, "sound_high")],
+        ]
+        for boundary in ("level_enter", "level_leave", "death"):
+            bad.append([root, event(4, event=boundary), end])
+        bad.append(
+            [
+                root,
+                dict(enabled(4), safe=1),
+                session(5, "restore", safe=1),
+                dict(end, seq=6),
+            ]
+        )
+        bad.append(
+            [
+                obs(3, "fountain_drink", "started"),
+                obs(4, "fountain_drink", "notice", 3, "cannot_reach"),
+                obs(5, "fountain_drink", "completed", 3),
+            ]
+        )
+        for rows in bad:
+            # Keep chronology valid for the orphan case so linkage is tested.
+            rows = [dict(r, seq=i) for i, r in enumerate(rows, 3)]
+            with self.subTest(rows=rows), self.assertRaises(ValueError):
+                self.project(enabled(), session(2), *rows)
+
+    def test_completed_evidence_and_incomplete_boundaries(self):
+        root = obs(3, "whistling", "started")
+        notice = obs(4, "whistling", "notice", 3, "sound_high")
+        end = obs(6, "whistling", "completed", 3)
+        result = self.project(
+            enabled(),
+            session(2),
+            root,
+            notice,
+            event(5, private={"target_id": "SECRET"}),
+            end,
+        )
+        self.assertEqual(
+            result["episodes"],
+            [
+                dict(
+                    operation="whistling",
+                    count=1,
+                    saturated=False,
+                    evidence=[
+                        dict(root_seq=3, notice_seq=4, end_seq=6, fact="sound_high")
+                    ],
+                )
+            ],
+        )
+        self.assertNotIn("SECRET", json.dumps(result))
+        for suffix in (
+            [],
+            [notice],
+            [notice, event(5, event="level_enter")],
+            [notice, event(5, event="level_leave")],
+            [notice, event(5, event="death")],
+            [notice, obs(5, "whistling", "started")],
+        ):
+            output = self.project(enabled(), session(2), root, *suffix)
+            self.assertEqual(output["episodes"], [])
+            expected = (
+                2
+                if suffix
+                and suffix[-1]["v"] == 2
+                and suffix[-1]["observation"]["stage"] == "started"
+                else 1
+            )
+            self.assertEqual(
+                output["coverage"]["incomplete"], dict(count=expected, saturated=False)
+            )
+
+    def test_blocked_and_completed_without_notice(self):
+        for notice in (False, True):
+            rows = [enabled(), session(2), obs(3, "fountain_drink", "started")]
+            if notice:
+                rows.append(obs(4, "fountain_drink", "notice", 3, "cannot_reach"))
+            rows.append(obs(len(rows) + 1, "fountain_drink", "blocked", 3))
+            result = self.project(*rows)
+            self.assertEqual(result["episodes"], [])
+            self.assertEqual(
+                result["coverage"]["blocked"], dict(count=1, saturated=False)
+            )
+            self.assertEqual(result["coverage"]["incomplete"]["count"], 0)
+        result = self.project(
+            enabled(),
+            session(2),
+            obs(3, "whistling", "started"),
+            obs(4, "whistling", "completed", 3),
+        )
+        self.assertEqual(result["episodes"], [])
+        self.assertEqual(
+            result["coverage"]["completed_without_notice"],
+            dict(count=1, saturated=False),
+        )
+
+    def test_saturation_and_first_two_latest(self):
+        for count in (1, 2, 3, 4, 8):
+            rows = [enabled(), session(2)]
+            expected = [
+                action(rows, fact="sound_high" if i % 2 else "sound_shrill")
+                for i in range(count)
+            ]
+            result = self.project(*rows)["episodes"][0]
+            self.assertEqual(result["count"], min(3, count))
+            self.assertEqual(result["saturated"], count > 3)
+            self.assertEqual(
+                result["evidence"],
+                expected if count <= 3 else expected[:2] + expected[-1:],
+            )
+        for terminal, key in (
+            (None, "incomplete"),
+            ("blocked", "blocked"),
+            ("completed", "completed_without_notice"),
+        ):
+            for count in (3, 4):
+                rows = [enabled(), session(2)]
+                for _ in range(count):
+                    action(rows, "fountain_drink", None, terminal)
+                self.assertEqual(
+                    self.project(*rows)["coverage"][key],
+                    dict(count=3, saturated=count > 3),
+                )
+
+    def test_window_eviction_and_restore_reset(self):
+        for count in (32, 33, 35, 36):
+            rows = [enabled(), session(2)]
+            first = action(rows, fact=None, terminal=None)
+            evidence = [action(rows) for _ in range(count - 1)]
+            result = self.project(*rows)
+            self.assertEqual(
+                result["coverage"]["omitted_roots"],
+                dict(count=min(3, count - 32), saturated=count > 35),
+            )
+            self.assertEqual(
+                result["coverage"]["incomplete"]["count"], int(count == 32)
+            )
+            retained = evidence[max(0, count - 33) :]
+            self.assertEqual(
+                result["episodes"][0]["evidence"], retained[:2] + retained[-1:]
+            )
+            self.assertNotIn(first, result["episodes"][0]["evidence"])
+            for opted in (False, True):
+                restored = list(rows)
+                if opted:
+                    restored.append(dict(enabled(len(restored) + 1), safe=1))
+                restored.append(session(len(restored) + 1, "restore", safe=1))
+                output = self.project(*restored)
+                self.assertEqual(output["episodes"], [])
+                self.assertTrue(
+                    all(
+                        v == dict(count=0, saturated=False)
+                        for v in output["coverage"].values()
+                    )
+                )
+                if opted:
+                    new = action(restored, "fountain_drink", "water_foul")
+                    self.assertEqual(
+                        self.project(*restored)["episodes"][0]["evidence"], [new]
+                    )
+        # A legacy process can restore with observations enabled, no invented save row.
+        rows = [session(), dict(enabled(2), safe=0), session(3, "restore")]
+        new = action(rows)
+        self.assertEqual(self.project(*rows)["episodes"][0]["evidence"], [new])
+
+    def test_canonical_bound_determinism_and_overflow_guard(self):
+        # A conservative schema bound uses MAX_INT references, larger than the
+        # 50,000-row history can actually produce; no contract cap is relaxed.
+        from chaos.protocol import MAX_INT
+
+        upper = self.project(session())
+        upper["episodes"] = [
+            dict(
+                operation=operation,
+                count=3,
+                saturated=False,
+                evidence=[
+                    dict(
+                        root_seq=MAX_INT, notice_seq=MAX_INT, end_seq=MAX_INT, fact=fact
+                    )
+                    for _ in range(3)
+                ],
+            )
+            for operation, fact in (
+                ("fountain_drink", "detection_presented"),
+                ("whistling", "sound_strange"),
+            )
+        ]
+        for value in upper["coverage"].values():
+            value.update(count=3, saturated=False)
+
+        def encode(value):
+            return json.dumps(
+                value, sort_keys=True, separators=(",", ":"), ensure_ascii=True
+            ).encode("ascii")
+
+        self.assertLessEqual(len(encode(upper)), 4096)
+        rows = [enabled(), session(2)]
+        for _ in range(4):
+            action(rows)
+            action(rows, "fountain_drink", "detection_presented")
+        first = self.project(*rows)
+        self.assertEqual(
+            [g["operation"] for g in first["episodes"]], ["fountain_drink", "whistling"]
+        )
+        self.assertEqual(encode(first), encode(self.project(*rows)))
+        raw = wire(*rows)
+        # Valid input cannot exceed the proven bound; inject a serializer result
+        # only to exercise fail-closed defense against future schema expansion.
+        with patch("json.dumps", return_value="x" * 4097):
+            with self.assertRaisesRegex(ValueError, "summary.*cap"):
+                episodes.project_episodes(raw)
+
+    def test_legacy_empty_projection_and_redaction(self):
+        expected = dict(
+            episode_context_v=1,
+            scope="selected_whistle_fountain",
+            lookback_roots=32,
+            episodes=[],
+            coverage={
+                key: dict(count=0, saturated=False)
+                for key in (
+                    "incomplete",
+                    "blocked",
+                    "completed_without_notice",
+                    "omitted_roots",
+                )
+            },
+        )
+        for row in (
+            session(),
+            session(private={"target_id": "SECRET"}),
+            session(vitals=obs()["vitals"]),
+        ):
+            self.assertEqual(self.project(row), expected)
+        self.assertEqual(
+            self.project(
+                session(),
+                event(2, event="apply", phase="attempt"),
+                event(3, event="pray", detail="cancelled"),
+            ),
+            expected,
+        )
 
 
 class EpisodeParserTests(unittest.TestCase):
