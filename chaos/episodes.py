@@ -8,7 +8,10 @@ Whistling facts never establish ordinary/magic identity or obedience.
 
 from collections import deque
 import json
+import os
 
+from . import curio_continuity as continuity
+from . import curio_store as store
 from .director import DEFAULT_BYTES, DEFAULT_EVENTS
 from .protocol import MAX_INT, NUMBERS, VITALS, integer, parse_event, strict_json
 
@@ -233,3 +236,76 @@ def project_episodes(raw: bytes) -> dict:
     if len(encoded) > 4096:
         raise ValueError("episode summary byte cap exceeded")
     return public
+
+
+def _validate_episode_checkpoint(proof):
+    """Validate host proof shape before touching any filesystem resource."""
+    if type(proof) is not dict or set(proof) != {"directory", "event"}:
+        raise ValueError("invalid episode checkpoint fields")
+    event = proof["event"]
+    if type(event) is not dict or set(event) != {"identity", "length", "sha256"}:
+        raise ValueError("invalid episode event checkpoint fields")
+    for identity in (proof["directory"], event["identity"]):
+        if (
+            type(identity) is not list
+            or len(identity) != 2
+            or any(type(v) is not int or v < 0 for v in identity)
+        ):
+            raise ValueError("invalid host identity")
+    if type(event["length"]) is not int or not 0 < event["length"] <= DEFAULT_BYTES:
+        raise ValueError("invalid episode checkpoint length")
+    digest = event["sha256"]
+    if (
+        type(digest) is not str
+        or len(digest) != 64
+        or any(c not in "0123456789abcdef" for c in digest)
+    ):
+        raise ValueError("invalid episode checkpoint digest")
+
+
+def snapshot_episodes(path, *, checkpoint=None):
+    """Return (public summary, host proof) for private run events.jsonl.
+
+    A checkpoint selects only its complete prefix; later bytes are not history
+    for this projection, though the whole file must remain within DEFAULT_BYTES.
+    Rechecks establish local unchanged-prefix identity at a verified read instant,
+    not a signature, protection from a malicious same-user forger, or future
+    immutability. This read-only API never creates, repairs or adopts resources.
+    """
+    if checkpoint is not None:
+        _validate_episode_checkpoint(checkpoint)
+    with store._directory(path) as directory:
+        identity = continuity._inode(os.fstat(directory))
+        raw, event = continuity._file(directory, "events.jsonl", DEFAULT_BYTES)
+    if checkpoint is not None:
+        expected = checkpoint["event"]
+        if (
+            identity != checkpoint["directory"]
+            or event["identity"] != expected["identity"]
+        ):
+            raise ValueError("episode checkpoint resource replaced")
+        if len(raw) < expected["length"]:
+            raise ValueError("episode checkpoint truncated")
+        raw = raw[: expected["length"]]
+        digest = store._digest(raw)
+        if digest != expected["sha256"]:
+            raise ValueError("episode checkpoint prefix changed")
+        event = dict(identity=event["identity"], length=len(raw), sha256=digest)
+    public = project_episodes(raw)
+    # Reopen the supplied path, not just the held inode: a renamed directory
+    # can leave its old fd and child entry intact while the host path changes.
+    with store._directory(path) as directory:
+        if continuity._inode(os.fstat(directory)) != identity:
+            raise ValueError("episode directory replaced during projection")
+        current, current_event = continuity._file(
+            directory, "events.jsonl", DEFAULT_BYTES
+        )
+        prefix = current[: len(raw)]
+        if (
+            current_event["identity"] != event["identity"]
+            or len(current) < len(raw)
+            or prefix != raw
+            or store._digest(prefix) != event["sha256"]
+        ):
+            raise ValueError("episode prefix changed during projection")
+    return public, dict(directory=identity, event=event)

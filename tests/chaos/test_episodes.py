@@ -1,6 +1,11 @@
 """Synthetic schema fixtures only: no native receipts or model output."""
 
+import copy
+import hashlib
 import json
+import os
+from pathlib import Path
+import tempfile
 import unittest
 
 from unittest.mock import patch
@@ -51,6 +56,297 @@ def action(rows, operation="whistling", fact="sound_high", terminal="completed")
         end = len(rows) + 1
         rows.append(obs(end, operation, terminal, root))
     return dict(root_seq=root, notice_seq=notice, end_seq=end, fact=fact)
+
+
+class EpisodeSnapshotTests(unittest.TestCase):
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.run_dir = Path(self.temp.name)
+        self.log = self.run_dir / "events.jsonl"
+        rows = [enabled(), session(2, private="SECRET")]
+        action(rows)
+        self.raw = wire(*rows)
+        self.log.write_bytes(self.raw)
+        self.log.chmod(0o600)
+
+    def snapshot(self, path=None, **kw):
+        self.assertTrue(callable(getattr(episodes, "snapshot_episodes", None)))
+        return episodes.snapshot_episodes(self.run_dir if path is None else path, **kw)
+
+    def test_checkpoint_append_projects_only_prefix(self):
+        original = self.snapshot()
+        checkpoint = copy.deepcopy(original[1])
+        for suffix in (wire(event(6)), b'{"partial":', b"{}\n"):
+            self.log.write_bytes(self.raw)
+            with self.log.open("ab") as stream:
+                stream.write(suffix)
+            result = self.snapshot(checkpoint=checkpoint)
+            self.assertEqual(result, original)
+            self.assertEqual(checkpoint, original[1])
+            self.assertIsNot(result[1], checkpoint)
+            self.assertIsNot(result[1]["directory"], checkpoint["directory"])
+            self.assertIsNot(result[1]["event"], checkpoint["event"])
+            self.assertIsNot(
+                result[1]["event"]["identity"], checkpoint["event"]["identity"]
+            )
+            if suffix != wire(event(6)):
+                with self.assertRaises(ValueError):
+                    self.snapshot()
+
+    def test_checkpoint_rejects_changed_source(self):
+        proof = self.snapshot()[1]
+        for raw in (self.raw.replace(b"SECRET", b"PUBLIC"), self.raw[:-1]):
+            self.log.write_bytes(raw)
+            with self.assertRaises(ValueError):
+                self.snapshot(checkpoint=proof)
+        self.log.write_bytes(self.raw)
+        saved = self.run_dir / "old"
+        self.log.rename(saved)
+        self.log.write_bytes(self.raw)
+        self.log.chmod(0o600)
+        with self.assertRaises(ValueError):
+            self.snapshot(checkpoint=proof)
+        with tempfile.TemporaryDirectory() as other:
+            target = Path(other) / "events.jsonl"
+            target.write_bytes(self.raw)
+            target.chmod(0o600)
+            with self.assertRaises(ValueError):
+                self.snapshot(other, checkpoint=proof)
+
+    def test_checkpoint_schema_validated_before_io(self):
+        good = self.snapshot()[1]
+        malformed = [False, True, [], 1, "proof", {}]
+        for section in (None, "event"):
+            target = good if section is None else good[section]
+            for key in (*target, "extra"):
+                bad = copy.deepcopy(good)
+                obj = bad if section is None else bad[section]
+                if key == "extra":
+                    obj[key] = 1
+                else:
+                    del obj[key]
+                malformed.append(bad)
+        for key, values in (
+            (
+                "length",
+                [True, False, 0, -1, 1.0, "1", None, episodes.DEFAULT_BYTES + 1],
+            ),
+            ("sha256", [None, 1, "a" * 63, "A" * 64, "g" * 64, "a" * 64 + "\n"]),
+            (
+                "identity",
+                [
+                    None,
+                    {},
+                    (),
+                    [1],
+                    [1, 2, 3],
+                    [True, 2],
+                    [1, False],
+                    [-1, 2],
+                    [1, 2.0],
+                ],
+            ),
+        ):
+            for value in values:
+                bad = copy.deepcopy(good)
+                bad["event"][key] = value
+                malformed.append(bad)
+                if key == "identity":
+                    bad = copy.deepcopy(good)
+                    bad["directory"] = value
+                    malformed.append(bad)
+        for value in (None, [], True):
+            malformed.append(dict(good, event=value))
+        for bad in malformed:
+            with (
+                self.subTest(checkpoint=bad),
+                patch.object(
+                    episodes.store, "_directory", wraps=episodes.store._directory
+                ) as opening,
+            ):
+                with self.assertRaises(ValueError):
+                    self.snapshot(checkpoint=bad)
+                opening.assert_not_called()
+        # Host identity integers have no game MAX_INT ceiling; mismatches get
+        # as far as actual source verification, not schema rejection.
+        large = copy.deepcopy(good)
+        large["directory"] = [2**70, 2**71]
+        with patch.object(
+            episodes.store, "_directory", wraps=episodes.store._directory
+        ) as opening:
+            with self.assertRaises(ValueError):
+                self.snapshot(checkpoint=large)
+            opening.assert_called()
+
+    def test_rechecks_actual_resources_after_projection(self):
+        project = episodes.project_episodes
+        for mutation in (
+            "directory",
+            "file",
+            "rewrite",
+            "truncate",
+            "file_mode",
+            "directory_mode",
+            "hardlink",
+        ):
+            for checkpointed in (False, True):
+                with (
+                    self.subTest(mutation=mutation, checkpointed=checkpointed),
+                    tempfile.TemporaryDirectory() as root,
+                ):
+                    run = Path(root) / "run"
+                    run.mkdir(mode=0o700)
+                    log = run / "events.jsonl"
+                    log.write_bytes(self.raw)
+                    log.chmod(0o600)
+                    proof = self.snapshot(run)[1] if checkpointed else None
+
+                    def changed(raw):
+                        if mutation == "directory":
+                            run.rename(Path(root) / "old")
+                            run.mkdir(mode=0o700)
+                            log.write_bytes(self.raw)
+                            log.chmod(0o600)
+                        elif mutation == "file":
+                            log.rename(run / "old")
+                            log.write_bytes(self.raw)
+                            log.chmod(0o600)
+                        elif mutation == "rewrite":
+                            log.write_bytes(self.raw.replace(b"SECRET", b"PUBLIC"))
+                        elif mutation == "truncate":
+                            log.write_bytes(self.raw[:-1])
+                        elif mutation == "file_mode":
+                            log.chmod(0o640)
+                        elif mutation == "directory_mode":
+                            run.chmod(0o750)
+                        else:
+                            os.link(log, run / "link")
+                        return project(raw)
+
+                    with patch.object(
+                        episodes, "project_episodes", side_effect=changed
+                    ):
+                        with self.assertRaises((ValueError, OSError)):
+                            self.snapshot(run, checkpoint=proof)
+
+    def test_append_during_projection_keeps_consumed_prefix(self):
+        expected = self.snapshot()
+        project = episodes.project_episodes
+
+        def appended(raw):
+            with self.log.open("ab") as stream:
+                stream.write(b'{"partial":')
+            return project(raw)
+
+        with patch.object(episodes, "project_episodes", side_effect=appended):
+            self.assertEqual(self.snapshot(), expected)
+
+    def test_private_resource_guards(self):
+        for target, mode in ((self.log, 0o644), (self.run_dir, 0o755)):
+            original = target.stat().st_mode & 0o777
+            target.chmod(mode)
+            try:
+                with self.assertRaises((ValueError, OSError)):
+                    self.snapshot()
+            finally:
+                target.chmod(original)
+        with tempfile.TemporaryDirectory() as root:
+            link = Path(root) / "alias"
+            link.symlink_to(self.run_dir, target_is_directory=True)
+            with self.assertRaises((ValueError, OSError)):
+                self.snapshot(link)
+            child = self.run_dir / "child"
+            child.mkdir(mode=0o700)
+            with self.assertRaises((ValueError, OSError)):
+                self.snapshot(link / "child")
+        saved = self.run_dir / "saved"
+        self.log.rename(saved)
+        self.log.symlink_to(saved)
+        with self.assertRaises((ValueError, OSError)):
+            self.snapshot()
+        self.log.unlink()
+        os.link(saved, self.log)
+        with self.assertRaises(ValueError):
+            self.snapshot()
+        self.log.unlink()
+        self.log.mkdir(mode=0o700)
+        with self.assertRaises((ValueError, OSError)):
+            self.snapshot()
+        self.log.rmdir()
+        os.mkfifo(self.log, 0o600)
+        with self.assertRaises(ValueError):
+            self.snapshot()
+
+    def test_foreign_ownership(self):
+        for target in (self.run_dir, self.log):
+            try:
+                os.chown(target, os.getuid() + 1, -1)
+            except PermissionError:
+                self.skipTest("foreign ownership requires chown privilege")
+            try:
+                with self.assertRaises((ValueError, OSError)):
+                    self.snapshot()
+            finally:
+                os.chown(target, os.getuid(), -1)
+
+    def test_missing_resources_not_created_and_failures_do_not_leak(self):
+        self.log.unlink()
+        before = len(os.listdir("/proc/self/fd"))
+        for _ in range(20):
+            with self.assertRaises(FileNotFoundError):
+                self.snapshot()
+        self.assertEqual(len(os.listdir("/proc/self/fd")), before)
+        self.assertEqual(list(self.run_dir.iterdir()), [])
+        missing = self.run_dir / "missing"
+        with self.assertRaises(FileNotFoundError):
+            self.snapshot(missing)
+        self.assertFalse(missing.exists())
+
+    def test_director_caps_apply_to_full_file_and_consumed_events(self):
+        proof = self.snapshot()[1]
+        # Sparse overcap file: bounded disk/memory, including short checkpoints.
+        with self.log.open("r+b") as stream:
+            stream.truncate(episodes.DEFAULT_BYTES + 1)
+        for checkpoint in (None, proof):
+            with self.assertRaises(ValueError):
+                self.snapshot(checkpoint=checkpoint)
+        self.log.write_bytes(b"{}\n" * (episodes.DEFAULT_EVENTS + 1))
+        with self.assertRaisesRegex(ValueError, "history cap"):
+            self.snapshot()
+        # Above continuity's unrelated event/byte ceilings, below director caps.
+        raw = wire(session()) + b"".join(wire(event(i)) for i in range(2, 6002))
+        self.assertGreater(len(raw), episodes.continuity.MAX_EVENT_BYTES)
+        self.log.write_bytes(raw)
+        self.assertEqual(self.snapshot()[0], episodes.project_episodes(raw))
+
+    def test_fresh_exact_proof_and_public_redaction(self):
+        before = self.log.stat()
+        result = self.snapshot()
+        self.assertIs(type(result), tuple)
+        public, proof = result
+        directory = self.run_dir.stat()
+        self.assertEqual(public, episodes.project_episodes(self.raw))
+        self.assertEqual(
+            proof,
+            {
+                "directory": [directory.st_dev, directory.st_ino],
+                "event": {
+                    "identity": [before.st_dev, before.st_ino],
+                    "length": len(self.raw),
+                    "sha256": hashlib.sha256(self.raw).hexdigest(),
+                },
+            },
+        )
+        self.assertIs(type(proof["event"]["length"]), int)
+        for identity in (proof["directory"], proof["event"]["identity"]):
+            self.assertIs(type(identity), list)
+            self.assertTrue(all(type(v) is int for v in identity))
+        for secret in ("SECRET", str(self.run_dir), "directory", "identity", "sha256"):
+            self.assertNotIn(secret, json.dumps(public))
+        self.assertEqual(self.log.read_bytes(), self.raw)
+        self.assertEqual(self.log.stat().st_mtime_ns, before.st_mtime_ns)
+        self.assertEqual(list(self.run_dir.iterdir()), [self.log])
 
 
 class EpisodeProjectionTests(unittest.TestCase):
