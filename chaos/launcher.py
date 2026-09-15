@@ -7,6 +7,7 @@ No model modules are imported and the game inherits the caller's terminal.
 """
 
 import argparse
+import fcntl
 import json
 import os
 from pathlib import Path
@@ -63,6 +64,12 @@ def add_parser(sub):
         "--reuse-run-dir",
         type=Path,
         help="existing owned private directory for restore",
+    )
+    p.add_argument(
+        "--curio-source",
+        type=Path,
+        help="offline saved mode-0600 source in private 0700 parent; install before fresh play, "
+        "VERIFY ONLY on restore (no repair); installation is not native admission",
     )
     p.add_argument(
         "--game-root",
@@ -272,8 +279,38 @@ def _stop_director(pid):
     os.waitpid(pid, 0)
 
 
+def _curio_preflight(args):
+    source = getattr(args, "curio_source", None)
+    if source is None:
+        return None
+    from . import curio_store as store
+
+    prepared = store._source(source, None, None)
+    if args.reuse_run_dir is not None:
+        # Mailbox normally creates a missing lock. Curio restore must not do so.
+        # Validate the original path, before _directory resolves any symlinks.
+        with store._directory(args.reuse_run_dir) as d:
+            fd = store._open_file(d, ".director.lock")
+            os.close(fd)
+    return prepared
+
+
+def _curio_install(directory, box, prepared, *, restore):
+    from . import curio_store as store
+
+    with store._directory(directory) as d:
+        # Reassert the SAME open file description, never reopen/unlock/reacquire.
+        # Anchored identity checks reject a replaced lock, not just a busy one.
+        store._private(os.fstat(box.lock))
+        store._same_entry(d, ".director.lock", os.fstat(box.lock))
+        fcntl.flock(box.lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        store._same_entry(d, ".director.lock", os.fstat(box.lock))
+        store._install_locked(d, *prepared, "verify" if restore else "fresh")
+
+
 def play(args):
     backend, root, executable = _configuration(args)
+    curio = _curio_preflight(args)
     directory = _directory(args)
     print(
         "chaos: run directory " + json.dumps(str(directory)) + " (preserved on exit)",
@@ -308,6 +345,13 @@ def play(args):
                 pass
             else:
                 os.close(journal)
+            if curio is not None:
+                _curio_install(
+                    args.reuse_run_dir or args.run_dir or directory,
+                    box,
+                    curio,
+                    restore=args.reuse_run_dir is not None,
+                )
             log = secure_open(
                 directory / "director.log", os.O_WRONLY | os.O_CREAT | os.O_APPEND
             )

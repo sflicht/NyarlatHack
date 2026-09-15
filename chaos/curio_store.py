@@ -374,6 +374,31 @@ def _verify(directory, raw, receipt):
     return _json(_read(directory, "curio-install.json", _JSON_CAP), receipt)
 
 
+def _install_locked(directory, raw, provenance, mode):
+    """Internal publication seam: validated dirfd/source under the writer lock.
+
+    Caller owns the lock for this entire operation and subsequent child startup.
+    Never call this without _writer_lock or the supervisor's validated Mailbox.
+    """
+    if type(mode) is not str or mode not in ("fresh", "verify"):
+        raise ValueError("mode must be fresh or verify")
+    receipt = {
+        "version": 1,
+        "status": "candidate_installed_not_admitted",
+        "source_sha256": _digest(raw),
+        "provenance": provenance,
+    }
+    _check_names(directory)
+    if mode == "fresh":
+        if any(_exists(directory, name) for name in _INSTALL_FILES):
+            raise ValueError("existing candidate evidence; fresh game required")
+        _publish(directory, "curio.lua", raw)
+        if _exists(directory, "curio-used.lua"):
+            raise ValueError("game used candidate during pre-game installation")
+        _publish(directory, "curio-install.json", _encode(receipt))
+    return _verify(directory, raw, receipt)
+
+
 def install_saved_source(
     run_directory,
     *,
@@ -393,21 +418,6 @@ def install_saved_source(
         raise ValueError("mode must be fresh or verify")
     # Finish all candidate/resource validation before even creating a run lock.
     raw, provenance = _source(source_file, bundle_root, candidate_id)
-    receipt = {
-        "version": 1,
-        "status": "candidate_installed_not_admitted",
-        "source_sha256": _digest(raw),
-        "provenance": provenance,
-    }
     with _directory(run_directory) as directory:
         with _writer_lock(directory, create=mode == "fresh"):
-            _check_names(directory)
-            if mode == "fresh":
-                if any(_exists(directory, name) for name in _INSTALL_FILES):
-                    raise ValueError("existing candidate evidence; fresh game required")
-                _publish(directory, "curio.lua", raw)
-                # Detect a noncooperating/game writer before claiming installation.
-                if _exists(directory, "curio-used.lua"):
-                    raise ValueError("game used candidate during pre-game installation")
-                _publish(directory, "curio-install.json", _encode(receipt))
-            return _verify(directory, raw, receipt)
+            return _install_locked(directory, raw, provenance, mode)
