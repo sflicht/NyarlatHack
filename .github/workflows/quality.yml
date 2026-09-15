@@ -46,7 +46,7 @@ jobs:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           ref: ${{ github.sha }}
-          fetch-depth: 1
+          fetch-depth: 0
           persist-credentials: false
       - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
         with:
@@ -55,24 +55,53 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install --no-install-recommends -y \
-            build-essential bison flex libncursesw5-dev pkg-config liblua5.4-dev
-      - name: Build both modes and run the complete offline suite
+            build-essential gcc-13 binutils bison flex libncursesw5-dev pkg-config liblua5.4-dev
+      - name: Prepare authenticated native tuples
         run: |
           set -euo pipefail
-          make -j2 install CHAOS=0 2>&1 | tee ci-build-off.log
-          stock="$RUNNER_TEMP/nyarlathack-stock"
-          mkdir -p "$stock"
-          cp dnethackdir/dnethack dnethackdir/nhdat dnethackdir/license "$stock/"
-          make -j2 install CHAOS=1 2>&1 | tee ci-build-on.log
-          NYARLATHACK_STOCK_DIR="$stock" NYARLATHACK_GAME_TESTS=1 \
-            python -m unittest discover -s tests/chaos -p 'test_*.py' -v \
-            2>&1 | tee ci-tests.log
-      - name: Retain build and test logs
+          umask 077
+          /usr/bin/python3 scripts/prepare_native_ci.py \
+            --root "$GITHUB_WORKSPACE" --output-dir "$RUNNER_TEMP/native-ci" \
+            --expected-revision "$GITHUB_SHA" 2>&1 | tee "$RUNNER_TEMP/native-preparation.log"
+      - name: Run the complete offline suite once
+        run: |
+          set -euo pipefail
+          umask 077
+          out="$RUNNER_TEMP/native-ci"
+          : > "$out/full-suite.log"
+          # Preserve intentionally public negative fixtures inside private TMPDIR.
+          umask 022
+          env -i PATH=/usr/bin:/bin HOME="$out/home" LANG=C.UTF-8 TZ=America/New_York \
+            PKG_CONFIG_LIBDIR=/usr/lib/x86_64-linux-gnu/pkgconfig:/usr/share/pkgconfig \
+            MAIL="$out/MAIL" TMPDIR="$out/fixtures" PYTHONDONTWRITEBYTECODE=1 \
+            NYARLATHACK_STOCK_DIR="$out/stock" NYARLATHACK_GAME_TESTS=1 \
+            NYARLATHACK_PRECURIO_DIR="$out/precurio" \
+            NYARLATHACK_NATIVE_FIXTURE_MODE=source-build \
+            NYARLATHACK_NATIVE_BUILD_RECEIPT="$out/system-gcc13" \
+            NYARLATHACK_NATIVE_EXPECTED_REVISION="$GITHUB_SHA" \
+            /usr/bin/python3 -m unittest discover -s tests/chaos -p 'test_*.py' -v \
+            2>&1 | tee "$out/full-suite.log"
+      - name: Retain selected build and test diagnostics
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: native-build-and-test-logs
-          path: ci-*.log
+          path: |
+            ${{ runner.temp }}/native-preparation.log
+            ${{ runner.temp }}/native-ci/*.json
+            ${{ runner.temp }}/native-ci/full-suite.log
+            ${{ runner.temp }}/native-ci/system-gcc13/*.json
+            ${{ runner.temp }}/native-ci/system-gcc13/*.log
+            ${{ runner.temp }}/native-ci/system-gcc13/*.txt
+            ${{ runner.temp }}/native-ci/old-on/*.json
+            ${{ runner.temp }}/native-ci/old-on/*.log
+            ${{ runner.temp }}/native-ci/old-on/*.txt
+            ${{ runner.temp }}/native-ci/fixtures/**/*.json
+            ${{ runner.temp }}/native-ci/fixtures/**/*.jsonl
+            ${{ runner.temp }}/native-ci/fixtures/**/*.raw
+            ${{ runner.temp }}/native-ci/fixtures/**/*.log
+            ${{ runner.temp }}/native-ci/fixtures/**/*.txt
+            !${{ runner.temp }}/native-ci/fixtures/**/.git/**
           if-no-files-found: ignore
           retention-days: 7
 
