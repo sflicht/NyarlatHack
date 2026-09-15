@@ -31,13 +31,24 @@ class Game:
         root=None,
         echoes=True,
         launcher_options=None,
+        launcher_fresh=False,
     ):
+        """Leave run absent for fresh launch; explicitly set launcher_fresh=False
+        before a later reuse start. Never infer the mode from path existence.
+        Existing run paths reject fresh construction; the launcher checks them
+        again at start. Default construction and startup retain legacy reuse.
+        """
+        if launcher_fresh and launcher_options is None:
+            raise ValueError("launcher_fresh requires launcher_options")
         self.root = Path(root or tempfile.mkdtemp(prefix="nyarlathack-game-test-"))
         self.game = self.root / "game"
         self.run = self.root / "run"
+        if launcher_fresh and os.path.lexists(self.run):
+            raise FileExistsError("fresh launcher run path already exists")
         if not self.game.exists():
             self.game.mkdir(parents=True)
-            self.run.mkdir(mode=0o700)
+            if not launcher_fresh:
+                self.run.mkdir(mode=0o700)
             for name in ("dnethack", "nhdat", "license"):
                 shutil.copy2(Path(source) / name, self.game / name)
             for name in ("perm", "record", "logfile", "xlogfile", "livelog"):
@@ -49,6 +60,7 @@ class Game:
         self.wizard = wizard
         self.echoes = echoes
         self.launcher_options = launcher_options
+        self.launcher_fresh = launcher_fresh
         self.pid = self.fd = None
         self.raw = bytearray()
         self.inputs = []
@@ -193,6 +205,8 @@ class Game:
 
     def start(self):
         assert self.pid is None
+        if self.launcher_fresh and self.launcher_options is None:
+            raise ValueError("launcher_fresh requires launcher_options")
         self._reader_pid = None
         self._input_checkpoint = None
         self.sessions.append(
@@ -241,7 +255,7 @@ class Game:
                     "-m",
                     "chaos",
                     "play",
-                    "--reuse-run-dir",
+                    "--run-dir" if self.launcher_fresh else "--reuse-run-dir",
                     str(self.run),
                     "--game-root",
                     str(self.game),
