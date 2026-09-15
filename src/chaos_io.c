@@ -49,7 +49,7 @@ static int append(struct chaos_io *io, int fd, const char *buf) {
     if(fsync(fd)) { io->failed=1; return 0; }
     return 1;
 }
-static int event(struct chaos_io *io, struct chaos_state *s, const struct chaos_context *c,
+static int event(struct chaos_io *io, struct chaos_state *s, const struct chaos_context *c, int version,
                  const char *name, const char *phase, const char *detail, const char *extra) {
     char a[160], b[160], d[1538], line[3072];
     int n;
@@ -57,17 +57,57 @@ static int event(struct chaos_io *io, struct chaos_state *s, const struct chaos_
     if(!chaos_quote(a,sizeof a,name,strlen(name)) || !chaos_quote(b,sizeof b,phase,strlen(phase)) ||
        !chaos_quote(d,sizeof d,detail,strlen(detail))) return 0;
     n=snprintf(line,sizeof line,
-        "{\"v\":1,\"seq\":%ld,\"turn\":%ld,\"safe\":%ld,\"event\":%s,\"phase\":%s,\"detail\":%s,"
+        "{\"v\":%d,\"seq\":%ld,\"turn\":%ld,\"safe\":%ld,\"event\":%s,\"phase\":%s,\"detail\":%s,"
         "\"sanity\":%d,\"insight\":%d,\"budget\":%d,\"spent\":%d,\"reserved\":%d,\"last_id\":%d,"
         "\"vitals\":{\"hp\":%d,\"hp_max\":%d,\"power\":%d,\"power_max\":%d}%s}\n",
-        s->seq+1,c->turn,s->safe,a,b,d,c->sanity,c->insight,chaos_budget(s,c->sanity),s->spent,s->reserved,s->last_id,
+        version,s->seq+1,c->turn,s->safe,a,b,d,c->sanity,c->insight,chaos_budget(s,c->sanity),s->spent,s->reserved,s->last_id,
         c->hp,c->hp_max,c->power,c->power_max,extra);
     if(n < 0 || (size_t)n >= sizeof line || !append(io,io->events,line)) return 0;
     ++s->seq; return 1;
 }
 int chaos_io_event(struct chaos_io *io, struct chaos_state *s, const struct chaos_context *c,
                    const char *name, const char *phase, const char *detail) {
-    return event(io,s,c,name,phase,detail,"");
+    return event(io,s,c,1,name,phase,detail,"");
+}
+int chaos_io_observation(struct chaos_io *io, struct chaos_state *s,
+                         const struct chaos_context *c, int operation, int stage,
+                         long root_seq, int fact) {
+    static const char *const operations[] = { "none", "whistling", "fountain_drink" };
+    static const char *const stages[] = { "enabled", "started", "notice", "completed", "blocked" };
+    static const char *const facts[] = { "none", "sound_high", "sound_shrill", "sound_normal",
+        "sound_strange", "sound_humming", "water_refreshed", "water_foul", "cannot_reach",
+        "detection_presented" };
+    char extra[512];
+    int n;
+    if(operation < CHAOS_OBS_OP_NONE || operation > CHAOS_OBS_OP_FOUNTAIN_DRINK ||
+       stage < CHAOS_OBS_STAGE_ENABLED || stage > CHAOS_OBS_STAGE_BLOCKED ||
+       fact < CHAOS_OBS_FACT_NONE || fact > CHAOS_OBS_FACT_DETECTION_PRESENTED) return 0;
+    /* Compare roots to the actual next record, without overflowing or advancing.
+     * Active-root ownership and duplicate suppression belong to engine scopes. */
+    if(s->seq < 0 || s->seq >= CHAOS_MAX_COUNTER ||
+       root_seq < 0 || root_seq > CHAOS_MAX_COUNTER) return 0;
+    if(stage == CHAOS_OBS_STAGE_ENABLED) {
+        if(operation != CHAOS_OBS_OP_NONE || root_seq || fact != CHAOS_OBS_FACT_NONE) return 0;
+    } else {
+        if(operation == CHAOS_OBS_OP_NONE) return 0;
+        if(stage == CHAOS_OBS_STAGE_STARTED) {
+            if(root_seq || fact != CHAOS_OBS_FACT_NONE) return 0;
+        } else {
+            if(!root_seq || root_seq > s->seq) return 0;
+            if(stage == CHAOS_OBS_STAGE_NOTICE) {
+                if(operation == CHAOS_OBS_OP_WHISTLING) {
+                    if(fact < CHAOS_OBS_FACT_SOUND_HIGH || fact > CHAOS_OBS_FACT_SOUND_HUMMING) return 0;
+                } else if(fact < CHAOS_OBS_FACT_WATER_REFRESHED ||
+                          fact > CHAOS_OBS_FACT_DETECTION_PRESENTED) return 0;
+            } else if(fact != CHAOS_OBS_FACT_NONE ||
+                      (stage == CHAOS_OBS_STAGE_BLOCKED &&
+                       operation != CHAOS_OBS_OP_FOUNTAIN_DRINK)) return 0;
+        }
+    }
+    n=snprintf(extra,sizeof extra,",\"observation\":{\"operation\":\"%s\",\"stage\":\"%s\","
+        "\"root_seq\":%ld,\"fact\":\"%s\"}",operations[operation],stages[stage],root_seq,facts[fact]);
+    if(n < 0 || (size_t)n >= sizeof extra) return 0;
+    return event(io,s,c,2,"observation",stage == CHAOS_OBS_STAGE_STARTED ? "attempt" : "result","",extra);
 }
 static void fields(char *buf, size_t cap, const struct chaos_request *r, const char *status, long expires) {
     snprintf(buf,cap,",\"id\":%d,\"status\":\"%s\",\"mutation\":\"%s\",\"value\":%d,\"duration\":%d,"
@@ -79,7 +119,7 @@ static void ack(struct chaos_io *io, struct chaos_state *s, const struct chaos_c
     char extra[512];
     fields(extra,sizeof extra,r,result == CHAOS_OK ? "accepted" : "rejected",
         result == CHAOS_OK && r->duration ? c->turn+r->duration : 0);
-    (void)event(io,s,c,"ack","result",chaos_reason(result),extra);
+    (void)event(io,s,c,1,"ack","result",chaos_reason(result),extra);
 }
 void chaos_io_expire(struct chaos_io *io, struct chaos_state *s, const struct chaos_context *c) {
     int i, mask=0;

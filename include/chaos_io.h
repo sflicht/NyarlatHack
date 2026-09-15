@@ -12,6 +12,8 @@ void chaos_io_close(struct chaos_io *);
 int chaos_io_event(struct chaos_io *, struct chaos_state *, const struct chaos_context *,
                    const char *, const char *, const char *);
 void chaos_io_expire(struct chaos_io *, struct chaos_state *, const struct chaos_context *);
+int chaos_io_observation(struct chaos_io *, struct chaos_state *,
+                         const struct chaos_context *, int, int, long, int);
 void chaos_io_safe(struct chaos_io *, struct chaos_state *, const struct chaos_context *,
                    const char *, chaos_telegraph_fn, void *);
 #endif
