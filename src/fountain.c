@@ -2051,7 +2051,11 @@ drinkfountain()
 	register int fate = rnd(30);
 
 	if (Levitation) {
+		chaos_observation_blocked();
+		chaos_observation_arm(CHAOS_OBS_OP_FOUNTAIN_DRINK,
+			CHAOS_OBS_FACT_CANNOT_REACH);
 		floating_above("fountain");
+		chaos_observation_disarm();
 		return;
 	}
 
