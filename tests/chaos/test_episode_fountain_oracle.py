@@ -147,6 +147,61 @@ class FountainOracleTests(unittest.TestCase):
         with self.assertRaises(AssertionError):
             driver.validate_legacy_pair(off, on)
 
+    def test_negative_control_evidence_is_fail_closed(self):
+        # SYNTHETIC validator inputs, not native abort receipts.
+        for mode in ("native", "raw", "budget"):
+            interval = dict(
+                action_completed=True,
+                injection=mode,
+                case="confirmed-refreshed",
+                seed=2,
+                returncode=32,
+                move_quaffed=32,
+                count=4 if mode == "native" else 3,
+                next=123 if mode != "budget" else 74575,
+                expected_count=3,
+                expected_next=74575,
+                spent_before=0,
+                spent_after=int(mode == "budget"),
+                hunger_before=500,
+                hunger_after=510,
+            )
+            probe = dict(seed=2, count=3, next=74575, changed_next=123, hunger=10)
+            expression = (
+                "!memcmp(&before,&normalized,sizeof before)"
+                if mode == "budget"
+                else "result == (decline ? MOVE_CANCELLED : MOVE_QUAFFED) && count == t.count && next == t.next"
+            )
+            diagnostic = (
+                "episode-fountain: /tmp/episode_fountain.c:200: main: Assertion `"
+                + expression
+                + "' failed.\n"
+            ).encode()
+            raw = b"Drink from the fountain? The cool draught refreshes you."
+            driver.validate_negative(mode, -6, raw, diagnostic, interval, probe)
+            for status in (0, 1, 127, -15, -9):
+                with self.assertRaises(AssertionError):
+                    driver.validate_negative(
+                        mode, status, raw, diagnostic, interval, probe
+                    )
+            for key, value in (
+                ("action_completed", False),
+                ("returncode", 0),
+                ("injection", "unsupported"),
+                ("count", 99),
+                ("next", -1),
+                ("spent_after", 99),
+            ):
+                invalid = dict(interval, **{key: value})
+                with self.assertRaises(AssertionError):
+                    driver.validate_negative(mode, -6, raw, diagnostic, invalid, probe)
+            with self.assertRaises(AssertionError):
+                driver.validate_negative(mode, -6, b"", diagnostic, interval, probe)
+            with self.assertRaises(AssertionError):
+                driver.validate_negative(
+                    mode, -6, raw, b"argc assertion failed", interval, probe
+                )
+
     def test_optimized_cli_rejected_before_arguments_or_setup(self):
         result = subprocess.run(
             ["/usr/bin/python3", "-O", str(Path(driver.__file__))],

@@ -5,6 +5,7 @@
 /* Code for drinking from fountains. */
 
 #include "hack.h"
+#include "chaos.h"
 #include "artifact.h"
 
 
@@ -2079,7 +2080,10 @@ drinkfountain()
 	}
 
 	if (fate < 10) {
+		chaos_observation_arm(CHAOS_OBS_OP_FOUNTAIN_DRINK,
+			CHAOS_OBS_FACT_WATER_REFRESHED);
 		pline_The("cool draught refreshes you.");
+		chaos_observation_disarm();
 		if(Race_if(PM_INCANTIFIER)) u.uen += rnd(10); /* don't choke on water */
 		else u.uhunger += rnd(10); /* don't choke on water */
 		newuhs(FALSE);

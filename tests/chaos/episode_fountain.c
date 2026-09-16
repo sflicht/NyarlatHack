@@ -79,8 +79,16 @@ int main(int argc, char **argv)
     long old_moves, old_monstermoves;
     unsigned seed;
     int i,x,y,result,count,next,decline, total = 0;
+    const char *injection = 0;
     FILE *f;
-    assert(argc == 2);
+    assert(argc == 2 || argc == 3);
+    if (argc == 3) {
+        assert(!strcmp(argv[1], "confirmed-refreshed"));
+        if (!strcmp(argv[2], "--inject-native")) injection = "native";
+        else if (!strcmp(argv[2], "--inject-raw")) injection = "raw";
+        else if (!strcmp(argv[2], "--inject-budget")) injection = "budget";
+        else assert(!"unsupported action injection");
+    }
     test_rng_control();
     test_rng_negative_control(argv[1]);
     if (!strcmp(argv[1], "--calibrate")) {
@@ -94,6 +102,19 @@ int main(int argc, char **argv)
                    seed,t.fate,t.hunger,t.dry,t.count,t.next);
         }
         assert(total <= 256); puts("\n]"); return 0;
+    }
+    if (!strcmp(argv[1], "--probe-controls")) {
+        assert(argc == 2 && getenv("FOUNTAIN_SEED"));
+        seed = (unsigned)atoi(getenv("FOUNTAIN_SEED"));
+        assert(seed >= 1 && seed <= 64);
+        t = preflight(seed);
+        assert(t.fate < 10 && t.dry > 0 && t.count == 3);
+        /* preflight's sentinel is the extra stream draw; now measure the
+         * real following value. This is calibration, never a dodrink reroll. */
+        next = rn2(100000);
+        printf("{\"seed\":%u,\"count\":%d,\"next\":%d,\"changed_next\":%d,\"hunger\":%d,\"calls\":%d}\n",
+               seed,t.count,t.next,next,t.hunger,reseed_count);
+        return 0;
     }
     decline = !strcmp(argv[1], "decline-selection-cancel");
     assert(decline || !strcmp(argv[1], "confirmed-refreshed"));
@@ -157,7 +178,31 @@ int main(int argc, char **argv)
     old_moves = moves; old_monstermoves = monstermoves;
     seeded_reset(seed);
     result = dodrink();
+    /* Only after the genuine confirmed native action returns; no extra scope,
+     * callback, seed reset, or production argument interpretation. */
+    if (injection) {
+        assert(!decline && result == MOVE_QUAFFED);
+        /* abort() does not flush the native renderer's buffered stdout.
+         * Retain its actual bytes, without another message/render callback. */
+        assert(!fflush(stdout));
+        if (!strcmp(injection, "native")) (void)rn2(100000);
+        else if (!strcmp(injection, "raw")) (void)random();
+        else u.chaos.spent += 1;
+    }
     count = reseed_count; next = rn2(100000);
+    if (injection) {
+        assert(getenv("FOUNTAIN_INTERVAL"));
+        f = fopen(getenv("FOUNTAIN_INTERVAL"),"w"); assert(f);
+        fprintf(f,"{\"action_completed\":true,\"case\":\"confirmed-refreshed\","
+                "\"injection\":\"%s\",\"seed\":%u,\"returncode\":%d,\"move_quaffed\":%d,"
+                "\"count\":%d,\"next\":%d,\"expected_count\":%d,\"expected_next\":%d,"
+                "\"spent_before\":%d,\"spent_after\":%d,\"hunger_before\":%d,\"hunger_after\":%d,"
+                "\"context_before\":",injection,seed,result,MOVE_QUAFFED,count,next,t.count,t.next,
+                before.chaos.spent,u.chaos.spent,before.uhunger,u.uhunger);
+        context_record(f,&before,old_moves);
+        fputs(",\"context_after\":",f); context_record(f,&u,moves);
+        fputs("}\n",f); assert(!fflush(f)); assert(!fclose(f));
+    }
     fprintf(stderr,"{\"case\":\"%s\",\"seed\":%u,\"return\":%d,"
             "\"move_quaffed\":%d,\"move_cancelled\":%d,\"count\":%d,\"next\":%d,\"expected_next\":%d,"
             "\"hunger_before\":%d,\"hunger_after\":%d,\"hunger_delta\":%d,"

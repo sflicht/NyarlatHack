@@ -69,7 +69,41 @@ def validate_legacy_pair(off, on):
     assert off == legacy, "legacy envelope OFF/ON mismatch"
 
 
-def confirmed_at_prompt(g, exe, child_env, work, supervisor, cancel, case):
+def validate_negative(mode, status, raw, diagnostic, interval, probe):
+    """Reject arbitrary crashes: require completed action and exact purity abort."""
+    assert mode in ("native", "raw", "budget")
+    assert status == -signal.SIGABRT
+    assert raw.count(b"The cool draught refreshes you.") == 1
+    assert b"Drink from the fountain?" in raw
+    assert interval["action_completed"] is True
+    assert interval["case"] == "confirmed-refreshed"
+    assert interval["injection"] == mode
+    assert interval["returncode"] == interval["move_quaffed"] == 32
+    assert interval["seed"] == probe["seed"]
+    assert interval["expected_count"] == probe["count"] == 3
+    assert interval["expected_next"] == probe["next"]
+    assert probe["changed_next"] != probe["next"]
+    assert interval["count"] == probe["count"] + int(mode == "native")
+    assert interval["next"] == probe["next" if mode == "budget" else "changed_next"]
+    assert interval["spent_before"] == 0
+    assert interval["spent_after"] == int(mode == "budget")
+    assert interval["hunger_after"] - interval["hunger_before"] == probe["hunger"]
+    expression = (
+        b"!memcmp(&before,&normalized,sizeof before)"
+        if mode == "budget"
+        else b"result == (decline ? MOVE_CANCELLED : MOVE_QUAFFED) && count == t.count && next == t.next"
+    )
+    assert re.search(
+        rb"episode_fountain\.c:\d+: main: Assertion [`']"
+        + re.escape(expression)
+        + rb"' failed\.",
+        diagnostic,
+    ), diagnostic
+
+
+def confirmed_at_prompt(
+    g, exe, child_env, work, supervisor, cancel, case, *, injection=None
+):
     """Use pinned stdin-read proof; physical fountain confirmation."""
     # Game readiness pins /proc/exe to this private path. The native tuple was
     # verified before replacing ONLY this private copy with the linked fixture.
@@ -79,6 +113,10 @@ def confirmed_at_prompt(g, exe, child_env, work, supervisor, cancel, case):
         str(g.game / "dnethack"),
         case,
     ]
+    assert injection in (None, "native", "raw", "budget")
+    if injection is not None:
+        assert case == "confirmed-refreshed"
+        command.append("--inject-" + injection)
     supervisor.save(work / "terminal.command.json", command)
     diagnostic_path = work / "terminal.stderr"
     try:
@@ -116,7 +154,7 @@ def confirmed_at_prompt(g, exe, child_env, work, supervisor, cancel, case):
                 supervisor.save(work / "prompt-proof.json", proof)
                 response = g.send(b"\x1b")
             status = g.finish(response)
-            assert status == 0, status
+            assert status == (0 if injection is None else -signal.SIGABRT), status
             assert g.inputs == (["6e", "1b"] if decline else ["79"]), g.inputs
     finally:
         if g.pid is not None or g.fd is not None:
@@ -345,6 +383,22 @@ def main(argv=None):
         calls = sum(r["count"] + 1 for r in calibration)
         assert calls <= 256
         chosen = next(r for r in calibration if r["fate"] < 10 and r["dry"] > 0)
+        # Separate real-stream calibration, no extra native actions or rerolls.
+        probe = json.loads(
+            supervisor.bounded(
+                [exe, "--probe-controls"],
+                out,
+                dict(env, FOUNTAIN_SEED=str(chosen["seed"])),
+                out / "control-probe",
+                45,
+                cancel=cancel,
+            )[0]
+        )
+        for key in ("seed", "count", "next", "hunger"):
+            assert probe[key] == chosen[key]
+        assert probe["changed_next"] != chosen["next"]
+        assert probe["calls"] == chosen["count"] + 2
+        save(out / "negative-calibration.json", probe)
         save(
             out / "rng-calibration.json",
             dict(candidates=calibration, chosen=chosen, preflight_calls=calls),
@@ -451,6 +505,70 @@ def main(argv=None):
             validate_legacy_pair(*histories)
         assert len(results) == 4
         save(out / "native-results.json", results)
+        negatives = []
+        for mode in ("native", "raw", "budget"):
+            work = out / ("negative-" + mode)
+            g = OwnedGame(selection.tuple_dir, clock, root=work)
+            selection.verify_copy(g.game)
+            options = work / "options"
+            options.write_text("OPTIONS=!splash_screen,!perm_invent\n")
+            child_env = dict(
+                env,
+                HOME=str(work),
+                TERM="xterm",
+                LINES="24",
+                COLUMNS="80",
+                NETHACKOPTIONS="@" + str(options),
+                LD_PRELOAD=str(clock),
+                NYARLATHACK_RUN_DIR=str(g.run),
+                NYARLATHACK_OBSERVATIONS="1",
+                FOUNTAIN_SEED=str(chosen["seed"]),
+                FOUNTAIN_STATE=str(work / "state.json"),
+                FOUNTAIN_INTERVAL=str(work / "interval.json"),
+            )
+            raw, diagnostic = confirmed_at_prompt(
+                g,
+                exe,
+                child_env,
+                work,
+                supervisor,
+                cancel,
+                "confirmed-refreshed",
+                injection=mode,
+            )
+            interval = json.loads((work / "interval.json").read_text())
+            validate_negative(mode, g.exitcode, raw, diagnostic, interval, probe)
+            cleanup = json.loads((work / "cleanup.json").read_text())
+            assert cleanup == dict(pid=None, returncode=-signal.SIGABRT, errors=[])
+            assert g.pid is None and g.fd is None
+            assert g.inputs == ["79"]
+            # Full-state file is deliberately not written after a purity abort.
+            assert not (work / "state.json").exists()
+            records_raw = (g.run / "events.jsonl").read_bytes()
+            records = [parse_episode_event(line) for line in records_raw.splitlines()]
+            validate_history(
+                records,
+                interval["context_before"],
+                enabled=True,
+                future=len(results[3]["observations"]) > 1,
+            )
+            after_context = dict(interval["context_after"])
+            after_context["spent"] -= int(mode == "budget")
+            # chaos_budget reports remaining allowance, not capacity; the
+            # injected spent point must reduce this derived value by one.
+            after_context["budget"] += int(mode == "budget")
+            assert after_context == interval["context_before"]
+            negative = dict(
+                mode=mode,
+                native_returncode=g.exitcode,
+                interval=interval,
+                records=records,
+                inputs=g.inputs,
+                cleanup=cleanup,
+            )
+            negatives.append(negative)
+            save(out / "negative-results.json", negatives)
+        assert len(negatives) == 3
         # native_rng.h: 34 calls in test_rng_control + one in its unused
         # negative-control dispatch, for every native process including calibration.
         header_calls = 35
@@ -463,13 +581,28 @@ def main(argv=None):
             + 1
             for result in results
         ]
-        total_calls = header_calls + calls + sum(per_action_calls)
+        negative_action_calls = [
+            header_calls + chosen["count"] + 1 + row["interval"]["count"] + 1
+            for row in negatives
+        ]
+        probe_calls = header_calls + probe["calls"]
+        total_calls = (
+            header_calls
+            + calls
+            + sum(per_action_calls)
+            + probe_calls
+            + sum(negative_action_calls)
+        )
         assert total_calls < 4096
         save(
             out / "rng-call-budget.json",
             dict(
                 calibration_calls=header_calls + calls,
                 per_action_calls=per_action_calls,
+                negative_action_calls=negative_action_calls,
+                probe_calls=probe_calls,
+                raw_libc_injected_calls=1,
+                raw_libc_note="extra random() is not a native reseed counter invocation",
                 total_calls=total_calls,
                 scope="native RNG control/preflight/action/sentinel; initialization excluded",
             ),
@@ -501,7 +634,9 @@ def main(argv=None):
                 oracle=args.oracle,
                 native_oracles_passed=True,
                 acceptance=False,
-                actions=len(results),
+                actions=len(results) + len(negatives),
+                normal_actions=len(results),
+                negative_actions=len(negatives),
             ),
         )
         return 0
@@ -514,6 +649,8 @@ def main(argv=None):
                 native_oracles_passed=True,
                 case="confirmed-refreshed",
                 native_return_verified=True,
+                actions=len(results) + len(negatives),
+                negative_controls_passed=len(negatives),
                 missing_expected_observations=[
                     "fountain_drink.started",
                     "fountain_drink.water_refreshed",
