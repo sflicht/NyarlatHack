@@ -26,6 +26,21 @@ static void seeded_reset(unsigned seed)
 }
 
 struct trace { int fate, hunger, dry, count, next; };
+static int predicted_wisdom;
+static struct monst *prepared_monster;
+static struct trace preflight_detection(unsigned seed)
+{
+    struct trace t;
+    seeded_reset(seed);
+    t.fate = rnd(30); t.hunger = 0; t.dry = -1;
+    predicted_wisdom = 0;
+    if (t.fate == 26) {
+        predicted_wisdom = rn2(19) > 12;
+        t.dry = rn2(3);
+    }
+    t.count = reseed_count; t.next = rn2(100000);
+    return t;
+}
 static struct trace preflight(unsigned seed)
 {
     struct trace t;
@@ -60,12 +75,20 @@ static void hex_record(FILE *f, const void *data, size_t size)
 static void empty_world(struct obj *potion)
 {
     int x,y;
-    assert(invent == potion && !fmon && !fobj && !ftrap && !migrating_mons && !migrating_objs);
+    assert(invent == potion && fmon == prepared_monster && !fobj && !ftrap && !migrating_mons && !migrating_objs);
+    if (prepared_monster) {
+        assert(!prepared_monster->nmon && !prepared_monster->minvent && !prepared_monster->mextra_p);
+        assert(prepared_monster->mhp > 0 && prepared_monster->mhpmax >= prepared_monster->mhp);
+        assert(prepared_monster->mx == 12 && prepared_monster->my == 10);
+        assert(prepared_monster->data == &mons[PM_LITTLE_DOG]);
+        assert(prepared_monster->mtyp == PM_LITTLE_DOG);
+    }
     assert(!nextgetobj);
     if (potion) assert(!potion->nobj && !potion->cobj && !potion->oextra_p
                        && !potion->mp && potion->where == OBJ_INVENT);
     for (x = 0; x < COLNO; ++x) for (y = 0; y < ROWNO; ++y)
-        assert(!level.monsters[x][y] && !level.objects[x][y] && !t_at(x,y));
+        assert(level.monsters[x][y] == ((prepared_monster && x == 12 && y == 10) ? prepared_monster : 0)
+               && !level.objects[x][y] && !t_at(x,y));
 }
 
 static void context_record(FILE *f, const struct you *hero, long turn)
@@ -83,7 +106,7 @@ int main(int argc, char **argv)
 {
     struct trace t;
     struct you before, normalized;
-    struct monst saved_youmonst;
+    struct monst saved_youmonst, saved_monster;
     struct rm map[COLNO][ROWNO];
     typeof(level.flags) level_flags;
     short discovery[NUM_OBJECTS];
@@ -94,6 +117,7 @@ int main(int argc, char **argv)
     unsigned seed;
     int i,x,y,result,count,next,decline,foul,mechanoid, total = 0;
     int reach, noshow, lev_cancel, levitating, returned = 0;
+    int detection, map_cancelled, no_live, map_flags = 0;
     long root = 0;
     const char *injection = 0;
     FILE *f;
@@ -116,6 +140,15 @@ int main(int argc, char **argv)
             printf("%s{\"seed\":%u,\"fate\":%d,\"hunger\":%d,\"dry\":%d,"
                    "\"count\":%d,\"next\":%d}", seed == 1 ? "" : ",\n",
                    seed,t.fate,t.hunger,t.dry,t.count,t.next);
+        }
+        assert(total <= 1024); puts("\n]"); return 0;
+    }
+    if (!strcmp(argv[1], "--calibrate-detection")) {
+        puts("[");
+        for (seed = 1; seed <= 256; ++seed) {
+            t = preflight_detection(seed); total += t.count + 1;
+            printf("%s{\"seed\":%u,\"fate\":%d,\"hunger\":%d,\"dry\":%d,\"count\":%d,\"next\":%d,\"wisdom\":%d}",
+                   seed == 1 ? "" : ",\n",seed,t.fate,t.hunger,t.dry,t.count,t.next,predicted_wisdom);
         }
         assert(total <= 1024); puts("\n]"); return 0;
     }
@@ -149,7 +182,10 @@ int main(int argc, char **argv)
     reach = noshow || !strcmp(argv[1], "lowlevel-reach-delivered");
     lev_cancel = !strcmp(argv[1], "levitating-dodrink-selection-cancel");
     levitating = reach || lev_cancel;
-    assert(decline || foul || mechanoid || levitating || !strcmp(argv[1], "confirmed-refreshed"));
+    map_cancelled = !strcmp(argv[1], "confirmed-detection-map-cancelled");
+    no_live = !strcmp(argv[1], "confirmed-detection-empty");
+    detection = map_cancelled || no_live || !strcmp(argv[1], "confirmed-detection-presented");
+    assert(decline || foul || mechanoid || levitating || detection || !strcmp(argv[1], "confirmed-refreshed"));
     assert(getenv("FOUNTAIN_SEED")); seed = (unsigned)atoi(getenv("FOUNTAIN_SEED"));
     assert(seed >= 1 && seed <= 256);
     if (levitating) {
@@ -160,8 +196,8 @@ int main(int argc, char **argv)
         t.count = reseed_count; t.next = rn2(100000);
         assert(t.count == (reach ? 1 : 0));
     } else {
-    t = mechanoid ? preflight_mechanoid(seed) : preflight(seed);
-    assert(((foul || mechanoid) ? t.fate == 20 : t.fate < 10) && t.dry > 0);
+    t = detection ? preflight_detection(seed) : (mechanoid ? preflight_mechanoid(seed) : preflight(seed));
+    assert((detection ? t.fate == 26 : ((foul || mechanoid) ? t.fate == 20 : t.fate < 10)) && t.dry > 0);
     assert(t.count == (mechanoid ? 2 : 3));
     if (decline) {
         seeded_reset(seed);
@@ -177,7 +213,7 @@ int main(int argc, char **argv)
     assert(iflags.window_inited && windowprocs.win_putstr == tty_putstr);
     assert(ttyDisplay->cols == 80 && ttyDisplay->rows == 24);
     init_objects(); init_gods();
-    if (levitating) id_permonst(); /* genuine native startup mtyp initialization */
+    if (levitating || detection) id_permonst(); /* genuine native startup mtyp initialization */
     urace.malenum = PM_HUMAN; urole.malenum = PM_WIZARD;
     u.umonnum = u.umonster = PM_HUMAN;
     youmonst.data = &mons[PM_HUMAN]; youmonst.mtyp = PM_HUMAN;
@@ -226,6 +262,30 @@ int main(int argc, char **argv)
     vision_init(); vision_reset(); vision_recalc(0);
     for (x = 1; x < COLNO; ++x) for (y = 0; y < ROWNO; ++y) newsym(x,y);
     empty_world(0);
+    if (detection) {
+        u.ulycn = NON_PM; u.ugrave_arise = NON_PM;
+        assert(Race_if(PM_HUMAN) && !Sick && !Hallucination && !Blind);
+        assert(!Upolyd && !umechanoid && ACURR(A_WIS) == 12 && AEXE(A_WIS) == 0);
+        if (!no_live) {
+            prepared_monster = makemon(&mons[PM_LITTLE_DOG],12,10,NO_MINVENT);
+            assert(prepared_monster && canseemon(prepared_monster));
+        }
+        docrt(); clear_nhwindow(WIN_MESSAGE); flush_screen(1); assert(!fflush(stdout));
+        empty_world(0);
+        if (prepared_monster) saved_monster = *prepared_monster;
+        assert(windowprocs.win_display_nhwindow == tty_display_nhwindow);
+        assert(windowprocs.win_print_glyph == tty_print_glyph);
+        assert(!(wins[WIN_MAP]->flags & WIN_CANCELLED));
+        if (map_cancelled) wins[WIN_MAP]->flags |= WIN_CANCELLED;
+        map_flags = wins[WIN_MAP]->flags;
+        /* Matched control: suppress only sense text in BOTH map cases.
+         * vpline still flushes real glyphs before NOSHOW. Otherwise cancelled
+         * map display is followed by an unrelated message More in docrt/cls.
+         * The positive blocking map itself creates More with an empty toplin. */
+        iflags.msgtype_regex = FALSE;
+        msgpline_add(MSGTYP_NOSHOW, "You sense the presence of monsters.");
+        assert(msgpline_type("You sense the presence of monsters.") == MSGTYP_NOSHOW);
+    }
     if (decline || lev_cancel) {
         potion = mksobj(POT_WATER, MKOBJ_NOINIT); assert(potion);
         potion->obj_material = objects[POT_WATER].oc_material;
@@ -326,12 +386,23 @@ int main(int argc, char **argv)
     if (potion) assert(!memcmp(&saved_potion,potion,sizeof saved_potion));
     normalized = u; normalized.uhunger = before.uhunger;
     normalized.chaos.seq = before.chaos.seq; /* driver verifies exact sequence delta */
+    if (detection) {
+        assert(AEXE(A_WIS) == before.aexe.a[A_WIS] + predicted_wisdom);
+        normalized.aexe.a[A_WIS] = before.aexe.a[A_WIS];
+        assert(wins[WIN_MAP]->flags == map_flags);
+        if (prepared_monster) assert(!memcmp(&saved_monster,prepared_monster,sizeof saved_monster));
+    }
     assert(!memcmp(&before,&normalized,sizeof before));
     assert(!memcmp(&saved_youmonst,&youmonst,sizeof youmonst));
     assert(!memcmp(map,levl,sizeof map) && !memcmp(&level_flags,&level.flags,sizeof level_flags));
     assert(!memcmp(discovery,disco,sizeof discovery) && !memcmp(definitions,objects,sizeof definitions));
     /* TTY status refresh may clear botl; all other global gameplay flags match. */
     saved_flags.botl = flags.botl;
+    if (detection && !no_live) {
+        /* monster_detect's final docrt schedules a full status redraw. */
+        assert(!saved_flags.botlx && flags.botlx == 1);
+        saved_flags.botlx = 1;
+    }
     assert(!memcmp(&saved_flags,&flags,sizeof flags));
     assert(getenv("FOUNTAIN_STATE")); f = fopen(getenv("FOUNTAIN_STATE"),"w"); assert(f);
     fprintf(f,"{\"seq_before\":%ld,\"seq_after\":%ld,\"player_before_hex\":",before.chaos.seq,u.chaos.seq);
@@ -354,6 +425,12 @@ int main(int argc, char **argv)
                 reach ? 1 : 0, returned ? "true" : "false", reach ? 0 : 1,
                 before.uprops[LEVITATION].intrinsic,HLevitation);
     fputs(",\"inventory_after_hex\":",f); hex_record(f,potion,potion ? sizeof *potion : 0);
+    if (detection)
+        fprintf(f,",\"detection\":{\"wisdom_before\":%d,\"wisdom_after\":%d,\"predicted_wisdom\":%d,\"map_flags_before\":%d,\"map_flags_after\":%d,\"population\":%d,\"monster_hp\":%d,\"monster_type\":%d,\"monster_x\":%d,\"monster_y\":%d,\"monster_bytes_unchanged\":true}",
+                before.aexe.a[A_WIS],AEXE(A_WIS),predicted_wisdom,map_flags,wins[WIN_MAP]->flags,
+                !!prepared_monster,prepared_monster ? prepared_monster->mhp : 0,
+                prepared_monster ? prepared_monster->mtyp : -1,
+                prepared_monster ? prepared_monster->mx : 0,prepared_monster ? prepared_monster->my : 0);
     fputs("}\n",f); assert(!fclose(f));
     fprintf(stderr,"\"hp\":%d,\"hp_max\":%d,\"power\":%d,\"power_max\":%d,"
             "\"sanity\":%d,\"insight\":%d,\"moves\":%ld,\"monstermoves\":%ld,"

@@ -74,6 +74,47 @@ def synthetic_reach(noshow=False, prehook=False):
 
 
 class FountainOracleTests(unittest.TestCase):
+    def test_detection_presented_and_cancelled_are_distinct(self):
+        records = synthetic(True, True)
+        records[5]["observation"]["fact"] = "detection_presented"
+        driver.validate_detection_history(
+            records, CONTEXT, enabled=True, presented=True
+        )
+        missing = copy.deepcopy(records)
+        missing.pop(5)
+        missing[-1]["seq"] = 6
+        with self.assertRaises(AssertionError):
+            driver.validate_detection_history(
+                missing, CONTEXT, enabled=True, presented=True
+            )
+        driver.validate_detection_history(
+            missing, CONTEXT, enabled=True, presented=False
+        )
+        with self.assertRaises(AssertionError):
+            driver.validate_detection_history(
+                records, CONTEXT, enabled=True, presented=False
+            )
+        for original, presented in ((records, True), (missing, False)):
+            for key, value in (
+                ("root_seq", 4),
+                ("fact", "water_refreshed"),
+                ("monster_x", 12),
+            ):
+                bad = copy.deepcopy(original)
+                bad[-1]["observation"][key] = value
+                with self.assertRaises(AssertionError):
+                    driver.validate_detection_history(
+                        bad, CONTEXT, enabled=True, presented=presented
+                    )
+            with self.assertRaises(AssertionError):
+                driver.validate_detection_history(
+                    original[:-1], CONTEXT, enabled=True, presented=presented
+                )
+        for presented in (False, True):
+            driver.validate_detection_history(
+                synthetic(False, False), CONTEXT, enabled=False, presented=presented
+            )
+
     def test_reach_exact_history_and_blocked_projection(self):
         for noshow in (False, True):
             records = synthetic_reach(noshow)

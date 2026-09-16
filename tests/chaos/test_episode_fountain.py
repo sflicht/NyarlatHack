@@ -72,6 +72,40 @@ def validate_history(
 
 REACH_CASES = ("lowlevel-reach-delivered", "lowlevel-reach-noshow")
 LEVITATING_CANCEL = "levitating-dodrink-selection-cancel"
+DETECTION_CASES = (
+    "confirmed-detection-presented",
+    "confirmed-detection-map-cancelled",
+    "confirmed-detection-empty",
+)
+
+
+def validate_detection_history(records, context, *, enabled, presented):
+    prefix = 4 if enabled else 3
+    validate_history(records[:prefix], context, enabled=enabled, future=False)
+    expected = []
+    if enabled:
+        stages = [("started", "none", 0, "attempt")]
+        if presented:
+            stages.append(("notice", "detection_presented", 5, "result"))
+        stages.append(("completed", "none", 5, "result"))
+        for stage, fact, root, phase in stages:
+            expected.append(
+                dict(
+                    context,
+                    v=2,
+                    seq=prefix + len(expected) + 1,
+                    event="observation",
+                    phase=phase,
+                    detail="",
+                    observation=dict(
+                        operation="fountain_drink",
+                        stage=stage,
+                        root_seq=root,
+                        fact=fact,
+                    ),
+                )
+            )
+    assert records[prefix:] == expected, "detection presentation history mismatch"
 
 
 def validate_reach_history(records, context, *, enabled, noshow, prehook=False):
@@ -261,6 +295,39 @@ def confirmed_at_prompt(
             proof = [dict(pid=pid, reader_pid=g._reader_pid, input=first.hex())]
             supervisor.save(work / "prompt-proof.json", proof)
             response = g.send(first)
+            if case in DETECTION_CASES:
+                presented = case == DETECTION_CASES[0]
+                (work / "detection-action.stdout").write_bytes(
+                    bytes(g.raw)[len((work / "selection-prompt.stdout").read_bytes()) :]
+                )
+                action_bytes = (work / "detection-action.stdout").read_bytes()
+                # Exact native TTY glyph output at the prepared map row. This
+                # exists even with WIN_MAP cancelled: NOT a delivery ACK.
+                glyphs = (
+                    b"\x1b[12;10H\x1b[1m\x1b[37m@\x1b[0m\x1b[C\x1b[1m\x1b[37md\x1b[0m"
+                )
+                assert (glyphs in action_bytes) == (case != DETECTION_CASES[2])
+                if presented:
+                    assert b"You sense the presence of monsters." not in response
+                    assert response.count(b"--More--") == 1
+                    assert g._reader_pid == pid, "fresh detection stdin read required"
+                    prefix = (g.run / "events.jsonl").read_bytes()
+                    assert prefix.endswith(b"\n")
+                    records = [json.loads(line) for line in prefix.splitlines()]
+                    assert not any(
+                        r.get("observation", {}).get("stage") in ("notice", "completed")
+                        for r in records
+                    )
+                    (work / "detection-prompt.events.jsonl").write_bytes(prefix)
+                    (work / "detection-prompt.stdout").write_bytes(bytes(g.raw))
+                    proof.append(dict(pid=pid, reader_pid=g._reader_pid, input="20"))
+                    supervisor.save(work / "prompt-proof.json", proof)
+                    response = g.send(b" ")
+                else:
+                    assert b"--More--" not in response
+                finish_without_input(g, supervisor, cancel)
+                assert g.inputs == (["79", "20"] if presented else ["79"])
+                return bytes(g.raw), diagnostic_path.read_bytes()
             if decline:
                 assert b"What do you want to drink?" in response, response
                 assert g._reader_pid == pid, "fresh native selection read required"
@@ -527,6 +594,32 @@ def main(argv=None):
         OwnedGame = supervisor.owned_game_type(gameplay_support.Game, cancel)
         results = []
         reach_failures = []
+        detection_failures = []
+        detection_calibration = json.loads(
+            run([exe, "--calibrate-detection"], "detection-seed-preflight")
+        )
+        assert [r["seed"] for r in detection_calibration] == list(range(1, 257))
+        detection_calls = sum(r["count"] + 1 for r in detection_calibration)
+        assert detection_calls <= 1024
+        detection_chosen = next(
+            r for r in detection_calibration if r["fate"] == 26 and r["dry"] > 0
+        )
+        assert detection_chosen["count"] == 3 and detection_chosen["hunger"] == 0
+        save(
+            out / "detection-calibration.json",
+            dict(
+                candidates=detection_calibration,
+                chosen=detection_chosen,
+                preflight_calls=detection_calls,
+                action_rerolls=0,
+                trace=[
+                    "rnd(30)",
+                    "rn2(19) wisdom exercise",
+                    "rn2(3) dryup",
+                    "rn2(100000) sentinel",
+                ],
+            ),
+        )
         mech_calibration = json.loads(
             run([exe, "--calibrate-mechanoid"], "mechanoid-seed-preflight")
         )
@@ -556,7 +649,9 @@ def main(argv=None):
             "confirmed-foul-mechanoid",
             *REACH_CASES,
             LEVITATING_CANCEL,
+            *DETECTION_CASES,
         ):
+            detection = case in DETECTION_CASES
             reach = case in REACH_CASES
             levitating = reach or case == LEVITATING_CANCEL
             is_foul = case in ("confirmed-foul", "confirmed-foul-mechanoid")
@@ -567,6 +662,8 @@ def main(argv=None):
             )
             if levitating:
                 action_seed = dict(seed=1)
+            if detection:
+                action_seed = detection_chosen
             pair, histories = [], []
             for enabled in (False, True):
                 work = out / (case + "-" + ("on" if enabled else "off"))
@@ -651,8 +748,80 @@ def main(argv=None):
                     and case != "decline-selection-cancel"
                     and len(obs) > 1
                 )
-                if reach:
+                if detection:
+                    presented = case == DETECTION_CASES[0]
+                    empty = case == DETECTION_CASES[2]
+                    assert b"You sense the presence of monsters." not in raw
+                    assert raw.count(b"--More--") == int(presented)
+                    private = native["detection"]
+                    if presented:
+                        prefix = (work / "detection-prompt.events.jsonl").read_bytes()
+                        assert [
+                            json.loads(line) for line in prefix.splitlines()
+                        ] == records[: 5 if enabled else 3]
+                    assert private["population"] == int(not empty)
+                    assert private["monster_bytes_unchanged"] is True
+                    assert private["wisdom_before"] == 0
+                    assert (
+                        private["wisdom_after"]
+                        == private["predicted_wisdom"]
+                        == detection_chosen["wisdom"]
+                    )
+                    assert (
+                        private["map_flags_before"]
+                        == private["map_flags_after"]
+                        == int(case == DETECTION_CASES[1])
+                    )
+                    if not empty:
+                        assert private["monster_hp"] > 0
+                        assert (private["monster_x"], private["monster_y"]) == (12, 10)
+                    try:
+                        validate_detection_history(
+                            records,
+                            native["context_before"],
+                            enabled=enabled,
+                            presented=presented,
+                        )
+                    except AssertionError:
+                        assert enabled and presented
+                        validate_detection_history(
+                            records,
+                            native["context_before"],
+                            enabled=True,
+                            presented=False,
+                        )
+                        detection_failures.append(
+                            dict(
+                                case=case,
+                                missing_expected_observations=[
+                                    "fountain_drink.detection_presented"
+                                ],
+                                actual="started -> completed without notice",
+                            )
+                        )
+                    if not enabled or not presented or detection_failures:
+                        validate_reach_projection(
+                            projection, blocked=False, prehook=enabled
+                        )
+                    else:
+                        assert projection["episodes"] == [
+                            dict(
+                                operation="fountain_drink",
+                                count=1,
+                                saturated=False,
+                                evidence=[
+                                    dict(
+                                        root_seq=5,
+                                        notice_seq=6,
+                                        end_seq=7,
+                                        fact="detection_presented",
+                                    )
+                                ],
+                            )
+                        ]
+                elif reach:
                     noshow = case == REACH_CASES[1]
+                    # Existing reach cases remain independently strict.
                     try:
                         validate_reach_history(
                             records,
@@ -742,6 +911,7 @@ def main(argv=None):
                         g.inputs,
                         native["map_before_hex"],
                         native["map_after_hex"],
+                        native.get("detection"),
                     )
                 )
                 results.append(
@@ -758,7 +928,7 @@ def main(argv=None):
                 save(out / "native-results.json", results)
             assert pair[0] == pair[1], "terminal/input/native state OFF/ON mismatch"
             validate_legacy_pair(*histories)
-        assert len(results) == 14
+        assert len(results) == 20
         save(out / "native-results.json", results)
         negatives = []
         for mode in ("native", "raw", "budget"):
@@ -855,6 +1025,8 @@ def main(argv=None):
             + sum(per_action_calls)
             + probe_calls
             + sum(negative_action_calls)
+            + header_calls
+            + detection_calls
         )
         assert total_calls < 4096
         save(
@@ -862,6 +1034,7 @@ def main(argv=None):
             dict(
                 calibration_calls=header_calls + calls,
                 mechanoid_calibration_calls=header_calls + mech_calls,
+                detection_calibration_calls=header_calls + detection_calls,
                 per_action_calls=per_action_calls,
                 negative_action_calls=negative_action_calls,
                 probe_calls=probe_calls,
@@ -1025,6 +1198,26 @@ def main(argv=None):
                 + "; native return/state/RNG/delivery distinction verified",
                 file=sys.stderr,
             )
+        return 1
+    if detection_failures:
+        save(
+            out / "strict-failure.json",
+            dict(
+                oracle=args.oracle,
+                acceptance=False,
+                native_oracles_passed=True,
+                source_guards_passed=True,
+                actions=len(results) + len(negatives),
+                normal_actions=len(results),
+                preserved_normal_actions=14,
+                negative_controls_passed=len(negatives),
+                failures=detection_failures,
+            ),
+        )
+        print(
+            "confirmed-detection-presented: missing detection_presented notice; native map/prompt/input/state/RNG and cancelled/empty controls verified",
+            file=sys.stderr,
+        )
         return 1
     return 0
 
