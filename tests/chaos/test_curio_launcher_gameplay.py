@@ -19,7 +19,7 @@ import unittest
 from unittest.mock import patch
 
 from gameplay_support import ANSI, ROOT, Game
-from native_fixture_selection import prepare
+from native_fixture_selection import SOURCE_DRIVER_HASH, prepare
 from chaos import curio_continuity as continuity
 from chaos.curio_store import store_candidate
 from chaos.director import Mailbox
@@ -27,6 +27,14 @@ from chaos.director import Mailbox
 
 def sha(data):
     return hashlib.sha256(data).hexdigest()
+
+
+# Explicit keys retain the historical pin and fail closed on unknown modes.
+def expected_driver_hash(mode):
+    return {
+        "archived": "9d341b28a4ab3f4453b09e4f49a2e8701a7c78345184f487e2f0b32d70db7270",
+        "source-build": SOURCE_DRIVER_HASH,
+    }[mode]
 
 
 def metadata(path):
@@ -126,7 +134,7 @@ class CurioLauncherGameplayTests(unittest.TestCase):
         self.assertEqual((ROOT / ".chaos-build").read_text().strip(), "1")
         self.assertEqual(
             sha((ROOT / "tests/chaos/gameplay_support.py").read_bytes()),
-            "9d341b28a4ab3f4453b09e4f49a2e8701a7c78345184f487e2f0b32d70db7270",
+            expected_driver_hash(selection.mode),
         )
         root = Path(tempfile.mkdtemp(prefix="curio8e2-native-"))
         print("CURIO8E2_ARTIFACTS=" + str(root), flush=True)

@@ -1,7 +1,9 @@
 """Selection units and read-only fixture AST checks, NOT native evidence.
 
-Identity/calibration backends use synthetic typed results. No launcher fixture
-import/execution, compiler, native helper, game, or held gameplay module runs.
+Identity/calibration backends use synthetic typed results. Only the launcher's
+trusted AST prelaunch prefix executes, with mocked preparation and a stop before
+temporary-directory creation. No fixture import, compiler, native helper, game,
+or held gameplay module runs.
 """
 
 import ast
@@ -460,6 +462,120 @@ class SelectionTests(unittest.TestCase):
         )
 
 
+class FixturePrelaunchTests(unittest.TestCase):
+    """Execute only the actual fixture prefix with mocks; never native evidence."""
+
+    def run_prelaunch(self, mode, helper, accepted):
+        import native_fixture_selection as selection
+
+        tree = ast.parse((ROOT / FIXTURE).read_text())
+        fixture = next(
+            n
+            for n in tree.body
+            if isinstance(n, ast.ClassDef) and n.name == "CurioLauncherGameplayTests"
+        )
+        method = next(n for n in fixture.body if isinstance(n, ast.FunctionDef))
+        boundary = next(
+            i
+            for i, n in enumerate(method.body)
+            if isinstance(n, ast.Assign)
+            and any(isinstance(t, ast.Name) and t.id == "root" for t in n.targets)
+        )
+        # Include the real mkdtemp statement, but stop there via a sentinel.
+        prefix = ast.Module(
+            body=[
+                n
+                for n in tree.body
+                if isinstance(n, ast.FunctionDef) and n.name == "expected_driver_hash"
+            ]
+            + method.body[: boundary + 1],
+            type_ignores=[],
+        )
+
+        class PrelaunchComplete(Exception):
+            pass
+
+        prepare = Mock(return_value=Mock(mode=mode))
+        compiler = Mock()
+        with (
+            patch.object(Path, "read_text", return_value="1\n"),
+            patch.object(Path, "read_bytes", return_value=helper),
+            patch.object(tempfile, "mkdtemp", side_effect=PrelaunchComplete) as mkdir,
+            patch.object(subprocess, "run", compiler),
+        ):
+            namespace = dict(
+                ROOT=ROOT,
+                self=self,
+                prepare=prepare,
+                sha=digest,
+                Path=Path,
+                tempfile=tempfile,
+                SOURCE_DRIVER_HASH=selection.SOURCE_DRIVER_HASH,
+            )
+            error = PrelaunchComplete if accepted else (AssertionError, KeyError)
+            try:
+                with self.assertRaises(error):
+                    exec(compile(prefix, FIXTURE, "exec"), namespace)
+            except PrelaunchComplete:
+                self.fail("invalid helper/mode reached temporary-directory creation")
+            prepare.assert_called_once_with(ROOT)
+            if accepted:
+                mkdir.assert_called_once_with(prefix="curio8e2-native-")
+            else:
+                mkdir.assert_not_called()
+            compiler.assert_not_called()
+
+    @staticmethod
+    def archived_helper():
+        return subprocess.check_output(
+            [
+                "/usr/bin/git",
+                "-C",
+                str(ROOT),
+                "show",
+                BASELINE + ":tests/chaos/gameplay_support.py",
+            ],
+            env={"PATH": "/usr/bin:/bin", "GIT_NO_REPLACE_OBJECTS": "1"},
+            timeout=30,
+        )
+
+    def test_reviewed_source_helper_reaches_prelaunch_boundary_unit_only(self):
+        self.run_prelaunch(
+            "source-build",
+            (ROOT / "tests/chaos/gameplay_support.py").read_bytes(),
+            True,
+        )
+
+    def test_archived_helper_reaches_prelaunch_boundary_unit_only(self):
+        helper = self.archived_helper()
+        self.assertEqual(
+            digest(helper),
+            "9d341b28a4ab3f4453b09e4f49a2e8701a7c78345184f487e2f0b32d70db7270",
+        )
+        self.run_prelaunch("archived", helper, True)
+
+    def test_historical_helper_rejected_in_source_mode_unit_only(self):
+        self.run_prelaunch("source-build", self.archived_helper(), False)
+
+    def test_reviewed_helper_rejected_in_archived_mode_unit_only(self):
+        self.run_prelaunch(
+            "archived", (ROOT / "tests/chaos/gameplay_support.py").read_bytes(), False
+        )
+
+    def test_wrong_helper_rejected_in_each_mode_unit_only(self):
+        for mode in ("archived", "source-build"):
+            with self.subTest(mode=mode):
+                self.run_prelaunch(mode, b"wrong helper; unit data only", False)
+
+    def test_unknown_mode_rejects_both_pinned_helpers_unit_only(self):
+        for helper in (
+            self.archived_helper(),
+            (ROOT / "tests/chaos/gameplay_support.py").read_bytes(),
+        ):
+            with self.subTest(helper=digest(helper)):
+                self.run_prelaunch("unknown", helper, False)
+
+
 class FixtureASTTests(unittest.TestCase):
     def test_archived_pins_equal_committed_baseline_literals(self):
         self.assertIsNotNone(importlib.util.find_spec("native_fixture_selection"))
@@ -490,9 +606,53 @@ class FixtureASTTests(unittest.TestCase):
                 and n.func.attr.startswith("assert")
             )
 
+        old_tree = ast.parse(baseline())
+        new_tree = ast.parse((ROOT / FIXTURE).read_text())
+        old_pin = ast.parse(
+            'self.assertEqual(sha((ROOT / "tests/chaos/gameplay_support.py").read_bytes()), '
+            '"9d341b28a4ab3f4453b09e4f49a2e8701a7c78345184f487e2f0b32d70db7270")',
+            mode="eval",
+        ).body
+        new_pin = ast.parse(
+            'self.assertEqual(sha((ROOT / "tests/chaos/gameplay_support.py").read_bytes()), '
+            "expected_driver_hash(selection.mode))",
+            mode="eval",
+        ).body
+        old_assertions, new_assertions = assertions(old_tree), assertions(new_tree)
+        self.assertEqual(old_assertions[ast.dump(old_pin)], 1)
+        self.assertEqual(new_assertions[ast.dump(new_pin)], 1)
+        # Exactly one approved expected-value transformation, not a subset check
+        # or blanket removal of identity assertions. Every other AST must match.
+        old_assertions[ast.dump(old_pin)] -= 1
+        old_assertions[ast.dump(new_pin)] += 1
+        self.assertEqual(+old_assertions, new_assertions)
+        expected_gate = ast.parse(
+            "def expected_driver_hash(mode):\n"
+            "    return {\n"
+            '        "archived": "9d341b28a4ab3f4453b09e4f49a2e8701a7c78345184f487e2f0b32d70db7270",\n'
+            '        "source-build": SOURCE_DRIVER_HASH,\n'
+            "    }[mode]\n"
+        ).body[0]
+        gates = [
+            n
+            for n in new_tree.body
+            if isinstance(n, ast.FunctionDef) and n.name == "expected_driver_hash"
+        ]
+        self.assertEqual([ast.dump(n) for n in gates], [ast.dump(expected_gate)])
+        imports = [
+            ast.dump(n)
+            for n in new_tree.body
+            if isinstance(n, ast.ImportFrom) and n.module == "native_fixture_selection"
+        ]
         self.assertEqual(
-            assertions(ast.parse(baseline())),
-            assertions(ast.parse((ROOT / FIXTURE).read_text())),
+            imports,
+            [
+                ast.dump(
+                    ast.parse(
+                        "from native_fixture_selection import SOURCE_DRIVER_HASH, prepare"
+                    ).body[0]
+                )
+            ],
         )
 
     def test_fixture_prelaunch_order_and_compiler_environment_are_explicit(self):
