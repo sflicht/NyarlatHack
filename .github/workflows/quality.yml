@@ -99,6 +99,11 @@ jobs:
             NYARLATHACK_FOUNTAIN_RECEIPT="$out/system-gcc13" \
             NYARLATHACK_FOUNTAIN_REVISION="$revision" \
             NYARLATHACK_FOUNTAIN_ARTIFACTS="$invocation/fountain" \
+            NYARLATHACK_FOUNTAIN_MATRIX_ARTIFACTS="$invocation/fountain-matrix" \
+            NYARLATHACK_ACTION_TRANSPORT_ROOT="$root" \
+            NYARLATHACK_ACTION_TRANSPORT_RECEIPT="$out/system-gcc13" \
+            NYARLATHACK_ACTION_TRANSPORT_REVISION="$revision" \
+            NYARLATHACK_ACTION_TRANSPORT_ARTIFACTS="$invocation/action-transport" \
             /usr/bin/python3 -m unittest discover -s tests/chaos -p 'test_*.py' -v \
             2>&1 | tee "$out/full-suite.log"
       - name: Retain selected preparation log

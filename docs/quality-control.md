@@ -116,6 +116,11 @@ env -i PATH=/usr/bin:/bin HOME="$out/home" LANG=C.UTF-8 TZ=America/New_York \
   NYARLATHACK_FOUNTAIN_RECEIPT="$out/system-gcc13" \
   NYARLATHACK_FOUNTAIN_REVISION="$revision" \
   NYARLATHACK_FOUNTAIN_ARTIFACTS="$invocation/fountain" \
+  NYARLATHACK_FOUNTAIN_MATRIX_ARTIFACTS="$invocation/fountain-matrix" \
+  NYARLATHACK_ACTION_TRANSPORT_ROOT="$root" \
+  NYARLATHACK_ACTION_TRANSPORT_RECEIPT="$out/system-gcc13" \
+  NYARLATHACK_ACTION_TRANSPORT_REVISION="$revision" \
+  NYARLATHACK_ACTION_TRANSPORT_ARTIFACTS="$invocation/action-transport" \
   /usr/bin/python3 -m unittest discover -s tests/chaos -p 'test_*.py' -v \
   2>&1 | tee "$out/full-suite.log"
 ```
@@ -136,6 +141,29 @@ not overwrites or automatic retries. The registered fountain native adapter
 always uses `strict-desired`; the command-line interface (CLI) retains
 `observed-prehook` only for explicit historical diagnosis, never acceptance.
 Discovery runs the strict adapter once, without a duplicate fountain CLI launch.
+The accepted fountain matrix and selected-action transport are also required
+native discovery gates, run serially through the existing bounded external
+supervisor. The matrix reuses the explicit `NYARLATHACK_FOUNTAIN_ROOT`,
+`RECEIPT`, and `REVISION` selection; its dedicated
+`NYARLATHACK_FOUNTAIN_MATRIX_ARTIFACTS` leaf must be absent. Transport retains its
+existing four `NYARLATHACK_ACTION_TRANSPORT_*` selection variables and a separate
+absent artifact leaf. No extra production build or upstream comparison is added.
+
+After the new matrix succeeds, its adapter starts a separately supervised fresh
+Python interpreter against the current fixture's oracle module, explicitly
+setting **both** `FOUNTAIN_MATRIX_EVIDENCE` and
+`FOUNTAIN_MATRIX_CONTROL_EVIDENCE` to that invocation's matrix output. The
+`oracle-execution.json` receipt names all seven executed test methods and records
+zero skips as a condition of success. Ordinary discovery without these evidence
+variables currently skips four artifact-dependent oracle methods; those skips
+are not native acceptance and cannot replace the adapter's subsequent explicit
+oracle execution. Driver or oracle nonzero exits fail the gate. The new adapter
+unit tests use synthetic supervision results or real preflight failures without
+building; they are not native acceptance evidence.
+
+Registration does **not** resolve the strict turn-loop gate: it remains **FAILED,
+pending user decision**. Whole-phase acceptance and fresh exact-revision native
+CI remain open; no fatal-driver gate is registered by this change.
 Delivery allocates its own private parent
 under the same `/tmp`-backed `TMPDIR`. Observations remain child-scoped, not enabled
 globally in the suite environment.
