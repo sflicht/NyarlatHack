@@ -23,7 +23,9 @@ import sys
 import unittest
 
 
-def validate_history(records, context, *, enabled, future):
+def validate_history(
+    records, context, *, enabled, future, fact="water_refreshed", missing_notice=False
+):
     """Exact whole history from native context, never from journal envelopes."""
     assert context["safe"] == 1
     expected = []
@@ -51,9 +53,12 @@ def validate_history(records, context, *, enabled, future):
     if enabled and future:
         for stage, fact, root, phase in (
             ("started", "none", 0, "attempt"),
-            ("notice", "water_refreshed", 5, "result"),
+            ("notice", fact, 5, "result"),
             ("completed", "none", 5, "result"),
         ):
+            if stage == "notice" and missing_notice:
+                assert fact == "water_foul"
+                continue
             add(
                 "observation",
                 safe=context["safe"],
@@ -381,9 +386,9 @@ def main(argv=None):
         assert again.record()["source_build"] == selection.record()["source_build"]
         save(out / "executable-hashes.json", {str(p): digest(p) for p in (exe, clock)})
         calibration = json.loads(run([exe, "--calibrate"], "seed-preflight"))
-        assert [r["seed"] for r in calibration] == list(range(1, 65))
+        assert [r["seed"] for r in calibration] == list(range(1, 257))
         calls = sum(r["count"] + 1 for r in calibration)
-        assert calls <= 256
+        assert calls <= 1024
         chosen = next(r for r in calibration if r["fate"] < 10 and r["dry"] > 0)
         # Separate real-stream calibration, no extra native actions or rerolls.
         probe = json.loads(
@@ -412,7 +417,14 @@ def main(argv=None):
         assert Path(chaos.episodes.__file__).resolve() == root / "chaos/episodes.py"
         OwnedGame = supervisor.owned_game_type(gameplay_support.Game, cancel)
         results = []
-        for case in ("decline-selection-cancel", "confirmed-refreshed"):
+        foul_chosen = next(r for r in calibration if r["fate"] == 20 and r["dry"] > 0)
+        save(out / "foul-calibration.json", foul_chosen)
+        for case in (
+            "decline-selection-cancel",
+            "confirmed-refreshed",
+            "confirmed-foul",
+        ):
+            action_seed = foul_chosen if case == "confirmed-foul" else chosen
             pair, histories = [], []
             for enabled in (False, True):
                 work = out / (case + "-" + ("on" if enabled else "off"))
@@ -430,7 +442,7 @@ def main(argv=None):
                     LD_PRELOAD=str(clock),
                     NYARLATHACK_RUN_DIR=str(g.run),
                     NYARLATHACK_OBSERVATIONS=str(int(enabled)),
-                    FOUNTAIN_SEED=str(chosen["seed"]),
+                    FOUNTAIN_SEED=str(action_seed["seed"]),
                     FOUNTAIN_STATE=str(work / "state.json"),
                 )
                 raw, diagnostic = confirmed_at_prompt(
@@ -439,16 +451,19 @@ def main(argv=None):
                 assert raw.count(b"The cool draught refreshes you.") == int(
                     case == "confirmed-refreshed"
                 )
+                assert raw.count(b"The water is foul!  You gag and vomit.") == int(
+                    case == "confirmed-foul"
+                )
                 state = json.loads(diagnostic)
                 assert state["native_oracles_passed"] is True
                 assert state["case"] == case
-                if case == "confirmed-refreshed":
+                if case in ("confirmed-refreshed", "confirmed-foul"):
                     assert state["return"] == state["move_quaffed"]
                     for key in ("seed", "count", "next", "fate", "dry"):
-                        assert state[key] == chosen[key]
+                        assert state[key] == action_seed[key]
                     assert (
                         state["hunger_after"] - state["hunger_before"]
-                        == chosen["hunger"]
+                        == action_seed["hunger"]
                     )
                 else:
                     assert state["return"] == state["move_cancelled"]
@@ -474,12 +489,35 @@ def main(argv=None):
                 future = (
                     args.oracle == "strict-desired"
                     and enabled
-                    and case == "confirmed-refreshed"
+                    and case in ("confirmed-refreshed", "confirmed-foul")
                     and len(obs) > 1
                 )
                 validate_history(
-                    records, native["context_before"], enabled=enabled, future=future
+                    records,
+                    native["context_before"],
+                    enabled=enabled,
+                    future=future,
+                    fact="water_foul"
+                    if case == "confirmed-foul"
+                    else "water_refreshed",
+                    missing_notice=case == "confirmed-foul"
+                    and enabled
+                    and len(obs) == 3,
                 )
+                if case == "confirmed-foul" and enabled and len(obs) == 3:
+                    assert projection["episodes"] == []
+                    assert projection["coverage"]["completed_without_notice"] == dict(
+                        count=1, saturated=False
+                    )
+                if case == "confirmed-foul":
+                    assert native["vomiting"] == dict(
+                        multi=-2,
+                        reason="vomiting",
+                        occupation=False,
+                        afternmv=False,
+                        nomovemsg=False,
+                        free_action=False,
+                    )
                 if not future:
                     assert projection["episodes"] == []
                 histories.append(records)
@@ -505,7 +543,7 @@ def main(argv=None):
                 )
             assert pair[0] == pair[1], "terminal/input/native state OFF/ON mismatch"
             validate_legacy_pair(*histories)
-        assert len(results) == 4
+        assert len(results) == 6
         save(out / "native-results.json", results)
         negatives = []
         for mode in ("native", "raw", "budget"):
@@ -680,6 +718,34 @@ def main(argv=None):
                     fact="water_refreshed",
                 )
             ],
+        )
+    ]
+    foul = results[5]
+    if len(foul["observations"]) == 3:
+        save(
+            out / "strict-failure.json",
+            dict(
+                oracle=args.oracle,
+                acceptance=False,
+                native_oracles_passed=True,
+                case="confirmed-foul",
+                native_return_verified=True,
+                actions=len(results) + len(negatives),
+                negative_controls_passed=len(negatives),
+                missing_expected_observations=["fountain_drink.water_foul"],
+            ),
+        )
+        print(
+            "confirmed-foul: missing expected water_foul notice; native hunger/vomiting/RNG/return verified",
+            file=sys.stderr,
+        )
+        return 1
+    assert foul["projection"]["episodes"] == [
+        dict(
+            operation="fountain_drink",
+            count=1,
+            saturated=False,
+            evidence=[dict(root_seq=5, notice_seq=6, end_seq=7, fact="water_foul")],
         )
     ]
     return 0

@@ -30,6 +30,7 @@ static struct trace preflight(unsigned seed)
     seeded_reset(seed);
     t.fate = rnd(30); t.hunger = t.dry = -1;
     if (t.fate < 10) { t.hunger = rnd(10); t.dry = rn2(3); }
+    if (t.fate == 20) { t.hunger = -rn1(20,11); t.dry = rn2(3); }
     t.count = reseed_count; t.next = rn2(100000);
     return t;
 }
@@ -78,7 +79,7 @@ int main(int argc, char **argv)
     struct obj *potion = 0, saved_potion;
     long old_moves, old_monstermoves;
     unsigned seed;
-    int i,x,y,result,count,next,decline, total = 0;
+    int i,x,y,result,count,next,decline,foul, total = 0;
     const char *injection = 0;
     FILE *f;
     assert(argc == 2 || argc == 3);
@@ -92,16 +93,16 @@ int main(int argc, char **argv)
     test_rng_control();
     test_rng_negative_control(argv[1]);
     if (!strcmp(argv[1], "--calibrate")) {
-        /* Declared candidate set: integers 1..64 inclusive, no action rerolls.
-         * At most 256 native calls here, including every sentinel. */
+        /* Declared candidate set: integers 1..256 inclusive, no action rerolls.
+         * At most 1024 native calls here, including every sentinel. */
         puts("[");
-        for (seed = 1; seed <= 64; ++seed) {
+        for (seed = 1; seed <= 256; ++seed) {
             t = preflight(seed); total += t.count + 1;
             printf("%s{\"seed\":%u,\"fate\":%d,\"hunger\":%d,\"dry\":%d,"
                    "\"count\":%d,\"next\":%d}", seed == 1 ? "" : ",\n",
                    seed,t.fate,t.hunger,t.dry,t.count,t.next);
         }
-        assert(total <= 256); puts("\n]"); return 0;
+        assert(total <= 1024); puts("\n]"); return 0;
     }
     if (!strcmp(argv[1], "--probe-controls")) {
         assert(argc == 2 && getenv("FOUNTAIN_SEED"));
@@ -117,10 +118,12 @@ int main(int argc, char **argv)
         return 0;
     }
     decline = !strcmp(argv[1], "decline-selection-cancel");
-    assert(decline || !strcmp(argv[1], "confirmed-refreshed"));
+    foul = !strcmp(argv[1], "confirmed-foul");
+    assert(decline || foul || !strcmp(argv[1], "confirmed-refreshed"));
     assert(getenv("FOUNTAIN_SEED")); seed = (unsigned)atoi(getenv("FOUNTAIN_SEED"));
-    assert(seed >= 1 && seed <= 64);
-    t = preflight(seed); assert(t.fate < 10 && t.dry > 0 && t.count == 3);
+    assert(seed >= 1 && seed <= 256);
+    t = preflight(seed);
+    assert((foul ? t.fate == 20 : t.fate < 10) && t.dry > 0 && t.count == 3);
     if (decline) {
         seeded_reset(seed);
         t.fate = t.dry = -1; t.hunger = 0;
@@ -151,6 +154,14 @@ int main(int argc, char **argv)
     assert(!Blind && !Hallucination && !Strangled && !u.usteed && !u.uswallow);
     assert(!u.sealsActive && !u.specialSealsActive && !uarmh && !uarmc && !uarmg);
     assert(!nomouth(youracedata->mtyp) && !occupation && multi == 0);
+    if (foul) {
+        /* Healthy ordinary metabolism; retain real vomiting incapacitation. */
+        assert(!umechanoid && !inediate(youracedata) && !Free_action && !Sick);
+        assert(YouHunger-30 > 150*get_uhungersizemod());
+        assert(!u.uinvulnerable && !u.usleep && !u.puzzle_time);
+        assert(!flags.forcefight && !flags.travel && !iflags.travel1);
+        assert(!flags.mv && !flags.run && !multi_txt[0] && !afternmv && !nomovemsg);
+    }
     for (x = 7; x <= 17; ++x) for (y = 7; y <= 13; ++y) {
         levl[x][y].typ = ROOM; levl[x][y].lit = 1;
     }
@@ -213,7 +224,11 @@ int main(int argc, char **argv)
     assert(result == (decline ? MOVE_CANCELLED : MOVE_QUAFFED) && count == t.count && next == t.next);
     assert(reseed_period == INT_MAX && moves == old_moves && monstermoves == old_monstermoves);
     assert(u.uhunger == before.uhunger+t.hunger && u.uhs == NOT_HUNGRY);
-    assert(!occupation && multi == 0); empty_world(potion);
+    assert(!occupation && multi == (foul ? -2 : 0)); empty_world(potion);
+    if (foul) {
+        assert(!strcmp(multi_txt,"vomiting") && !afternmv && !nomovemsg);
+        assert(!iflags.travel1 && !Sick && !Free_action);
+    }
     if (potion) assert(!memcmp(&saved_potion,potion,sizeof saved_potion));
     normalized = u; normalized.uhunger = before.uhunger;
     normalized.chaos.seq = before.chaos.seq; /* driver verifies exact sequence delta */
@@ -232,6 +247,9 @@ int main(int argc, char **argv)
     fputs(",\"context_before\":",f); context_record(f,&before,old_moves);
     fputs(",\"context_after\":",f); context_record(f,&u,moves);
     fputs(",\"inventory_before_hex\":",f); hex_record(f,&saved_potion,potion ? sizeof saved_potion : 0);
+    if (foul)
+        fprintf(f,",\"vomiting\":{\"multi\":%d,\"reason\":\"%s\",\"occupation\":false,"
+                "\"afternmv\":false,\"nomovemsg\":false,\"free_action\":false}",multi,multi_txt);
     fputs(",\"inventory_after_hex\":",f); hex_record(f,potion,potion ? sizeof *potion : 0);
     fputs("}\n",f); assert(!fclose(f));
     fprintf(stderr,"\"hp\":%d,\"hp_max\":%d,\"power\":%d,\"power_max\":%d,"

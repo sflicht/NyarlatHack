@@ -64,6 +64,57 @@ def synthetic(enabled, future):
 
 
 class FountainOracleTests(unittest.TestCase):
+    def test_foul_complete_and_missing_notice_contract(self):
+        records = synthetic(True, True)
+        records[5]["observation"]["fact"] = "water_foul"
+        driver.validate_history(
+            records, CONTEXT, enabled=True, future=True, fact="water_foul"
+        )
+        raw = b"".join(json.dumps(r).encode() + b"\n" for r in records)
+        self.assertEqual(
+            project_episodes(raw)["episodes"][0]["evidence"],
+            [dict(root_seq=5, notice_seq=6, end_seq=7, fact="water_foul")],
+        )
+        records.pop(5)
+        records[-1]["seq"] = 6
+        driver.validate_history(
+            records,
+            CONTEXT,
+            enabled=True,
+            future=True,
+            fact="water_foul",
+            missing_notice=True,
+        )
+        raw = b"".join(json.dumps(r).encode() + b"\n" for r in records)
+        projection = project_episodes(raw)
+        self.assertEqual(projection["episodes"], [])
+        self.assertEqual(
+            projection["coverage"]["completed_without_notice"],
+            dict(count=1, saturated=False),
+        )
+        self.assertLessEqual(len(json.dumps(projection).encode()), 4096)
+        with self.assertRaises(AssertionError):
+            driver.validate_history(
+                records, CONTEXT, enabled=True, future=True, fact="water_foul"
+            )
+        records.pop()
+        raw = b"".join(json.dumps(r).encode() + b"\n" for r in records)
+        incomplete = project_episodes(raw)
+        self.assertEqual(incomplete["episodes"], [])
+        self.assertEqual(
+            incomplete["coverage"]["incomplete"], dict(count=1, saturated=False)
+        )
+        self.assertLessEqual(len(json.dumps(incomplete).encode()), 4096)
+        with self.assertRaises(AssertionError):
+            driver.validate_history(
+                records,
+                CONTEXT,
+                enabled=True,
+                future=True,
+                fact="water_foul",
+                missing_notice=True,
+            )
+
     def validate(self, records, enabled=True, future=True):
         driver.validate_history(records, CONTEXT, enabled=enabled, future=future)
 
