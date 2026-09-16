@@ -1,11 +1,15 @@
 #!/usr/bin/python3
-"""First full doapply baseline; expected selected events remain a RED oracle.
+"""Selected ordinary whistle: native purity and measured negative controls.
 
 Run from the explicit frozen source root. External fixture/support hashes are
 separate from native build identity. This is not the complete Task 6b/8 matrix.
 """
 
 import argparse
+import fcntl
+import pty
+import struct
+import termios
 import importlib.util
 import json
 import os
@@ -243,6 +247,7 @@ def main(argv=None):
                     LD_PRELOAD=str(clock),
                     NYARLATHACK_RUN_DIR=str(g.run),
                     NYARLATHACK_OBSERVATIONS=str(int(enabled)),
+                    WHISTLE_CHAOS_STATE=str(work / "chaos-state.json"),
                 )
                 raw, diagnostic = supervisor.bounded(
                     [exe, case],
@@ -256,11 +261,27 @@ def main(argv=None):
                 assert raw.count(b"You produce a high whistling sound.") == 1
                 state = json.loads(diagnostic)
                 records = g.events()
+                chaos = json.loads((work / "chaos-state.json").read_text())
+                before, after = chaos["before"].copy(), chaos["after"].copy()
+                assert after.pop("seq") - before.pop("seq") == (4 if enabled else 1)
+                assert before == after, chaos
+                assert chaos["after"]["seq"] == records[-1]["seq"]
+                assert set(before) == {
+                    "version",
+                    "budget",
+                    "spent",
+                    "reserved",
+                    "last_id",
+                    "safe",
+                    "effects",
+                    "haunt",
+                }
+                assert len(before["effects"]) == 3
                 assert not any(e["event"] == "ack" for e in records)
                 obs = [e for e in records if e["v"] == 2]
                 if not enabled:
                     assert not obs
-                pair.append((raw, state))
+                pair.append((raw, state, before))
                 results.append(
                     {
                         "case": case,
@@ -271,8 +292,75 @@ def main(argv=None):
                     }
                 )
             assert pair[0] == pair[1], "native terminal/state off-on mismatch"
-        # Publish genuine action/identity evidence BEFORE the expected missing-events RED.
         save(out / "native-results.json", results)
+        # Expected aborts use owned status capture, never a caught bounded error.
+        OwnedGame = supervisor.owned_game_type(gameplay_support.Game, cancel)
+        negatives = []
+        for mode in ("native", "raw", "budget"):
+            work = out / ("negative-" + mode)
+            g = OwnedGame(selection.tuple_dir, clock, root=work)
+            selection.verify_copy(g.game)
+            options = work / "options"
+            options.write_text("OPTIONS=!splash_screen,!perm_invent\n")
+            child_env = dict(
+                env,
+                HOME=str(work),
+                TERM="xterm",
+                LINES="24",
+                COLUMNS="80",
+                NETHACKOPTIONS="@" + str(options),
+                LD_PRELOAD=str(clock),
+                NYARLATHACK_RUN_DIR=str(g.run),
+                NYARLATHACK_OBSERVATIONS="1",
+                WHISTLE_CHAOS_STATE=str(work / "chaos-state.json"),
+            )
+            command = [str(exe), "known", "--inject-" + mode]
+            save(work / "command.json", command)
+            try:
+                pid, fd = pty.fork()
+                if pid == 0:
+                    os.chdir(g.game)
+                    os.execve(exe, command, child_env)
+                g.pid, g.fd = pid, fd
+                fcntl.ioctl(fd, termios.TIOCSWINSZ, struct.pack("HHHH", 24, 80, 0, 0))
+                status = g.finish(g.read(3))
+            finally:
+                if g.pid is not None or g.fd is not None:
+                    g.cleanup()
+            raw = bytes(g.raw)
+            records = g.events()
+            negative = dict(mode=mode, native_returncode=status, records=records)
+            negatives.append(negative)
+            save(out / "negative-results.json", negatives)
+            assert status == -signal.SIGABRT, negative
+            assert raw.count(b"You produce a high whistling sound.") == 1, raw
+            diagnostic = (
+                b"draws == 0 && next == expected"
+                if mode != "budget"
+                else b"!memcmp(&saved_u.chaos, &after_u.chaos, sizeof saved_u.chaos)"
+            )
+            assert diagnostic in raw, raw
+            measured = re.search(rb"WHISTLE_INTERVAL (\{[^\r\n]+\})", raw)
+            assert measured is not None, raw
+            interval = json.loads(measured[1])
+            negative["interval"] = interval
+            assert interval["return"] == 4
+            assert interval["draws"] == (1 if mode == "native" else 0)
+            if mode == "budget":
+                assert interval["next"] == interval["expected"]
+                chaos = json.loads((work / "chaos-state.json").read_text())
+                assert chaos["after"]["spent"] == chaos["before"]["spent"] + 1
+            else:
+                assert interval["next"] != interval["expected"]
+            assert not any(e["event"] == "ack" for e in records)
+            results.append(
+                dict(
+                    case="negative-" + mode,
+                    enabled=True,
+                    observations=[e for e in records if e["v"] == 2],
+                )
+            )
+        save(out / "negative-results.json", negatives)
         for result in results:
             if result["enabled"]:
                 obs = result["observations"]

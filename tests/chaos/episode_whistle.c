@@ -10,6 +10,25 @@
 
 extern struct obj *nextgetobj;
 
+/* Every chaos_state field; haunting counters are also exposed for review. */
+static void state_record(FILE *f, const struct you *player)
+{
+    const struct chaos_state *s = &player->chaos;
+    int i;
+    fprintf(f, "{\"version\":%d,\"budget\":%d,\"spent\":%d,"
+            "\"reserved\":%d,\"last_id\":%d,\"seq\":%ld,\"safe\":%ld,\"effects\":[",
+            s->version, chaos_budget(s, player->usanity), s->spent, s->reserved,
+            s->last_id, s->seq, s->safe);
+    for (i = 0; i < CHAOS_KINDS; ++i)
+        fprintf(f, "%s{\"value\":%d,\"cost\":%d,\"expires\":%ld}",
+                i ? "," : "", s->effects[i].value,
+                s->effects[i].cost, s->effects[i].expires);
+    fprintf(f, "],\"haunt\":{\"active\":%d,\"count\":%d,\"backtracks\":%d,"
+            "\"echo_pending\":%d,\"echo_delivered\":%d}}",
+            player->haunt.active, player->haunt.count, player->haunt.backtracks,
+            player->haunt.echo_pending, player->haunt.echo_delivered);
+}
+
 int main(int argc, char **argv)
 {
     struct obj o, saved_o;
@@ -18,7 +37,12 @@ int main(int argc, char **argv)
     struct you saved_u, after_u;
     int i, known, result, draws, next, expected;
     long before_moves, before_monstermoves;
-    assert(argc == 2);
+    const char *injection = argc == 3 ? argv[2] : "";
+    FILE *state_file;
+    assert(argc == 2 || argc == 3);
+    assert(!*injection || !strcmp(injection, "--inject-native")
+           || !strcmp(injection, "--inject-raw")
+           || !strcmp(injection, "--inject-budget"));
     known = !strcmp(argv[1], "known");
     assert(known || !strcmp(argv[1], "unknown"));
     test_rng_control();
@@ -63,8 +87,27 @@ int main(int argc, char **argv)
     expected = test_rng_begin();
     nextgetobj = &o;
     result = doapply();
+    /* Test-only perturbations are inside the same measured native interval. */
+    if (!strcmp(injection, "--inject-native")) (void)rn2(100000);
+    if (!strcmp(injection, "--inject-raw")) (void)random();
+    if (!strcmp(injection, "--inject-budget")) ++u.chaos.spent;
     draws = reseed_count;
     next = rn2(100000);
+    assert(getenv("WHISTLE_CHAOS_STATE"));
+    state_file = fopen(getenv("WHISTLE_CHAOS_STATE"), "w");
+    assert(state_file);
+    fputs("{\"before\":", state_file);
+    state_record(state_file, &saved_u);
+    fputs(",\"after\":", state_file);
+    state_record(state_file, &u);
+    fputs("}\n", state_file);
+    assert(!fclose(state_file));
+    if (*injection) {
+        fflush(stdout);
+        fprintf(stderr, "WHISTLE_INTERVAL {\"draws\":%d,\"next\":%d,"
+                "\"expected\":%d,\"return\":%d}\n", draws, next, expected, result);
+        fflush(stderr);
+    }
     assert(!nextgetobj && result == MOVE_PARTIAL);
     assert(draws == 0 && next == expected);
     assert(moves == before_moves && monstermoves == before_monstermoves);
@@ -76,8 +119,11 @@ int main(int argc, char **argv)
     assert(!memcmp(&saved_dog, EDOG(&sleeper), sizeof saved_dog));
     assert(!memcmp(&saved_mon, &sleeper, sizeof sleeper));
     after_u = u;
-    memset(&saved_u.chaos, 0, sizeof saved_u.chaos);
-    memset(&after_u.chaos, 0, sizeof after_u.chaos);
+    /* Only seq may differ: one legacy apply attempt plus three opted-in
+     * observations. safe, version, spending, reservation, IDs and every effect
+     * byte remain covered; no whole-chaos masking. Driver checks exact seqs. */
+    after_u.chaos.seq = saved_u.chaos.seq;
+    assert(!memcmp(&saved_u.chaos, &after_u.chaos, sizeof saved_u.chaos));
     assert(!memcmp(&saved_u, &after_u, sizeof saved_u));
     fprintf(stderr, "{\"known\":%d,\"return\":%d,\"move_partial\":%d,"
             "\"moves\":%ld,\"monstermoves\":%ld,\"rng_draws\":%d,"
