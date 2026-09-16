@@ -4,8 +4,8 @@
 Normal-render baseline reached missing-notice RED before this candidate.
 Real More SPACE/ESC and append cases extend the three original regressions.
 Early filters and controlled port identities extend regression coverage.
-Synthetic vision-boundary reentry and real fsync failure are test injections;
-actual unsupported ports, write failures and CHAOS-off remain pending;
+Synthetic vision-boundary reentry and delivery-time I/O faults are test injections;
+actual unsupported ports and CHAOS-off remain pending;
 these synthetic scopes do not discharge action or whole-game acceptance.
 """
 
@@ -29,6 +29,17 @@ import termios
 import tempfile
 import time
 import unittest
+
+
+# Independent fixed wire contract for the synthetic context, not parsed from a
+# failed append or reconstructed from the wrapper's captured request.
+WRITE_NOTICE = (
+    b'{"v":2,"seq":6,"turn":10,"safe":1,"event":"observation","phase":"result",'
+    b'"detail":"","sanity":60,"insight":4,"budget":6,"spent":0,"reserved":0,'
+    b'"last_id":0,"vitals":{"hp":7,"hp_max":20,"power":2,"power_max":10},'
+    b'"observation":{"operation":"whistling","stage":"notice","root_seq":5,'
+    b'"fact":"sound_high"}}\n'
+)
 
 
 def digest(path):
@@ -193,6 +204,7 @@ def main():
         os.environ.update(old_env)
     source = Path(__file__).resolve().with_name("episode_delivery.c")
     shutil.copyfile(source, out / source.name)
+    shutil.copyfile(Path(__file__).resolve(), out / Path(__file__).name)
     shutil.copyfile(trusted / "native_rng.h", out / "native_rng.h")
     save(
         "fixture-hashes.json",
@@ -391,10 +403,19 @@ def main():
             raise RuntimeError(f"native render exited {code}; inspect {work}; not RED")
         assert terminal.count(b"--More--") == len(inputs) == expected_prompts
         assert b"".join(bytes.fromhex(item["hex"]) for item in inputs) == key
-        rows = [
-            json.loads(line)
-            for line in (run_dir / "events.jsonl").read_text().splitlines()
-        ]
+        if enabled and scenario == "attribution-write-short-eio":
+            # Only this closed case permits a physical partial tail. Never parse
+            # or repair the whole file; all other scenarios retain strict JSON.
+            prefix = (work / "events-before-write.jsonl").read_bytes()
+            physical = (run_dir / "events.jsonl").read_bytes()
+            assert physical == prefix + WRITE_NOTICE[:7]
+            rows = [json.loads(line) for line in prefix.splitlines()]
+            assert len(rows) == 5 and [row["seq"] for row in rows] == [1, 2, 3, 4, 5]
+        else:
+            rows = [
+                json.loads(line)
+                for line in (run_dir / "events.jsonl").read_text().splitlines()
+            ]
         state = json.loads((work / "stderr.txt").read_text())
         return bytes(terminal), rows, state, (work / "native-history.txt").read_bytes()
 
@@ -793,6 +814,100 @@ def main():
                 "durable_notice_claim": name != "fsync-failure",
                 "prompt_count": int(name == "stop-space"),
             }
+        )
+    # Attempts, forwarded syscalls, syncs: independent constants for delivery,
+    # then total through end/disabled-begin probes. EINTR is legally retried.
+    write_cases = {
+        "eintr": ((2, 1, 1), (3, 2, 2), errno.EINTR, False, 0),
+        "short": ((2, 2, 1), (3, 3, 2), 0, False, 0),
+        "short-eio": ((2, 1, 0), (2, 1, 0), errno.EIO, True, 7),
+        "eio": ((1, 0, 0), (1, 0, 0), errno.EIO, True, 0),
+    }
+    for name, (delivery, total, error, hard, tail_size) in write_cases.items():
+        scenario = "attribution-write-" + name
+        runs = []
+        for enabled in (False, True):
+            terminal, rows, state, history = render(enabled, scenario)
+            work = out / (scenario + ("-on" if enabled else "-off"))
+            injection = json.loads((work / "injection.json").read_text())
+            prefix = (work / "events-before-write.jsonl").read_bytes()
+            physical = (work / "run/events.jsonl").read_bytes()
+            before = [json.loads(line) for line in prefix.splitlines()]
+            assert prefix.endswith(b"\n")
+            assert len(before) == (5 if enabled else 3)
+            assert [row["seq"] for row in before] == (
+                [1, 2, 3, 4, 5] if enabled else [1, 2, 3]
+            )
+            # All pre-fault events must equal this run's ordinary accepted case.
+            normal = (
+                out / ("render-on" if enabled else "render-off") / "run/events.jsonl"
+            ).read_bytes()
+            assert prefix == b"".join(normal.splitlines(keepends=True)[: len(before)])
+            assert state.pop("root") == (5 if enabled else 0)
+            assert terminal.count(target) == terminal.count(b"You listen.") == 1
+            assert terminal.index(target) < terminal.index(b"You listen.")
+            assert terminal.count(b"--More--") == 0
+            assert tuple(
+                injection[k]
+                for k in ("delivery_writes", "delivery_forwarded", "delivery_syncs")
+            ) == (delivery if enabled else (0, 0, 0))
+            assert tuple(
+                injection[k] for k in ("event_writes", "event_forwarded", "event_syncs")
+            ) == (total if enabled else (0, 0, 0))
+            assert injection["injected_errno"] == (error if enabled else 0)
+            assert injection["injected_errors"] == int(enabled and bool(error))
+            assert injection["injected_return"] == (-1 if enabled and error else 0)
+            assert injection["requested_length"] == (
+                len(WRITE_NOTICE) if enabled else 0
+            )
+            assert bytes.fromhex(injection["requested_hex"]) == (
+                WRITE_NOTICE if enabled else b""
+            )
+            assert injection["seq_before"] == (5 if enabled else 3)
+            assert (
+                injection["seq_after"] == (5 if hard else 6)
+                if enabled
+                else injection["seq_after"] == 3
+            )
+            assert (
+                injection["seq_final"] == (5 if hard else 7)
+                if enabled
+                else injection["seq_final"] == 3
+            )
+            assert injection["next_root"] == 0
+            assert (
+                injection["reentries"]
+                == injection["replacement_root"]
+                == injection["blocking_displays"]
+                == 0
+            )
+            obs = [row["observation"] for row in rows if "observation" in row]
+            stages = ["enabled", "started"] + ([] if hard else ["notice", "completed"])
+            assert [row["stage"] for row in obs] == (stages if enabled else [])
+            if enabled and not hard:
+                assert physical.startswith(prefix + WRITE_NOTICE)
+                assert [row["seq"] for row in rows] == [1, 2, 3, 4, 5, 6, 7]
+                assert obs[-1] == dict(
+                    operation="whistling", stage="completed", root_seq=5, fact="none"
+                )
+                assert rows[-1]["turn"] == 10
+                assert injection["event_bytes"] == len(physical) - len(prefix)
+            else:
+                tail = WRITE_NOTICE[:tail_size] if enabled else b""
+                assert physical == prefix + tail
+                assert injection["event_bytes"] == len(tail)
+            runs.append((terminal, state, history))
+        assert runs[0] == runs[1], scenario
+        results.append(
+            dict(
+                scenario=scenario,
+                passed=True,
+                prompt_count=0,
+                physical_notice_records=0 if hard else 1,
+                durable_notice_claim=not hard,
+                failure_bytes_uncommitted=tail_size,
+                failure_tail_hex=WRITE_NOTICE[:tail_size].hex(),
+            )
         )
     final_hashes = {name: digest(Path(name)) for name in originals}
     save("final-original-object-hashes.json", final_hashes)

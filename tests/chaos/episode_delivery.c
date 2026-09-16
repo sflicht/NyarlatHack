@@ -14,6 +14,12 @@
  * substitutes unrelated vision work at vpline's real post-take boundary; no
  * initialized-world/vision purity or ordinary-play scheduling claim is made. */
 static int reenter, reentries, replace_root, sync_fault, event_writes, event_syncs;
+enum write_case { WRITE_NORMAL, WRITE_EINTR, WRITE_SHORT, WRITE_SHORT_EIO, WRITE_EIO };
+static enum write_case write_fault;
+static int event_forwarded, injected_errors, injected_errno, delivery_writes;
+static int delivery_forwarded, delivery_syncs;
+static size_t event_bytes, requested_length;
+static char requested_notice[3072];
 static long replacement_root;
 static struct stat event_identity;
 void __real_vision_recalc(int);
@@ -34,22 +40,56 @@ void __wrap_vision_recalc(int mode)
 static int is_event_fd(int fd)
 {
     struct stat st;
-    return sync_fault && !fstat(fd, &st) && st.st_dev == event_identity.st_dev
-        && st.st_ino == event_identity.st_ino;
+    return (sync_fault || write_fault) && !fstat(fd, &st)
+        && st.st_dev == event_identity.st_dev && st.st_ino == event_identity.st_ino;
 }
 ssize_t __real_write(int, const void *, size_t);
 int __real_fsync(int);
 ssize_t __wrap_write(int fd, const void *buf, size_t n)
 {
-    if (is_event_fd(fd)) ++event_writes;
-    return __real_write(fd, buf, n);
+    ssize_t result;
+    size_t forwarded = n;
+    if (!is_event_fd(fd)) return __real_write(fd, buf, n);
+    ++event_writes;
+    if (!write_fault) return __real_write(fd, buf, n); /* Old fsync case. */
+    assert(event_writes <= 3);
+    if (event_writes == 1) {
+        assert(n > 7 && n < sizeof requested_notice);
+        memcpy(requested_notice, buf, n);
+        requested_length = n;
+    }
+    if ((event_writes == 1 && (write_fault == WRITE_EINTR || write_fault == WRITE_EIO))
+        || (event_writes == 2 && write_fault == WRITE_SHORT_EIO)) {
+        ++injected_errors;
+        injected_errno = write_fault == WRITE_EINTR ? EINTR : EIO;
+        errno = injected_errno; /* Test injection, not a storage failure. No bytes. */
+        return -1;
+    }
+    if (event_writes == 1 && (write_fault == WRITE_SHORT || write_fault == WRITE_SHORT_EIO))
+        forwarded = 7;
+    if (event_writes == 2) {
+        size_t offset = write_fault == WRITE_EINTR ? 0 : 7;
+        assert(n == requested_length - offset);
+        assert(!memcmp(buf, requested_notice + offset, n));
+    }
+    ++event_forwarded;
+    result = __real_write(fd, buf, forwarded);
+    /* Unexpected OS short/error is fixture failure, never a pretend success. */
+    assert(result == (ssize_t)forwarded);
+    event_bytes += (size_t)result;
+    return result;
 }
 int __wrap_fsync(int fd)
 {
     if (is_event_fd(fd)) {
         ++event_syncs;
-        errno = EIO;
-        return -1;
+        if (sync_fault) {
+            errno = EIO;
+            return -1;
+        }
+        assert(event_syncs <= 2);
+        assert(__real_fsync(fd) == 0);
+        return 0;
     }
     return __real_fsync(fd);
 }
@@ -208,6 +248,8 @@ static void attribution_case(const char *name, int enabled)
     int stop = !strcmp(name, "stop-space");
     int map = !strcmp(name, "map-isolation");
     int failure = !strcmp(name, "fsync-failure");
+    int transport = !strncmp(name, "write-", 6);
+    int hard = !strcmp(name, "write-short-eio") || !strcmp(name, "write-eio");
     int nested = !strncmp(name, "nested-", 7);
     int suppressed = !strcmp(name, "nested-suppressed");
     int expected_rng = test_rng_begin();
@@ -217,7 +259,7 @@ static void attribution_case(const char *name, int enabled)
     char path[1024];
     struct chaos_observation_token token;
     struct WinDesc *cw = wins[WIN_MESSAGE];
-    assert(stop || map || failure || nested);
+    assert(stop || map || failure || nested || transport);
     replace_root = !strcmp(name, "nested-replacement");
     if (stop || suppressed) {
         iflags.msgtype_regex = FALSE;
@@ -232,6 +274,27 @@ static void attribution_case(const char *name, int enabled)
     chaos_observation_arm(operation, map ? CHAOS_OBS_FACT_DETECTION_PRESENTED
                                        : CHAOS_OBS_FACT_SOUND_HIGH);
     seq_before = u.chaos.seq;
+    if (transport) {
+        FILE *before, *snapshot;
+        int ch;
+        struct stat opened;
+        assert(snprintf(path, sizeof path, "%s/events.jsonl",
+                        getenv("NYARLATHACK_RUN_DIR")) < (int)sizeof path);
+        assert(stat(path, &event_identity) == 0);
+        before = fopen(path, "rb"); assert(before);
+        assert(!fstat(fileno(before), &opened));
+        assert(opened.st_dev == event_identity.st_dev && opened.st_ino == event_identity.st_ino);
+        snapshot = fopen("events-before-write.jsonl", "wb"); assert(snapshot);
+        while ((ch = fgetc(before)) != EOF) assert(fputc(ch, snapshot) != EOF);
+        assert(!ferror(before) && fclose(before) == 0 && fclose(snapshot) == 0);
+        assert(seq_before == (enabled ? 5 : 3));
+        if (enabled) {
+            if (!strcmp(name, "write-eintr")) write_fault = WRITE_EINTR;
+            else if (!strcmp(name, "write-short")) write_fault = WRITE_SHORT;
+            else if (!strcmp(name, "write-short-eio")) write_fault = WRITE_SHORT_EIO;
+            else { assert(!strcmp(name, "write-eio")); write_fault = WRITE_EIO; }
+        }
+    }
     if (failure) {
         assert(snprintf(path, sizeof path, "%s/events.jsonl",
                         getenv("NYARLATHACK_RUN_DIR")) < (int)sizeof path);
@@ -245,6 +308,14 @@ static void attribution_case(const char *name, int enabled)
     /* %s makes vpline own its outer text before nested You reuses You_buf. */
     You("%s", map ? "listen." : "produce a high whistling sound.");
     seq_after = u.chaos.seq;
+    if (transport) {
+        delivery_writes = event_writes;
+        delivery_forwarded = event_forwarded;
+        delivery_syncs = event_syncs;
+        assert(seq_after == seq_before + (enabled && !hard ? 1 : 0));
+        You("listen."); /* Ordinary follow-up cannot duplicate the consumed token. */
+        assert(u.chaos.seq == seq_after && event_writes == delivery_writes);
+    }
     if (map) {
         token = chaos_observation_take_map();
         assert(token.root == root);
@@ -277,6 +348,17 @@ static void attribution_case(const char *name, int enabled)
         assert(event_syncs == enabled && event_writes == enabled);
         assert(chaos_observation_take_message().root == 0);
     }
+    if (transport) {
+        assert(u.chaos.seq == seq_before + (enabled && !hard ? 2 : 0));
+        if (hard) {
+            next_root = chaos_observation_begin(CHAOS_OBS_OP_WHISTLING);
+            chaos_observation_arm(CHAOS_OBS_OP_WHISTLING, CHAOS_OBS_FACT_SOUND_HIGH);
+            chaos_observation_end(next_root);
+            assert(next_root == 0 && u.chaos.seq == seq_before);
+            assert(event_writes == delivery_writes && event_syncs == 0);
+        }
+        assert(chaos_observation_take_message().root == 0);
+    }
     assert(blocking_displays == stop);
     if (stop) assert(morc == ' ');
     assert(windowprocs.win_putstr == tty_putstr);
@@ -292,9 +374,23 @@ static void attribution_case(const char *name, int enabled)
     file = fopen("injection.json", "w"); assert(file);
     fprintf(file, "{\"reentries\":%d,\"replacement_root\":%ld,"
         "\"blocking_displays\":%d,\"event_writes\":%d,\"event_syncs\":%d,"
-        "\"seq_before\":%ld,\"seq_after\":%ld,\"next_root\":%ld}\n",
+        "\"seq_before\":%ld,\"seq_after\":%ld,\"next_root\":%ld",
         reentries, replacement_root, blocking_displays, event_writes, event_syncs,
         seq_before, seq_after, next_root);
+    if (transport) {
+        fprintf(file, ",\"event_forwarded\":%d,\"event_bytes\":%lu,"
+            "\"injected_errors\":%d,\"injected_errno\":%d,\"injected_return\":%d,"
+            "\"delivery_writes\":%d,\"delivery_forwarded\":%d,\"delivery_syncs\":%d,"
+            "\"seq_final\":%ld,\"requested_length\":%lu,\"requested_hex\":\"",
+            event_forwarded, (unsigned long)event_bytes, injected_errors,
+            injected_errno, injected_errors ? -1 : 0,
+            delivery_writes, delivery_forwarded, delivery_syncs, u.chaos.seq,
+            (unsigned long)requested_length);
+        for (i = 0; i < (long)requested_length; ++i)
+            fprintf(file, "%02x", (unsigned char)requested_notice[i]);
+        fprintf(file, "\"");
+    }
+    fprintf(file, "}\n");
     assert(fclose(file) == 0);
     file = fopen("native-history.txt", "w"); assert(file);
     fprintf(file, "toplines:%s\nprevmsg:%s\nmaxrow:%ld maxcol:%ld\n",
