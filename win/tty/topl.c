@@ -192,13 +192,20 @@ const char *s;
 void
 more()
 {
+    (void) tty_more_presented();
+}
+
+/* Execution of the native prompt/wait path, not approval or EOF status. */
+boolean
+tty_more_presented()
+{
     struct WinDesc *cw = wins[WIN_MESSAGE];
 
     /* avoid recursion -- only happens from interrupts */
     if(ttyDisplay->inmore++)
-	return;
+	return FALSE;
     if (iflags.debug_fuzzer)
-	return;
+	return FALSE;
 
     if(ttyDisplay->toplin) {
 	tty_curs(BASE_WINDOW, cw->curx+1, cw->cury);
@@ -227,6 +234,7 @@ more()
     }
     ttyDisplay->toplin = 0;
     ttyDisplay->inmore = 0;
+    return TRUE;
 }
 
 void

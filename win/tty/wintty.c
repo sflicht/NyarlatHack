@@ -179,6 +179,7 @@ STATIC_DCL void FDECL(invert_all_on_page, (winid,tty_menu_item *,tty_menu_item *
 STATIC_DCL void FDECL(invert_all, (winid,tty_menu_item *,tty_menu_item *, CHAR_P));
 STATIC_DCL void FDECL(process_menu_window, (winid,struct WinDesc *));
 STATIC_DCL void FDECL(process_text_window, (winid,struct WinDesc *));
+STATIC_DCL boolean FDECL(tty_display_nhwindow_impl, (winid, BOOLEAN_P));
 STATIC_DCL tty_menu_item *FDECL(reverse, (tty_menu_item *));
 const char * FDECL(compress_str, (const char *));
 STATIC_DCL void FDECL(tty_putsym, (winid, int, int, CHAR_P));
@@ -1700,14 +1701,37 @@ struct WinDesc *cw;
 void
 tty_display_nhwindow(window, blocking)
     winid window;
+    boolean blocking;
+{
+    (void) tty_display_nhwindow_impl(window, blocking);
+}
+
+#ifdef CHAOS
+/* Run once as usual; only a blocking map can certify map presentation. */
+boolean
+tty_display_map_presented(window, blocking)
+    winid window;
+    boolean blocking;
+{
+    boolean presented = tty_display_nhwindow_impl(window, blocking);
+
+    return (window == WIN_MAP && blocking
+	    && wins[window]->type == NHW_MAP && presented);
+}
+#endif
+
+STATIC_OVL boolean
+tty_display_nhwindow_impl(window, blocking)
+    winid window;
     boolean blocking;	/* with ttys, all windows are blocking */
 {
     register struct WinDesc *cw = 0;
+    boolean presented = FALSE;
 
     if(window == WIN_ERR || (cw = wins[window]) == (struct WinDesc *) 0)
 	panic(winpanicstr,  window);
     if(cw->flags & WIN_CANCELLED)
-	return;
+	return FALSE;
     ttyDisplay->lastwin = window;
     ttyDisplay->rawprint = 0;
 
@@ -1716,7 +1740,7 @@ tty_display_nhwindow(window, blocking)
     switch(cw->type) {
     case NHW_MESSAGE:
 	if(ttyDisplay->toplin == 1) {
-	    more();
+	    presented = tty_more_presented();
 	    ttyDisplay->toplin = 1; /* more resets this */
 	    tty_clear_nhwindow(window);
 	} else
@@ -1729,8 +1753,7 @@ tty_display_nhwindow(window, blocking)
 	end_glyphout();
 	if(blocking) {
 	    if(!ttyDisplay->toplin) ttyDisplay->toplin = 1;
-	    tty_display_nhwindow(WIN_MESSAGE, TRUE);
-	    return;
+	    return tty_display_nhwindow_impl(WIN_MESSAGE, TRUE);
 	}
     case NHW_BASE:
 	(void) fflush(stdout);
@@ -1773,6 +1796,7 @@ tty_display_nhwindow(window, blocking)
 	break;
     }
     cw->active = 1;
+    return presented;
 }
 
 void

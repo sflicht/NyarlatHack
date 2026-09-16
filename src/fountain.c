@@ -2178,7 +2178,10 @@ drinkfountain()
 
 		case 26: /* See Monsters */
 
+			chaos_observation_arm(CHAOS_OBS_OP_FOUNTAIN_DRINK,
+			    CHAOS_OBS_FACT_DETECTION_PRESENTED);
 			(void) monster_detect((struct obj *)0, 0);
+			chaos_observation_disarm();
 			exercise(A_WIS, TRUE);
 			break;
 

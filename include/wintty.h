@@ -159,6 +159,7 @@ E boolean FDECL(parse_resetcolor, (char *));
 
 E void FDECL(addtopl, (const char *));
 E void NDECL(more);
+E boolean NDECL(tty_more_presented);
 E void FDECL(update_topl, (const char *));
 E boolean FDECL(tty_update_topl_rendered, (const char *));
 E void FDECL(putsyms, (const char*));
@@ -183,6 +184,9 @@ E void NDECL(tty_resume_nhwindows);
 E winid FDECL(tty_create_nhwindow, (int));
 E void FDECL(tty_clear_nhwindow, (winid));
 E void FDECL(tty_display_nhwindow, (winid, BOOLEAN_P));
+#ifdef CHAOS
+E boolean FDECL(tty_display_map_presented, (winid, BOOLEAN_P));
+#endif
 E void FDECL(tty_dismiss_nhwindow, (winid));
 E void FDECL(tty_destroy_nhwindow, (winid));
 E void FDECL(tty_curs, (winid,int,int));
