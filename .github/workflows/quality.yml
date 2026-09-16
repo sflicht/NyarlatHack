@@ -95,6 +95,10 @@ jobs:
             NYARLATHACK_WHISTLE_RECEIPT="$out/system-gcc13" \
             NYARLATHACK_WHISTLE_REVISION="$revision" \
             NYARLATHACK_WHISTLE_ARTIFACTS="$invocation/whistle" \
+            NYARLATHACK_FOUNTAIN_ROOT="$root" \
+            NYARLATHACK_FOUNTAIN_RECEIPT="$out/system-gcc13" \
+            NYARLATHACK_FOUNTAIN_REVISION="$revision" \
+            NYARLATHACK_FOUNTAIN_ARTIFACTS="$invocation/fountain" \
             /usr/bin/python3 -m unittest discover -s tests/chaos -p 'test_*.py' -v \
             2>&1 | tee "$out/full-suite.log"
       - name: Retain selected preparation log

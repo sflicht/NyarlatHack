@@ -1,8 +1,9 @@
 #!/usr/bin/python3
-"""Explicit CLI fountain baseline; not native acceptance or CI registration.
+"""Strict native fountain acceptance via opt-in unittest discovery or CLI.
 
 Run from the explicit frozen source root. External fixture/support hashes are
 separate from native build identity. This is not the complete Task 6b/8 matrix.
+The observed-prehook CLI oracle is a manual diagnostic, never acceptance.
 """
 
 import argparse
@@ -19,6 +20,7 @@ import resource
 import shutil
 import signal
 import sys
+import unittest
 
 
 def validate_history(records, context, *, enabled, future):
@@ -681,6 +683,30 @@ def main(argv=None):
         )
     ]
     return 0
+
+
+@unittest.skipUnless(os.environ.get("NYARLATHACK_GAME_TESTS") == "1", "native opt-in")
+class EpisodeFountainTests(unittest.TestCase):
+    def test_strict_fountain(self):
+        if not __debug__:
+            self.fail("optimized Python is not supported")
+        args = []
+        for key in ("ROOT", "RECEIPT", "REVISION", "ARTIFACTS"):
+            value = os.environ.get("NYARLATHACK_FOUNTAIN_" + key)
+            self.assertTrue(value, "set NYARLATHACK_FOUNTAIN_" + key)
+            args.extend(["--" + key.lower(), value])
+        args.extend(["--oracle", "strict-desired"])
+        from native_driver_supervision import run_driver
+
+        code, logs = run_driver(
+            Path(__file__).resolve(),
+            args,
+            os.environ["NYARLATHACK_FOUNTAIN_ROOT"],
+            os.environ["NYARLATHACK_FOUNTAIN_ARTIFACTS"],
+        )
+        self.assertEqual(
+            code, 0, f"fountain driver failed ({code}); diagnostics: {logs}"
+        )
 
 
 if __name__ == "__main__":
