@@ -137,10 +137,17 @@ def main(argv=None):
     for name in ("root", "receipt", "revision", "off-tuple", "artifacts"):
         parser.add_argument("--" + name, required=True)
     parser.add_argument("--matrix", action="store_true")
+    parser.add_argument("--provenance-dumps", action="store_true")
     parser.add_argument("--stock-tuple")
     parser.add_argument("--stock-receipt")
     parser.add_argument("--stock-revision")
     args = parser.parse_args(argv)
+    if args.provenance_dumps and not (
+        args.matrix and args.stock_tuple and args.stock_receipt and args.stock_revision
+    ):
+        raise ValueError(
+            "provenance comparison requires the full seven-variant stock matrix"
+        )
     assert re.fullmatch("[0-9a-f]{40}", args.revision)
     root, receipt, off, out = map(
         Path, (args.root, args.receipt, args.off_tuple, args.artifacts)
@@ -194,6 +201,36 @@ def main(argv=None):
         save(out / "stock-provenance.json", stock_identity)
     else:
         assert not args.stock_receipt and not args.stock_revision
+    bindings = {}
+    profile = None
+    if args.provenance_dumps:
+        from turnloop_header_bindings import (
+            check_profile,
+            current_binding,
+            historical_binding,
+            read_dumps,
+            compare_run,
+        )
+
+        profile = check_profile(root, args.revision)
+        bindings[off] = current_binding(receipt, off, args.revision, 0)
+        bindings[current] = current_binding(receipt, current, args.revision, 1)
+        bindings[stock] = historical_binding(stock_receipt, stock, args.stock_revision)
+        save(
+            out / "header-bindings.json",
+            {
+                "profile": profile,
+                "bindings": {
+                    str(p): {
+                        "build": b.build.record(),
+                        "sizes": dict(b.sizes),
+                        "source_evidence": b.evidence,
+                    }
+                    for p, b in bindings.items()
+                },
+                "trust": "cooperative same-UID build receipts, not authentication",
+            },
+        )
     for name in ("gameplay_support.py", "replay_clock.c"):
         assert digest(Path(__file__).with_name(name)) == digest(
             root / "tests/chaos" / name
@@ -205,7 +242,13 @@ def main(argv=None):
     ]
     for path in sources:
         shutil.copy2(path, out / path.name)
-    save(out / "fixture-hashes.json", {p.name: digest(p) for p in sources})
+    if args.provenance_dumps:
+        for name in ("turnloop_header_bindings.py", "turnloop_dump_provenance.py"):
+            source = Path(__file__).with_name(name)
+            sources.append(source)
+            shutil.copy2(source, out / name)
+    fixture_hashes = {p.name: digest(p) for p in sources}
+    save(out / "fixture-hashes.json", fixture_hashes)
     save(
         out / "provenance.json",
         {
@@ -269,6 +312,9 @@ def main(argv=None):
 
         games = []
         mismatches = []
+        supplemental = []
+        supplemental_failures = []
+        run_builds = []
         witnesses = {}
         variants = [
             ("reviewed-chaos0", off, False, False),
@@ -306,6 +352,8 @@ def main(argv=None):
                 source, clock, observe=observe, wizard=True, root=out / name
             )
             active.append(game)
+            if args.provenance_dumps:
+                run_builds.append(bindings[source].verify_tuple(game.game))
             if source == stock:
                 assert stock_identity is not None
                 for filename in ("dnethack", "nhdat"):
@@ -341,6 +389,11 @@ def main(argv=None):
                 for p in (game.game / "dumplog").iterdir()
                 if p.is_file()
             }
+            if args.provenance_dumps:
+                bindings[source].verify_tuple(game.game)
+                dumps = {
+                    k: v.hex() for k, v in read_dumps(game.game / "dumplog").items()
+                }
             run = {
                 "inputs": game.inputs,
                 "terminal": bytes(game.raw),
@@ -359,6 +412,18 @@ def main(argv=None):
                             "equal": {k: games[0][1][k] == run[k] for k in run},
                         }
                     )
+                if args.provenance_dumps:
+                    try:
+                        supplemental.append(
+                            compare_run(games[0][1], run, run_builds[0], run_builds[-1])
+                        )
+                        for index, (_, previous) in enumerate(games):
+                            if run_builds[index] == run_builds[-1]:
+                                compare_runs(previous, run)
+                    except (ValueError, AssertionError) as exc:
+                        supplemental_failures.append(
+                            {"variant": name, "failure": str(exc)}
+                        )
             games.append((game, run))
             if observe:
                 assert (game.run / "whispers.jsonl").read_bytes() == b""
@@ -410,13 +475,58 @@ def main(argv=None):
             },
         )
         print("TURNLOOP_ARTIFACTS=" + str(out))
-        assert not mismatches, mismatches
+        if args.provenance_dumps:
+            check_profile(root, args.revision)
+            assert {p.name: digest(p) for p in sources} == fixture_hashes, (
+                "fixture source changed"
+            )
+            for source, binding in bindings.items():
+                binding.verify_tuple(source)
+            assert (
+                len(games) == 7 and len(supplemental) == 6 and not supplemental_failures
+            ), supplemental_failures
+        else:
+            assert not mismatches, mismatches
     finally:
-        signal.alarm(0)
-        for game in active:
-            game.cleanup()
-        for sig, handler in old_handlers.items():
-            signal.signal(sig, handler)
+        original_error = sys.exception()
+        cleanup_errors = []
+        try:
+            try:
+                signal.alarm(0)
+            except BaseException as exc:
+                cleanup_errors.append(exc)
+            for game in active:
+                try:
+                    game.cleanup()
+                except BaseException as exc:
+                    cleanup_errors.append(exc)
+        finally:
+            for sig, handler in old_handlers.items():
+                try:
+                    signal.signal(sig, handler)
+                except BaseException as exc:
+                    cleanup_errors.append(exc)
+        if cleanup_errors:
+            failure = original_error if original_error is not None else cleanup_errors[0]
+            for exc in cleanup_errors:
+                failure.add_note("turn-loop cleanup failure: " + repr(exc))
+            if original_error is None:
+                raise failure
+    if args.provenance_dumps:
+        save(
+            out / "provenance-result.json",
+            {
+                "comparison": "provenance-validated-dump-v1",
+                "passed_selected_matrix": True,
+                "task8_closed": False,
+                "strict_result_passed": not mismatches,
+                "strict_mismatches": mismatches,
+                "comparisons": supplemental,
+                "driver_cleanup_completed": True,
+                "outer_family_cleanup": "must be verified by existing run_driver supervisor",
+                "scope": "selected matrix only; independent review required",
+            },
+        )
 
 
 @unittest.skipUnless(
@@ -431,6 +541,8 @@ class TurnloopTests(unittest.TestCase):
             value = os.environ["NYARLATHACK_TURNLOOP_" + key]
             args.extend(["--" + key.lower().replace("_", "-"), value])
         args.append("--matrix")
+        if os.environ.get("NYARLATHACK_TURNLOOP_PROVENANCE_DUMPS") == "1":
+            args.append("--provenance-dumps")
         if os.environ.get("NYARLATHACK_TURNLOOP_STOCK_TUPLE"):
             for key in ("STOCK_TUPLE", "STOCK_RECEIPT", "STOCK_REVISION"):
                 args.extend(

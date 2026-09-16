@@ -126,9 +126,11 @@ jobs:
             ${{ env.NYARLATHACK_CI_OUT }}/system-gcc13/*.json
             ${{ env.NYARLATHACK_CI_OUT }}/system-gcc13/*.log
             ${{ env.NYARLATHACK_CI_OUT }}/system-gcc13/*.txt
+            ${{ env.NYARLATHACK_CI_OUT }}/system-gcc13/*-date.h
             ${{ env.NYARLATHACK_CI_OUT }}/old-on/*.json
             ${{ env.NYARLATHACK_CI_OUT }}/old-on/*.log
             ${{ env.NYARLATHACK_CI_OUT }}/old-on/*.txt
+            ${{ env.NYARLATHACK_CI_OUT }}/old-on/*-date.h
             ${{ env.NYARLATHACK_CI_OUT }}/fixtures/**/*.json
             ${{ env.NYARLATHACK_CI_OUT }}/fixtures/**/*.jsonl
             ${{ env.NYARLATHACK_CI_OUT }}/fixtures/**/*.raw

@@ -182,6 +182,136 @@ class NativeCIPreparationTests(unittest.TestCase):
             self.ci.digest(self.root / "dnethackdir/dnethack"),
         )
 
+    def test_simulated_date_headers_survive_next_mode_and_stay_separate(self):
+        """Raw simulated unit files, not native headers or build acceptance."""
+        raw = {
+            ("old-checkout", 1): b"simulated historical precurio\r\n\x00\xff",
+            ("checkout", 0): b"simulated mode zero\r\n\x00\xfe",
+            ("checkout", 1): b"simulated mode one\n\x00\xfd",
+        }
+
+        def install_raw(argv, **kw):
+            cwd = Path(kw["cwd"])
+            mode = int(argv[3][-1])
+            if cwd == self.root and argv[2:4] == ["clean", "CHAOS=1"]:
+                self.assertTrue((self.out / "system-gcc13/0-date.h").is_file())
+                self.assertEqual(
+                    (self.out / "system-gcc13/0-date.h").read_bytes(),
+                    raw[("checkout", 0)],
+                )
+            result = self.run_fake(argv, **kw)
+            if argv[2] == "install":
+                (cwd / "include/date.h").write_bytes(raw[(cwd.name, mode)])
+            return result
+
+        self.ci._run_build.side_effect = install_raw
+        self.prepare()
+        for folder, checkout, mode, revision in (
+            ("old-on", "old-checkout", 1, OLD),
+            ("system-gcc13", "checkout", 0, REV),
+            ("system-gcc13", "checkout", 1, REV),
+        ):
+            with self.subTest(folder=folder, mode=mode):
+                capture = self.out / folder / f"{mode}-date.h"
+                self.assertEqual(capture.read_bytes(), raw[(checkout, mode)])
+                self.assertEqual(stat.S_IMODE(capture.stat().st_mode), 0o600)
+                manifest = json.loads(
+                    (capture.parent / f"{mode}-manifest.json").read_text()
+                )
+                self.assertEqual(manifest["mode"], mode)
+                self.assertEqual(manifest["revision"], revision)
+                self.assertEqual(
+                    self.ci.digest(capture),
+                    manifest["generated_headers"]["include/date.h"],
+                )
+                self.assertEqual(
+                    set(manifest),
+                    {
+                        "mode",
+                        "revision",
+                        "pairs",
+                        "symbols",
+                        "generated_headers",
+                        "objects",
+                        "commands",
+                        "finished_eastern",
+                        "acceptance",
+                    },
+                )
+        self.assertEqual(
+            (self.root / "include/date.h").read_bytes(), raw[("checkout", 1)]
+        )
+
+    def test_simulated_date_capture_is_private_with_permissive_umask(self):
+        receipts = self.base / "unit-receipts"
+        receipts.mkdir(mode=0o700)
+        old_umask = os.umask(0)
+        try:
+            self.ci.build_mode(self.root, receipts, REV, self.ci.environment(), 0)
+        finally:
+            os.umask(old_umask)
+        self.assertTrue((receipts / "0-date.h").is_file())
+        self.assertEqual(stat.S_IMODE((receipts / "0-date.h").stat().st_mode), 0o600)
+
+    def test_simulated_date_capture_failures_prevent_success_manifest(self):
+        """Inject only unit-file faults; all build commands remain mocked."""
+        real_digest = self.ci.digest
+        for mode in (0, 1):
+            for fault in (
+                "missing-source",
+                "mismatch",
+                "missing-capture",
+                "exists",
+                "symlink",
+            ):
+                with self.subTest(mode=mode, fault=fault):
+                    self.out = self.base / f"output-{mode}-{fault}"
+                    receipts = self.out / "system-gcc13"
+                    capture = receipts / f"{mode}-date.h"
+                    sentinel = self.base / f"sentinel-{mode}-{fault}"
+                    sentinel.write_bytes(b"preserve simulated unit sentinel")
+
+                    def install_fault(argv, **kw):
+                        result = self.run_fake(argv, **kw)
+                        if Path(kw["cwd"]) == self.root and argv[2:4] == [
+                            "install",
+                            f"CHAOS={mode}",
+                        ]:
+                            if fault == "missing-source":
+                                (self.root / "include/date.h").unlink()
+                                (self.root / "include/other.h").write_bytes(b"unit")
+                            elif fault == "exists":
+                                capture.write_bytes(sentinel.read_bytes())
+                            elif fault == "symlink":
+                                capture.symlink_to(sentinel)
+                        return result
+
+                    def digest_fault(path):
+                        if path == capture:
+                            if fault == "mismatch":
+                                path.write_bytes(b"corrupted simulated capture")
+                            elif fault == "missing-capture":
+                                path.unlink()
+                        return real_digest(path)
+
+                    self.ci._run_build.side_effect = install_fault
+                    with patch.object(self.ci, "digest", side_effect=digest_fault):
+                        with self.assertRaises((RuntimeError, OSError)):
+                            self.prepare()
+                    self.assertFalse((receipts / f"{mode}-manifest.json").exists())
+                    self.assertFalse((self.out / "preparation.json").exists())
+                    completion = json.loads((receipts / "completion.json").read_text())
+                    self.assertEqual(
+                        completion["finished_modes"], [] if mode == 0 else [0]
+                    )
+                    self.assertEqual(
+                        sentinel.read_bytes(), b"preserve simulated unit sentinel"
+                    )
+                    if fault in ("exists", "symlink"):
+                        self.assertEqual(capture.read_bytes(), sentinel.read_bytes())
+                    if fault == "symlink":
+                        self.assertTrue(capture.is_symlink())
+
     def test_private_receipts_writable_copies_and_immutable_archive(self):
         self.prepare()
         for directory in (self.out, self.out / "fixtures", self.out / "system-gcc13"):
@@ -793,6 +923,9 @@ class NativeCallerWiringTests(unittest.TestCase):
             f"{base}/{folder}/*.{suffix}"
             for folder in ("system-gcc13", "old-on")
             for suffix in ("json", "log", "txt")
+        )
+        expected.update(
+            f"{base}/{folder}/*-date.h" for folder in ("system-gcc13", "old-on")
         )
         expected.update(
             f"{base}/fixtures/**/*.{suffix}"
