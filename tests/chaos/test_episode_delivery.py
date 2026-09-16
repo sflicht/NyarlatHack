@@ -2,9 +2,9 @@
 """Full-linked native TTY output, synthetic scope: not doapply acceptance.
 
 Normal-render baseline reached missing-notice RED before this candidate.
-Initial WIN_STOP append/replacement cases require fresh native execution.
-Remaining delivery matrix (More, early suppression, ports, nesting, failures,
-and CHAOS-off) is explicitly pending; these three cases do not discharge it.
+Real More SPACE/ESC and append cases extend the three original regressions.
+Early suppression, ports, nesting, failures and CHAOS-off remain pending;
+these synthetic scopes do not discharge action or whole-game acceptance.
 """
 
 import argparse
@@ -51,13 +51,29 @@ def main():
     if not out.is_relative_to(Path("/tmp")) or out.is_relative_to(root):
         raise ValueError("artifacts must be outside checkout, under /tmp")
     trusted = root / "tests/chaos"
-    sys.path.append(str(trusted))
+    helper_names = (
+        "gameplay_support",
+        "native_fixture_selection",
+        "native_rng",
+        "native_build_calibration",
+        "native_build_identity",
+    )
+    # Reject conflicting cached helpers; never discard them to repair provenance.
+    for name in helper_names:
+        cached = sys.modules.get(name)
+        if cached is not None:
+            origin = getattr(cached, "__file__", None)
+            if origin is None or Path(origin).resolve().parent != trusted:
+                raise ValueError("unexpected cached verifier path")
+    # An external test script must not shadow the explicitly selected helpers.
+    # Keep all post-import path and source/build receipt checks below intact.
+    sys.path.insert(0, str(trusted))
     # No PYTHONPATH editing, source override, archived fallback, or model imports.
     import gameplay_support
     import native_fixture_selection
     import native_rng
 
-    for module in (gameplay_support, native_fixture_selection, native_rng):
+    for module in (sys.modules[name] for name in helper_names):
         if module.__file__ is None or Path(module.__file__).resolve().parent != trusted:
             raise ValueError("unexpected imported verifier path")
     if gameplay_support.ROOT != root:
@@ -248,22 +264,34 @@ def main():
             NYARLATHACK_OBSERVATIONS=str(int(enabled)),
         )
         master, slave = pty.openpty()
-        fcntl.ioctl(slave, termios.TIOCSWINSZ, struct.pack("HHHH", 24, 80, 0, 0))
         terminal = bytearray()
-        # No automatic key feed: these bounded scenarios must not need More.
-        with (work / "stderr.txt").open("wb") as errors:
-            process = subprocess.Popen(
-                [str(exe), "--" + scenario],
-                cwd=work,
-                env=child_env,
-                stdin=slave,
-                stdout=slave,
-                stderr=errors,
-                start_new_session=True,
-            )
-            os.close(slave)
-            deadline = time.monotonic() + 20
-            try:
+        inputs = []
+        process = None
+        key = (
+            b" "
+            if scenario == "pre-more-space"
+            else b"\x1b"
+            if scenario.endswith("-escape")
+            else b""
+        )
+        expected_prompts = int(bool(key))
+        command = [str(exe), "--" + scenario]
+        (work / "command.json").write_text(json.dumps(command) + "\n")
+        try:
+            fcntl.ioctl(slave, termios.TIOCSWINSZ, struct.pack("HHHH", 24, 80, 0, 0))
+            with (work / "stderr.txt").open("wb") as errors:
+                process = subprocess.Popen(
+                    command,
+                    cwd=work,
+                    env=child_env,
+                    stdin=slave,
+                    stdout=slave,
+                    stderr=errors,
+                    start_new_session=True,
+                )
+                os.close(slave)
+                slave = None
+                deadline = time.monotonic() + 20
                 while True:
                     if time.monotonic() > deadline:
                         raise TimeoutError("native TTY scenario exceeded 20s; not RED")
@@ -277,16 +305,58 @@ def main():
                         break
                     if not data:
                         break
+                    if len(terminal) + len(data) > 1024 * 1024:
+                        raise RuntimeError("native terminal capture exceeds 1 MiB")
                     terminal.extend(data)
+                    prompts = terminal.count(b"--More--")
+                    if prompts > expected_prompts:
+                        raise AssertionError(
+                            "unexpected More prompt; no extra input sent"
+                        )
+                    if prompts == 1 and not inputs:
+                        # Exactly one byte, only after the actual native prompt.
+                        written = os.write(master, key)
+                        inputs.append(
+                            {
+                                "hex": key[:written].hex(),
+                                "bytes_written": written,
+                                "prompt_count": prompts,
+                                "prompt_offset": terminal.index(b"--More--"),
+                                "terminal_bytes_before_write": len(terminal),
+                            }
+                        )
+                        assert written == 1
                 code = process.wait(timeout=3)
-            finally:
-                if process.poll() is None:
+        except BaseException as exc:
+            (work / "failure.txt").write_text(repr(exc) + "\n")
+            raise
+        finally:
+            if process is not None:
+                try:
                     os.killpg(process.pid, signal.SIGKILL)
-                    process.wait(timeout=3)
-                os.close(master)
-                (work / "terminal.bin").write_bytes(terminal)
+                except ProcessLookupError:
+                    pass
+                process.wait(timeout=3)
+            if slave is not None:
+                os.close(slave)
+            os.close(master)
+            (work / "terminal.bin").write_bytes(terminal)
+            (work / "input.json").write_text(
+                json.dumps(
+                    {
+                        "expected_key_hex": key.hex(),
+                        "writes": inputs,
+                        "prompt_count": terminal.count(b"--More--"),
+                        "returncode": process.returncode if process else None,
+                    },
+                    indent=2,
+                )
+                + "\n"
+            )
         if code:
             raise RuntimeError(f"native render exited {code}; inspect {work}; not RED")
+        assert terminal.count(b"--More--") == len(inputs) == expected_prompts
+        assert b"".join(bytes.fromhex(item["hex"]) for item in inputs) == key
         rows = [
             json.loads(line)
             for line in (run_dir / "events.jsonl").read_text().splitlines()
@@ -294,10 +364,27 @@ def main():
         state = json.loads((work / "stderr.txt").read_text())
         return bytes(terminal), rows, state, (work / "native-history.txt").read_bytes()
 
-    for scenario in ("render", "stop-append", "stop-replacement"):
+    results = []
+    for scenario in (
+        "render",
+        "stop-append",
+        "stop-replacement",
+        "append",
+        "pre-more-space",
+        "pre-more-escape",
+        "post-newline-escape",
+        "post-wrap-escape",
+    ):
         off_text, off_rows, off_state, off_history = render(False, scenario)
         on_text, on_rows, on_state, on_history = render(True, scenario)
-        expected_notices = int(scenario == "render")
+        expected_notices = int(
+            scenario
+            not in (
+                "stop-append",
+                "stop-replacement",
+                "pre-more-escape",
+            )
+        )
         target = b"You produce a high whistling sound."
         assert off_text.count(target) == on_text.count(target) == expected_notices, (
             scenario
@@ -305,7 +392,41 @@ def main():
         assert on_text == off_text, (
             "observation on/off terminal bytes differ: " + scenario
         )
-        assert b"--More--" not in on_text, "unexpected input boundary: " + scenario
+        more = scenario.startswith("pre-more-") or scenario.startswith("post-")
+        assert on_text.count(b"--More--") == int(more), scenario
+        if scenario == "pre-more-space":
+            assert on_text.index(b"--More--") < on_text.index(target)
+        if scenario.startswith("pre-more-"):
+            prime = b"You wait beside the quiet fountain and listen to the water."
+            assert on_text.count(prime) == 1
+            assert on_text.index(prime) < on_text.index(b"--More--")
+        if scenario.startswith("post-"):
+            # The exact first phrase is intentionally unwrapped in both cases.
+            # Do not strip terminal controls or normalize whitespace to find it.
+            assert on_text.index(target) < on_text.index(b"--More--")
+            ending = (
+                b"The echo fades."
+                if scenario == "post-newline-escape"
+                else b"and slowly fades into silence."
+            )
+            if scenario == "post-wrap-escape":
+                # At 80 columns, the native word-wrap splits after 'corridor'.
+                # Assert the actual line break/control sequence, not normalized text.
+                assert (
+                    b"empty corridor\x1b[K\x1b[K\r\nand slowly fades into silence."
+                    in on_text
+                )
+            assert on_text.count(ending) == 1
+            assert (
+                on_text.index(target)
+                < on_text.index(ending)
+                < on_text.index(b"--More--")
+            )
+            assert on_history.split(b"maxrow:")[0].count(b"\n") == 2, scenario
+        if scenario == "append":
+            assert on_text.count(b"You wait.") == 1
+            assert on_text.index(b"You wait.") < on_text.index(target)
+            assert on_history.startswith(b"toplines:You wait.  " + target + b"\n")
         assert not [row for row in off_rows if "observation" in row]
         assert off_state.pop("root") == 0
         root_seq = on_state.pop("root")
@@ -352,6 +473,26 @@ def main():
             }
             assert start["seq"] < notice["seq"] < end["seq"]
             assert start["turn"] == notice["turn"] == end["turn"]
+        results.append(
+            {
+                "scenario": scenario,
+                "notices": len(notices),
+                "prompt_count": on_text.count(b"--More--"),
+                "passed": True,
+            }
+        )
+    final_hashes = {name: digest(Path(name)) for name in originals}
+    save("final-original-object-hashes.json", final_hashes)
+    assert originals == final_hashes, "native originals changed during execution"
+    save(
+        "result.json",
+        {
+            "cases": results,
+            "original_objects_unchanged": True,
+            "scenario_count": len(results),
+        },
+    )
+    print(json.dumps({"artifacts": str(out), "cases": results}), flush=True)
 
 
 @unittest.skipUnless(
