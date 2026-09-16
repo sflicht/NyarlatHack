@@ -43,6 +43,7 @@ SOUND_CASES = {
 
 DISPATCH_CASES = ("tagged-curio-inert", "leaf-ordinary", "apply-cancel")
 PET_CASES = ("magic-pet-known", "magic-pet-unknown")
+SUPPRESSION_CASES = ("noshow-known", "noshow-unknown", "norep-known", "norep-unknown")
 
 
 def cancel_at_prompt(g, exe, child_env, work, supervisor, cancel):
@@ -325,8 +326,16 @@ def main(argv=None):
         )
         OwnedGame = supervisor.owned_game_type(gameplay_support.Game, cancel)
         results = []
-        for case in ("known", "unknown", *SOUND_CASES, *DISPATCH_CASES, *PET_CASES):
+        for case in (
+            "known",
+            "unknown",
+            *SOUND_CASES,
+            *DISPATCH_CASES,
+            *PET_CASES,
+            *SUPPRESSION_CASES,
+        ):
             descriptor = SOUND_CASES.get(case)
+            suppression = case in SUPPRESSION_CASES
             pet = case in PET_CASES
             dispatch = case in DISPATCH_CASES
             calibrated = seeds[case == "magic-cursed-success"]
@@ -352,7 +361,7 @@ def main(argv=None):
                     NYARLATHACK_OBSERVATIONS=str(int(enabled)),
                     WHISTLE_CHAOS_STATE=str(work / "chaos-state.json"),
                 )
-                if descriptor or dispatch or pet:
+                if descriptor or dispatch or pet or suppression:
                     child_env["WHISTLE_SEED"] = str(calibrated["seed"])
                 if case == "apply-cancel":
                     raw, diagnostic = cancel_at_prompt(
@@ -371,7 +380,13 @@ def main(argv=None):
                 message = descriptor[0] if descriptor else "high whistling sound"
                 if pet:
                     message = "strange whistling sound"
-                if case in ("apply-cancel", "tagged-curio-inert"):
+                if suppression:
+                    # NOREP's one real primer is in the transcript, not a notice
+                    # from the measured doapply. Native ring/state proves order.
+                    assert raw.count(
+                        b"You produce a high whistling sound."
+                    ) == case.startswith("norep-")
+                elif case in ("apply-cancel", "tagged-curio-inert"):
                     assert b"whistling sound" not in raw and b"humming noise" not in raw
                     assert raw.count(b"This curio is inert.") == (
                         case == "tagged-curio-inert"
@@ -379,6 +394,57 @@ def main(argv=None):
                 else:
                     assert raw.count(("You produce a " + message + ".").encode()) == 1
                 state = json.loads(diagnostic)
+                if suppression:
+                    repeat = case.startswith("norep-")
+                    high = b"You produce a high whistling sound."
+                    assert state["case"] == case and state["seed"] == 2
+                    assert (
+                        state["known"]
+                        == state["dknown"]
+                        == state["type_known"]
+                        == case.endswith("-known")
+                    )
+                    assert (
+                        state["cursed"] == state["blessed"] == state["rng_draws"] == 0
+                    )
+                    assert (
+                        state["next_draw"]
+                        == state["expected_next"]
+                        == calibrated["next_after_zero"]
+                        == 35290
+                    )
+                    assert state["return"] == 4
+                    assert state["sleeping"] == 0 and state["whistletime"] == 101
+                    assert state["primer_requests"] == repeat
+                    assert state["filter_type"] == (1 if repeat else 2)
+                    if repeat:
+                        assert (
+                            state["request_index_before"]
+                            == (state["primer_index_before"] + 1)
+                            % state["request_ring_size"]
+                        )
+                    else:
+                        assert (
+                            state["request_index_before"]
+                            == state["primer_index_before"]
+                        )
+                    assert (
+                        state["request_index_after"]
+                        == (state["request_index_before"] + 1)
+                        % state["request_ring_size"]
+                    )
+                    assert bytes.fromhex(state["requested_message_hex"]) == high
+                    assert (
+                        state["prevmsg_before_hex"]
+                        == state["prevmsg_after_hex"]
+                        == (high.hex() if repeat else "")
+                    )
+                    for key in (
+                        "player_unchanged",
+                        "inventory_unchanged",
+                        "monster_other_bytes_unchanged",
+                    ):
+                        assert state[key] is True
                 if pet:
                     known = case == "magic-pet-known"
                     assert state["case"] == case and state["seed"] == 2
@@ -459,10 +525,10 @@ def main(argv=None):
                 chaos = json.loads((work / "chaos-state.json").read_text())
                 before, after = chaos["before"].copy(), chaos["after"].copy()
                 assert after.pop("seq") - before.pop("seq") == (
-                    4 if enabled and not dispatch else 1
+                    (3 if suppression else 4) if enabled and not dispatch else 1
                 )
                 assert before == after, chaos
-                if dispatch:
+                if dispatch or suppression:
                     attempts = [e for e in records if e["event"] == "apply"]
                     assert len(attempts) == 1 and attempts[0]["phase"] == "attempt"
                     assert attempts[0]["detail"] == ""
@@ -493,7 +559,7 @@ def main(argv=None):
                     }
                 )
             assert pair[0] == pair[1], "native terminal/state off-on mismatch"
-        assert len(results) == 24
+        assert len(results) == 32
         save(out / "native-results.json", results)
         # Expected aborts use owned status capture, never a caught bounded error.
         OwnedGame = supervisor.owned_game_type(gameplay_support.Game, cancel)
@@ -564,10 +630,54 @@ def main(argv=None):
             )
         assert len(negatives) == 3
         save(out / "negative-results.json", negatives)
-        assert len(results) == 27
+        assert len(results) == 35
         for result in results:
             if result["enabled"]:
                 obs = result["observations"]
+                if result["case"] in SUPPRESSION_CASES:
+                    assert not [e for e in obs if e["observation"]["stage"] == "notice"]
+                    assert len(obs) == 3
+                    marker, start, end = obs
+                    assert [e["seq"] for e in obs] == [1, 6, 7]
+                    assert [e["phase"] for e in obs] == ["result", "attempt", "result"]
+                    assert [e["observation"] for e in obs] == [
+                        dict(
+                            operation="none", stage="enabled", root_seq=0, fact="none"
+                        ),
+                        dict(
+                            operation="whistling",
+                            stage="started",
+                            root_seq=0,
+                            fact="none",
+                        ),
+                        dict(
+                            operation="whistling",
+                            stage="completed",
+                            root_seq=start["seq"],
+                            fact="none",
+                        ),
+                    ]
+                    assert start["turn"] == end["turn"]
+                    for event in obs:
+                        assert event["detail"] == "" and event["event"] == "observation"
+                        assert set(event) == {
+                            "v",
+                            "seq",
+                            "turn",
+                            "safe",
+                            "event",
+                            "phase",
+                            "detail",
+                            "sanity",
+                            "insight",
+                            "budget",
+                            "spent",
+                            "reserved",
+                            "last_id",
+                            "vitals",
+                            "observation",
+                        }
+                    continue
                 if result["case"] in DISPATCH_CASES:
                     assert len(obs) == 1
                     marker = obs[0]

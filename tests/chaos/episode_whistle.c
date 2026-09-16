@@ -11,6 +11,10 @@
 
 extern struct obj *nextgetobj;
 extern short disco[NUM_OBJECTS]; /* globalized external copy of o_init.o */
+/* Native pline diagnostics: requests enter this ring before message filtering. */
+extern char prevmsg[BUFSZ], msgs[DUMPMSGS][BUFSZ];
+extern int lastmsg;
+extern int msgpline_type(const char *);
 
 static void hex_record(FILE *f, const void *data, size_t size)
 {
@@ -106,6 +110,9 @@ int main(int argc, char **argv)
     int saved_type_known;
     int pet, pet_known, x, y, selection = -1, wisdom = -1, wisdom_delta = 0;
     int discovery_slot = -1;
+    int noshow, norep, suppression, request_before = -1, primer_before = -1;
+    char previous[BUFSZ];
+    const char *high_message = "You produce a high whistling sound.";
     short saved_disco[NUM_OBJECTS];
     struct rm saved_map[COLNO][ROWNO];
     static const int positions[8][2] = {
@@ -126,7 +133,11 @@ int main(int argc, char **argv)
     assert(!*injection || !strcmp(injection, "--inject-native")
            || !strcmp(injection, "--inject-raw")
            || !strcmp(injection, "--inject-budget"));
-    known = !strcmp(argv[1], "known");
+    noshow = !strcmp(argv[1], "noshow-known") || !strcmp(argv[1], "noshow-unknown");
+    norep = !strcmp(argv[1], "norep-known") || !strcmp(argv[1], "norep-unknown");
+    suppression = noshow || norep;
+    known = !strcmp(argv[1], "known") || !strcmp(argv[1], "noshow-known")
+        || !strcmp(argv[1], "norep-known");
     pet_known = !strcmp(argv[1], "magic-pet-known");
     pet = pet_known || !strcmp(argv[1], "magic-pet-unknown");
     cancel_apply = !strcmp(argv[1], "apply-cancel");
@@ -135,8 +146,8 @@ int main(int argc, char **argv)
     dispatch = cancel_apply || inert || leaf;
     for (i = 0; i < (int)(sizeof sound_cases / sizeof sound_cases[0]); ++i)
         if (!strcmp(argv[1], sound_cases[i].name)) variant = &sound_cases[i];
-    assert(pet || dispatch || variant || known || !strcmp(argv[1], "unknown"));
-    assert(!*injection || (known && !variant));
+    assert(suppression || pet || dispatch || variant || known || !strcmp(argv[1], "unknown"));
+    assert(!*injection || (known && !variant && !suppression));
     test_rng_control();
     test_rng_negative_control(argv[1]); /* Header control API; not action controls. */
     choose_windows("tty");
@@ -225,14 +236,40 @@ int main(int argc, char **argv)
             }
         for (i = 0; i < 8; ++i)
             assert(goodpos(positions[i][0], positions[i][1], &sleeper, 0));
-        for (i = bases[TOOL_CLASS]; disco[i] && disco[i] != MAGIC_WHISTLE; ++i)
-            assert(i < NUM_OBJECTS - 1);
+        assert(bases[TOOL_CLASS] >= 0 && bases[TOOL_CLASS] < NUM_OBJECTS);
+        for (i = bases[TOOL_CLASS]; i < NUM_OBJECTS && disco[i]
+             && disco[i] != MAGIC_WHISTLE; ++i) { }
+        assert(i < NUM_OBJECTS);
         discovery_slot = i;
         assert(!disco[i]);
     } else assert(!sleeper.mtame);
     assert(EDOG(&sleeper)->whistletime == 0);
     chaos_start();
     assert(u.chaos.safe == 1);
+    if (suppression) {
+        long seq = u.chaos.seq;
+        assert(!o.cursed && !o.blessed && o.otyp == WHISTLE);
+        assert(msgpline_type(high_message) == MSGTYP_NORMAL);
+        assert(!program_state.gameover && !(wins[WIN_MESSAGE]->flags & WIN_STOP));
+        assert(!*prevmsg && !*toplines);
+        primer_before = lastmsg;
+        if (norep) {
+            /* Legitimate native renderer prime, outside any selected action. */
+            You("produce a high whistling sound.");
+            assert(lastmsg == (primer_before + 1) % DUMPMSGS);
+            assert(!strcmp(msgs[lastmsg], high_message));
+            assert(!strcmp(prevmsg, high_message) && !strcmp(toplines, high_message));
+            assert(ttyDisplay->toplin == 1 && wins[WIN_MESSAGE]->cury == 0);
+        } else assert(lastmsg == primer_before);
+        assert(u.chaos.seq == seq); /* Primer emits no selected root/notice. */
+        assert(!fflush(stdout));
+        iflags.msgtype_regex = FALSE;
+        msgpline_add(noshow ? MSGTYP_NOSHOW : MSGTYP_NOREP,
+                     "You produce a high whistling sound.");
+        assert(msgpline_type(high_message) == (noshow ? MSGTYP_NOSHOW : MSGTYP_NOREP));
+        memcpy(previous, prevmsg, sizeof previous);
+        request_before = lastmsg;
+    }
     saved_o = o; saved_mon = sleeper; saved_u = u;
     saved_dog = *EDOG(&sleeper);
     before_moves = moves; before_monstermoves = monstermoves;
@@ -249,7 +286,7 @@ int main(int argc, char **argv)
         expected = rn2(100000);
         seeded_reset(seed);
     }
-    if (dispatch) {
+    if (dispatch || suppression) {
         assert(getenv("WHISTLE_SEED") && !strcmp(getenv("WHISTLE_SEED"), "2"));
         seed = 2;
         seeded_reset(seed);
@@ -270,6 +307,16 @@ int main(int argc, char **argv)
         seeded_reset(seed);
     }
     result = doapply();
+    if (suppression) {
+        /* Source-derived request proof, not a fake renderer acknowledgement. */
+        assert(lastmsg == (request_before + 1) % DUMPMSGS);
+        assert(!strcmp(msgs[lastmsg], high_message));
+        assert(!memcmp(previous, prevmsg, sizeof previous));
+        assert(!strcmp(toplines, norep ? high_message : ""));
+        assert(windowprocs.win_putstr == tty_putstr);
+        assert(!(wins[WIN_MESSAGE]->flags & WIN_STOP));
+        assert(reseed_period == INT_MAX && invent == &o);
+    }
     /* Test-only perturbations are inside the same measured native interval. */
     if (!strcmp(injection, "--inject-native")) (void)rn2(100000);
     if (!strcmp(injection, "--inject-raw")) (void)random();
@@ -377,8 +424,8 @@ int main(int argc, char **argv)
     assert(!memcmp(&saved_dog, EDOG(&sleeper), sizeof saved_dog));
     assert(!memcmp(&saved_mon, &sleeper, sizeof sleeper));
     after_u = u;
-    /* For all prior cases only seq may differ: one legacy apply plus three opted-in
-     * observations. safe, version, spending, reservation, IDs and every effect
+    /* Only seq may differ: legacy apply and opted-in selected observations
+     * (suppressed messages have no notice). safe, version, spending and every effect
      * byte remain covered; no whole-chaos masking. Driver checks exact seqs. */
     after_u.chaos.seq = saved_u.chaos.seq;
     /* Only newly discovered magic may exercise wisdom; assert before masking. */
@@ -388,7 +435,29 @@ int main(int argc, char **argv)
     }
     assert(!memcmp(&saved_u.chaos, &after_u.chaos, sizeof saved_u.chaos));
     assert(!memcmp(&saved_u, &after_u, sizeof saved_u));
-    if (pet) { /* private pet diagnostic already emitted before assertions */ }
+    if (suppression) {
+        fprintf(stderr, "{\"case\":\"%s\",\"seed\":%u,\"known\":%d,\"dknown\":%d,"
+                "\"type_known\":%d,\"cursed\":%d,\"blessed\":%d,\"return\":%d,"
+                "\"rng_draws\":%d,\"next_draw\":%d,\"expected_next\":%d,"
+                "\"sleeping\":%d,\"whistletime\":%ld,\"primer_requests\":%d,"
+                "\"primer_index_before\":%d,\"request_index_before\":%d,"
+                "\"request_index_after\":%d,\"request_ring_size\":%d,"
+                "\"filter_type\":%d,\"player_unchanged\":true,"
+                "\"inventory_unchanged\":true,\"monster_other_bytes_unchanged\":true,"
+                "\"prevmsg_before_hex\":",
+                argv[1], seed, o.known, o.dknown, objects[o.otyp].oc_name_known,
+                o.cursed, o.blessed, result, draws, next, expected,
+                sleeper.msleeping, EDOG(&sleeper)->whistletime, norep,
+                primer_before, request_before, lastmsg, DUMPMSGS, msgpline_type(high_message));
+        hex_record(stderr, previous, strlen(previous));
+        fputs(",\"prevmsg_after_hex\":", stderr);
+        hex_record(stderr, prevmsg, strlen(prevmsg));
+        fputs(",\"requested_message_hex\":", stderr);
+        hex_record(stderr, msgs[lastmsg], strlen(msgs[lastmsg]));
+        fputs("}\n", stderr);
+        msgpline_free();
+    }
+    else if (pet) { /* private pet diagnostic already emitted before assertions */ }
     else if (dispatch)
         fprintf(stderr, "{\"case\":\"%s\",\"seed\":%u,\"otyp\":%d,"
                 "\"oclass\":%d,\"weight\":%u,\"curio_tag\":%d,"
