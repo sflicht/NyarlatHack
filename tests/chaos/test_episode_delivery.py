@@ -3,7 +3,8 @@
 
 Normal-render baseline reached missing-notice RED before this candidate.
 Real More SPACE/ESC and append cases extend the three original regressions.
-Early suppression, ports, nesting, failures and CHAOS-off remain pending;
+Early filters and controlled port identities extend regression coverage.
+Actual unsupported ports, nesting, failures and CHAOS-off remain pending;
 these synthetic scopes do not discharge action or whole-game acceptance.
 """
 
@@ -365,6 +366,23 @@ def main():
         return bytes(terminal), rows, state, (work / "native-history.txt").read_bytes()
 
     results = []
+    # Independent contract oracles, not derived from observed rendering/notices.
+    # Target totals include the one unarmed priming message in repeat cases;
+    # raw fallback is visible but never acknowledged as supported delivery.
+    extra_cases = {
+        "filter-noshow": dict(target=0, prime=0, followup=1, notices=0, forwarded=0),
+        "filter-msgtype-norep": dict(
+            target=1, prime=1, followup=1, notices=0, forwarded=0
+        ),
+        "filter-norep": dict(target=1, prime=1, followup=1, notices=0, forwarded=0),
+        "early-empty": dict(target=0, prime=0, followup=1, notices=0, forwarded=0),
+        "early-raw": dict(target=1, prime=0, followup=1, notices=0, forwarded=0),
+        "port-native-renamed": dict(
+            target=1, prime=0, followup=0, notices=1, forwarded=0
+        ),
+        "port-wrapper": dict(target=1, prime=0, followup=0, notices=0, forwarded=1),
+        "port-wrapper-tty": dict(target=1, prime=0, followup=0, notices=0, forwarded=1),
+    }
     for scenario in (
         "render",
         "stop-append",
@@ -374,6 +392,7 @@ def main():
         "pre-more-escape",
         "post-newline-escape",
         "post-wrap-escape",
+        *extra_cases,
     ):
         off_text, off_rows, off_state, off_history = render(False, scenario)
         on_text, on_rows, on_state, on_history = render(True, scenario)
@@ -385,10 +404,36 @@ def main():
                 "pre-more-escape",
             )
         )
+        expected_target = expected_notices
+        if scenario in extra_cases:
+            expected_notices = extra_cases[scenario]["notices"]
+            expected_target = extra_cases[scenario]["target"]
         target = b"You produce a high whistling sound."
-        assert off_text.count(target) == on_text.count(target) == expected_notices, (
+        assert off_text.count(target) == on_text.count(target) == expected_target, (
             scenario
         )
+        followup = b"You listen."
+        expected_followup = extra_cases.get(scenario, {}).get("followup", 0)
+        assert off_text.count(followup) == on_text.count(followup) == expected_followup
+        assert (
+            on_state["forwarded_calls"]
+            == off_state["forwarded_calls"]
+            == (extra_cases.get(scenario, {}).get("forwarded", 0))
+        )
+        if scenario in extra_cases:
+            case = extra_cases[scenario]
+            if case["prime"]:
+                # Selected repeat contributes no second target/history entry.
+                assert on_text.index(target) < on_text.index(followup)
+                assert on_history.startswith(
+                    b"toplines:" + target + b"  " + followup + b"\n"
+                )
+            elif expected_followup:
+                assert on_history.startswith(b"toplines:" + followup + b"\n")
+            else:
+                assert on_history.startswith(b"toplines:" + target + b"\n")
+            if scenario == "early-raw":
+                assert on_text.index(target) < on_text.index(followup)
         assert on_text == off_text, (
             "observation on/off terminal bytes differ: " + scenario
         )
@@ -438,6 +483,8 @@ def main():
             scenario + "-observed.json",
             {
                 "target_count": on_text.count(target),
+                "followup_count": on_text.count(followup),
+                "expected": extra_cases.get(scenario),
                 "same_terminal_bytes": True,
                 "same_selected_state_and_history": True,
                 "root_seq": root_seq,

@@ -9,12 +9,24 @@
 
 /* Native exported implementation has no public declaration in extern.h. */
 extern int msgpline_type(const char *);
+extern char prevmsg[BUFSZ];
+
+static int forwarded_calls;
+static void forwarding_putstr(winid window, int attr, const char *text)
+{
+    ++forwarded_calls;
+    assert(window == WIN_MESSAGE && attr == 0);
+    assert(!strcmp(text, "You produce a high whistling sound."));
+    tty_putstr(window, attr, text);
+}
 
 int main(int argc, char **argv)
 {
     long root;
     int expected, enabled, stopped, replacement, append, pre_more;
     int post_newline, post_wrap, escape;
+    int noshow, msg_norep, norep, empty, raw, early, renamed, wrapped, tty_named;
+    struct window_procs saved_procs;
     const char *message = "produce a high whistling sound.";
     long i;
     FILE *history;
@@ -36,9 +48,19 @@ int main(int argc, char **argv)
     post_newline = !strcmp(argv[1], "--post-newline-escape");
     post_wrap = !strcmp(argv[1], "--post-wrap-escape");
     append = !strcmp(argv[1], "--append");
+    noshow = !strcmp(argv[1], "--filter-noshow");
+    msg_norep = !strcmp(argv[1], "--filter-msgtype-norep");
+    norep = !strcmp(argv[1], "--filter-norep");
+    empty = !strcmp(argv[1], "--early-empty");
+    raw = !strcmp(argv[1], "--early-raw");
+    early = noshow || msg_norep || norep || empty || raw;
+    renamed = !strcmp(argv[1], "--port-native-renamed");
+    tty_named = !strcmp(argv[1], "--port-wrapper-tty");
+    wrapped = !strcmp(argv[1], "--port-wrapper") || tty_named;
     escape = !strcmp(argv[1], "--pre-more-escape") || post_newline || post_wrap;
     replacement = !strcmp(argv[1], "--stop-replacement") || pre_more;
     assert(stopped || pre_more || post_newline || post_wrap || append
+           || early || renamed || wrapped
            || !strcmp(argv[1], "--render"));
     if (post_newline)
         message = "produce a high whistling sound.\nThe echo fades.";
@@ -100,11 +122,58 @@ int main(int argc, char **argv)
         assert(ttyDisplay->toplin == 0 && wins[WIN_MESSAGE]->cury == 0);
     }
     if (!stopped) assert(!(wins[WIN_MESSAGE]->flags & WIN_STOP));
+    if (msg_norep || norep) {
+        /* Prime the real prevmsg/toplines paths before arming, not fake state. */
+        You("%s", message);
+        assert(!strcmp(prevmsg, "You produce a high whistling sound."));
+        assert(!strcmp(toplines, prevmsg));
+        assert(ttyDisplay->toplin == 1 && wins[WIN_MESSAGE]->cury == 0);
+    }
+    if (noshow || msg_norep) {
+        iflags.msgtype_regex = FALSE;
+        msgpline_add(noshow ? MSGTYP_NOSHOW : MSGTYP_NOREP,
+                     "You produce a high whistling sound.");
+        assert(msgpline_type("You produce a high whistling sound.")
+               == (noshow ? MSGTYP_NOSHOW : MSGTYP_NOREP));
+    }
+    saved_procs = windowprocs;
+    if (renamed || wrapped) {
+        /* Controlled test port identity, not actual curses coverage. All other
+         * native callbacks remain intact; the wrapper renders once via TTY. */
+        windowprocs.name = tty_named ? "tty" : "fixture-forwarding";
+        if (wrapped) windowprocs.win_putstr = forwarding_putstr;
+        assert((windowprocs.win_putstr == tty_putstr) == !wrapped);
+    }
     expected = test_rng_begin();
     root = chaos_observation_begin(CHAOS_OBS_OP_WHISTLING);
     assert(enabled ? root > 0 : root == 0);
     chaos_observation_arm(CHAOS_OBS_OP_WHISTLING, CHAOS_OBS_FACT_SOUND_HIGH);
-    You("%s", message);
+    if (raw) {
+        assert(iflags.window_inited);
+        iflags.window_inited = FALSE;
+    }
+    if (empty) {
+        /* Pass an actually empty line at vpline entry, not You("") or "%s".
+         * Runtime argv terminator avoids -Wformat-zero-length on pline(""). */
+        const char *empty_line = argv[1] + strlen(argv[1]);
+        assert(!*empty_line);
+        /* The unused argument satisfies -Wformat-security; vpline returns
+         * before reading any format arguments because the line is empty. */
+        pline(empty_line, 0);
+    } else if (norep) Norep("You produce a high whistling sound.");
+    else You("%s", message);
+    if (raw) {
+        assert(!iflags.window_inited);
+        iflags.window_inited = TRUE;
+    }
+    assert(forwarded_calls == (wrapped ? 1 : 0));
+    windowprocs = saved_procs;
+    if (early) {
+        /* No disarm/end/rearm/take probe before this ordinary native output:
+         * it must not steal the suppressed/empty/raw call's pending token. */
+        assert(msgpline_type("You listen.") == MSGTYP_NORMAL);
+        You("listen.");
+    }
     chaos_observation_disarm();
     chaos_observation_end(root);
     test_rng_unchanged(expected);
@@ -122,10 +191,11 @@ int main(int argc, char **argv)
     fflush(stdout);
     /* State evidence on a separate pipe, never the terminal-text oracle. */
     fprintf(stderr, "{\"root\":%ld,\"flags\":%d,\"toplin\":%d,"
-        "\"message_x\":%d,\"message_y\":%d,\"display_x\":%d,\"display_y\":%d}\n",
+        "\"message_x\":%d,\"message_y\":%d,\"display_x\":%d,\"display_y\":%d,"
+        "\"forwarded_calls\":%d}\n",
         root, (int)wins[WIN_MESSAGE]->flags, (int)ttyDisplay->toplin,
         (int)wins[WIN_MESSAGE]->curx, (int)wins[WIN_MESSAGE]->cury,
-        (int)ttyDisplay->curx, (int)ttyDisplay->cury);
+        (int)ttyDisplay->curx, (int)ttyDisplay->cury, forwarded_calls);
     /* Full stored text/history comparison, not a rendering acknowledgement. */
     history = fopen("native-history.txt", "w");
     assert(history);
@@ -135,6 +205,7 @@ int main(int argc, char **argv)
         fprintf(history, "%ld:%s\n", i, wins[WIN_MESSAGE]->data[i]
                 ? wins[WIN_MESSAGE]->data[i] : "<null>");
     assert(fclose(history) == 0);
+    if (noshow || msg_norep) msgpline_free();
     tty_exit_nhwindows((char *)0);
     return 0;
 }
