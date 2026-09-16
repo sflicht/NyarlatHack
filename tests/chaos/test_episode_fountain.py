@@ -1,0 +1,486 @@
+#!/usr/bin/python3
+"""Explicit CLI fountain baseline; not native acceptance or CI registration.
+
+Run from the explicit frozen source root. External fixture/support hashes are
+separate from native build identity. This is not the complete Task 6b/8 matrix.
+"""
+
+import argparse
+import fcntl
+import pty
+import struct
+import termios
+import importlib.util
+import json
+import os
+from pathlib import Path
+import re
+import resource
+import shutil
+import signal
+import sys
+
+
+def confirmed_at_prompt(g, exe, child_env, work, supervisor, cancel):
+    """Use pinned stdin-read proof; physical fountain confirmation."""
+    # Game readiness pins /proc/exe to this private path. The native tuple was
+    # verified before replacing ONLY this private copy with the linked fixture.
+    shutil.copy2(exe, g.game / "dnethack")
+    assert supervisor.digest(g.game / "dnethack") == supervisor.digest(exe)
+    command = [
+        str(g.game / "dnethack"),
+        "confirmed-refreshed",
+    ]
+    supervisor.save(work / "terminal.command.json", command)
+    diagnostic_path = work / "terminal.stderr"
+    try:
+        cancel.checkpoint()
+        with diagnostic_path.open("xb") as diagnostic:
+            pid, fd = pty.fork()
+            if pid == 0:
+                try:
+                    fcntl.ioctl(
+                        0, termios.TIOCSWINSZ, struct.pack("HHHH", 24, 80, 0, 0)
+                    )
+                    os.dup2(diagnostic.fileno(), 2)
+                    os.chdir(g.game)
+                    os.execve(command[0], command, child_env)
+                except BaseException:
+                    os._exit(127)
+            g.pid, g.fd = pid, fd
+            fcntl.ioctl(fd, termios.TIOCSWINSZ, struct.pack("HHHH", 24, 80, 0, 0))
+            prompt = g.read(5)
+            assert len(g.raw) <= 65536, "selection prompt cap"
+            assert b"Drink from the fountain?" in prompt, prompt
+            assert g._reader_pid == pid, "native terminal stdin read required"
+            (work / "selection-prompt.stdout").write_bytes(bytes(g.raw))
+            supervisor.save(
+                work / "prompt-proof.json",
+                dict(pid=pid, reader_pid=g._reader_pid, input="79"),
+            )
+            status = g.finish(g.send(b"y"))
+            assert status == 0, status
+            assert g.inputs == ["79"], g.inputs
+    finally:
+        if g.pid is not None or g.fd is not None:
+            g.cleanup()
+        (work / "terminal.stdout").write_bytes(bytes(g.raw))
+    assert diagnostic_path.stat().st_size <= supervisor.LIMIT
+    return bytes(g.raw), diagnostic_path.read_bytes()
+
+
+def main(argv=None):
+    parser = argparse.ArgumentParser(description=__doc__)
+    for name in ("root", "receipt", "revision", "artifacts"):
+        parser.add_argument("--" + name, required=True)
+    parser.add_argument(
+        "--oracle", choices=("observed-prehook", "strict-desired"), required=True
+    )
+    args = parser.parse_args(argv)
+    if not re.fullmatch(r"[0-9a-f]{40}", args.revision):
+        raise ValueError("full lowercase 40hex revision required")
+    for name in ("root", "receipt", "artifacts"):
+        value = getattr(args, name)
+        p = Path(value)
+        if not p.is_absolute() or str(p) != value or p.resolve() != p:
+            raise ValueError("canonical absolute path required: " + name)
+    root, receipt, out = map(Path, (args.root, args.receipt, args.artifacts))
+    if Path.cwd() != root or not out.is_relative_to(Path("/tmp")):
+        raise ValueError("launch from selected root; artifacts under /tmp")
+    if out.is_relative_to(root):
+        raise ValueError("external artifacts required")
+    trusted = root / "tests/chaos"
+    helpers = (
+        "gameplay_support",
+        "native_fixture_selection",
+        "native_rng",
+        "native_build_calibration",
+        "native_build_identity",
+    )
+    for name in helpers:
+        cached = sys.modules.get(name)
+        if cached is not None and (
+            not getattr(cached, "__file__", None)
+            or Path(cached.__file__).resolve().parent != trusted
+        ):
+            raise ValueError("foreign cached helper: " + name)
+    sys.path.insert(0, str(trusted))
+    import gameplay_support
+    import native_fixture_selection
+    import native_rng  # noqa: F401
+
+    for name in helpers:
+        if Path(sys.modules[name].__file__).resolve().parent != trusted:
+            raise ValueError("foreign helper: " + name)
+    if gameplay_support.ROOT != root:
+        raise ValueError("helper ROOT mismatch")
+    selection_env = dict(
+        os.environ,
+        NYARLATHACK_NATIVE_FIXTURE_MODE="source-build",
+        NYARLATHACK_NATIVE_BUILD_RECEIPT=str(receipt),
+        NYARLATHACK_NATIVE_EXPECTED_REVISION=args.revision,
+    )
+    selection = native_fixture_selection.prepare(root, selection_env)
+    if selection.environment is None:
+        raise ValueError("source build environment required")
+    # Explicit external reviewed test support, NOT a frozen native helper.
+    support = Path(__file__).resolve().with_name("test_episode_platforms.py")
+    spec = importlib.util.spec_from_file_location("fountain_supervision", support)
+    assert spec is not None and spec.loader is not None
+    supervisor = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(supervisor)
+    digest, save = supervisor.digest, supervisor.save
+    os.umask(0o077)
+    out.mkdir(mode=0o700, exist_ok=False)
+    resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
+    env = dict(
+        selection.environment,
+        HOME=str(out),
+        TMPDIR=str(out),
+        MAIL=str(out / "private-mail"),
+        PYTHONDONTWRITEBYTECODE="1",
+    )
+    (out / "private-mail").write_bytes(b"")
+    manifest = json.loads((receipt / "1-manifest.json").read_text())
+    originals = {str(root / n): digest(root / n) for n in manifest["objects"]}
+    save(out / "manifest-object-hashes.json", originals)
+    cancel = supervisor.Cancellation()
+    handlers = {
+        s: signal.signal(s, cancel.handler)
+        for s in (signal.SIGTERM, signal.SIGINT, signal.SIGALRM)
+    }
+    signal.alarm(180)
+    try:
+
+        def run(command, name, timeout=45):
+            return supervisor.bounded(
+                command, out, env, out / name, timeout, cancel=cancel
+            )[0]
+
+        for name in native_fixture_selection.ORACLE_SOURCES:
+            shutil.copyfile(root / name, out / Path(name).name)
+        selection.verify_helper_copy(out)
+        source = Path(__file__).resolve().with_name("episode_fountain.c")
+        fixture_paths = (
+            source,
+            Path(__file__).resolve(),
+            support,
+            trusted / "native_rng.h",
+            trusted / "native_rng.py",
+        )
+        save(
+            out / "external-fixture-and-support-hashes.json",
+            {str(p): digest(p) for p in fixture_paths},
+        )
+        for p in fixture_paths:
+            shutil.copyfile(p, out / p.name)
+            assert digest(p) == digest(out / p.name)
+        flags = [
+            "-std=gnu17",
+            "-g",
+            "-Wall",
+            "-Wextra",
+            "-Werror",
+            "-DCHAOS",
+            "-DDLB",
+            "-isystem" + str(root / "include"),
+        ]
+        run(
+            [
+                selection.compiler,
+                *flags,
+                out / "curio_save_layout.c",
+                "-o",
+                out / "layout",
+            ],
+            "layout-build",
+        )
+        selection.validate_schema(json.loads(run([out / "layout"], "layout")))
+        save(out / "selection.json", selection.record())
+        objects = (
+            sorted((root / "src").glob("*.o"))
+            + [
+                root / p
+                for p in (
+                    "sys/unix/unixres.o",
+                    "sys/unix/unixunix.o",
+                    "sys/unix/unixmain.o",
+                    "sys/share/ioctl.o",
+                    "sys/share/unixtty.o",
+                )
+            ]
+            + sorted((root / "win/tty").glob("*.o"))
+            + sorted((root / "win/curses").glob("*.o"))
+        )
+        transforms = {
+            root / "src/o_init.o": ["--globalize-symbol=disco"],
+            root / "sys/unix/unixmain.o": ["--redefine-sym=main=original_game_main"],
+            root / "src/rnd.o": [
+                "--globalize-symbol=reseed_period",
+                "--globalize-symbol=reseed_count",
+            ],
+        }
+        # Same symbol-only RNG copy as controlled_rng_objects, bounded supervisor.
+        for original, switches in transforms.items():
+            target = out / original.name
+            run(
+                ["/usr/bin/objcopy", *switches, original, target],
+                "copy-" + original.stem,
+            )
+            objects = [target if p == original else p for p in objects]
+        run(
+            [
+                selection.compiler,
+                *flags,
+                "-c",
+                out / source.name,
+                "-o",
+                out / "fixture.o",
+            ],
+            "fixture-compile",
+        )
+        libs = (
+            run(["/usr/bin/pkg-config", "--libs", "lua5.4"], "lua-libs")
+            .decode()
+            .split()
+        )
+        exe = out / "episode-fountain"
+        run(
+            [
+                selection.compiler,
+                out / "fixture.o",
+                *objects,
+                "-lncursesw",
+                "-ltinfo",
+                "-lm",
+                "-ldl",
+                *libs,
+                "-o",
+                exe,
+            ],
+            "fixture-link",
+        )
+        clock = out / "clock.so"
+        run(
+            [
+                selection.compiler,
+                "-shared",
+                "-fPIC",
+                "-Wall",
+                "-Wextra",
+                "-Werror",
+                out / "replay_clock.c",
+                "-ldl",
+                "-o",
+                clock,
+            ],
+            "clock-build",
+        )
+        again = native_fixture_selection.prepare(root, selection_env)
+        assert again.record()["source_build"] == selection.record()["source_build"]
+        save(out / "executable-hashes.json", {str(p): digest(p) for p in (exe, clock)})
+        calibration = json.loads(run([exe, "--calibrate"], "seed-preflight"))
+        assert [r["seed"] for r in calibration] == list(range(1, 65))
+        calls = sum(r["count"] + 1 for r in calibration)
+        assert calls <= 256
+        chosen = next(r for r in calibration if r["fate"] < 10 and r["dry"] > 0)
+        save(
+            out / "rng-calibration.json",
+            dict(candidates=calibration, chosen=chosen, preflight_calls=calls),
+        )
+        sys.path.insert(0, str(root))
+        from chaos.episodes import parse_episode_event, project_episodes
+        import chaos.episodes
+
+        assert Path(chaos.episodes.__file__).resolve() == root / "chaos/episodes.py"
+        OwnedGame = supervisor.owned_game_type(gameplay_support.Game, cancel)
+        results, pair = [], []
+        for enabled in (False, True):
+            work = out / ("confirmed-refreshed-" + ("on" if enabled else "off"))
+            g = OwnedGame(selection.tuple_dir, clock, root=work)
+            selection.verify_copy(g.game)
+            options = work / "options"
+            options.write_text("OPTIONS=!splash_screen,!perm_invent\n")
+            child_env = dict(
+                env,
+                HOME=str(work),
+                TERM="xterm",
+                LINES="24",
+                COLUMNS="80",
+                NETHACKOPTIONS="@" + str(options),
+                LD_PRELOAD=str(clock),
+                NYARLATHACK_RUN_DIR=str(g.run),
+                NYARLATHACK_OBSERVATIONS=str(int(enabled)),
+                FOUNTAIN_SEED=str(chosen["seed"]),
+                FOUNTAIN_STATE=str(work / "state.json"),
+            )
+            raw, diagnostic = confirmed_at_prompt(
+                g, exe, child_env, work, supervisor, cancel
+            )
+            assert raw.count(b"The cool draught refreshes you.") == 1
+            state = json.loads(diagnostic)
+            assert state["native_oracles_passed"] is True
+            assert state["return"] == state["move_quaffed"]
+            for key in ("seed", "count", "next", "fate", "dry"):
+                assert state[key] == chosen[key]
+            assert state["hunger_after"] - state["hunger_before"] == chosen["hunger"]
+            assert state["status_before"] == state["status_after"]
+            records_raw = (g.run / "events.jsonl").read_bytes()
+            records = [parse_episode_event(line) for line in records_raw.splitlines()]
+            projection = project_episodes(records_raw)
+            save(work / "projection.json", projection)
+            native = json.loads((work / "state.json").read_text())
+            obs = [r for r in records if r["v"] == 2]
+            startup = records[: 4 if enabled else 3]
+            assert [r["event"] for r in startup] == (
+                ["observation"] if enabled else []
+            ) + ["session", "level_enter", "safe_point"]
+            assert native["seq_before"] == startup[-1]["seq"]
+            assert native["seq_after"] == records[-1]["seq"]
+            if enabled:
+                assert obs[0]["seq"] == 1 and obs[0]["safe"] == 0
+                assert obs[0]["observation"] == dict(
+                    operation="none", stage="enabled", root_seq=0, fact="none"
+                )
+            else:
+                assert not obs and len(records) == 3
+            assert native["seq_after"] - native["seq_before"] == len(records) - len(
+                startup
+            )
+            assert not any(r["event"] == "ack" for r in records)
+            pair.append(
+                (
+                    raw,
+                    state,
+                    g.inputs,
+                    native["map_before_hex"],
+                    native["map_after_hex"],
+                )
+            )
+            results.append(
+                dict(
+                    case="confirmed-refreshed",
+                    enabled=enabled,
+                    state=state,
+                    observations=obs,
+                    records=records,
+                    projection=projection,
+                    native_returncode=0,
+                )
+            )
+        assert pair[0] == pair[1], "terminal/input/native state OFF/ON mismatch"
+        assert len(results) == 2
+        save(out / "native-results.json", results)
+    finally:
+        signal.alarm(0)
+        try:
+            after = {p: digest(Path(p)) for p in originals}
+            save(out / "manifest-object-hashes-after.json", after)
+            assert after == originals, "original objects changed"
+            final_selection = native_fixture_selection.prepare(root, selection_env)
+            assert (
+                final_selection.record()["source_build"]
+                == selection.record()["source_build"]
+            )
+            save(out / "final-source-identity.json", final_selection.record())
+        finally:
+            for sig, handler in handlers.items():
+                signal.signal(sig, handler)
+
+    # Strict feature assertion only AFTER native paired results and source guards.
+    if args.oracle == "observed-prehook":
+        for result in results:
+            assert len(result["observations"]) == int(result["enabled"])
+            assert result["projection"]["episodes"] == []
+        save(
+            out / "oracle-result.json",
+            dict(
+                oracle=args.oracle,
+                native_oracles_passed=True,
+                acceptance=False,
+                actions=len(results),
+            ),
+        )
+        return 0
+    obs = results[1]["observations"]
+    if len(obs) == 1:
+        save(
+            out / "strict-failure.json",
+            dict(
+                oracle=args.oracle,
+                native_oracles_passed=True,
+                case="confirmed-refreshed",
+                native_return_verified=True,
+                missing_expected_observations=[
+                    "fountain_drink.started",
+                    "fountain_drink.water_refreshed",
+                    "fountain_drink.completed",
+                ],
+            ),
+        )
+        print(
+            "confirmed-refreshed: missing expected observations: fountain_drink started / water_refreshed notice / completed; native_return verified",
+            file=sys.stderr,
+        )
+        return 1
+    assert len(obs) == 4
+    start, notice, end = obs[1:]
+    root_seq = results[1]["records"][3]["seq"] + 1
+    assert [r["seq"] for r in obs[1:]] == [root_seq, root_seq + 1, root_seq + 2]
+    assert [r["phase"] for r in obs[1:]] == ["attempt", "result", "result"]
+    assert [r["observation"] for r in obs[1:]] == [
+        dict(operation="fountain_drink", stage="started", root_seq=0, fact="none"),
+        dict(
+            operation="fountain_drink",
+            stage="notice",
+            root_seq=root_seq,
+            fact="water_refreshed",
+        ),
+        dict(
+            operation="fountain_drink",
+            stage="completed",
+            root_seq=root_seq,
+            fact="none",
+        ),
+    ]
+    assert start["turn"] == notice["turn"] == end["turn"]
+    assert start["safe"] == notice["safe"] == end["safe"]
+    for r in obs:
+        assert r["detail"] == "" and r["event"] == "observation"
+        assert set(r) == {
+            "v",
+            "seq",
+            "turn",
+            "safe",
+            "event",
+            "phase",
+            "detail",
+            "sanity",
+            "insight",
+            "budget",
+            "spent",
+            "reserved",
+            "last_id",
+            "vitals",
+            "observation",
+        }
+    assert results[1]["projection"]["episodes"] == [
+        dict(
+            operation="fountain_drink",
+            count=1,
+            saturated=False,
+            evidence=[
+                dict(
+                    root_seq=root_seq,
+                    notice_seq=notice["seq"],
+                    end_seq=end["seq"],
+                    fact="water_refreshed",
+                )
+            ],
+        )
+    ]
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
