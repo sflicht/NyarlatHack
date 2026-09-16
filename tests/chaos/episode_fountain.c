@@ -1,5 +1,6 @@
-/* NGPL. Fixture-only full native dodrink with physical TTY confirmation.
- * No observation begin/arm/delivered calls: missing production hooks stay RED. */
+/* NGPL. Full native dodrink with physical TTY confirmation/cancellation.
+ * Only labelled low-level reach cases create a test scope (begin/end).
+ * Never manufacture blocked/arm/delivered/take: missing hooks stay RED. */
 #include "hack.h"
 #include "chaos.h"
 #include "wintty.h"
@@ -8,6 +9,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+extern int msgpline_type(const char *);
 extern short disco[NUM_OBJECTS]; /* only copied o_init.o is globalized */
 extern struct obj *nextgetobj; /* inspected only; copied invent.o */
 
@@ -91,6 +93,8 @@ int main(int argc, char **argv)
     long old_moves, old_monstermoves;
     unsigned seed;
     int i,x,y,result,count,next,decline,foul,mechanoid, total = 0;
+    int reach, noshow, lev_cancel, levitating, returned = 0;
+    long root = 0;
     const char *injection = 0;
     FILE *f;
     assert(argc == 2 || argc == 3);
@@ -141,9 +145,21 @@ int main(int argc, char **argv)
     decline = !strcmp(argv[1], "decline-selection-cancel");
     foul = !strcmp(argv[1], "confirmed-foul");
     mechanoid = !strcmp(argv[1], "confirmed-foul-mechanoid");
-    assert(decline || foul || mechanoid || !strcmp(argv[1], "confirmed-refreshed"));
+    noshow = !strcmp(argv[1], "lowlevel-reach-noshow");
+    reach = noshow || !strcmp(argv[1], "lowlevel-reach-delivered");
+    lev_cancel = !strcmp(argv[1], "levitating-dodrink-selection-cancel");
+    levitating = reach || lev_cancel;
+    assert(decline || foul || mechanoid || levitating || !strcmp(argv[1], "confirmed-refreshed"));
     assert(getenv("FOUNTAIN_SEED")); seed = (unsigned)atoi(getenv("FOUNTAIN_SEED"));
     assert(seed >= 1 && seed <= 256);
+    if (levitating) {
+        /* Fixed legal seed; runtime native continuation, no fate search. */
+        assert(seed == 1); seeded_reset(seed);
+        t.fate = t.dry = -1; t.hunger = 0;
+        if (reach) (void)rnd(30);
+        t.count = reseed_count; t.next = rn2(100000);
+        assert(t.count == (reach ? 1 : 0));
+    } else {
     t = mechanoid ? preflight_mechanoid(seed) : preflight(seed);
     assert(((foul || mechanoid) ? t.fate == 20 : t.fate < 10) && t.dry > 0);
     assert(t.count == (mechanoid ? 2 : 3));
@@ -153,6 +169,7 @@ int main(int argc, char **argv)
         t.count = reseed_count; t.next = rn2(100000);
         assert(t.count == 0);
     }
+    }
     choose_windows("tty"); initoptions(); init_nhwindows(&argc, argv);
     WIN_MESSAGE = create_nhwindow(NHW_MESSAGE);
     WIN_STATUS = create_nhwindow(NHW_STATUS); WIN_MAP = create_nhwindow(NHW_MAP);
@@ -160,6 +177,7 @@ int main(int argc, char **argv)
     assert(iflags.window_inited && windowprocs.win_putstr == tty_putstr);
     assert(ttyDisplay->cols == 80 && ttyDisplay->rows == 24);
     init_objects(); init_gods();
+    if (levitating) id_permonst(); /* genuine native startup mtyp initialization */
     urace.malenum = PM_HUMAN; urole.malenum = PM_WIZARD;
     u.umonnum = u.umonster = PM_HUMAN;
     youmonst.data = &mons[PM_HUMAN]; youmonst.mtyp = PM_HUMAN;
@@ -208,7 +226,7 @@ int main(int argc, char **argv)
     vision_init(); vision_reset(); vision_recalc(0);
     for (x = 1; x < COLNO; ++x) for (y = 0; y < ROWNO; ++y) newsym(x,y);
     empty_world(0);
-    if (decline) {
+    if (decline || lev_cancel) {
         potion = mksobj(POT_WATER, MKOBJ_NOINIT); assert(potion);
         potion->obj_material = objects[POT_WATER].oc_material;
         potion->quan = 1; potion->known = potion->dknown = potion->bknown = 1;
@@ -218,6 +236,25 @@ int main(int argc, char **argv)
         assert(potion->oclass == POTION_CLASS && potion->owt > 0);
         saved_potion = *potion;
     }
+    if (levitating) {
+        assert(Race_if(PM_HUMAN) && !Upolyd && youracedata == &mons[PM_HUMAN]);
+        assert(youracedata->mtyp == PM_HUMAN && !nomouth(youracedata->mtyp));
+        assert(!Levitation && !Flying && !Weightless && !ELevitation);
+        assert(!u.utrap && !u.uinwater && !u.uswallow && !u.usteed);
+        assert(!Is_waterlevel(&u.uz) && !Hallucination && !Sick);
+        assert(!uarm && !uarmu && !uarmf && !uarms && !uarmh && !uarmc && !uarmg);
+        assert(!multi_txt[0] && !afternmv && !nomovemsg && !occupation && !multi);
+        assert(!u.uinvulnerable && !u.usleep && !u.puzzle_time);
+        set_itimeout(&HLevitation, 500L); float_up();
+        assert(HLevitation == 500L && !ELevitation && Levitation && !Flying);
+        assert(!can_reach_floor()); /* diagnostic, not fountain eligibility */
+        clear_nhwindow(WIN_MESSAGE); flush_screen(1); assert(!fflush(stdout));
+        if (noshow) {
+            iflags.msgtype_regex = FALSE;
+            msgpline_add(MSGTYP_NOSHOW, "You are floating high above the fountain.");
+            assert(msgpline_type("You are floating high above the fountain.") == MSGTYP_NOSHOW);
+        }
+    }
     empty_world(potion); chaos_start(); assert(u.chaos.safe == 1);
     before = u; saved_youmonst = youmonst; level_flags = level.flags;
     saved_flags = flags;
@@ -225,7 +262,16 @@ int main(int argc, char **argv)
     memcpy(definitions,objects,sizeof definitions);
     old_moves = moves; old_monstermoves = monstermoves;
     seeded_reset(seed);
-    result = dodrink();
+    if (reach) {
+        root = chaos_observation_begin(CHAOS_OBS_OP_FOUNTAIN_DRINK);
+        assert(root == (getenv("NYARLATHACK_OBSERVATIONS")
+                       && !strcmp(getenv("NYARLATHACK_OBSERVATIONS"), "1")
+                       ? before.chaos.seq + 1 : 0));
+        drinkfountain(); /* actual void native call, exactly once */
+        returned = 1;
+        chaos_observation_end(root);
+        result = 0; /* not a MOVE_* return from the void routine */
+    } else result = dodrink();
     /* Only after the genuine confirmed native action returns; no extra scope,
      * callback, seed reset, or production argument interpretation. */
     if (injection) {
@@ -258,6 +304,13 @@ int main(int argc, char **argv)
             argv[1],seed,result,MOVE_QUAFFED,MOVE_CANCELLED,count,next,t.next,before.uhunger,u.uhunger,t.hunger,
             before.uhs,u.uhs,t.fate,t.dry);
     fflush(stderr);
+    if (levitating) {
+        assert((reach ? returned && result == 0 : result == MOVE_CANCELLED));
+        assert(count == t.count && next == t.next && count == (reach ? 1 : 0));
+        assert(HLevitation == 500L && HLevitation == before.uprops[LEVITATION].intrinsic);
+        assert(u.uhunger == before.uhunger && t.hunger == 0);
+        assert(!multi_txt[0] && !afternmv && !nomovemsg && !Sick);
+    } else
     assert(result == (decline ? MOVE_CANCELLED : MOVE_QUAFFED) && count == t.count && next == t.next);
     assert(reseed_period == INT_MAX && moves == old_moves && monstermoves == old_monstermoves);
     assert(u.uhunger == before.uhunger+t.hunger && u.uhs == NOT_HUNGRY);
@@ -291,11 +344,15 @@ int main(int argc, char **argv)
     if (foul)
         fprintf(f,",\"vomiting\":{\"multi\":%d,\"reason\":\"%s\",\"occupation\":false,"
                 "\"afternmv\":false,\"nomovemsg\":false,\"free_action\":false}",multi,multi_txt);
-    if (mechanoid)
+    if (mechanoid || levitating)
         fprintf(f,",\"motion\":{\"multi\":%d,\"reason\":\"%s\",\"occupation\":%s,"
                 "\"afternmv\":%s,\"nomovemsg\":%s}",multi,multi_txt,
                 occupation ? "true" : "false", afternmv ? "true" : "false",
                 nomovemsg ? "true" : "false");
+    if (levitating)
+        fprintf(f,",\"reach\":{\"lowlevel_calls\":%d,\"void_returned\":%s,\"dodrink_calls\":%d,\"timeout_before\":%ld,\"timeout_after\":%ld}",
+                reach ? 1 : 0, returned ? "true" : "false", reach ? 0 : 1,
+                before.uprops[LEVITATION].intrinsic,HLevitation);
     fputs(",\"inventory_after_hex\":",f); hex_record(f,potion,potion ? sizeof *potion : 0);
     fputs("}\n",f); assert(!fclose(f));
     fprintf(stderr,"\"hp\":%d,\"hp_max\":%d,\"power\":%d,\"power_max\":%d,"

@@ -70,6 +70,85 @@ def validate_history(
     assert records == expected, "complete fountain history mismatch"
 
 
+REACH_CASES = ("lowlevel-reach-delivered", "lowlevel-reach-noshow")
+LEVITATING_CANCEL = "levitating-dodrink-selection-cancel"
+
+
+def validate_reach_history(records, context, *, enabled, noshow, prehook=False):
+    """Desired blocked history; explicit prehook is diagnostic, not acceptance."""
+    prefix = 4 if enabled else 3
+    validate_history(records[:prefix], context, enabled=enabled, future=False)
+    expected = []
+    if enabled:
+        stages = [("started", "none", 0, "attempt")]
+        if not noshow and not prehook:
+            stages.append(("notice", "cannot_reach", 5, "result"))
+        stages.append(("completed" if prehook else "blocked", "none", 5, "result"))
+        for stage, fact, root, phase in stages:
+            expected.append(
+                dict(
+                    context,
+                    v=2,
+                    seq=prefix + len(expected) + 1,
+                    event="observation",
+                    phase=phase,
+                    detail="",
+                    observation=dict(
+                        operation="fountain_drink",
+                        stage=stage,
+                        root_seq=root,
+                        fact=fact,
+                    ),
+                )
+            )
+    assert records[prefix:] == expected, (
+        "reach: missing expected cannot_reach notice / blocked terminal or invalid history"
+    )
+
+
+def validate_reach_projection(public, *, blocked, prehook=False):
+    assert not (blocked and prehook)
+    assert public == dict(
+        episode_context_v=1,
+        scope="selected_whistle_fountain",
+        lookback_roots=32,
+        episodes=[],
+        coverage={
+            key: dict(
+                count=int(
+                    (key == "blocked" and blocked)
+                    or (key == "completed_without_notice" and prehook)
+                ),
+                saturated=False,
+            )
+            for key in (
+                "incomplete",
+                "blocked",
+                "completed_without_notice",
+                "omitted_roots",
+            )
+        },
+    ), "reach coverage must not create a positive episode"
+
+
+def finish_without_input(g, supervisor, cancel):
+    """Never use Game.finish's automatic SPACE/n on a no-input native path."""
+    import time
+
+    deadline = time.monotonic() + 5
+    while supervisor.observe(g.pid) is None:
+        cancel.checkpoint()
+        assert time.monotonic() < deadline, "native no-input exit deadline"
+        assert not g._input_ready(), "unexpected native stdin wait"
+        text = g.read(0.5)
+        assert not any(
+            p in text for p in (b"--More--", b"[yn", b"What do you", b"Drink from")
+        ), text
+    g.cleanup()
+    assert g.exitcode == 0
+    return g.exitcode
+
+
 def validate_mechanoid_aftermath(state, motion):
     """Private native case-20 oracle: no human hunger draw or vomiting."""
     assert state["hunger_after"] == state["hunger_before"]
@@ -153,6 +232,27 @@ def confirmed_at_prompt(
             fcntl.ioctl(fd, termios.TIOCSWINSZ, struct.pack("HHHH", 24, 80, 0, 0))
             prompt = g.read(5)
             assert len(g.raw) <= 65536, "selection prompt cap"
+            if case in REACH_CASES or case == LEVITATING_CANCEL:
+                assert b"Drink from the fountain?" not in prompt, prompt
+                proof = []
+                if case == LEVITATING_CANCEL:
+                    assert b"What do you want to drink?" in prompt, prompt
+                    assert g._reader_pid == pid, "native selection stdin read required"
+                    (work / "drink-selection-prompt.stdout").write_bytes(bytes(g.raw))
+                    proof.append(dict(pid=pid, reader_pid=g._reader_pid, input="1b"))
+                    response = g.send(b"\x1b")
+                else:
+                    assert g._reader_pid is None, "lowlevel guard must not read stdin"
+                    response = prompt
+                supervisor.save(work / "prompt-proof.json", proof)
+                assert not any(
+                    p in response
+                    for p in (b"--More--", b"[yn", b"What do you", b"Drink from")
+                ), response
+                finish_without_input(g, supervisor, cancel)
+                assert g.inputs == (["1b"] if case == LEVITATING_CANCEL else [])
+                assert diagnostic_path.stat().st_size <= supervisor.LIMIT
+                return bytes(g.raw), diagnostic_path.read_bytes()
             assert b"Drink from the fountain?" in prompt, prompt
             assert g._reader_pid == pid, "native terminal stdin read required"
             (work / "selection-prompt.stdout").write_bytes(bytes(g.raw))
@@ -426,6 +526,7 @@ def main(argv=None):
         assert Path(chaos.episodes.__file__).resolve() == root / "chaos/episodes.py"
         OwnedGame = supervisor.owned_game_type(gameplay_support.Game, cancel)
         results = []
+        reach_failures = []
         mech_calibration = json.loads(
             run([exe, "--calibrate-mechanoid"], "mechanoid-seed-preflight")
         )
@@ -453,13 +554,19 @@ def main(argv=None):
             "confirmed-refreshed",
             "confirmed-foul",
             "confirmed-foul-mechanoid",
+            *REACH_CASES,
+            LEVITATING_CANCEL,
         ):
+            reach = case in REACH_CASES
+            levitating = reach or case == LEVITATING_CANCEL
             is_foul = case in ("confirmed-foul", "confirmed-foul-mechanoid")
             action_seed = (
                 mech_chosen
                 if case == "confirmed-foul-mechanoid"
                 else (foul_chosen if is_foul else chosen)
             )
+            if levitating:
+                action_seed = dict(seed=1)
             pair, histories = [], []
             for enabled in (False, True):
                 work = out / (case + "-" + ("on" if enabled else "off"))
@@ -495,7 +602,21 @@ def main(argv=None):
                 state = json.loads(diagnostic)
                 assert state["native_oracles_passed"] is True
                 assert state["case"] == case
-                if case != "decline-selection-cancel":
+                if levitating:
+                    assert state["seed"] == 1
+                    assert state["count"] == int(reach)
+                    assert state["next"] == state["expected_next"]
+                    assert state["hunger_after"] == state["hunger_before"]
+                    assert state["hunger_delta"] == 0
+                    assert state["return"] == (0 if reach else state["move_cancelled"])
+                    assert raw.count(b"You start to float in the air!") == 1
+                    assert raw.count(
+                        b"You are floating high above the fountain."
+                    ) == int(case == REACH_CASES[0])
+                    assert b"Drink from the fountain?" not in raw
+                    assert raw.count(b"What do you want to drink?") == int(not reach)
+                    assert b"You sense" not in raw and b"--More--" not in raw
+                elif case != "decline-selection-cancel":
                     assert state["return"] == state["move_quaffed"]
                     for key in ("seed", "count", "next", "fate", "dry"):
                         assert state[key] == action_seed[key]
@@ -530,14 +651,71 @@ def main(argv=None):
                     and case != "decline-selection-cancel"
                     and len(obs) > 1
                 )
-                validate_history(
-                    records,
-                    native["context_before"],
-                    enabled=enabled,
-                    future=future,
-                    fact="water_foul" if is_foul else "water_refreshed",
-                    missing_notice=is_foul and enabled and len(obs) == 3,
-                )
+                if reach:
+                    noshow = case == REACH_CASES[1]
+                    try:
+                        validate_reach_history(
+                            records,
+                            native["context_before"],
+                            enabled=enabled,
+                            noshow=noshow,
+                        )
+                    except AssertionError:
+                        # Only the exact known prehook history is a missing-feature
+                        # diagnostic. Every other malformed journal fails here.
+                        validate_reach_history(
+                            records,
+                            native["context_before"],
+                            enabled=enabled,
+                            noshow=noshow,
+                            prehook=True,
+                        )
+                        assert enabled
+                        validate_reach_projection(
+                            projection, blocked=False, prehook=True
+                        )
+                        reach_failures.append(
+                            dict(
+                                case=case,
+                                enabled=True,
+                                missing_expected_observations=(
+                                    ["fountain_drink.cannot_reach"]
+                                    if not noshow
+                                    else []
+                                )
+                                + ["fountain_drink.blocked"],
+                                actual="started -> completed without notice",
+                                refusal_delivered=not noshow,
+                            )
+                        )
+                    else:
+                        validate_reach_projection(projection, blocked=enabled)
+                else:
+                    validate_history(
+                        records,
+                        native["context_before"],
+                        enabled=enabled,
+                        future=False if levitating else future,
+                        fact="water_foul" if is_foul else "water_refreshed",
+                        missing_notice=is_foul and enabled and len(obs) == 3,
+                    )
+                if levitating:
+                    assert native["reach"] == dict(
+                        lowlevel_calls=int(reach),
+                        void_returned=reach,
+                        dodrink_calls=int(not reach),
+                        timeout_before=500,
+                        timeout_after=500,
+                    )
+                    assert native["motion"] == dict(
+                        multi=0,
+                        reason="",
+                        occupation=False,
+                        afternmv=False,
+                        nomovemsg=False,
+                    )
+                    if not reach:
+                        validate_reach_projection(projection, blocked=False)
                 if is_foul and enabled and len(obs) == 3:
                     assert projection["episodes"] == []
                     assert projection["coverage"]["completed_without_notice"] == dict(
@@ -580,7 +758,7 @@ def main(argv=None):
                 save(out / "native-results.json", results)
             assert pair[0] == pair[1], "terminal/input/native state OFF/ON mismatch"
             validate_legacy_pair(*histories)
-        assert len(results) == 8
+        assert len(results) == 14
         save(out / "native-results.json", results)
         negatives = []
         for mode in ("native", "raw", "budget"):
@@ -650,7 +828,9 @@ def main(argv=None):
         # negative-control dispatch, for every native process including calibration.
         header_calls = 35
         per_action_calls = [
-            header_calls
+            (header_calls + 2 * (result["state"]["count"] + 1))
+            if result["case"] in (*REACH_CASES, LEVITATING_CANCEL)
+            else header_calls
             + (
                 mech_chosen["count"]
                 if result["case"] == "confirmed-foul-mechanoid"
@@ -822,6 +1002,30 @@ def main(argv=None):
             evidence=[dict(root_seq=5, notice_seq=6, end_seq=7, fact="water_foul")],
         )
     ]
+    if reach_failures:
+        save(
+            out / "strict-failure.json",
+            dict(
+                oracle=args.oracle,
+                acceptance=False,
+                native_oracles_passed=True,
+                source_guards_passed=True,
+                actions=len(results) + len(negatives),
+                normal_actions=len(results),
+                preserved_normal_actions=8,
+                negative_controls_passed=len(negatives),
+                failures=reach_failures,
+            ),
+        )
+        for failure in reach_failures:
+            print(
+                failure["case"]
+                + ": missing expected "
+                + " / ".join(failure["missing_expected_observations"])
+                + "; native return/state/RNG/delivery distinction verified",
+                file=sys.stderr,
+            )
+        return 1
     return 0
 
 

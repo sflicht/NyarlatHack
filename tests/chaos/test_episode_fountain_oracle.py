@@ -63,7 +63,99 @@ def synthetic(enabled, future):
     return records
 
 
+def synthetic_reach(noshow=False, prehook=False):
+    records = synthetic(True, True)
+    records[5]["observation"]["fact"] = "cannot_reach"
+    records[-1]["observation"]["stage"] = "completed" if prehook else "blocked"
+    if noshow or prehook:
+        records.pop(5)
+        records[-1]["seq"] = 6
+    return records
+
+
 class FountainOracleTests(unittest.TestCase):
+    def test_reach_exact_history_and_blocked_projection(self):
+        for noshow in (False, True):
+            records = synthetic_reach(noshow)
+            driver.validate_reach_history(records, CONTEXT, enabled=True, noshow=noshow)
+            raw = b"".join(json.dumps(r).encode() + b"\n" for r in records)
+            driver.validate_reach_projection(project_episodes(raw), blocked=True)
+            with self.assertRaises(AssertionError):
+                driver.validate_reach_history(
+                    synthetic_reach(noshow, prehook=True),
+                    CONTEXT,
+                    enabled=True,
+                    noshow=noshow,
+                )
+            driver.validate_reach_history(
+                synthetic_reach(noshow, prehook=True),
+                CONTEXT,
+                enabled=True,
+                noshow=noshow,
+                prehook=True,
+            )
+            driver.validate_reach_history(
+                synthetic(False, False),
+                CONTEXT,
+                enabled=False,
+                noshow=noshow,
+            )
+
+    def test_reach_rejects_malformed_linkage_and_hidden_data(self):
+        for noshow in (False, True):
+            original = synthetic_reach(noshow)
+            mutations = []
+            for index in range(len(original)):
+                for key, value in (
+                    ("detail", "secret"),
+                    ("turn", 102),
+                    ("phase", "bogus"),
+                    ("seed", 1),
+                ):
+                    row = copy.deepcopy(original)
+                    row[index][key] = value
+                    mutations.append(row)
+            for key, value in (
+                ("root_seq", 4),
+                ("operation", "whistling"),
+                ("fact", "cannot_reach"),
+                ("stage", "completed"),
+                ("Levitation", True),
+            ):
+                row = copy.deepcopy(original)
+                row[-1]["observation"][key] = value
+                mutations.append(row)
+            mutations.extend([original[:-1], original + [copy.deepcopy(original[-1])]])
+            for row in mutations:
+                with self.assertRaises(AssertionError):
+                    driver.validate_reach_history(
+                        row, CONTEXT, enabled=True, noshow=noshow
+                    )
+            public = project_episodes(
+                b"".join(json.dumps(r).encode() + b"\n" for r in original)
+            )
+            for key in public["coverage"]:
+                row = copy.deepcopy(public)
+                row["coverage"][key]["count"] += 1
+                with self.assertRaises(AssertionError):
+                    driver.validate_reach_projection(row, blocked=True)
+        # A delivered cannot_reach may never become a completed positive episode.
+        row = synthetic_reach()
+        row[-1]["observation"]["stage"] = "completed"
+        with self.assertRaises(ValueError):
+            project_episodes(b"".join(json.dumps(r).encode() + b"\n" for r in row))
+
+    def test_levitating_selection_has_only_startup_history(self):
+        for enabled in (False, True):
+            records = synthetic(enabled, False)
+            driver.validate_history(records, CONTEXT, enabled=enabled, future=False)
+            driver.validate_reach_projection(
+                project_episodes(
+                    b"".join(json.dumps(r).encode() + b"\n" for r in records)
+                ),
+                blocked=False,
+            )
+
     def test_mechanoid_foul_aftermath_is_not_human_vomiting(self):
         # SYNTHETIC private-state oracle inputs, not native evidence.
         motion = dict(
