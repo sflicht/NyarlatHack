@@ -1981,8 +1981,8 @@ const char *str;
 	return cbuf;
 }
 
-void
-tty_putstr(window, attr, str)
+static boolean
+tty_putstr_core(window, attr, str)
     winid window;
     int attr;
     const char *str;
@@ -1997,12 +1997,12 @@ tty_putstr(window, attr, str)
      */
     if(window == WIN_ERR || (cw = wins[window]) == (struct WinDesc *) 0) {
 	tty_raw_print(str);
-	return;
+	return FALSE;
     }
 
     if(str == (const char*)0 ||
 	((cw->flags & WIN_CANCELLED) && (cw->type != NHW_MESSAGE)))
-	return;
+	return FALSE;
     if(cw->type != NHW_MESSAGE)
 	str = compress_str(str);
 
@@ -2016,8 +2016,7 @@ tty_putstr(window, attr, str)
 #if defined(USER_SOUNDS) && defined(WIN32CON)
 	play_sound_for_message(str);
 #endif
-	update_topl(str);
-	break;
+	return tty_update_topl_rendered(str);
 
     case NHW_STATUS:
 	ob = &cw->data[cw->cury][j = cw->curx];
@@ -2136,7 +2135,28 @@ tty_putstr(window, attr, str)
 	}
 	break;
     }
+    return FALSE;
 }
+
+void
+tty_putstr(window, attr, str)
+    winid window;
+    int attr;
+    const char *str;
+{
+    (void) tty_putstr_core(window, attr, str);
+}
+
+#ifdef CHAOS
+boolean
+tty_putstr_rendered(window, attr, str)
+    winid window;
+    int attr;
+    const char *str;
+{
+    return tty_putstr_core(window, attr, str);
+}
+#endif
 
 void
 tty_display_file(fname, complain)

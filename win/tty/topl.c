@@ -231,6 +231,14 @@ more()
 
 void
 update_topl(bp)
+	const char *bp;
+{
+	(void) tty_update_topl_rendered(bp);
+}
+
+/* Confirm the rendering branch, not history storage or a More prompt. */
+boolean
+tty_update_topl_rendered(bp)
 	register const char *bp;
 {
 	register char *tl, *otl;
@@ -248,9 +256,12 @@ update_topl(bp)
 		Strcat(toplines, "  ");
 		Strcat(toplines, bp);
 		cw->curx += 2;
-		if(!(cw->flags & WIN_STOP))
+		if(!(cw->flags & WIN_STOP)) {
+		    boolean rendered = (*bp != '\0');
 		    addtopl(bp);
-		return;
+		    return rendered;
+		}
+		return FALSE;
 	} else if (!(cw->flags & WIN_STOP)) {
 	    if(ttyDisplay->toplin == 1) more();
 	    else if(cw->cury) {	/* for when flags.toplin == 2 && cury > 1 */
@@ -274,7 +285,13 @@ update_topl(bp)
 	    n0 = strlen(tl);
 	}
 	if(!notdied) cw->flags &= ~WIN_STOP;
-	if(!(cw->flags & WIN_STOP)) redotoplin(toplines);
+	if(!(cw->flags & WIN_STOP)) {
+	    boolean rendered = (*toplines != '\0');
+	    redotoplin(toplines);
+	    /* A post-render More/ESC must not revoke actual output. */
+	    return rendered;
+	}
+	return FALSE;
 }
 
 STATIC_OVL
