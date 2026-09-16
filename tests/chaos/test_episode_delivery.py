@@ -4,7 +4,8 @@
 Normal-render baseline reached missing-notice RED before this candidate.
 Real More SPACE/ESC and append cases extend the three original regressions.
 Early filters and controlled port identities extend regression coverage.
-Actual unsupported ports, nesting, failures and CHAOS-off remain pending;
+Synthetic vision-boundary reentry and real fsync failure are test injections;
+actual unsupported ports, write failures and CHAOS-off remain pending;
 these synthetic scopes do not discharge action or whole-game acceptance.
 """
 
@@ -225,6 +226,7 @@ def main():
             selection.compiler,
             out / "fixture.o",
             *objects,
+            "-Wl,--wrap=vision_recalc,--wrap=write,--wrap=fsync",
             "-lncursesw",
             "-ltinfo",
             "-lm",
@@ -235,6 +237,17 @@ def main():
         "fixture-link",
         75,
     )
+    # Prove the hooks wrap external references, not same-object calls.
+    for object_name in ("pline", "chaos_io"):
+        symbols = run(
+            ["/usr/bin/nm", "-u", root / "src" / (object_name + ".o")],
+            object_name + "-undefined-symbols",
+            10,
+        )
+        for symbol in (
+            (b"vision_recalc",) if object_name == "pline" else (b"write", b"fsync")
+        ):
+            assert re.search(rb"\bU " + symbol + rb"$", symbols, re.MULTILINE)
     # Recheck exact root/receipt/revision plus original objects before executing.
     again = native_fixture_selection.prepare(root, selection_env)
     if again.record()["source_build"] != selection.record()["source_build"]:
@@ -270,7 +283,8 @@ def main():
         process = None
         key = (
             b" "
-            if scenario == "pre-more-space" or scenario.endswith("-text-space")
+            if scenario in ("pre-more-space", "attribution-stop-space")
+            or scenario.endswith("-text-space")
             else b"\x1b"
             if scenario.endswith("-escape")
             else b""
@@ -315,6 +329,25 @@ def main():
                             "unexpected More prompt; no extra input sent"
                         )
                     if prompts == 1 and not inputs:
+                        if scenario == "attribution-stop-space":
+                            # Snapshot before sending the only SPACE. At this
+                            # real blocking prompt, notice must exist, end must not.
+                            snapshot = (run_dir / "events.jsonl").read_bytes()
+                            (work / "events-before-input.jsonl").write_bytes(snapshot)
+                            obs = [
+                                row["observation"] | {"seq": row["seq"]}
+                                for row in map(json.loads, snapshot.splitlines())
+                                if "observation" in row
+                            ]
+                            assert [row["stage"] for row in obs] == (
+                                ["enabled", "started", "notice"] if enabled else []
+                            )
+                            if enabled:
+                                assert obs[-1]["root_seq"] == obs[1]["seq"]
+                                assert obs[-1]["fact"] == "sound_high"
+                            assert terminal.index(
+                                b"You produce a high whistling sound."
+                            ) < terminal.index(b"--More--")
                         # Exactly one byte, only after the actual native prompt.
                         written = os.write(master, key)
                         inputs.append(
@@ -667,6 +700,100 @@ def main():
                 }
             )
     save("direct-pairs.json", direct_pairs)
+    # Existing contracts above are unchanged. This separate matrix labels
+    # physical fsync-failure bytes, never treating them as durable acceptance.
+    attribution_cases = {
+        "stop-space": (1, 0, 1),
+        "map-isolation": (0, 1, 0),
+        "nested-visible": (1, 1, 1),
+        "nested-suppressed": (0, 1, 0),
+        "nested-replacement": (2, 1, 1),
+        "fsync-failure": (1, 1, 1),
+    }
+    for name, (targets, followups, physical_notices) in attribution_cases.items():
+        scenario = "attribution-" + name
+        runs = []
+        for enabled in (False, True):
+            terminal, rows, state, history = render(enabled, scenario)
+            root_seq = state.pop("root")
+            assert root_seq > 0 if enabled else root_seq == 0
+            assert terminal.count(target) == targets, scenario
+            assert terminal.count(b"You listen.") == followups, scenario
+            work = out / (scenario + ("-on" if enabled else "-off"))
+            injection = json.loads((work / "injection.json").read_text())
+            assert injection["reentries"] == int(name.startswith("nested-"))
+            assert injection["blocking_displays"] == int(name == "stop-space")
+            obs = [row for row in rows if "observation" in row]
+            notices = [r for r in obs if r["observation"]["stage"] == "notice"]
+            assert len(notices) == (physical_notices if enabled else 0)
+            expected_stages = ["enabled", "started"]
+            if name == "nested-replacement":
+                expected_stages.append("started")
+            expected_stages += ["notice"] * physical_notices
+            if name != "fsync-failure":
+                expected_stages.append("completed")
+            assert [r["observation"]["stage"] for r in obs] == (
+                expected_stages if enabled else []
+            ), scenario
+            operation = "fountain_drink" if name == "map-isolation" else "whistling"
+            if enabled:
+                assert obs[1]["seq"] == root_seq
+                assert obs[1]["observation"] == dict(
+                    operation=operation, stage="started", root_seq=0, fact="none"
+                )
+                destination = (
+                    injection["replacement_root"]
+                    if name == "nested-replacement"
+                    else root_seq
+                )
+                if name == "nested-replacement":
+                    assert obs[2]["seq"] == destination > root_seq
+                    assert obs[2]["observation"] == obs[1]["observation"]
+                for notice in notices:
+                    assert notice["observation"] == dict(
+                        operation=operation,
+                        stage="notice",
+                        root_seq=destination,
+                        fact="sound_high",
+                    )
+                    assert notice["seq"] > destination
+                if name != "fsync-failure":
+                    assert obs[-1]["observation"] == dict(
+                        operation=operation,
+                        stage="completed",
+                        root_seq=destination,
+                        fact="none",
+                    )
+                    assert obs[-1]["seq"] > destination
+                assert all(row["turn"] == 10 for row in obs[1:])
+            if name == "fsync-failure":
+                assert (
+                    injection["event_writes"]
+                    == injection["event_syncs"]
+                    == int(enabled)
+                )
+                assert injection["seq_before"] == injection["seq_after"]
+                assert injection["next_root"] == 0
+                if enabled:
+                    # Public engine sequence remains at committed root. Full
+                    # physical notice bytes are not a successful append/fsync.
+                    assert injection["seq_after"] == root_seq
+                    assert notices[0]["seq"] == root_seq + 1
+            else:
+                assert injection["event_writes"] == injection["event_syncs"] == 0
+            # Only root omitted; every captured native field/history retained.
+            # Explicit injected counters/roots/sequence live in a separate file.
+            runs.append((terminal, state, history))
+        assert runs[0] == runs[1], scenario
+        results.append(
+            {
+                "scenario": scenario,
+                "passed": True,
+                "physical_notice_records": physical_notices,
+                "durable_notice_claim": name != "fsync-failure",
+                "prompt_count": int(name == "stop-space"),
+            }
+        )
     final_hashes = {name: digest(Path(name)) for name in originals}
     save("final-original-object-hashes.json", final_hashes)
     assert originals == final_hashes, "native originals changed during execution"

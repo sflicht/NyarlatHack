@@ -6,6 +6,63 @@
 #include "native_rng.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <errno.h>
+#include <sys/stat.h>
+#include <unistd.h>
+
+/* Test-only external-call hooks. Disabled cases forward unchanged. Reentry
+ * substitutes unrelated vision work at vpline's real post-take boundary; no
+ * initialized-world/vision purity or ordinary-play scheduling claim is made. */
+static int reenter, reentries, replace_root, sync_fault, event_writes, event_syncs;
+static long replacement_root;
+static struct stat event_identity;
+void __real_vision_recalc(int);
+void __wrap_vision_recalc(int mode)
+{
+    if (!reenter) { __real_vision_recalc(mode); return; }
+    assert(mode == 0);
+    reenter = 0;
+    ++reentries;
+    vision_full_recalc = FALSE;
+    You("listen.");
+    if (replace_root) {
+        replacement_root = chaos_observation_begin(CHAOS_OBS_OP_WHISTLING);
+        chaos_observation_arm(CHAOS_OBS_OP_WHISTLING, CHAOS_OBS_FACT_SOUND_HIGH);
+    }
+}
+
+static int is_event_fd(int fd)
+{
+    struct stat st;
+    return sync_fault && !fstat(fd, &st) && st.st_dev == event_identity.st_dev
+        && st.st_ino == event_identity.st_ino;
+}
+ssize_t __real_write(int, const void *, size_t);
+int __real_fsync(int);
+ssize_t __wrap_write(int fd, const void *buf, size_t n)
+{
+    if (is_event_fd(fd)) ++event_writes;
+    return __real_write(fd, buf, n);
+}
+int __wrap_fsync(int fd)
+{
+    if (is_event_fd(fd)) {
+        ++event_syncs;
+        errno = EIO;
+        return -1;
+    }
+    return __real_fsync(fd);
+}
+
+static int blocking_displays;
+extern char prevmsg[BUFSZ];
+static void counting_display(winid window, BOOLEAN_P blocking)
+{
+    assert(window == WIN_MESSAGE && blocking);
+    assert(!strcmp(prevmsg, "You produce a high whistling sound."));
+    ++blocking_displays;
+    tty_display_nhwindow(window, blocking);
+}
 
 /* Native exported implementation has no public declaration in extern.h. */
 extern int msgpline_type(const char *);
@@ -145,6 +202,111 @@ static void direct_case(const char *spec, int enabled)
     tty_exit_nhwindows((char *)0);
 }
 
+/* Independent scenarios; metadata is separate from ordinary native state. */
+static void attribution_case(const char *name, int enabled)
+{
+    int stop = !strcmp(name, "stop-space");
+    int map = !strcmp(name, "map-isolation");
+    int failure = !strcmp(name, "fsync-failure");
+    int nested = !strncmp(name, "nested-", 7);
+    int suppressed = !strcmp(name, "nested-suppressed");
+    int expected_rng = test_rng_begin();
+    int operation = map ? CHAOS_OBS_OP_FOUNTAIN_DRINK : CHAOS_OBS_OP_WHISTLING;
+    long root, seq_before, seq_after, next_root = 0, i;
+    FILE *file;
+    char path[1024];
+    struct chaos_observation_token token;
+    struct WinDesc *cw = wins[WIN_MESSAGE];
+    assert(stop || map || failure || nested);
+    replace_root = !strcmp(name, "nested-replacement");
+    if (stop || suppressed) {
+        iflags.msgtype_regex = FALSE;
+        msgpline_add(stop ? MSGTYP_STOP : MSGTYP_NOSHOW,
+                     "You produce a high whistling sound.");
+        assert(msgpline_type("You produce a high whistling sound.")
+               == (stop ? MSGTYP_STOP : MSGTYP_NOSHOW));
+    }
+    if (stop) windowprocs.win_display_nhwindow = counting_display;
+    root = chaos_observation_begin(operation);
+    assert(enabled ? root > 0 : root == 0);
+    chaos_observation_arm(operation, map ? CHAOS_OBS_FACT_DETECTION_PRESENTED
+                                       : CHAOS_OBS_FACT_SOUND_HIGH);
+    seq_before = u.chaos.seq;
+    if (failure) {
+        assert(snprintf(path, sizeof path, "%s/events.jsonl",
+                        getenv("NYARLATHACK_RUN_DIR")) < (int)sizeof path);
+        assert(stat(path, &event_identity) == 0);
+        sync_fault = 1; /* Only after successful session/root append. */
+    }
+    if (nested) {
+        reenter = 1;
+        vision_full_recalc = TRUE;
+    }
+    /* %s makes vpline own its outer text before nested You reuses You_buf. */
+    You("%s", map ? "listen." : "produce a high whistling sound.");
+    seq_after = u.chaos.seq;
+    if (map) {
+        token = chaos_observation_take_map();
+        assert(token.root == root);
+        assert(token.fact == (enabled ? CHAOS_OBS_FACT_DETECTION_PRESENTED
+                                     : CHAOS_OBS_FACT_NONE));
+        assert(chaos_observation_take_map().root == 0);
+        /* No map display or manual map-delivered acknowledgement. */
+    }
+    if (nested) assert(reentries == 1 && !reenter && !vision_full_recalc);
+    if (replace_root) {
+        assert(enabled ? replacement_root > root : replacement_root == 0);
+        /* Outer stale delivery must not consume B's still-pending token. */
+        assert(seq_after == (enabled ? replacement_root : seq_before));
+        chaos_observation_end(root); /* Stale cleanup must leave B intact. */
+        clear_nhwindow(WIN_MESSAGE);
+        You("%s", "produce a high whistling sound.");
+        chaos_observation_disarm();
+        chaos_observation_end(replacement_root);
+    } else {
+        chaos_observation_disarm();
+        chaos_observation_end(root);
+    }
+    if (failure) {
+        assert(seq_after == seq_before && u.chaos.seq == seq_before);
+        You("listen."); /* Failure neither cancels nor retries native output. */
+        next_root = chaos_observation_begin(CHAOS_OBS_OP_WHISTLING);
+        chaos_observation_arm(CHAOS_OBS_OP_WHISTLING, CHAOS_OBS_FACT_SOUND_HIGH);
+        chaos_observation_end(next_root);
+        assert(next_root == 0 && u.chaos.seq == seq_before);
+        assert(event_syncs == enabled && event_writes == enabled);
+        assert(chaos_observation_take_message().root == 0);
+    }
+    assert(blocking_displays == stop);
+    if (stop) assert(morc == ' ');
+    assert(windowprocs.win_putstr == tty_putstr);
+    test_rng_unchanged(expected_rng);
+    fflush(stdout);
+    fprintf(stderr, "{\"root\":%ld,\"flags\":%d,\"toplin\":%d,"
+        "\"message_x\":%d,\"message_y\":%d,\"display_x\":%d,\"display_y\":%d,"
+        "\"lastwin\":%d,\"inmore\":%d,\"morc\":%d,\"window_inited\":%d}\n",
+        root, (int)cw->flags, (int)ttyDisplay->toplin,
+        (int)cw->curx, (int)cw->cury, (int)ttyDisplay->curx,
+        (int)ttyDisplay->cury, (int)ttyDisplay->lastwin,
+        (int)ttyDisplay->inmore, (int)morc, (int)iflags.window_inited);
+    file = fopen("injection.json", "w"); assert(file);
+    fprintf(file, "{\"reentries\":%d,\"replacement_root\":%ld,"
+        "\"blocking_displays\":%d,\"event_writes\":%d,\"event_syncs\":%d,"
+        "\"seq_before\":%ld,\"seq_after\":%ld,\"next_root\":%ld}\n",
+        reentries, replacement_root, blocking_displays, event_writes, event_syncs,
+        seq_before, seq_after, next_root);
+    assert(fclose(file) == 0);
+    file = fopen("native-history.txt", "w"); assert(file);
+    fprintf(file, "toplines:%s\nprevmsg:%s\nmaxrow:%ld maxcol:%ld\n",
+            toplines, prevmsg, cw->maxrow, cw->maxcol);
+    for (i = 0; i < cw->rows; ++i)
+        fprintf(file, "%ld:%s\n", i, cw->data[i] ? cw->data[i] : "<null>");
+    assert(fclose(file) == 0);
+    if (stop || suppressed) msgpline_free();
+    windowprocs.win_display_nhwindow = tty_display_nhwindow;
+    tty_exit_nhwindows((char *)0);
+}
+
 int main(int argc, char **argv)
 {
     long root;
@@ -186,6 +348,7 @@ int main(int argc, char **argv)
     replacement = !strcmp(argv[1], "--stop-replacement") || pre_more;
     assert(stopped || pre_more || post_newline || post_wrap || append
            || early || renamed || wrapped || !strncmp(argv[1], "--direct-", 9)
+           || !strncmp(argv[1], "--attribution-", 14)
            || !strcmp(argv[1], "--render"));
     if (post_newline)
         message = "produce a high whistling sound.\nThe echo fades.";
@@ -230,6 +393,10 @@ int main(int argc, char **argv)
     u.ux = u.uy = 0; vision_full_recalc = FALSE;
     chaos_start();
     assert(u.chaos.safe == 1);
+    if (!strncmp(argv[1], "--attribution-", 14)) {
+        attribution_case(argv[1] + 14, enabled);
+        return 0;
+    }
     if (!strncmp(argv[1], "--direct-", 9)) {
         direct_case(argv[1] + 9, enabled);
         return 0;
