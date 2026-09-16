@@ -340,6 +340,12 @@ def main(argv=None):
             "pit_count": 2,
             "pit_next": 86788,
         }
+        # Measured with actual d(1,1) in artifact-h9e2wzpx, not rn2(1).
+        # reseed_count counts one call here, while libc advances zero draws.
+        assert {
+            key: seeds[0][key]
+            for key in ("artifact_d", "artifact_count", "artifact_next")
+        } == {"artifact_d": 1, "artifact_count": 1, "artifact_next": 35290}
         OwnedGame = supervisor.owned_game_type(gameplay_support.Game, cancel)
         results = []
         for case in (
@@ -349,8 +355,10 @@ def main(argv=None):
             *DISPATCH_CASES,
             *PET_CASES,
             *SUPPRESSION_CASES,
+            "artifact-rally-dispatch",
         ):
             descriptor = SOUND_CASES.get(case)
+            artifact = case == "artifact-rally-dispatch"
             suppression = case in SUPPRESSION_CASES
             pet = case in PET_CASES
             pit = case == "magic-pet-pit-known"
@@ -380,7 +388,7 @@ def main(argv=None):
                     NYARLATHACK_OBSERVATIONS=str(int(enabled)),
                     WHISTLE_CHAOS_STATE=str(work / "chaos-state.json"),
                 )
-                if descriptor or dispatch or pet or suppression:
+                if descriptor or dispatch or pet or suppression or artifact:
                     child_env["WHISTLE_SEED"] = str(calibrated["seed"])
                 if case == "apply-cancel" or pit:
                     raw, diagnostic = cancel_at_prompt(
@@ -397,7 +405,7 @@ def main(argv=None):
                         cancel=cancel,
                     )
                 message = descriptor[0] if descriptor else "high whistling sound"
-                if pet:
+                if pet or artifact:
                     message = "strange whistling sound"
                 if suppression:
                     # NOREP's one real primer is in the transcript, not a notice
@@ -413,6 +421,27 @@ def main(argv=None):
                 else:
                     assert raw.count(("You produce a " + message + ".").encode()) == 1
                 state = json.loads(diagnostic)
+                if artifact:
+                    assert state["entry"] == "special_weapon_hit"
+                    assert state["case"] == case and state["seed"] == 2
+                    assert state["return"] == state["mm_hit"]
+                    assert state["plus"] == 1 and state["hp"] == 100
+                    assert state["preflight_count"] == state["rng_draws"]
+                    assert state["true_damage"] == state["messaged"] == 0
+                    assert state["rng_draws"] == calibrated["artifact_count"] == 1
+                    assert state["preflight_d"] == calibrated["artifact_d"] == 1
+                    assert state["next_draw"] == state["expected_next"]
+                    assert state["next_draw"] == calibrated["artifact_next"]
+                    assert state["next_draw"] == calibrated["next_after_zero"]
+                    for key in (
+                        "player_unchanged",
+                        "inventory_unchanged",
+                        "monster_unchanged",
+                        "world_unchanged",
+                    ):
+                        assert state[key] is True
+                    assert state["map_before"] == state["map_after"]
+                    assert state["discovery_before"] == state["discovery_after"]
                 if suppression:
                     repeat = case.startswith("norep-")
                     high = b"You produce a high whistling sound."
@@ -573,9 +602,15 @@ def main(argv=None):
                 chaos = json.loads((work / "chaos-state.json").read_text())
                 before, after = chaos["before"].copy(), chaos["after"].copy()
                 assert after.pop("seq") - before.pop("seq") == (
-                    (3 if suppression else 4) if enabled and not dispatch else 1
+                    0
+                    if artifact
+                    else (3 if suppression else 4)
+                    if enabled and not dispatch
+                    else 1
                 )
                 assert before == after, chaos
+                if artifact:
+                    assert not [e for e in records if e["event"] == "apply"]
                 if dispatch or suppression or pit:
                     attempts = [e for e in records if e["event"] == "apply"]
                     assert len(attempts) == 1 and attempts[0]["phase"] == "attempt"
@@ -594,7 +629,7 @@ def main(argv=None):
                 assert len(before["effects"]) == 3
                 assert not any(e["event"] == "ack" for e in records)
                 obs = [e for e in records if e["v"] == 2]
-                if pit:
+                if pit or artifact:
                     for event in obs:
                         assert set(event) == {
                             "v",
@@ -633,7 +668,7 @@ def main(argv=None):
                     }
                 )
             assert pair[0] == pair[1], "native terminal/state off-on mismatch"
-        assert len(results) == 34
+        assert len(results) == 36
         for family in ("noshow", "norep"):
             for enabled in (False, True):
                 public = [
@@ -713,7 +748,7 @@ def main(argv=None):
             )
         assert len(negatives) == 3
         save(out / "negative-results.json", negatives)
-        assert len(results) == 37
+        assert len(results) == 39
         for result in results:
             if result["enabled"]:
                 obs = result["observations"]
@@ -761,7 +796,7 @@ def main(argv=None):
                             "observation",
                         }
                     continue
-                if result["case"] in DISPATCH_CASES:
+                if result["case"] in (*DISPATCH_CASES, "artifact-rally-dispatch"):
                     assert len(obs) == 1
                     marker = obs[0]
                     assert marker["seq"] == 1 and marker["phase"] == "result"

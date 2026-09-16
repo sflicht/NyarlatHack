@@ -67,6 +67,7 @@ static void calibrate(void)
                                      9, 10, 11, 12, 13, 14, 15, 16};
     unsigned i;
     int branch, zero, one, two, selection, wisdom, damage, pit_count, pit_next;
+    int artifact_d, artifact_count, artifact_next;
     puts("[");
     for (i = 0; i < sizeof seeds / sizeof seeds[0]; ++i) {
         seeded_reset(seeds[i]);
@@ -84,12 +85,17 @@ static void calibrate(void)
         damage = rnd(6);
         pit_count = reseed_count;
         pit_next = rn2(100000);
+        seeded_reset(seeds[i]);
+        artifact_d = d(1,1);
+        artifact_count = reseed_count;
+        artifact_next = rn2(100000);
         printf("%s{\"seed\":%u,\"first_rn2_2\":%d,\"next_after_zero\":%d,"
                "\"next_after_one\":%d,\"next_after_two\":%d,"
                "\"pet_selection\":%d,\"wisdom_draw\":%d,"
-               "\"pit_damage\":%d,\"pit_count\":%d,\"pit_next\":%d}",
+               "\"pit_damage\":%d,\"pit_count\":%d,\"pit_next\":%d,"
+               "\"artifact_d\":%d,\"artifact_count\":%d,\"artifact_next\":%d}",
                i ? ",\n" : "", seeds[i], branch, zero, one, two, selection, wisdom,
-               damage, pit_count, pit_next);
+               damage, pit_count, pit_next, artifact_d, artifact_count, artifact_next);
     }
     puts("\n]");
 }
@@ -106,6 +112,123 @@ static const struct sound_case sound_cases[] = {
     {"magic-cursed-humming", 1, 1, 0, 1, 0, 0},
     {"magic-cursed-success", 1, 1, 0, 1, 1, 0}
 };
+
+/* Complete artifact effect dispatcher, not a full attack or doapply. */
+static int artifact_rally(void)
+{
+    struct obj *sword = mksobj(LONG_SWORD, MKOBJ_NOINIT), saved_sword;
+    /* Same heap ownership as makemon_core; no MX is needed for a non-pet. */
+    struct monst *defender = malloc(sizeof *defender), saved_defender, saved_youmonst;
+    struct you before;
+    struct rm map[COLNO][ROWNO];
+    short discovery[NUM_OBJECTS];
+    struct artifact definition;
+    const struct artifact *arti;
+    int x, y, result, plus = 0, true_damage = 0, count, next;
+    int preflight_d, preflight_count, expected, request;
+    boolean messaged = FALSE;
+    long old_moves, old_monstermoves;
+    FILE *f;
+    assert(sword && defender && !fmon && !invent && !fobj && !ftrap);
+    memset(defender, 0, sizeof *defender);
+    defender->data = &mons[PM_LITTLE_DOG]; defender->mtyp = PM_LITTLE_DOG;
+    defender->mhp = defender->mhpmax = 100;
+    defender->mcansee = defender->mcanhear = defender->mcanmove = 1;
+    defender->mnotlaugh = 1;
+    fmon = defender;
+    youmonst.mtyp = PM_HUMAN;
+    assert(youmonst.data == &mons[PM_HUMAN] && !on_level(&spire_level, &u.uz));
+    assert(!Hallucination && !Blind && !u.sealsActive && !u.specialSealsActive);
+    assert(!uwep && !uswapwep && !uarm && !uarmc && !uarmh && !uarmg && !uarmf);
+    sword->oartifact = ART_SINGING_SWORD; sword->osinging = OSING_RALLY;
+    sword->known = sword->dknown = 1;
+    sword->invlet = 'a'; sword->where = OBJ_INVENT; invent = sword;
+    objects[LONG_SWORD].oc_name_known = 1;
+    sword->owt = weight(sword);
+    assert(sword->otyp == LONG_SWORD && sword->oclass == WEAPON_CLASS);
+    assert(sword->quan == 1 && !sword->nobj && !sword->cobj);
+    assert(!sword->blessed && !sword->cursed && !sword->spe);
+    assert(sword->obj_material == objects[LONG_SWORD].oc_material);
+    assert(sword->obj_material == IRON && sword->objsize == MZ_MEDIUM);
+    assert(check_oprop(sword, OPROP_NONE));
+    arti = get_artifact(sword); assert(arti);
+    assert(arti->otyp == LONG_SWORD && arti->adtyp == AD_PHYS);
+    assert(arti->accuracy == 1 && arti->damage == 1 && !arti->aflags);
+    assert(arti->inv_prop == SINGING && !arti->wflags && !arti->cflags && !arti->iflags);
+    for (x = 0; x < MAXARTPROP; ++x)
+        assert(!arti->wprops[x] && !arti->cprops[x]);
+    assert(arti->material == MT_DEFAULT && arti->size == MZ_DEFAULT);
+    definition = *arti;
+    for (x = 7; x <= 17; ++x)
+        for (y = 7; y <= 13; ++y) { levl[x][y].typ = ROOM; levl[x][y].lit = 1; }
+    place_monster(defender, 11, 10);
+    vision_reset(); vision_recalc(0);
+    for (x = 1; x < COLNO; ++x)
+        for (y = 0; y < ROWNO; ++y) newsym(x, y);
+    assert(canseemon(defender) && canspotmon(defender) && distu(11,10) == 1);
+    assert(!defender->mtame && !defender->minvent && !defender->mextra_p);
+    assert(!defender->mtrapped && !MON_WEP(defender) && !u.usteed);
+    chaos_start();
+    before = u; saved_sword = *sword; saved_defender = *defender;
+    saved_youmonst = youmonst;
+    memcpy(map, levl, sizeof map); memcpy(discovery, disco, sizeof discovery);
+    old_moves = moves; old_monstermoves = monstermoves; request = lastmsg;
+    assert(getenv("WHISTLE_SEED") && !strcmp(getenv("WHISTLE_SEED"), "2"));
+    seeded_reset(2);
+    preflight_d = d(1,1); preflight_count = reseed_count;
+    expected = rn2(100000);
+    assert(preflight_d == 1 && preflight_count == 1);
+    seeded_reset(2);
+    result = special_weapon_hit(&youmonst, defender, sword, sword,
+                                1, &plus, &true_damage, 10, &messaged, TRUE);
+    /* rng_draws retains the fixture key: this is a reseed counter, not
+     * a libc draw count. Native d(1,1) increments it without consuming libc. */
+    count = reseed_count; next = rn2(100000);
+    fprintf(stderr, "{\"case\":\"artifact-rally-dispatch\","
+            "\"entry\":\"special_weapon_hit\",\"seed\":2,\"return\":%d,"
+            "\"mm_hit\":%d,\"plus\":%d,\"true_damage\":%d,\"messaged\":%d,"
+            "\"rng_draws\":%d,\"next_draw\":%d,\"expected_next\":%d,"
+            "\"preflight_d\":%d,\"preflight_count\":%d,\"hp\":%d,"
+            "\"otyp\":%d,\"artifact\":%d,\"song\":%ld,\"material\":%d,\"size\":%d,",
+            result, MM_HIT, plus, true_damage, messaged, count, next, expected,
+            preflight_d, preflight_count, defender->mhp, sword->otyp,
+            sword->oartifact, (long)sword->osinging, sword->obj_material, sword->objsize);
+    fflush(stderr);
+    assert(result == MM_HIT && plus == 1 && true_damage == 0 && !messaged);
+    assert(count == preflight_count && next == expected && reseed_period == INT_MAX);
+    assert(lastmsg == (request + 1) % DUMPMSGS);
+    assert(!strcmp(msgs[lastmsg], "You produce a strange whistling sound."));
+    assert(!strcmp(prevmsg, msgs[lastmsg]) && !(wins[WIN_MESSAGE]->flags & WIN_STOP));
+    assert(moves == old_moves && monstermoves == old_monstermoves);
+    assert(!memcmp(&before, &u, sizeof u)); /* seq delta is exactly zero */
+    assert(!memcmp(&saved_youmonst, &youmonst, sizeof youmonst));
+    assert(!memcmp(&saved_sword, sword, sizeof *sword) && invent == sword);
+    assert(!memcmp(&saved_defender, defender, sizeof *defender) && fmon == defender);
+    assert(!memcmp(&definition, arti, sizeof definition));
+    assert(!memcmp(map, levl, sizeof map) && !memcmp(discovery, disco, sizeof discovery));
+    assert(objects[LONG_SWORD].oc_name_known && !fobj && !ftrap && !migrating_mons);
+    for (x = 0; x < COLNO; ++x)
+        for (y = 0; y < ROWNO; ++y) {
+            assert(level.monsters[x][y] == ((x == 11 && y == 10) ? defender : NULL));
+            assert(!level.objects[x][y] && !t_at(x,y));
+        }
+    fputs("\"player_unchanged\":true,\"inventory_unchanged\":true,"
+          "\"monster_unchanged\":true,\"world_unchanged\":true,\"map_before\":", stderr);
+    hex_record(stderr, map, sizeof map);
+    fputs(",\"map_after\":", stderr); hex_record(stderr, levl, sizeof map);
+    fputs(",\"discovery_before\":", stderr); hex_record(stderr, discovery, sizeof discovery);
+    fputs(",\"discovery_after\":", stderr); hex_record(stderr, disco, sizeof discovery);
+    fputs("}\n", stderr);
+    assert(getenv("WHISTLE_CHAOS_STATE"));
+    f = fopen(getenv("WHISTLE_CHAOS_STATE"), "w"); assert(f);
+    fputs("{\"before\":", f); state_record(f, &before);
+    fputs(",\"after\":", f); state_record(f, &u); fputs("}\n", f);
+    assert(!fclose(f));
+    remove_monster(11,10); fmon = NULL; rem_all_mx(defender); dealloc_monst(defender);
+    invent = NULL; sword->where = OBJ_FREE; obfree(sword, NULL);
+    fflush(stdout); exit_nhwindows((char *)0);
+    return 0;
+}
 
 int main(int argc, char **argv)
 {
@@ -156,7 +279,8 @@ int main(int argc, char **argv)
     dispatch = cancel_apply || inert || leaf;
     for (i = 0; i < (int)(sizeof sound_cases / sizeof sound_cases[0]); ++i)
         if (!strcmp(argv[1], sound_cases[i].name)) variant = &sound_cases[i];
-    assert(suppression || pet || dispatch || variant || known || !strcmp(argv[1], "unknown"));
+    assert(suppression || pet || dispatch || variant || known || !strcmp(argv[1], "unknown")
+           || !strcmp(argv[1], "artifact-rally-dispatch"));
     assert(!*injection || (known && !variant && !suppression));
     test_rng_control();
     test_rng_negative_control(argv[1]); /* Header control API; not action controls. */
@@ -182,6 +306,7 @@ int main(int argc, char **argv)
     vision_init();
     /* Native vision/flush execute against the bounded fixture's real level. */
     vision_reset();
+    if (!strcmp(argv[1], "artifact-rally-dispatch")) return artifact_rally();
     memset(&o, 0, sizeof o);
     o.otyp = WHISTLE; o.oclass = TOOL_CLASS; o.quan = 1;
     o.o_id = 42; o.invlet = 'a'; o.where = OBJ_INVENT;
