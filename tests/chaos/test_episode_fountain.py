@@ -70,6 +70,15 @@ def validate_history(
     assert records == expected, "complete fountain history mismatch"
 
 
+def validate_mechanoid_aftermath(state, motion):
+    """Private native case-20 oracle: no human hunger draw or vomiting."""
+    assert state["hunger_after"] == state["hunger_before"]
+    assert state["count"] == 2
+    assert motion == dict(
+        multi=0, reason="", occupation=False, afternmv=False, nomovemsg=False
+    )
+
+
 def validate_legacy_pair(off, on):
     """Only the enabled marker's single sequence offset is normalized."""
     legacy = [dict(record, seq=record["seq"] - 1) for record in on if record["v"] == 1]
@@ -417,14 +426,40 @@ def main(argv=None):
         assert Path(chaos.episodes.__file__).resolve() == root / "chaos/episodes.py"
         OwnedGame = supervisor.owned_game_type(gameplay_support.Game, cancel)
         results = []
+        mech_calibration = json.loads(
+            run([exe, "--calibrate-mechanoid"], "mechanoid-seed-preflight")
+        )
+        assert [r["seed"] for r in mech_calibration] == list(range(1, 257))
+        mech_calls = sum(r["count"] + 1 for r in mech_calibration)
+        assert mech_calls <= 768
+        mech_chosen = next(
+            r for r in mech_calibration if r["fate"] == 20 and r["dry"] > 0
+        )
+        assert mech_chosen["count"] == 2 and mech_chosen["hunger"] == 0
+        save(
+            out / "mechanoid-calibration.json",
+            dict(
+                candidates=mech_calibration,
+                chosen=mech_chosen,
+                preflight_calls=mech_calls,
+                trace=["rnd(30)", "rn2(3) in dryup", "rn2(100000) sentinel"],
+                action_rerolls=0,
+            ),
+        )
         foul_chosen = next(r for r in calibration if r["fate"] == 20 and r["dry"] > 0)
         save(out / "foul-calibration.json", foul_chosen)
         for case in (
             "decline-selection-cancel",
             "confirmed-refreshed",
             "confirmed-foul",
+            "confirmed-foul-mechanoid",
         ):
-            action_seed = foul_chosen if case == "confirmed-foul" else chosen
+            is_foul = case in ("confirmed-foul", "confirmed-foul-mechanoid")
+            action_seed = (
+                mech_chosen
+                if case == "confirmed-foul-mechanoid"
+                else (foul_chosen if is_foul else chosen)
+            )
             pair, histories = [], []
             for enabled in (False, True):
                 work = out / (case + "-" + ("on" if enabled else "off"))
@@ -454,10 +489,13 @@ def main(argv=None):
                 assert raw.count(b"The water is foul!  You gag and vomit.") == int(
                     case == "confirmed-foul"
                 )
+                assert raw.count(
+                    b"The water is foul! It offends your olfactory receptors."
+                ) == int(case == "confirmed-foul-mechanoid")
                 state = json.loads(diagnostic)
                 assert state["native_oracles_passed"] is True
                 assert state["case"] == case
-                if case in ("confirmed-refreshed", "confirmed-foul"):
+                if case != "decline-selection-cancel":
                     assert state["return"] == state["move_quaffed"]
                     for key in ("seed", "count", "next", "fate", "dry"):
                         assert state[key] == action_seed[key]
@@ -489,7 +527,7 @@ def main(argv=None):
                 future = (
                     args.oracle == "strict-desired"
                     and enabled
-                    and case in ("confirmed-refreshed", "confirmed-foul")
+                    and case != "decline-selection-cancel"
                     and len(obs) > 1
                 )
                 validate_history(
@@ -497,14 +535,10 @@ def main(argv=None):
                     native["context_before"],
                     enabled=enabled,
                     future=future,
-                    fact="water_foul"
-                    if case == "confirmed-foul"
-                    else "water_refreshed",
-                    missing_notice=case == "confirmed-foul"
-                    and enabled
-                    and len(obs) == 3,
+                    fact="water_foul" if is_foul else "water_refreshed",
+                    missing_notice=is_foul and enabled and len(obs) == 3,
                 )
-                if case == "confirmed-foul" and enabled and len(obs) == 3:
+                if is_foul and enabled and len(obs) == 3:
                     assert projection["episodes"] == []
                     assert projection["coverage"]["completed_without_notice"] == dict(
                         count=1, saturated=False
@@ -518,6 +552,8 @@ def main(argv=None):
                         nomovemsg=False,
                         free_action=False,
                     )
+                if case == "confirmed-foul-mechanoid":
+                    validate_mechanoid_aftermath(state, native["motion"])
                 if not future:
                     assert projection["episodes"] == []
                 histories.append(records)
@@ -541,9 +577,10 @@ def main(argv=None):
                         native_returncode=0,
                     )
                 )
+                save(out / "native-results.json", results)
             assert pair[0] == pair[1], "terminal/input/native state OFF/ON mismatch"
             validate_legacy_pair(*histories)
-        assert len(results) == 6
+        assert len(results) == 8
         save(out / "native-results.json", results)
         negatives = []
         for mode in ("native", "raw", "budget"):
@@ -614,7 +651,11 @@ def main(argv=None):
         header_calls = 35
         per_action_calls = [
             header_calls
-            + chosen["count"]
+            + (
+                mech_chosen["count"]
+                if result["case"] == "confirmed-foul-mechanoid"
+                else chosen["count"]
+            )
             + 1
             + int(result["case"] == "decline-selection-cancel")
             + result["state"]["count"]
@@ -629,6 +670,8 @@ def main(argv=None):
         total_calls = (
             header_calls
             + calls
+            + header_calls
+            + mech_calls
             + sum(per_action_calls)
             + probe_calls
             + sum(negative_action_calls)
@@ -638,6 +681,7 @@ def main(argv=None):
             out / "rng-call-budget.json",
             dict(
                 calibration_calls=header_calls + calls,
+                mechanoid_calibration_calls=header_calls + mech_calls,
                 per_action_calls=per_action_calls,
                 negative_action_calls=negative_action_calls,
                 probe_calls=probe_calls,
@@ -741,6 +785,36 @@ def main(argv=None):
         )
         return 1
     assert foul["projection"]["episodes"] == [
+        dict(
+            operation="fountain_drink",
+            count=1,
+            saturated=False,
+            evidence=[dict(root_seq=5, notice_seq=6, end_seq=7, fact="water_foul")],
+        )
+    ]
+    mechanoid = results[7]
+    if len(mechanoid["observations"]) == 3:
+        save(
+            out / "strict-failure.json",
+            dict(
+                oracle=args.oracle,
+                acceptance=False,
+                native_oracles_passed=True,
+                case="confirmed-foul-mechanoid",
+                native_return_verified=True,
+                actions=len(results) + len(negatives),
+                normal_actions=len(results),
+                preserved_normal_actions=6,
+                negative_controls_passed=len(negatives),
+                missing_expected_observations=["fountain_drink.water_foul"],
+            ),
+        )
+        print(
+            "confirmed-foul-mechanoid: missing expected water_foul notice; native alternate wording/hunger/motion/RNG/return verified",
+            file=sys.stderr,
+        )
+        return 1
+    assert mechanoid["projection"]["episodes"] == [
         dict(
             operation="fountain_drink",
             count=1,

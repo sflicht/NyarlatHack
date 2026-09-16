@@ -35,6 +35,17 @@ static struct trace preflight(unsigned seed)
     return t;
 }
 
+/* Only case 20 is modeled: native branch skips rn1/morehungry/vomit. */
+static struct trace preflight_mechanoid(unsigned seed)
+{
+    struct trace t;
+    seeded_reset(seed);
+    t.fate = rnd(30); t.hunger = 0; t.dry = -1;
+    if (t.fate == 20) t.dry = rn2(3);
+    t.count = reseed_count; t.next = rn2(100000);
+    return t;
+}
+
 static void hex_record(FILE *f, const void *data, size_t size)
 {
     const unsigned char *p = data;
@@ -79,7 +90,7 @@ int main(int argc, char **argv)
     struct obj *potion = 0, saved_potion;
     long old_moves, old_monstermoves;
     unsigned seed;
-    int i,x,y,result,count,next,decline,foul, total = 0;
+    int i,x,y,result,count,next,decline,foul,mechanoid, total = 0;
     const char *injection = 0;
     FILE *f;
     assert(argc == 2 || argc == 3);
@@ -104,6 +115,16 @@ int main(int argc, char **argv)
         }
         assert(total <= 1024); puts("\n]"); return 0;
     }
+    if (!strcmp(argv[1], "--calibrate-mechanoid")) {
+        puts("[");
+        for (seed = 1; seed <= 256; ++seed) {
+            t = preflight_mechanoid(seed); total += t.count + 1;
+            printf("%s{\"seed\":%u,\"fate\":%d,\"hunger\":%d,\"dry\":%d,"
+                   "\"count\":%d,\"next\":%d}", seed == 1 ? "" : ",\n",
+                   seed,t.fate,t.hunger,t.dry,t.count,t.next);
+        }
+        assert(total <= 768); puts("\n]"); return 0;
+    }
     if (!strcmp(argv[1], "--probe-controls")) {
         assert(argc == 2 && getenv("FOUNTAIN_SEED"));
         seed = (unsigned)atoi(getenv("FOUNTAIN_SEED"));
@@ -119,11 +140,13 @@ int main(int argc, char **argv)
     }
     decline = !strcmp(argv[1], "decline-selection-cancel");
     foul = !strcmp(argv[1], "confirmed-foul");
-    assert(decline || foul || !strcmp(argv[1], "confirmed-refreshed"));
+    mechanoid = !strcmp(argv[1], "confirmed-foul-mechanoid");
+    assert(decline || foul || mechanoid || !strcmp(argv[1], "confirmed-refreshed"));
     assert(getenv("FOUNTAIN_SEED")); seed = (unsigned)atoi(getenv("FOUNTAIN_SEED"));
     assert(seed >= 1 && seed <= 256);
-    t = preflight(seed);
-    assert((foul ? t.fate == 20 : t.fate < 10) && t.dry > 0 && t.count == 3);
+    t = mechanoid ? preflight_mechanoid(seed) : preflight(seed);
+    assert(((foul || mechanoid) ? t.fate == 20 : t.fate < 10) && t.dry > 0);
+    assert(t.count == (mechanoid ? 2 : 3));
     if (decline) {
         seeded_reset(seed);
         t.fate = t.dry = -1; t.hunger = 0;
@@ -145,6 +168,20 @@ int main(int argc, char **argv)
     for (i = 0; i < A_MAX; ++i) ABASE(i) = AMAX(i) = 12;
     u.ux = 10; u.uy = 10; moves = 101; u.uz.dlevel = 1; u.ualign.god = 1;
     init_artifacts(); calc_total_maxhp(); calc_total_maxen();
+    if (mechanoid) {
+        /* Human in a mouth-bearing native clockwork polyform. set_uasmon
+         * uses set_mon_data; never redefine umechanoid or manufacture a flag.
+         * Setup only, not a simulated polyself action or its RNG accounting. */
+        id_permonst(); /* native startup assigns mons[].mtyp before set_uasmon */
+        u.umonnum = PM_CLOCKWORK_AUTOMATON;
+        u.mtimedone = 500; u.mh = u.mhrolled = 20;
+        u.macurr = u.acurr; u.mamax = u.amax;
+        set_uasmon(); calc_total_maxhp();
+        assert(Race_if(PM_HUMAN) && Upolyd && uclockwork && umechanoid);
+        assert(youracedata == &mons[PM_CLOCKWORK_AUTOMATON]);
+        assert(youmonst.mtyp == PM_CLOCKWORK_AUTOMATON && u.mh > 0 && u.mhmax >= u.mh);
+        assert(!Sick && !multi_txt[0] && !afternmv && !nomovemsg);
+    }
     u.uhungermax = 2000; u.uhunger = 500; u.uhs = NOT_HUNGRY;
     assert(YouHunger > 150*get_uhungersizemod() && YouHunger+10 <= get_satiationlimit());
     /* No init_dungeon: explicitly separate branches from ordinary dnum zero. */
@@ -229,6 +266,10 @@ int main(int argc, char **argv)
         assert(!strcmp(multi_txt,"vomiting") && !afternmv && !nomovemsg);
         assert(!iflags.travel1 && !Sick && !Free_action);
     }
+    if (mechanoid) {
+        assert(umechanoid && Upolyd && u.mtimedone == before.mtimedone);
+        assert(!multi_txt[0] && !afternmv && !nomovemsg && !Sick);
+    }
     if (potion) assert(!memcmp(&saved_potion,potion,sizeof saved_potion));
     normalized = u; normalized.uhunger = before.uhunger;
     normalized.chaos.seq = before.chaos.seq; /* driver verifies exact sequence delta */
@@ -250,6 +291,11 @@ int main(int argc, char **argv)
     if (foul)
         fprintf(f,",\"vomiting\":{\"multi\":%d,\"reason\":\"%s\",\"occupation\":false,"
                 "\"afternmv\":false,\"nomovemsg\":false,\"free_action\":false}",multi,multi_txt);
+    if (mechanoid)
+        fprintf(f,",\"motion\":{\"multi\":%d,\"reason\":\"%s\",\"occupation\":%s,"
+                "\"afternmv\":%s,\"nomovemsg\":%s}",multi,multi_txt,
+                occupation ? "true" : "false", afternmv ? "true" : "false",
+                nomovemsg ? "true" : "false");
     fputs(",\"inventory_after_hex\":",f); hex_record(f,potion,potion ? sizeof *potion : 0);
     fputs("}\n",f); assert(!fclose(f));
     fprintf(stderr,"\"hp\":%d,\"hp_max\":%d,\"power\":%d,\"power_max\":%d,"

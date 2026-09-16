@@ -64,6 +64,38 @@ def synthetic(enabled, future):
 
 
 class FountainOracleTests(unittest.TestCase):
+    def test_mechanoid_foul_aftermath_is_not_human_vomiting(self):
+        # SYNTHETIC private-state oracle inputs, not native evidence.
+        motion = dict(
+            multi=0, reason="", occupation=False, afternmv=False, nomovemsg=False
+        )
+        state = dict(hunger_before=500, hunger_after=500, count=2)
+        driver.validate_mechanoid_aftermath(state, motion)
+        for key, value in (
+            ("multi", -2),
+            ("reason", "vomiting"),
+            ("occupation", True),
+            ("afternmv", True),
+            ("nomovemsg", True),
+        ):
+            with self.assertRaises(AssertionError):
+                driver.validate_mechanoid_aftermath(state, dict(motion, **{key: value}))
+        for key, value in (("hunger_after", 480), ("count", 3)):
+            with self.assertRaises(AssertionError):
+                driver.validate_mechanoid_aftermath(dict(state, **{key: value}), motion)
+
+    def test_mechanoid_public_history_cannot_export_form(self):
+        records = synthetic(True, True)
+        records[5]["observation"]["fact"] = "water_foul"
+        driver.validate_history(
+            records, CONTEXT, enabled=True, future=True, fact="water_foul"
+        )
+        records[5]["observation"]["form"] = "clockwork automaton"
+        with self.assertRaises(AssertionError):
+            driver.validate_history(
+                records, CONTEXT, enabled=True, future=True, fact="water_foul"
+            )
+
     def test_foul_complete_and_missing_notice_contract(self):
         records = synthetic(True, True)
         records[5]["observation"]["fact"] = "water_foul"
