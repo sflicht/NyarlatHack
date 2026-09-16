@@ -40,8 +40,15 @@ DOMAINS = (
 
 # Finite fixture configuration, not a public observation vocabulary.
 SPECIAL_CASES = [
-    dict(case=name, fate=fate, blessed=blessed, luck=luck,
-         hallucination=hallucination, no_mouth=no_mouth, restore=restore)
+    dict(
+        case=name,
+        fate=fate,
+        blessed=blessed,
+        luck=luck,
+        hallucination=hallucination,
+        no_mouth=no_mouth,
+        restore=restore,
+    )
     for name, fate, blessed, luck, hallucination, no_mouth, restore in (
         ("magic-refresh", 1, True, 0, False, False, False),
         ("magic-low-luck", 10, True, 0, False, False, True),
@@ -140,7 +147,12 @@ def validate_history(raw, before, after, fate, enabled, case=None):
         episodes=groups,
         coverage={
             k: dict(
-                count=int(k == "completed_without_notice" and enabled and not fact and not rootless),
+                count=int(
+                    k == "completed_without_notice"
+                    and enabled
+                    and not fact
+                    and not rootless
+                ),
                 saturated=False,
             )
             for k in (
@@ -228,7 +240,12 @@ def main():
         raise RuntimeError("native_driver_supervision.py outer context required")
     if any(
         os.environ.get(key)
-        for key in ("FOUNTAIN_INJECTION", "FOUNTAIN_CASE", "LD_PRELOAD", "LD_LIBRARY_PATH")
+        for key in (
+            "FOUNTAIN_INJECTION",
+            "FOUNTAIN_CASE",
+            "LD_PRELOAD",
+            "LD_LIBRARY_PATH",
+        )
     ):
         raise RuntimeError("unsafe ambient native override")
     parser = argparse.ArgumentParser()
@@ -388,12 +405,18 @@ def main():
         validate_manifest(chosen)
         save(out / "chosen-manifest.json", chosen)  # frozen before any action
         chosen_hash = digest(out / "chosen-manifest.json")
-        special_calibration = json.loads(run([exe, "--calibrate-specials"], "special-calibration"))
+        special_calibration = json.loads(
+            run([exe, "--calibrate-specials"], "special-calibration")
+        )
         assert len(special_calibration) == 4096
         special_chosen = []
         for case in SPECIAL_CASES:
-            pick = next(r for r in special_calibration if r["fate"] == case["fate"]
-                        and (case["case"] != "depletion" or r["dry"] == 0))
+            pick = next(
+                r
+                for r in special_calibration
+                if r["fate"] == case["fate"]
+                and (case["case"] != "depletion" or r["dry"] == 0)
+            )
             special_chosen.append(dict(case, seed=pick["seed"]))
         save(out / "special-manifest.json", special_chosen)
         special_hash = digest(out / "special-manifest.json")
@@ -409,7 +432,8 @@ def main():
                 work = out / (
                     "negative-" + injection
                     if injection
-                    else (row["case"] + "-" + ("on" if enabled else "off")) if "case" in row
+                    else (row["case"] + "-" + ("on" if enabled else "off"))
+                    if "case" in row
                     else "fate-%02d-%s" % (row["fate"], "on" if enabled else "off")
                 )
                 g = Game(selection.tuple_dir, clock, root=work)
@@ -511,10 +535,11 @@ def main():
                 pair_histories.append(events)
                 fate = row["fate"]
                 witness_text = (
-                    b"You have no mouth to drink with!" if row.get("no_mouth")
-                    else b"This makes you feel great!" if row.get("restore")
-                    else
-                    b"The cool draught refreshes you."
+                    b"You have no mouth to drink with!"
+                    if row.get("no_mouth")
+                    else b"This makes you feel great!"
+                    if row.get("restore")
+                    else b"The cool draught refreshes you."
                     if fate < 10
                     else b"This tepid water is tasteless."
                     if fate <= 18

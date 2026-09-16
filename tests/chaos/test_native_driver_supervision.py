@@ -13,8 +13,18 @@ import unittest
 
 HERE = Path(__file__).resolve().parent
 ADAPTERS = (
-    ("test_episode_platforms.py", "EpisodePlatformTests", "test_explicit_source_platforms", "PLATFORM"),
-    ("test_episode_whistle.py", "EpisodeWhistleTests", "test_selected_ordinary_whistle", "WHISTLE"),
+    (
+        "test_episode_platforms.py",
+        "EpisodePlatformTests",
+        "test_explicit_source_platforms",
+        "PLATFORM",
+    ),
+    (
+        "test_episode_whistle.py",
+        "EpisodeWhistleTests",
+        "test_selected_ordinary_whistle",
+        "WHISTLE",
+    ),
 )
 
 
@@ -81,7 +91,10 @@ assert not (root/'other-absent').exists()
 assert len(list(root.glob('other-absent.driver-*'))) == 1
 """
         for adapter in ADAPTERS:
-            with self.subTest(adapter=adapter[0]), tempfile.TemporaryDirectory() as root:
+            with (
+                self.subTest(adapter=adapter[0]),
+                tempfile.TemporaryDirectory() as root,
+            ):
                 result = subprocess.run(
                     [sys.executable, "-c", probe, str(HERE), root, *adapter],
                     capture_output=True,

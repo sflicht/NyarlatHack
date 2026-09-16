@@ -34,7 +34,9 @@ class TestIsolationTests(unittest.TestCase):
                 observed = os.umask(mask)
                 self.assertEqual(observed, mask, "negative test leaked process umask")
 
-    @unittest.skipUnless(sys.platform.startswith("linux"), "POSIX/Linux process fixtures")
+    @unittest.skipUnless(
+        sys.platform.startswith("linux"), "POSIX/Linux process fixtures"
+    )
     def test_negative_driver_then_launcher_invalid_directories(self):
         original = os.umask(0o022)
         self.addCleanup(os.umask, original)

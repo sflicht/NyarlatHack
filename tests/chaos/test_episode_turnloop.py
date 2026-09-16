@@ -507,7 +507,9 @@ def main(argv=None):
                 except BaseException as exc:
                     cleanup_errors.append(exc)
         if cleanup_errors:
-            failure = original_error if original_error is not None else cleanup_errors[0]
+            failure = (
+                original_error if original_error is not None else cleanup_errors[0]
+            )
             for exc in cleanup_errors:
                 failure.add_note("turn-loop cleanup failure: " + repr(exc))
             if original_error is None:
