@@ -102,6 +102,7 @@ class SelectionTests(unittest.TestCase):
         self.calibrate = self.enterContext(
             patch.object(self.s, "validate_native_profile")
         )
+        self.real_git_run = subprocess.run
         self.git = self.enterContext(
             patch.object(self.s.subprocess, "run", side_effect=self.git_blob)
         )
@@ -194,6 +195,65 @@ class SelectionTests(unittest.TestCase):
         )
         self.assertIsNone(record["native_profile"])
 
+    def test_reviewed_source_helper_is_accepted_and_recorded_unit_only(self):
+        name = "tests/chaos/gameplay_support.py"
+        reviewed = "d22eae5cb3f1610a8f950c4c4ebc95af99296db0a02e1c0b967c8f164bb95ccc"
+        self.assertEqual(digest(self.blobs[name]), reviewed)
+        try:
+            selected = self.prepare()
+        except self.s.SelectionError as exc:
+            self.fail(f"reviewed source helper must pass unit preflight: {exc}")
+        self.assertEqual(selected.record()["source_hashes"][name], reviewed)
+        self.assertIsNone(selected.native_profile)
+        self.calibrate.assert_not_called()
+        with self.assertRaisesRegex(self.s.SelectionError, "calibration required"):
+            selected.verify_copy(self.root / "dnethackdir")
+
+    def test_source_helper_pin_is_fixed_separate_literal_unit_only(self):
+        tree = ast.parse((ROOT / "tests/chaos/native_fixture_selection.py").read_text())
+        pins = [
+            n.value
+            for n in tree.body
+            if isinstance(n, ast.Assign)
+            and any(
+                isinstance(t, ast.Name) and t.id == "SOURCE_DRIVER_HASH"
+                for t in n.targets
+            )
+        ]
+        self.assertEqual(len(pins), 1)
+        self.assertIsInstance(pins[0], ast.Constant)
+        assert isinstance(pins[0], ast.Constant)
+        self.assertEqual(
+            pins[0].value,
+            "d22eae5cb3f1610a8f950c4c4ebc95af99296db0a02e1c0b967c8f164bb95ccc",
+        )
+        self.assertNotEqual(pins[0].value, self.s.DRIVER_HASH)
+
+    def test_historical_helper_matching_commit_is_rejected_unit_only(self):
+        name = "tests/chaos/gameplay_support.py"
+        result = self.real_git_run(
+            ["/usr/bin/git", "-C", str(ROOT), "show", BASELINE + ":" + name],
+            env={"PATH": "/usr/bin:/bin", "GIT_NO_REPLACE_OBJECTS": "1"},
+            capture_output=True,
+            check=True,
+            timeout=30,
+        )
+        self.assertEqual(digest(result.stdout), self.s.DRIVER_HASH)
+        self.blobs[name] = result.stdout
+        (self.root / name).write_bytes(result.stdout)
+        with self.assertRaisesRegex(
+            self.s.SelectionError, "reviewed driver pin mismatch"
+        ):
+            self.prepare()
+        self.calibrate.assert_not_called()
+
+    def test_reviewed_worktree_with_different_commit_blob_rejected_unit_only(self):
+        name = "tests/chaos/gameplay_support.py"
+        self.blobs[name] = b"unreviewed committed helper"
+        with self.assertRaisesRegex(self.s.SelectionError, "oracle source mismatch"):
+            self.prepare()
+        self.calibrate.assert_not_called()
+
     def test_identity_failure_stops_before_oracle_lookup(self):
         for message in (
             "revision mismatch",
@@ -246,6 +306,7 @@ class SelectionTests(unittest.TestCase):
         (self.root / name).write_bytes(self.blobs[name])
         with self.assertRaisesRegex(self.s.SelectionError, "driver"):
             self.prepare()
+        self.calibrate.assert_not_called()
 
     def test_missing_committed_oracle_fails_closed(self):
         self.git.side_effect = subprocess.CalledProcessError(128, ["/usr/bin/git"])

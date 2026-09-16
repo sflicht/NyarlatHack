@@ -197,15 +197,15 @@ class ProvenanceDumpTests(unittest.TestCase):
         env = dict(
             os.environ, PROVENANCE_OPTIMIZED_CHILD="1", PYTHONDONTWRITEBYTECODE="1"
         )
+        # Exercise standalone discovery, even when the parent has PYTHONPATH set.
+        env.pop("PYTHONPATH", None)
         for flag in ("-O", "-OO"):
             result = subprocess.run(
                 [
                     sys.executable,
                     "-B",
                     flag,
-                    "-m",
-                    "unittest",
-                    "test_turnloop_dump_provenance",
+                    str(Path(__file__).resolve()),
                     "-v",
                 ],
                 env=env,
@@ -215,6 +215,11 @@ class ProvenanceDumpTests(unittest.TestCase):
                 timeout=30,
             )
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            for name in unittest.defaultTestLoader.getTestCaseNames(type(self)):
+                self.assertIn(
+                    f"{name} (__main__.ProvenanceDumpTests.{name}) ... ok",
+                    result.stderr,
+                )
 
 
 if __name__ == "__main__":

@@ -118,12 +118,12 @@ def main(argv=None):
         OwnedGame = owned_game_type(gameplay_support.Game, cancel)
 
         class FrozenGame(OwnedGame):
-            def send(self, value):
+            def send(self, value, *, deadline=None):
                 encoded = value.encode() if isinstance(value, str) else value
                 expected = self.frozen_inputs
                 assert len(self.inputs) < len(expected), 'input cap'
                 assert encoded.hex() == expected[len(self.inputs)], 'unplanned input'
-                return super().send(value)
+                return super().send(value, deadline=deadline)
 
         save(out / 'frozen-inputs.json', FROZEN_INPUTS)
         all_results = []

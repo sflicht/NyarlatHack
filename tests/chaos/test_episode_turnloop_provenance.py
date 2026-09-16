@@ -1,14 +1,22 @@
-"""SYNTHETIC UNIT ONLY integration probes; never launch a native game."""
+"""Synthetic unit probes plus opt-in, read-only historical evidence checks.
+
+No native games run. Historical checks require all three
+NYARLATHACK_TURNLOOP_STOCK_{TUPLE,RECEIPT,REVISION} environment variables.
+Without configuration only that evidence check skips; this is not native
+historical acceptance. Any explicit but invalid configuration fails closed.
+"""
 
 import copy
 import importlib
 import json
+import os
 from pathlib import Path
 import tempfile
 import unittest
 from unittest.mock import patch
 
-from test_turnloop_dump_provenance import ProvenanceDumpTests, sha
+import test_turnloop_dump_provenance as dump_tests
+from test_turnloop_dump_provenance import sha
 
 
 class IntegrationTests(unittest.TestCase):
@@ -20,7 +28,7 @@ class IntegrationTests(unittest.TestCase):
         return importlib.import_module("turnloop_header_bindings")
 
     def fixture(self, root):
-        f = ProvenanceDumpTests().fixture("reviewed-chaos0", "1", 0)
+        f = dump_tests.ProvenanceDumpTests().fixture("reviewed-chaos0", "1", 0)
         receipt = root / "receipt"
         receipt.mkdir()
         tuple_dir = root / "tuple"
@@ -115,7 +123,7 @@ class IntegrationTests(unittest.TestCase):
     def test_supplement_does_not_mask_nondump_or_strict(self):
         api = self.api()
         helper = importlib.import_module("turnloop_dump_provenance")
-        test = ProvenanceDumpTests()
+        test = dump_tests.ProvenanceDumpTests()
         test.setUp()
         left = dict(
             inputs=["unit"],
@@ -136,14 +144,21 @@ class IntegrationTests(unittest.TestCase):
                 api.compare_run(left, dict(right, **{field: b"changed"}), a, b)
 
     def test_historical_fixed_evidence_mutations(self):
-        api = self.api()
+        self.api()
         h = importlib.import_module("turnloop_dump_provenance")
-        receipt = Path(
-            "/home/hermes/.local/share/nyarlathack/evidence/nyarlathack-acceptance-o61fnz7b/stock/manifest.json"
+        keys = tuple(
+            "NYARLATHACK_TURNLOOP_STOCK_" + suffix
+            for suffix in ("TUPLE", "RECEIPT", "REVISION")
         )
-        t = Path("/home/hermes/.local/share/nyarlathack/baselines/ff37b3a7a")
+        if not any(key in os.environ for key in keys):
+            self.skipTest("historical evidence not configured; set " + ", ".join(keys))
+        if not all(os.environ.get(key) for key in keys):
+            self.fail(
+                "incomplete historical evidence configuration: " + ", ".join(keys)
+            )
+        t, receipt = (Path(os.environ[key]) for key in keys[:2])
         kwargs = dict(
-            revision=api.HISTORICAL_REVISION,
+            revision=os.environ[keys[2]],
             mode=0,
             receipt=receipt.read_bytes(),
             original_dump=(receipt.parent / "game/dumplog/1700000000").read_bytes(),
@@ -170,6 +185,9 @@ class IntegrationTests(unittest.TestCase):
         api = self.api()
         import test_episode_turnloop as driver
 
+        # main() is a CLI entry point and can fail before its cleanup block.
+        # Keep its private umask local to this test, including assertion failures.
+        self.addCleanup(os.umask, os.umask(0o077))
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             f, r, t, m = self.fixture(root)
@@ -184,6 +202,23 @@ class IntegrationTests(unittest.TestCase):
             (r / "1-manifest.json").write_text(json.dumps(on))
             (r / "1-commands.json").write_text(json.dumps(on["commands"]))
             (r / "0-date.h").unlink()
+            # SYNTHETIC UNIT ONLY: satisfy the driver's initial legacy receipt
+            # shape/hash checks, never the pinned historical validation below
+            # current_binding(). The missing current capture must fail first.
+            stock = root / "synthetic-unit-stock"
+            stock.mkdir()
+            hashes = {}
+            for name in ("dnethack", "nhdat"):
+                data = b"SYNTHETIC UNIT ONLY " + name.encode()
+                (stock / name).write_bytes(data)
+                hashes[name] = sha(data)
+            stock_receipt = stock / "manifest.json"
+            stock_receipt.write_text(
+                json.dumps({"exit": 0, "sessions": [{"sha256": hashes}]})
+            )
+            old_dump = stock / "game/dumplog/1700000000"
+            old_dump.parent.mkdir(parents=True)
+            old_dump.write_text("SYNTHETIC UNIT ONLY -g" + api.HISTORICAL_REVISION[:9])
             args = [
                 "--root",
                 str(root),
@@ -198,9 +233,9 @@ class IntegrationTests(unittest.TestCase):
                 "--matrix",
                 "--provenance-dumps",
                 "--stock-tuple",
-                "/home/hermes/.local/share/nyarlathack/baselines/ff37b3a7a",
+                str(stock),
                 "--stock-receipt",
-                "/home/hermes/.local/share/nyarlathack/evidence/nyarlathack-acceptance-o61fnz7b/stock/manifest.json",
+                str(stock_receipt),
                 "--stock-revision",
                 api.HISTORICAL_REVISION,
             ]
@@ -209,6 +244,9 @@ class IntegrationTests(unittest.TestCase):
                 args[args.index("--artifacts") + 1] = str(Path(out) / "artifacts")
                 with (
                     patch.object(api, "check_profile"),
+                    patch.object(
+                        api, "historical_binding", wraps=api.historical_binding
+                    ) as historical,
                     patch.object(driver, "Game") as game,
                     patch.object(driver, "bounded") as compiler,
                 ):
@@ -216,6 +254,7 @@ class IntegrationTests(unittest.TestCase):
                         driver.main(args)
                     game.assert_not_called()
                     compiler.assert_not_called()
+                    historical.assert_not_called()
 
     def test_profile_revision_and_source_mutations(self):
         api = self.api()

@@ -303,12 +303,12 @@ def main(argv=None):
         )
 
         class OwnedGame(owned_game_type(Game, cancel)):
-            def send(self, value):
+            def send(self, value, *, deadline=None):
                 assert len(self.inputs) < 80, "input batch cap"
                 assert (
                     sum(len(bytes.fromhex(s)) for s in self.inputs) + len(value) <= 2048
                 ), "input byte cap"
-                return super().send(value)
+                return super().send(value, deadline=deadline)
 
         games = []
         mismatches = []
