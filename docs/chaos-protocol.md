@@ -1,7 +1,8 @@
 # Crawling Chaos protocol: v1 baseline and opt-in v2 observations
 
 Status: implemented Tier 2 contract and bounded observation foundation;
-[strict turn-loop acceptance remains unresolved](haunting-observations-evidence.md#remaining-strict-gate).
+[local native acceptance under the approved dump contract](haunting-observations-evidence.md)
+is distinct from publication; literal strict cross-build comparison remains failed.
 This mailbox does not accept executable code; the separate First Haunting
 Lua admission path is documented in `milestone2.md`.
 All new engine code is under the NetHack General Public License (`dat/license`).

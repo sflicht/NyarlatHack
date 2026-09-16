@@ -58,12 +58,15 @@ secret is absent.
 supervisors isolate process-global umask and hard resource limits. The narrow
 fountain hook/fixture and strict native adapter reviews are also accepted; this
 does not accept the whole phase or establish hosted CI success. The configured
-fresh local suite at `49d4e166d001d27072ba9b50f5854a70a8e70cb7` is independently
-accepted: 618 tests in 287.257 seconds, 607 passed and 11 top-level skips.
-Seven matrix-oracle methods ran separately with zero skips (not seven additional
-top-level tests). See the [evidence ledger](haunting-observations-evidence.md)
-for the skip accounting, native scope, provenance and failed strict turn-loop
-gate. Hosted execution is unverified; whole-phase acceptance remains open.
+fresh local suite at `8f317763a3560bd774d0b61e134e7028a744412a` is independently
+accepted: 679 unique tests in 303.455 seconds, 672 passed and seven top-level
+skips (three ownership limits, four artifact-dependent matrix invocations).
+Seven configured matrix-oracle child methods ran with zero skips; they are not
+additional top-level tests or seven missing gates. The native command succeeded;
+its reporting wrapper exited 1 on a multiline test-status parsing error and its
+failed receipt is preserved. See the [evidence ledger](haunting-observations-evidence.md)
+for approved turn-loop acceptance, strict-failure history and provenance.
+Hosted execution and publication remain unverified; whole-phase sign-off is open.
 
 The portable same-checkout reproduction recipe below requires authorization and a fresh
 full-history checkout already at the independently approved revision, with
@@ -165,11 +168,15 @@ oracle execution. Driver or oracle nonzero exits fail the gate. The new adapter
 unit tests use synthetic supervision results or real preflight failures without
 building; they are not native acceptance evidence.
 
-Registration does **not** resolve the strict turn-loop gate: it remains **FAILED,
-pending user decision** about the dump comparator. The accepted fresh local
-suite deliberately leaves the selected-command driver and three native turn-loop
-oracle methods unexecuted. Exact-current-revision turn-loop acceptance and
-whole-phase acceptance remain open; hosted CI has not been verified. The earlier
+The recipe above is the core native recipe, not the complete selected-command
+acceptance invocation. The accepted `8f317763a` run additionally configured the
+turn-loop adapter, its native evidence methods and historical-stock provenance.
+Its seven-configuration gate is locally accepted under the approved
+[supplemental dump contract](turnloop-dump-comparison-contract.md); all three
+native strict-oracle methods and configured historical mutations executed without
+skips. Literal strict cross-build dump comparison remains **FAILED**, separately
+preserved; `task8_closed:false` is not rewritten by the independent review.
+Whole-phase publication/sign-off and hosted CI remain unverified. The earlier
 controlled native fatal run satisfies Task 7's fatal-interruption requirement,
 not Task 8's turn-loop contract; no fatal-driver gate is registered here.
 Delivery allocates its own private parent

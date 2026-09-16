@@ -113,13 +113,11 @@ python3 -m unittest discover -s tests/chaos -p 'test_*.py' -v
 
 For full native acceptance, use the maintained
 [fresh reviewed-checkout recipe](docs/quality-control.md#local-equivalents).
-Platform/whistle isolation and the configured fresh local native suite are
-accepted at `49d4e166d001d27072ba9b50f5854a70a8e70cb7`: 618 tests,
-607 passed, 11 top-level skips; seven nested matrix-oracle methods ran separately
-without skips. These counts do **not** establish whole-phase completion.
-The strict selected-command turn-loop gate remains **FAILED** on cross-build
-dump identity bytes, pending the user's comparator decision and exact-current-
-revision acceptance. Hosted CI status is unverified. See the
+The configured native suite and selected-command turn-loop gate are independently
+accepted locally at `8f317763a3560bd774d0b61e134e7028a744412a`, under the approved
+provenance-validated dump contract. Literal strict cross-build comparison remains
+**FAILED**; the successful suite and failed reporting wrapper are separate results.
+Publication, hosted CI and whole-phase sign-off remain unverified. See the
 [bounded evidence ledger](docs/haunting-observations-evidence.md).
 
 The terminal harness is Linux-specific and uses a test-only preload library.

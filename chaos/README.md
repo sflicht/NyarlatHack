@@ -332,8 +332,9 @@ episodes. Whistle tone is not object identity or proof of companion obedience;
 map presentation exports no monster locations. Other window ports or suppressed
 output need not supply a notice. See the
 [evidence ledger](../docs/haunting-observations-evidence.md) for accepted local
-scope and the **still-failed strict turn-loop gate**; this is not whole-phase or
-consequential-vision (#26) completion.
+scope at `8f317763a`, including the approved provenance-validated turn-loop
+acceptance and preserved **strict comparison failure**. Local acceptance is not
+publication, whole-phase sign-off or consequential-vision (#26) completion.
 
 ## Safety and lifecycle limits
 

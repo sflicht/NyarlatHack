@@ -9,14 +9,18 @@ independent build evidence; require **every other byte** exact; preserve the
 original failed result. This record does not claim an independent Discord fetch.
 It implements the proposal in `/tmp/nyarl-turnloop-dump-contract-review.md:70–77`.
 
-Status: **proposed implementation with synthetic unit validation only; native
-acceptance and independent review pending**. Existing strict `compare_runs` and
+Status: **native selected-matrix acceptance independently PASS at
+`8f317763a3560bd774d0b61e134e7028a744412a` under this approved alternate contract**.
+See the [evidence ledger](haunting-observations-evidence.md) and retained local
+review `/tmp/nyarl-mode-fresh-acceptance-review.md`. Existing strict `compare_runs` and
 its cross-build mismatch negative remain unchanged. The original strict failed
 native execution at revision `170c68e502a91662df832ec6029603915f0a1666` remains
 FAILED forever at `/tmp/nyarl-episode-turnloop-work/final`; never overwrite or
 relabel it. The separate core evidence at `49d4e166d001d27072ba9b50f5854a70a8e70cb7`
-is also untouched. This does not close Task 8, exact-current-HEAD acceptance,
-the remaining matrix, or the whole phase. No gameplay rerun is authorized here.
+is also untouched. The selected local gate is accepted by independent review;
+the driver's conservative `task8_closed:false` remains unchanged. This is not
+literal strict whole-file success, hosted CI, publication or whole-phase sign-off.
+This documentation update performs no gameplay rerun.
 
 ## API and independent-evidence trust boundary
 
@@ -65,14 +69,15 @@ binary/data; its license pin is separately reviewed. `date_h_sha256` is `None`
 and `source_kind` is `historical-recorded-dump`; no generated source is invented.
 The old current-build OFF date.h remains unavailable; it is not inferred.
 
-## Opt-in driver integration (test-validated, not native acceptance)
+## Opt-in driver integration (locally accepted native execution)
 
 `--provenance-dumps` requires `--matrix` and all historical-stock arguments.
 The unittest adapter adds it only with `NYARLATHACK_TURNLOOP_PROVENANCE_DUMPS=1`.
 Default strict comparison and `result.json` remain unchanged, including failed
 cross-build dump comparisons. A separate `provenance-result.json` uses label
-`provenance-validated-dump-v1` and retains strict status/mismatches; Task 8 remains
-open. Driver-local cleanup must finish before publishing supplemental success;
+`provenance-validated-dump-v1` and retains strict status/mismatches and
+`task8_closed:false`; independent acceptance is recorded separately, not patched
+into this machine receipt. Driver-local cleanup must finish before supplemental success;
 outer family cleanup remains the existing supervisor's independent gate.
 
 `turnloop_header_bindings.py` checks full root HEAD, pinned reviewed Linux
@@ -89,8 +94,9 @@ Each copied run tuple is verified before launch and after play. Complete dump
 directory enumeration requires the frozen route's sole `1700000000` regular
 file; symlinks, directories, extra/missing filenames fail. Inputs, terminal and
 xlog stay exact. Same-build full dumps and event repeats remain exact. Sources
-and source tuples are checked again at completion. Native execution and
-independent specification/quality review remain pending.
+and source tuples are checked again at completion. Native execution and independent
+local acceptance at `8f317763a` are now recorded in the ledger; publication review
+and hosted checks are separate.
 
 ## Exact comparison boundary
 
