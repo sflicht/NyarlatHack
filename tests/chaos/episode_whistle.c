@@ -10,6 +10,16 @@
 #include <dlfcn.h>
 
 extern struct obj *nextgetobj;
+extern short disco[NUM_OBJECTS]; /* globalized external copy of o_init.o */
+
+static void hex_record(FILE *f, const void *data, size_t size)
+{
+    const unsigned char *p = data;
+    size_t n;
+    fputc('"', f);
+    for (n = 0; n < size; ++n) fprintf(f, "%02x", p[n]);
+    fputc('"', f);
+}
 
 /* Every chaos_state field; haunting counters are also exposed for review. */
 static void state_record(FILE *f, const struct you *player)
@@ -52,7 +62,7 @@ static void calibrate(void)
     static const unsigned seeds[] = {1, 2, 3, 4, 5, 6, 7, 8,
                                      9, 10, 11, 12, 13, 14, 15, 16};
     unsigned i;
-    int branch, zero, one;
+    int branch, zero, one, two, selection, wisdom;
     puts("[");
     for (i = 0; i < sizeof seeds / sizeof seeds[0]; ++i) {
         seeded_reset(seeds[i]);
@@ -61,9 +71,14 @@ static void calibrate(void)
         branch = rn2(2);
         one = rn2(100000);
         assert(reseed_count == 2 && reseed_period == INT_MAX);
+        seeded_reset(seeds[i]);
+        selection = rn2(8);
+        wisdom = rn2(19);
+        two = rn2(100000);
         printf("%s{\"seed\":%u,\"first_rn2_2\":%d,\"next_after_zero\":%d,"
-               "\"next_after_one\":%d}", i ? ",\n" : "", seeds[i],
-               branch, zero, one);
+               "\"next_after_one\":%d,\"next_after_two\":%d,"
+               "\"pet_selection\":%d,\"wisdom_draw\":%d}",
+               i ? ",\n" : "", seeds[i], branch, zero, one, two, selection, wisdom);
     }
     puts("\n]");
 }
@@ -89,6 +104,13 @@ int main(int argc, char **argv)
     struct you saved_u, after_u;
     int i, known, result, draws, next, expected;
     int saved_type_known;
+    int pet, pet_known, x, y, selection = -1, wisdom = -1, wisdom_delta = 0;
+    int discovery_slot = -1;
+    short saved_disco[NUM_OBJECTS];
+    struct rm saved_map[COLNO][ROWNO];
+    static const int positions[8][2] = {
+        {9,9}, {10,9}, {11,9}, {9,11}, {10,11}, {11,11}, {9,10}, {11,10}
+    };
     unsigned seed = 0;
     int dispatch, cancel_apply, inert, leaf;
     const struct sound_case *variant = 0;
@@ -105,13 +127,15 @@ int main(int argc, char **argv)
            || !strcmp(injection, "--inject-raw")
            || !strcmp(injection, "--inject-budget"));
     known = !strcmp(argv[1], "known");
+    pet_known = !strcmp(argv[1], "magic-pet-known");
+    pet = pet_known || !strcmp(argv[1], "magic-pet-unknown");
     cancel_apply = !strcmp(argv[1], "apply-cancel");
     inert = !strcmp(argv[1], "tagged-curio-inert");
     leaf = !strcmp(argv[1], "leaf-ordinary");
     dispatch = cancel_apply || inert || leaf;
     for (i = 0; i < (int)(sizeof sound_cases / sizeof sound_cases[0]); ++i)
         if (!strcmp(argv[1], sound_cases[i].name)) variant = &sound_cases[i];
-    assert(dispatch || variant || known || !strcmp(argv[1], "unknown"));
+    assert(pet || dispatch || variant || known || !strcmp(argv[1], "unknown"));
     assert(!*injection || (known && !variant));
     test_rng_control();
     test_rng_negative_control(argv[1]); /* Header control API; not action controls. */
@@ -162,13 +186,50 @@ int main(int argc, char **argv)
         assert(!o.blessed && !o.cursed);
     }
     saved_type_known = objects[o.otyp].oc_name_known;
+    if (pet) {
+        youmonst.mtyp = PM_HUMAN;
+        o.otyp = MAGIC_WHISTLE;
+        o.known = o.dknown = pet_known;
+        objects[o.otyp].oc_name_known = saved_type_known = pet_known;
+        assert(!Hallucination && !Blind && !o.blessed && !o.cursed);
+        assert(AEXE(A_WIS) == 0 && ACURR(A_WIS) == 12);
+        for (x = 7; x <= 17; ++x)
+            for (y = 7; y <= 13; ++y) {
+                levl[x][y].typ = ROOM;
+                levl[x][y].lit = 1;
+            }
+    }
     o.owt = weight(&o); invent = &o;
     memset(&sleeper, 0, sizeof sleeper);
     sleeper.data = &mons[PM_LITTLE_DOG]; sleeper.mhp = sleeper.mhpmax = 10;
     sleeper.mx = 11; sleeper.my = 10; sleeper.msleeping = 1;
     sleeper.mcanmove = 1; add_mx(&sleeper, MX_EDOG); fmon = &sleeper;
     if (variant || dispatch) sleeper.mtyp = PM_LITTLE_DOG;
-    assert(!sleeper.mtame);
+    if (pet) {
+        sleeper.mtyp = PM_LITTLE_DOG;
+        sleeper.mtame = 10; sleeper.mpeaceful = 1;
+        sleeper.msleeping = 0; sleeper.mcansee = 1;
+        place_monster(&sleeper, 15, 10);
+        vision_reset(); vision_recalc(0);
+        for (x = 1; x < COLNO; ++x)
+            for (y = 0; y < ROWNO; ++y) newsym(x, y);
+        assert(canspotmon((&sleeper)) && canseemon((&sleeper)));
+        assert(fmon == &sleeper && !sleeper.nmon && m_at(15,10) == &sleeper);
+        assert(!ftrap && !sleeper.mtrapped && distu(15,10) > 2);
+        memcpy(saved_map, levl, sizeof saved_map);
+        memcpy(saved_disco, disco, sizeof saved_disco);
+        for (x = 0; x < COLNO; ++x)
+            for (y = 0; y < ROWNO; ++y) {
+                assert(level.monsters[x][y] == ((x == 15 && y == 10) ? &sleeper : NULL));
+                assert(!t_at(x,y));
+            }
+        for (i = 0; i < 8; ++i)
+            assert(goodpos(positions[i][0], positions[i][1], &sleeper, 0));
+        for (i = bases[TOOL_CLASS]; disco[i] && disco[i] != MAGIC_WHISTLE; ++i)
+            assert(i < NUM_OBJECTS - 1);
+        discovery_slot = i;
+        assert(!disco[i]);
+    } else assert(!sleeper.mtame);
     assert(EDOG(&sleeper)->whistletime == 0);
     chaos_start();
     assert(u.chaos.safe == 1);
@@ -196,6 +257,18 @@ int main(int argc, char **argv)
         seeded_reset(seed);
     }
     nextgetobj = cancel_apply ? NULL : &o;
+    if (pet) {
+        assert(getenv("WHISTLE_SEED") && !strcmp(getenv("WHISTLE_SEED"), "2"));
+        seed = 2;
+        seeded_reset(seed);
+        selection = rn2(8);
+        if (!pet_known) {
+            wisdom = rn2(19);
+            wisdom_delta = wisdom > ACURR(A_WIS);
+        }
+        expected = rn2(100000);
+        seeded_reset(seed);
+    }
     result = doapply();
     /* Test-only perturbations are inside the same measured native interval. */
     if (!strcmp(injection, "--inject-native")) (void)rn2(100000);
@@ -222,6 +295,53 @@ int main(int argc, char **argv)
         assert(!nextgetobj && result == (leaf ? MOVE_DEFAULT : MOVE_CANCELLED));
         assert(draws == 0 && next == expected && reseed_period == INT_MAX);
         assert(invent == &o);
+    } else if (pet) {
+        fprintf(stderr, "{\"case\":\"%s\",\"seed\":%u,\"rng_draws\":%d,"
+                "\"next_draw\":%d,\"expected_next\":%d,\"selection\":%d,"
+                "\"wisdom_draw\":%d,\"wisdom_before\":%d,\"wisdom_after\":%d,"
+                "\"type_before\":%d,\"type_after\":%d,\"known\":%d,\"dknown\":%d,"
+                "\"return\":%d,\"move_default\":%d,\"old\":[15,10],\"new\":[%d,%d],"
+                "\"sleeping\":%d,\"whistletime\":%ld,"
+                "\"player_before\":[%d,%d,%d,%d,%d],"
+                "\"player_after\":[%d,%d,%d,%d,%d],"
+                "\"monster_before\":[%d,%d,%d,%d,%d,%d,%d],"
+                "\"monster_after\":[%d,%d,%d,%d,%d,%d,%d],\"map_before\":",
+                argv[1], seed, draws, next, expected, selection, wisdom,
+                saved_u.aexe.a[A_WIS], AEXE(A_WIS), saved_type_known,
+                objects[o.otyp].oc_name_known, o.known, o.dknown, result, MOVE_DEFAULT,
+                sleeper.mx, sleeper.my, sleeper.msleeping, EDOG(&sleeper)->whistletime,
+                saved_u.ux, saved_u.uy, saved_u.uhp, saved_u.uen, saved_u.uluck,
+                u.ux, u.uy, u.uhp, u.uen, u.uluck,
+                saved_mon.mtyp, saved_mon.mtame, saved_mon.mhp, saved_mon.mhpmax,
+                saved_mon.mtrapped, saved_mon.mux, saved_mon.muy,
+                sleeper.mtyp, sleeper.mtame, sleeper.mhp, sleeper.mhpmax,
+                sleeper.mtrapped, sleeper.mux, sleeper.muy);
+        hex_record(stderr, saved_map, sizeof saved_map);
+        fputs(",\"map_after\":", stderr); hex_record(stderr, levl, sizeof saved_map);
+        fputs(",\"discovery_before\":", stderr);
+        hex_record(stderr, saved_disco, sizeof saved_disco);
+        fputs(",\"discovery_after\":", stderr); hex_record(stderr, disco, sizeof saved_disco);
+        fputs("}\n", stderr); fflush(stderr);
+        assert(!nextgetobj && result == MOVE_DEFAULT);
+        assert(draws == (pet_known ? 1 : 2) && next == expected);
+        assert(reseed_period == INT_MAX);
+        assert(sleeper.mx == positions[selection][0] && sleeper.my == positions[selection][1]);
+        assert(invent == &o && isok(sleeper.mx, sleeper.my));
+        assert(levl[sleeper.mx][sleeper.my].typ == ROOM);
+        assert(distu(sleeper.mx, sleeper.my) <= 2 && distu(sleeper.mx, sleeper.my) > 0);
+        assert(canspotmon((&sleeper)) && canseemon((&sleeper)));
+        assert(fmon == &sleeper && !sleeper.nmon && !ftrap && !sleeper.mtrapped);
+        for (x = 0; x < COLNO; ++x)
+            for (y = 0; y < ROWNO; ++y) {
+                assert(level.monsters[x][y] ==
+                       ((x == sleeper.mx && y == sleeper.my) ? &sleeper : NULL));
+                assert(!t_at(x,y));
+            }
+        assert(!memcmp(saved_map, levl, sizeof saved_map));
+        assert(objects[o.otyp].oc_name_known == 1);
+        if (!pet_known) saved_disco[discovery_slot] = MAGIC_WHISTLE;
+        assert(!memcmp(saved_disco, disco, sizeof saved_disco));
+        assert(AEXE(A_WIS) == saved_u.aexe.a[A_WIS] + wisdom_delta);
     } else if (variant) {
         assert(!nextgetobj && result == (variant->magic ? MOVE_DEFAULT : MOVE_PARTIAL));
         assert(draws == variant->draws && next == expected);
@@ -232,8 +352,14 @@ int main(int argc, char **argv)
     }
     assert(moves == before_moves && monstermoves == before_monstermoves);
     assert(!memcmp(&saved_o, &o, sizeof o));
-    assert(objects[o.otyp].oc_name_known == saved_type_known);
-    if (dispatch) {
+    assert(objects[o.otyp].oc_name_known == (pet ? 1 : saved_type_known));
+    if (pet) {
+        /* rloc_to -> place_monster coordinates and set_apparxy tame smell. */
+        assert(!sleeper.msleeping && EDOG(&sleeper)->whistletime == 0);
+        assert(sleeper.mux == u.ux && sleeper.muy == u.uy);
+        saved_mon.mx = positions[selection][0]; saved_mon.my = positions[selection][1];
+        saved_mon.mux = u.ux; saved_mon.muy = u.uy;
+    } else if (dispatch) {
         assert(sleeper.msleeping == !leaf);
         assert(EDOG(&sleeper)->whistletime == (leaf ? moves : 0));
         saved_mon.msleeping = !leaf;
@@ -251,13 +377,19 @@ int main(int argc, char **argv)
     assert(!memcmp(&saved_dog, EDOG(&sleeper), sizeof saved_dog));
     assert(!memcmp(&saved_mon, &sleeper, sizeof sleeper));
     after_u = u;
-    /* Only seq may differ: one legacy apply attempt plus three opted-in
+    /* For all prior cases only seq may differ: one legacy apply plus three opted-in
      * observations. safe, version, spending, reservation, IDs and every effect
      * byte remain covered; no whole-chaos masking. Driver checks exact seqs. */
     after_u.chaos.seq = saved_u.chaos.seq;
+    /* Only newly discovered magic may exercise wisdom; assert before masking. */
+    if (pet && !pet_known) {
+        assert(after_u.aexe.a[A_WIS] == saved_u.aexe.a[A_WIS] + wisdom_delta);
+        after_u.aexe.a[A_WIS] = saved_u.aexe.a[A_WIS];
+    }
     assert(!memcmp(&saved_u.chaos, &after_u.chaos, sizeof saved_u.chaos));
     assert(!memcmp(&saved_u, &after_u, sizeof saved_u));
-    if (dispatch)
+    if (pet) { /* private pet diagnostic already emitted before assertions */ }
+    else if (dispatch)
         fprintf(stderr, "{\"case\":\"%s\",\"seed\":%u,\"otyp\":%d,"
                 "\"oclass\":%d,\"weight\":%u,\"curio_tag\":%d,"
                 "\"known\":%d,\"dknown\":%d,\"type_known\":%d,"

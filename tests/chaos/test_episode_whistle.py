@@ -42,6 +42,7 @@ SOUND_CASES = {
 
 
 DISPATCH_CASES = ("tagged-curio-inert", "leaf-ordinary", "apply-cancel")
+PET_CASES = ("magic-pet-known", "magic-pet-unknown")
 
 
 def cancel_at_prompt(g, exe, child_env, work, supervisor, cancel):
@@ -223,6 +224,7 @@ def main(argv=None):
             + sorted((root / "win/curses").glob("*.o"))
         )
         transforms = {
+            root / "src/o_init.o": ["--globalize-symbol=disco"],
             root / "sys/unix/unixmain.o": ["--redefine-sym=main=original_game_main"],
             root / "src/invent.o": ["--globalize-symbol=nextgetobj"],
             root / "src/rnd.o": [
@@ -298,6 +300,21 @@ def main(argv=None):
         # Measured native libc seeds: fail rather than reselect on a new platform.
         # No measured action is retried to find a branch.
         assert {branch: row["seed"] for branch, row in seeds.items()} == {0: 2, 1: 1}
+        # Pet-only calibration pins measured before fixing these constants.
+        assert {
+            key: seeds[0][key]
+            for key in (
+                "pet_selection",
+                "wisdom_draw",
+                "next_after_one",
+                "next_after_two",
+            )
+        } == {
+            "pet_selection": 2,
+            "wisdom_draw": 16,
+            "next_after_one": 66719,
+            "next_after_two": 86788,
+        }
         save(
             out / "rng-calibration.json",
             {
@@ -308,8 +325,9 @@ def main(argv=None):
         )
         OwnedGame = supervisor.owned_game_type(gameplay_support.Game, cancel)
         results = []
-        for case in ("known", "unknown", *SOUND_CASES, *DISPATCH_CASES):
+        for case in ("known", "unknown", *SOUND_CASES, *DISPATCH_CASES, *PET_CASES):
             descriptor = SOUND_CASES.get(case)
+            pet = case in PET_CASES
             dispatch = case in DISPATCH_CASES
             calibrated = seeds[case == "magic-cursed-success"]
             pair = []
@@ -334,7 +352,7 @@ def main(argv=None):
                     NYARLATHACK_OBSERVATIONS=str(int(enabled)),
                     WHISTLE_CHAOS_STATE=str(work / "chaos-state.json"),
                 )
-                if descriptor or dispatch:
+                if descriptor or dispatch or pet:
                     child_env["WHISTLE_SEED"] = str(calibrated["seed"])
                 if case == "apply-cancel":
                     raw, diagnostic = cancel_at_prompt(
@@ -351,6 +369,8 @@ def main(argv=None):
                         cancel=cancel,
                     )
                 message = descriptor[0] if descriptor else "high whistling sound"
+                if pet:
+                    message = "strange whistling sound"
                 if case in ("apply-cancel", "tagged-curio-inert"):
                     assert b"whistling sound" not in raw and b"humming noise" not in raw
                     assert raw.count(b"This curio is inert.") == (
@@ -359,6 +379,37 @@ def main(argv=None):
                 else:
                     assert raw.count(("You produce a " + message + ".").encode()) == 1
                 state = json.loads(diagnostic)
+                if pet:
+                    known = case == "magic-pet-known"
+                    assert state["case"] == case and state["seed"] == 2
+                    assert state["rng_draws"] == (1 if known else 2)
+                    assert (
+                        state["next_draw"]
+                        == state["expected_next"]
+                        == calibrated["next_after_one" if known else "next_after_two"]
+                    )
+                    assert state["selection"] == calibrated["pet_selection"]
+                    assert state["wisdom_draw"] == (
+                        -1 if known else calibrated["wisdom_draw"]
+                    )
+                    assert state["wisdom_before"] == 0
+                    assert state["wisdom_after"] == (
+                        0 if known else calibrated["wisdom_draw"] > 12
+                    )
+                    assert state["type_before"] == known and state["type_after"] == 1
+                    assert state["known"] == state["dknown"] == known
+                    assert state["return"] == state["move_default"]
+                    assert state["old"] == [15, 10] and state["new"] != state["old"]
+                    assert state["new"] == [11, 9]
+                    assert state["player_before"] == state["player_after"]
+                    assert state["monster_before"][:5] == state["monster_after"][:5]
+                    assert state["monster_before"][5:] == [0, 0]
+                    assert state["monster_after"][5:] == [10, 10]
+                    assert state["sleeping"] == state["whistletime"] == 0
+                    assert state["map_before"] == state["map_after"]
+                    assert (
+                        state["discovery_before"] == state["discovery_after"]
+                    ) == known
                 if dispatch:
                     assert state["case"] == case and state["seed"] == 2
                     assert state["rng_draws"] == 0
@@ -442,7 +493,7 @@ def main(argv=None):
                     }
                 )
             assert pair[0] == pair[1], "native terminal/state off-on mismatch"
-        assert len(results) == 20
+        assert len(results) == 24
         save(out / "native-results.json", results)
         # Expected aborts use owned status capture, never a caught bounded error.
         OwnedGame = supervisor.owned_game_type(gameplay_support.Game, cancel)
@@ -513,7 +564,7 @@ def main(argv=None):
             )
         assert len(negatives) == 3
         save(out / "negative-results.json", negatives)
-        assert len(results) == 23
+        assert len(results) == 27
         for result in results:
             if result["enabled"]:
                 obs = result["observations"]
@@ -537,6 +588,8 @@ def main(argv=None):
                         "notice",
                         SOUND_CASES[result["case"]][1]
                         if result["case"] in SOUND_CASES
+                        else "sound_strange"
+                        if result["case"] in PET_CASES
                         else "sound_high",
                     ),
                     ("whistling", "completed", "none"),
