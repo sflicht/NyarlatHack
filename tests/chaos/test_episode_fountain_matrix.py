@@ -38,13 +38,29 @@ DOMAINS = (
 )
 
 
+# Finite fixture configuration, not a public observation vocabulary.
+SPECIAL_CASES = [
+    dict(case=name, fate=fate, blessed=blessed, luck=luck,
+         hallucination=hallucination, no_mouth=no_mouth, restore=restore)
+    for name, fate, blessed, luck, hallucination, no_mouth, restore in (
+        ("magic-refresh", 1, True, 0, False, False, False),
+        ("magic-low-luck", 10, True, 0, False, False, True),
+        ("magic-high-luck", 10, True, 4, False, False, True),
+        ("magic-negative-luck", 20, True, -1, False, False, False),
+        ("depletion", 10, False, 0, False, False, False),
+        ("hallucination-map", 26, False, 0, True, False, False),
+        ("no-mouth", 10, False, 0, False, True, False),
+    )
+]
+
+
 def validate_pair(off, on):
     assert off["state"]["count"] == on["state"]["count"], "native draw count mismatch"
     assert off["state"]["next"] == on["state"]["next"], "native continuation mismatch"
     assert off == on, "canonical native state / terminal / input / RNG mismatch"
 
 
-def validate_history(raw, before, after, fate, enabled):
+def validate_history(raw, before, after, fate, enabled, case=None):
     from chaos.episodes import parse_episode_event, project_episodes
 
     records = [parse_episode_event(line) for line in raw.splitlines()]
@@ -96,14 +112,15 @@ def validate_history(raw, before, after, fate, enabled):
         else None
     )
     root = 6 if fate == 23 else 5
-    if enabled:
+    rootless = case == "no-mouth"
+    if enabled and not rootless:
         obs(before, "started")
         if fact:
-            obs(after, "notice", root, fact)
+            obs(before if case else after, "notice", root, fact)
         obs(after, "completed", root)
     assert records == expected, "exact native history mismatch"
     groups = []
-    if enabled and fact:
+    if enabled and fact and not rootless:
         groups = [
             dict(
                 operation="fountain_drink",
@@ -123,7 +140,7 @@ def validate_history(raw, before, after, fate, enabled):
         episodes=groups,
         coverage={
             k: dict(
-                count=int(k == "completed_without_notice" and enabled and not fact),
+                count=int(k == "completed_without_notice" and enabled and not fact and not rootless),
                 saturated=False,
             )
             for k in (
@@ -211,7 +228,7 @@ def main():
         raise RuntimeError("native_driver_supervision.py outer context required")
     if any(
         os.environ.get(key)
-        for key in ("FOUNTAIN_INJECTION", "LD_PRELOAD", "LD_LIBRARY_PATH")
+        for key in ("FOUNTAIN_INJECTION", "FOUNTAIN_CASE", "LD_PRELOAD", "LD_LIBRARY_PATH")
     ):
         raise RuntimeError("unsafe ambient native override")
     parser = argparse.ArgumentParser()
@@ -371,10 +388,19 @@ def main():
         validate_manifest(chosen)
         save(out / "chosen-manifest.json", chosen)  # frozen before any action
         chosen_hash = digest(out / "chosen-manifest.json")
+        special_calibration = json.loads(run([exe, "--calibrate-specials"], "special-calibration"))
+        assert len(special_calibration) == 4096
+        special_chosen = []
+        for case in SPECIAL_CASES:
+            pick = next(r for r in special_calibration if r["fate"] == case["fate"]
+                        and (case["case"] != "depletion" or r["dry"] == 0))
+            special_chosen.append(dict(case, seed=pick["seed"]))
+        save(out / "special-manifest.json", special_chosen)
+        special_hash = digest(out / "special-manifest.json")
         negatives = []
         healthy = None
         healthy_history = None
-        for row, injection in [(r, None) for r in chosen] + [
+        for row, injection in [(r, None) for r in chosen + special_chosen] + [
             (chosen[0], mode) for mode in ("native", "raw", "budget")
         ]:
             pair = []
@@ -383,6 +409,7 @@ def main():
                 work = out / (
                     "negative-" + injection
                     if injection
+                    else (row["case"] + "-" + ("on" if enabled else "off")) if "case" in row
                     else "fate-%02d-%s" % (row["fate"], "on" if enabled else "off")
                 )
                 g = Game(selection.tuple_dir, clock, root=work)
@@ -407,6 +434,9 @@ def main():
                     FOUNTAIN_STATE=str(work / "state.json"),
                 )
                 child.pop("FOUNTAIN_INJECTION", None)
+                child.pop("FOUNTAIN_CASE", None)
+                if "case" in row:
+                    child["FOUNTAIN_CASE"] = row["case"]
                 if injection:
                     child["FOUNTAIN_INJECTION"] = injection
                 proof = []
@@ -431,10 +461,15 @@ def main():
                                 os._exit(127)
                         g.pid, g.fd = pid, fd
                         text = g.read(5)
-                        assert b"Drink from the fountain?" in text, text
-                        assert g._reader_pid == pid
-                        proof.append("confirmation")
-                        text = g.send(b"y")
+                        if row.get("no_mouth"):
+                            assert b"You have no mouth to drink with!" in text, text
+                            assert b"Drink from the fountain?" not in text
+                            proof.append("no-mouth-before-prompt")
+                        else:
+                            assert b"Drink from the fountain?" in text, text
+                            assert g._reader_pid == pid
+                            proof.append("confirmation")
+                            text = g.send(b"y")
                         deadline = time.monotonic() + 10
                         for _ in range(24):
                             assert time.monotonic() < deadline
@@ -459,7 +494,8 @@ def main():
                     save(work / "inputs.json", g.inputs)
                     save(work / "prompt-proof.json", proof)
                 state = json.loads((work / "state.json").read_text())
-                assert set(state["before"]) == set(DOMAINS) == set(state["after"])
+                domains = set(DOMAINS) | ({"vision"} if "case" in row else set())
+                assert set(state["before"]) == domains == set(state["after"])
                 raw_history = (g.run / "events.jsonl").read_bytes()
                 # Injection is after journal terminal; compare to frozen healthy
                 # contexts and exact bytes, not mutated native budget context.
@@ -470,10 +506,14 @@ def main():
                     history_state["context_after"],
                     row["fate"],
                     enabled,
+                    row.get("case"),
                 )
                 pair_histories.append(events)
                 fate = row["fate"]
                 witness_text = (
+                    b"You have no mouth to drink with!" if row.get("no_mouth")
+                    else b"This makes you feel great!" if row.get("restore")
+                    else
                     b"The cool draught refreshes you."
                     if fate < 10
                     else b"This tepid water is tasteless."
@@ -494,6 +534,8 @@ def main():
                     }[fate]
                 )
                 assert witness_text in g.raw
+                if row.get("case") == "depletion":
+                    assert b"fountain dries up!" in g.raw
                 if fate == 19:
                     assert len(proof) > 1, "real enlightenment menu must be dismissed"
                 pair.append(
@@ -515,7 +557,7 @@ def main():
                     )
                     save(out / "negative-controls.json", negatives)
                     continue
-                if row["fate"] == 1 and enabled:
+                if row["fate"] == 1 and enabled and "case" not in row:
                     healthy = pair[-1]
                     healthy_history = raw_history
                 results.append(
@@ -537,22 +579,23 @@ def main():
                 for i, r in enumerate(r for r in pair_histories[1] if r["v"] == 1)
             ]
             assert digest(out / "chosen-manifest.json") == chosen_hash
-        assert len(results) == 60 and len(negatives) == 3
+            assert digest(out / "special-manifest.json") == special_hash
+        assert len(results) == 60 + 2 * len(SPECIAL_CASES) and len(negatives) == 3
         save(
             out / "result.json",
             dict(
-                normal_actions=60,
+                normal_actions=len(results),
+                special_cases=len(SPECIAL_CASES),
                 ordinary_fates=30,
                 preflight_candidates=4096,
                 preflight_draws=4096,
+                special_preflight_candidates=len(special_calibration),
+                special_preflight_draws=sum(r["draws"] for r in special_calibration),
                 measured_action_draws=sum(r["count"] for r in results),
                 sentinel_draws=len(results),
                 scope="action counts exclude native startup, RNG controls and one fate-verification draw per process",
                 deferred=[
                     "fatal",
-                    "magic",
-                    "hallucination",
-                    "no-mouth",
                     "decline-potion",
                 ],
             ),

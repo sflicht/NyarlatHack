@@ -150,6 +150,60 @@ class MatrixOracleTests(unittest.TestCase):
         with self.assertRaises(AssertionError):
             matrix.validate_negative(healthy, bad, "budget")
 
+    def test_special_manifest_is_finite_and_explicit(self):
+        self.assertEqual(
+            [row["case"] for row in matrix.SPECIAL_CASES],
+            ["magic-refresh", "magic-low-luck", "magic-high-luck",
+             "magic-negative-luck", "depletion", "hallucination-map", "no-mouth"],
+        )
+        for row in matrix.SPECIAL_CASES:
+            self.assertEqual(set(row), {"case", "fate", "blessed", "luck", "hallucination", "no_mouth", "restore"})
+
+    @unittest.skipUnless(
+        os.environ.get("FOUNTAIN_MATRIX_EVIDENCE"), "explicit native evidence required"
+    )
+    def test_actual_special_pairs_and_history_mutations(self):
+        for case in matrix.SPECIAL_CASES:
+            pairs = []
+            for enabled in (False, True):
+                work = BASELINE / (case["case"] + ("-on" if enabled else "-off"))
+                state = json.loads((work / "state.json").read_text())
+                raw = (work / "run/events.jsonl").read_bytes()
+                matrix.validate_history(raw, state["context_before"],
+                                        state["context_after"], case["fate"], enabled,
+                                        case["case"])
+                pairs.append(dict(state=state,
+                                  terminal=(work / "terminal.stdout").read_bytes().hex(),
+                                  inputs=json.loads((work / "inputs.json").read_text())))
+                if enabled:
+                    rows = [json.loads(line) for line in raw.splitlines()]
+                    for field in ("secret", "vitals", "observation"):
+                        bad = copy.deepcopy(rows)
+                        if field == "secret":
+                            bad[-1][field] = "private-native-identity"
+                        elif field == "vitals":
+                            bad[-1][field]["hp"] += 1
+                        else:
+                            bad[-1][field] = dict(operation="fountain_drink", stage="notice",
+                                                 root_seq=5, fact="water_refreshed")
+                        with self.subTest(case=case["case"], field=field), self.assertRaises((ValueError, AssertionError)):
+                            matrix.validate_history(b"\n".join(json.dumps(r).encode() for r in bad),
+                                                    state["context_before"], state["context_after"],
+                                                    case["fate"], True, case["case"])
+            matrix.validate_pair(*pairs)
+            for field in ("vision", "player"):
+                bad = copy.deepcopy(pairs[1])
+                bad["state"]["after"][field] = None
+                with self.subTest(case=case["case"], domain=field), self.assertRaises(AssertionError):
+                    matrix.validate_pair(pairs[0], bad)
+            state = pairs[1]["state"]
+            if case["restore"]:
+                self.assertEqual(sum(a - 12 for a, _ in state["special"]["attributes"]),
+                                 6 if case["luck"] == 4 else 1)
+            if case["no_mouth"]:
+                self.assertEqual(pairs[1]["inputs"], [])
+                self.assertEqual(state["count"], 0)
+
     def test_manifest_requires_all_actual_fates(self):
         rows = [dict(fate=i, seed=i) for i in range(1, 31)]
         matrix.validate_manifest(rows)
