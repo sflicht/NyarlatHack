@@ -52,6 +52,17 @@ Protocol) tests. The separate pinned ChatGPT OAuth route has now been exercised
 with real GPT-5.6 Luna calls. Long-run balance and adversarial public-server
 hosting remain unvalidated.
 
+## Phase-one observation foundation
+
+An optional version-2 event extension records selected whistle actions and
+confirmed fountain drinks, with delivered public notices and bounded offline
+episode summaries. Default version-1 events and the whisper request API remain
+unchanged. Opt-in logs are **not inputs to the existing director or authoring
+pipeline**; use the [offline observation guide](chaos/README.md#offline-selected-action-observations).
+This adds no whisper mechanic, fountain remapping, companion behavior, Lua or
+Luna change, budget change, or new recurrence. It does not deliver the requested
+consequential-vision feature (#26), nor close #21 or the whole phase.
+
 ## Build
 
 On Debian/Ubuntu, install the compiler and build dependencies:
@@ -102,8 +113,14 @@ python3 -m unittest discover -s tests/chaos -p 'test_*.py' -v
 
 For full native acceptance, use the maintained
 [fresh reviewed-checkout recipe](docs/quality-control.md#local-equivalents).
-Platform/whistle driver isolation and native review/acceptance gates remain
-pending; caller wiring alone is not a passing full-suite result.
+Platform/whistle isolation and the configured fresh local native suite are
+accepted at `49d4e166d001d27072ba9b50f5854a70a8e70cb7`: 618 tests,
+607 passed, 11 top-level skips; seven nested matrix-oracle methods ran separately
+without skips. These counts do **not** establish whole-phase completion.
+The strict selected-command turn-loop gate remains **FAILED** on cross-build
+dump identity bytes, pending the user's comparator decision and exact-current-
+revision acceptance. Hosted CI status is unverified. See the
+[bounded evidence ledger](docs/haunting-observations-evidence.md).
 
 The terminal harness is Linux-specific and uses a test-only preload library.
 It records actual input bytes, terminal output, event logs, score logs and

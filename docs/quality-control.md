@@ -57,11 +57,15 @@ secret is absent.
 **Platform/whistle process isolation is implemented and accepted.** Their
 supervisors isolate process-global umask and hard resource limits. The narrow
 fountain hook/fixture and strict native adapter reviews are also accepted; this
-does not accept the whole phase or establish hosted CI success. Caller wiring
-and source-wiring unit tests alone do not verify native receipts. Hosted execution
-and whole-phase acceptance remain open.
+does not accept the whole phase or establish hosted CI success. The configured
+fresh local suite at `49d4e166d001d27072ba9b50f5854a70a8e70cb7` is independently
+accepted: 618 tests in 287.257 seconds, 607 passed and 11 top-level skips.
+Seven matrix-oracle methods ran separately with zero skips (not seven additional
+top-level tests). See the [evidence ledger](haunting-observations-evidence.md)
+for the skip accounting, native scope, provenance and failed strict turn-loop
+gate. Hosted execution is unverified; whole-phase acceptance remains open.
 
-The proposed canonical recipe below requires authorization and a fresh
+The portable same-checkout reproduction recipe below requires authorization and a fresh
 full-history checkout already at the independently approved revision, with
 reviewed hooks and fixtures committed. All drivers, helpers, fixtures and
 discovery must come from that same checkout. Separately verified reuse of frozen
@@ -162,8 +166,12 @@ unit tests use synthetic supervision results or real preflight failures without
 building; they are not native acceptance evidence.
 
 Registration does **not** resolve the strict turn-loop gate: it remains **FAILED,
-pending user decision**. Whole-phase acceptance and fresh exact-revision native
-CI remain open; no fatal-driver gate is registered by this change.
+pending user decision** about the dump comparator. The accepted fresh local
+suite deliberately leaves the selected-command driver and three native turn-loop
+oracle methods unexecuted. Exact-current-revision turn-loop acceptance and
+whole-phase acceptance remain open; hosted CI has not been verified. The earlier
+controlled native fatal run satisfies Task 7's fatal-interruption requirement,
+not Task 8's turn-loop contract; no fatal-driver gate is registered here.
 Delivery allocates its own private parent
 under the same `/tmp`-backed `TMPDIR`. Observations remain child-scoped, not enabled
 globally in the suite environment.
