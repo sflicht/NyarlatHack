@@ -30,7 +30,7 @@ static void state_record(FILE *f, const struct you *player)
             player->haunt.echo_pending, player->haunt.echo_delivered);
 }
 
-/* Preflight only: the real copied rnd.o and libc, never an action reroll. */
+/* Preflight and action setup: real copied rnd.o/libc, never action rerolls. */
 static void seeded_reset(unsigned seed)
 {
     /* replay_clock interposes srandom and ignores its argument. New seeded
@@ -90,6 +90,7 @@ int main(int argc, char **argv)
     int i, known, result, draws, next, expected;
     int saved_type_known;
     unsigned seed = 0;
+    int dispatch, cancel_apply, inert, leaf;
     const struct sound_case *variant = 0;
     long before_moves, before_monstermoves;
     const char *injection = argc == 3 ? argv[2] : "";
@@ -104,9 +105,13 @@ int main(int argc, char **argv)
            || !strcmp(injection, "--inject-raw")
            || !strcmp(injection, "--inject-budget"));
     known = !strcmp(argv[1], "known");
+    cancel_apply = !strcmp(argv[1], "apply-cancel");
+    inert = !strcmp(argv[1], "tagged-curio-inert");
+    leaf = !strcmp(argv[1], "leaf-ordinary");
+    dispatch = cancel_apply || inert || leaf;
     for (i = 0; i < (int)(sizeof sound_cases / sizeof sound_cases[0]); ++i)
         if (!strcmp(argv[1], sound_cases[i].name)) variant = &sound_cases[i];
-    assert(variant || known || !strcmp(argv[1], "unknown"));
+    assert(dispatch || variant || known || !strcmp(argv[1], "unknown"));
     assert(!*injection || (known && !variant));
     test_rng_control();
     test_rng_negative_control(argv[1]); /* Header control API; not action controls. */
@@ -146,13 +151,23 @@ int main(int argc, char **argv)
         assert((!!Hallucination) == variant->hallucinated);
         assert(!Halluc_resistance);
     }
+    if (dispatch) {
+        youmonst.mtyp = PM_HUMAN;
+        if (leaf) { o.otyp = EUCALYPTUS_LEAF; o.oclass = FOOD_CLASS; }
+        if (inert) {
+            o.curio_tag = CHAOS_CURIO_GENERATED;
+            assert(!u.curio.owner && !chaos_curio_matches(&o));
+        }
+        objects[o.otyp].oc_name_known = 0;
+        assert(!o.blessed && !o.cursed);
+    }
     saved_type_known = objects[o.otyp].oc_name_known;
     o.owt = weight(&o); invent = &o;
     memset(&sleeper, 0, sizeof sleeper);
     sleeper.data = &mons[PM_LITTLE_DOG]; sleeper.mhp = sleeper.mhpmax = 10;
     sleeper.mx = 11; sleeper.my = 10; sleeper.msleeping = 1;
     sleeper.mcanmove = 1; add_mx(&sleeper, MX_EDOG); fmon = &sleeper;
-    if (variant) sleeper.mtyp = PM_LITTLE_DOG;
+    if (variant || dispatch) sleeper.mtyp = PM_LITTLE_DOG;
     assert(!sleeper.mtame);
     assert(EDOG(&sleeper)->whistletime == 0);
     chaos_start();
@@ -173,7 +188,14 @@ int main(int argc, char **argv)
         expected = rn2(100000);
         seeded_reset(seed);
     }
-    nextgetobj = &o;
+    if (dispatch) {
+        assert(getenv("WHISTLE_SEED") && !strcmp(getenv("WHISTLE_SEED"), "2"));
+        seed = 2;
+        seeded_reset(seed);
+        expected = rn2(100000);
+        seeded_reset(seed);
+    }
+    nextgetobj = cancel_apply ? NULL : &o;
     result = doapply();
     /* Test-only perturbations are inside the same measured native interval. */
     if (!strcmp(injection, "--inject-native")) (void)rn2(100000);
@@ -196,7 +218,11 @@ int main(int argc, char **argv)
                 "\"expected\":%d,\"return\":%d}\n", draws, next, expected, result);
         fflush(stderr);
     }
-    if (variant) {
+    if (dispatch) {
+        assert(!nextgetobj && result == (leaf ? MOVE_DEFAULT : MOVE_CANCELLED));
+        assert(draws == 0 && next == expected && reseed_period == INT_MAX);
+        assert(invent == &o);
+    } else if (variant) {
         assert(!nextgetobj && result == (variant->magic ? MOVE_DEFAULT : MOVE_PARTIAL));
         assert(draws == variant->draws && next == expected);
         assert(reseed_period == INT_MAX);
@@ -207,7 +233,12 @@ int main(int argc, char **argv)
     assert(moves == before_moves && monstermoves == before_monstermoves);
     assert(!memcmp(&saved_o, &o, sizeof o));
     assert(objects[o.otyp].oc_name_known == saved_type_known);
-    if (variant) {
+    if (dispatch) {
+        assert(sleeper.msleeping == !leaf);
+        assert(EDOG(&sleeper)->whistletime == (leaf ? moves : 0));
+        saved_mon.msleeping = !leaf;
+        saved_dog.whistletime = leaf ? moves : 0;
+    } else if (variant) {
         assert(sleeper.msleeping == variant->sleeping);
         assert(EDOG(&sleeper)->whistletime == (variant->whistle_time ? moves : 0));
         saved_mon.msleeping = variant->sleeping;
@@ -226,7 +257,21 @@ int main(int argc, char **argv)
     after_u.chaos.seq = saved_u.chaos.seq;
     assert(!memcmp(&saved_u.chaos, &after_u.chaos, sizeof saved_u.chaos));
     assert(!memcmp(&saved_u, &after_u, sizeof saved_u));
-    if (variant)
+    if (dispatch)
+        fprintf(stderr, "{\"case\":\"%s\",\"seed\":%u,\"otyp\":%d,"
+                "\"oclass\":%d,\"weight\":%u,\"curio_tag\":%d,"
+                "\"known\":%d,\"dknown\":%d,\"type_known\":%d,"
+                "\"blessed\":%d,\"cursed\":%d,\"return\":%d,"
+                "\"move_default\":%d,\"move_cancelled\":%d,"
+                "\"rng_draws\":%d,\"next_draw\":%d,\"expected_next\":%d,"
+                "\"sleeping\":%d,\"whistletime\":%ld,"
+                "\"player_unchanged\":true,\"inventory_unchanged\":true,"
+                "\"monster_other_bytes_unchanged\":true}\n",
+                argv[1], seed, o.otyp, o.oclass, o.owt, o.curio_tag,
+                o.known, o.dknown, objects[o.otyp].oc_name_known,
+                o.blessed, o.cursed, result, MOVE_DEFAULT, MOVE_CANCELLED,
+                draws, next, expected, sleeper.msleeping, EDOG(&sleeper)->whistletime);
+    else if (variant)
         fprintf(stderr, "{\"case\":\"%s\",\"seed\":%u,\"otyp\":%d,"
                 "\"known\":%d,\"dknown\":%d,\"type_known\":%d,\"cursed\":%d,"
                 "\"hallucination_timeout\":%ld,\"hallucinating\":%d,"

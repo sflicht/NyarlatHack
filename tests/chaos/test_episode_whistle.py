@@ -41,6 +41,47 @@ SOUND_CASES = {
 }
 
 
+DISPATCH_CASES = ("tagged-curio-inert", "leaf-ordinary", "apply-cancel")
+
+
+def cancel_at_prompt(g, exe, child_env, work, supervisor, cancel):
+    """Use the pinned Game stdin-read proof, then send exactly one ESC."""
+    # Game readiness pins /proc/exe to this private path. The native tuple was
+    # verified before replacing ONLY this private copy with the linked fixture.
+    shutil.copy2(exe, g.game / "dnethack")
+    assert supervisor.digest(g.game / "dnethack") == supervisor.digest(exe)
+    command = [str(g.game / "dnethack"), "apply-cancel"]
+    supervisor.save(work / "terminal.command.json", command)
+    diagnostic_path = work / "terminal.stderr"
+    try:
+        cancel.checkpoint()
+        with diagnostic_path.open("xb") as diagnostic:
+            pid, fd = pty.fork()
+            if pid == 0:
+                try:
+                    os.dup2(diagnostic.fileno(), 2)
+                    os.chdir(g.game)
+                    os.execve(command[0], command, child_env)
+                except BaseException:
+                    os._exit(127)
+            g.pid, g.fd = pid, fd
+            fcntl.ioctl(fd, termios.TIOCSWINSZ, struct.pack("HHHH", 24, 80, 0, 0))
+            prompt = g.read(5)
+            assert len(g.raw) <= 65536, "selection prompt cap"
+            assert b"What do you want to use or apply? [a or ?*]" in prompt, prompt
+            assert g._reader_pid == pid, "native terminal stdin read required"
+            (work / "selection-prompt.stdout").write_bytes(bytes(g.raw))
+            status = g.finish(g.send(b"\x1b"))
+            assert status == 0, status
+            assert g.inputs == ["1b"], g.inputs
+    finally:
+        if g.pid is not None or g.fd is not None:
+            g.cleanup()
+        (work / "terminal.stdout").write_bytes(bytes(g.raw))
+    assert diagnostic_path.stat().st_size <= supervisor.LIMIT
+    return bytes(g.raw), diagnostic_path.read_bytes()
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     for name in ("root", "receipt", "revision", "artifacts"):
@@ -265,14 +306,19 @@ def main(argv=None):
                 "chosen": seeds,
             },
         )
+        OwnedGame = supervisor.owned_game_type(gameplay_support.Game, cancel)
         results = []
-        for case in ("known", "unknown", *SOUND_CASES):
+        for case in ("known", "unknown", *SOUND_CASES, *DISPATCH_CASES):
             descriptor = SOUND_CASES.get(case)
+            dispatch = case in DISPATCH_CASES
             calibrated = seeds[case == "magic-cursed-success"]
             pair = []
             for enabled in (False, True):
                 work = out / (case + ("-on" if enabled else "-off"))
-                g = gameplay_support.Game(selection.tuple_dir, clock, root=work)
+                game_type = (
+                    OwnedGame if case == "apply-cancel" else gameplay_support.Game
+                )
+                g = game_type(selection.tuple_dir, clock, root=work)
                 selection.verify_copy(g.game)
                 options = work / "options"
                 options.write_text("OPTIONS=!splash_screen,!perm_invent\n")
@@ -288,20 +334,49 @@ def main(argv=None):
                     NYARLATHACK_OBSERVATIONS=str(int(enabled)),
                     WHISTLE_CHAOS_STATE=str(work / "chaos-state.json"),
                 )
-                if descriptor:
+                if descriptor or dispatch:
                     child_env["WHISTLE_SEED"] = str(calibrated["seed"])
-                raw, diagnostic = supervisor.bounded(
-                    [exe, case],
-                    g.game,
-                    child_env,
-                    work / "terminal",
-                    20,
-                    True,
-                    cancel=cancel,
-                )
+                if case == "apply-cancel":
+                    raw, diagnostic = cancel_at_prompt(
+                        g, exe, child_env, work, supervisor, cancel
+                    )
+                else:
+                    raw, diagnostic = supervisor.bounded(
+                        [exe, case],
+                        g.game,
+                        child_env,
+                        work / "terminal",
+                        20,
+                        True,
+                        cancel=cancel,
+                    )
                 message = descriptor[0] if descriptor else "high whistling sound"
-                assert raw.count(("You produce a " + message + ".").encode()) == 1
+                if case in ("apply-cancel", "tagged-curio-inert"):
+                    assert b"whistling sound" not in raw and b"humming noise" not in raw
+                    assert raw.count(b"This curio is inert.") == (
+                        case == "tagged-curio-inert"
+                    )
+                else:
+                    assert raw.count(("You produce a " + message + ".").encode()) == 1
                 state = json.loads(diagnostic)
+                if dispatch:
+                    assert state["case"] == case and state["seed"] == 2
+                    assert state["rng_draws"] == 0
+                    assert (
+                        state["next_draw"]
+                        == state["expected_next"]
+                        == calibrated["next_after_zero"]
+                        == 35290
+                    )
+                    leaf = case == "leaf-ordinary"
+                    assert (
+                        state["return"]
+                        == state["move_default" if leaf else "move_cancelled"]
+                    )
+                    assert state["sleeping"] == (not leaf)
+                    assert state["whistletime"] == (101 if leaf else 0)
+                    for key in ("known", "dknown", "type_known", "blessed", "cursed"):
+                        assert state[key] == 0
                 if descriptor:
                     _, _, draws, sleeping, whistle_time, cursed, hallucinated = (
                         descriptor
@@ -332,8 +407,14 @@ def main(argv=None):
                 records = g.events()
                 chaos = json.loads((work / "chaos-state.json").read_text())
                 before, after = chaos["before"].copy(), chaos["after"].copy()
-                assert after.pop("seq") - before.pop("seq") == (4 if enabled else 1)
+                assert after.pop("seq") - before.pop("seq") == (
+                    4 if enabled and not dispatch else 1
+                )
                 assert before == after, chaos
+                if dispatch:
+                    attempts = [e for e in records if e["event"] == "apply"]
+                    assert len(attempts) == 1 and attempts[0]["phase"] == "attempt"
+                    assert attempts[0]["detail"] == ""
                 assert chaos["after"]["seq"] == records[-1]["seq"]
                 assert set(before) == {
                     "version",
@@ -361,7 +442,7 @@ def main(argv=None):
                     }
                 )
             assert pair[0] == pair[1], "native terminal/state off-on mismatch"
-        assert len(results) == 14
+        assert len(results) == 20
         save(out / "native-results.json", results)
         # Expected aborts use owned status capture, never a caught bounded error.
         OwnedGame = supervisor.owned_game_type(gameplay_support.Game, cancel)
@@ -432,9 +513,22 @@ def main(argv=None):
             )
         assert len(negatives) == 3
         save(out / "negative-results.json", negatives)
+        assert len(results) == 23
         for result in results:
             if result["enabled"]:
                 obs = result["observations"]
+                if result["case"] in DISPATCH_CASES:
+                    assert len(obs) == 1
+                    marker = obs[0]
+                    assert marker["seq"] == 1 and marker["phase"] == "result"
+                    assert marker["detail"] == ""
+                    assert marker["observation"] == {
+                        "operation": "none",
+                        "stage": "enabled",
+                        "root_seq": 0,
+                        "fact": "none",
+                    }
+                    continue
                 expected = [
                     ("none", "enabled", "none"),
                     ("whistling", "started", "none"),
