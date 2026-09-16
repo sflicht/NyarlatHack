@@ -54,17 +54,27 @@ secret is absent.
 
 ## Local equivalents
 
-**Platform/whistle acceptance is pending.** Caller wiring alone is not full-suite
-acceptance: both unittest adapters still need process isolation for their
-process-global umask and hard resource limits. Until that separate fix and the
-held hook/fixture reviews pass, do not run this native recipe or treat the
-workflow as ready to merge. Source-wiring unit tests do not verify native receipts.
+**Platform/whistle process isolation is implemented and accepted.** Their
+supervisors isolate process-global umask and hard resource limits. The narrow
+fountain hook/fixture and strict native adapter reviews are also accepted; this
+does not accept the whole phase or establish hosted CI success. Caller wiring
+and source-wiring unit tests alone do not verify native receipts. Hosted execution
+and whole-phase acceptance remain open.
 
-After authorization and both reviews, use a fresh canonical full-history checkout
-already at the independently approved revision, with reviewed hooks and fixtures
-committed. All drivers, helpers, fixtures and discovery must come from that same
-checkout. `REVIEWED_REV` below is deliberately invalid 40hex: replace it with the
-approved full lowercase SHA, never automatically with HEAD or a receipt value.
+The proposed canonical recipe below requires authorization and a fresh
+full-history checkout already at the independently approved revision, with
+reviewed hooks and fixtures committed. All drivers, helpers, fixtures and
+discovery must come from that same checkout. Separately verified reuse of frozen
+production with external committed Python tests is not a fresh production build
+at the tests' revision, nor execution of this same-checkout recipe. Keep those
+revision identities and evidence separate. Changing the working directory does
+not make external full-suite discovery compatible with frozen receipts: some
+adapters derive their source root from their own file location and reject a
+revision mismatch. Use the same-checkout recipe for full-suite acceptance.
+`REVIEWED_REV` below is deliberately invalid as a 40-character hexadecimal
+revision: replace it with the approved
+full lowercase commit identifier, never automatically with HEAD or a receipt
+value.
 
 ```bash
 set -euo pipefail
@@ -102,6 +112,10 @@ env -i PATH=/usr/bin:/bin HOME="$out/home" LANG=C.UTF-8 TZ=America/New_York \
   NYARLATHACK_WHISTLE_RECEIPT="$out/system-gcc13" \
   NYARLATHACK_WHISTLE_REVISION="$revision" \
   NYARLATHACK_WHISTLE_ARTIFACTS="$invocation/whistle" \
+  NYARLATHACK_FOUNTAIN_ROOT="$root" \
+  NYARLATHACK_FOUNTAIN_RECEIPT="$out/system-gcc13" \
+  NYARLATHACK_FOUNTAIN_REVISION="$revision" \
+  NYARLATHACK_FOUNTAIN_ARTIFACTS="$invocation/fountain" \
   /usr/bin/python3 -m unittest discover -s tests/chaos -p 'test_*.py' -v \
   2>&1 | tee "$out/full-suite.log"
 ```
@@ -114,11 +128,15 @@ skip that upload entirely; no empty-base or root fallback globs are used.
 A separate always-on upload retains only `runner.temp/native-preparation.log`
 when present. Both uploads ignore missing files and retain artifacts for seven
 days. Each suite or separately authorized standalone native launch needs a fresh
-private invocation parent under `out/fixtures` and distinct **absent**
-platform/whistle leaves.
+private invocation parent under `out/fixtures` and distinct, independent
+**absent** platform/whistle/fountain leaves.
 Never precreate, delete for reuse, or reuse those leaves; do not use symlinks as a
 canonical-path workaround. Retain distinct logs for later authorized launches,
-not overwrites or automatic retries. Delivery allocates its own private parent
+not overwrites or automatic retries. The registered fountain native adapter
+always uses `strict-desired`; the command-line interface (CLI) retains
+`observed-prehook` only for explicit historical diagnosis, never acceptance.
+Discovery runs the strict adapter once, without a duplicate fountain CLI launch.
+Delivery allocates its own private parent
 under the same `/tmp`-backed `TMPDIR`. Observations remain child-scoped, not enabled
 globally in the suite environment.
 
