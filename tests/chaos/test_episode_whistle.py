@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-"""Selected ordinary whistle: native purity and measured negative controls.
+"""Selected whistle sounds: native purity and measured negative controls.
 
 Run from the explicit frozen source root. External fixture/support hashes are
 separate from native build identity. This is not the complete Task 6b/8 matrix.
@@ -20,6 +20,25 @@ import shutil
 import signal
 import sys
 import unittest
+
+
+# Private fixture expectations, never observation metadata. Draw counts are
+# source predictions checked over the complete native action interval.
+SOUND_CASES = {
+    "ordinary-cursed": ("shrill whistling sound", "sound_shrill", 0, 0, 101, 1, 0),
+    "magic-uncursed": ("strange whistling sound", "sound_strange", 0, 1, 0, 0, 0),
+    "magic-hallucinated": ("normal whistling sound", "sound_normal", 0, 1, 0, 0, 1),
+    "magic-cursed-humming": (
+        "high-pitched humming noise",
+        "sound_humming",
+        1,
+        0,
+        0,
+        1,
+        0,
+    ),
+    "magic-cursed-success": ("strange whistling sound", "sound_strange", 1, 1, 0, 1, 0),
+}
 
 
 def main(argv=None):
@@ -203,6 +222,7 @@ def main(argv=None):
                 "-lncursesw",
                 "-ltinfo",
                 "-lm",
+                "-ldl",
                 *libs,
                 "-o",
                 exe,
@@ -228,8 +248,27 @@ def main(argv=None):
         again = native_fixture_selection.prepare(root, selection_env)
         assert again.record()["source_build"] == selection.record()["source_build"]
         save(out / "executable-hashes.json", {str(p): digest(p) for p in (exe, clock)})
+        calibration = json.loads(run([exe, "--calibrate"], "seed-preflight"))
+        assert [r["seed"] for r in calibration] == list(range(1, 17))
+        seeds = {
+            branch: next(r for r in calibration if r["first_rn2_2"] == branch)
+            for branch in (0, 1)
+        }
+        # Measured native libc seeds: fail rather than reselect on a new platform.
+        # No measured action is retried to find a branch.
+        assert {branch: row["seed"] for branch, row in seeds.items()} == {0: 2, 1: 1}
+        save(
+            out / "rng-calibration.json",
+            {
+                "provenance": "native copied rnd.o rn2 plus libc srandom; pre-action only",
+                "candidates": calibration,
+                "chosen": seeds,
+            },
+        )
         results = []
-        for case in ("known", "unknown"):
+        for case in ("known", "unknown", *SOUND_CASES):
+            descriptor = SOUND_CASES.get(case)
+            calibrated = seeds[case == "magic-cursed-success"]
             pair = []
             for enabled in (False, True):
                 work = out / (case + ("-on" if enabled else "-off"))
@@ -249,6 +288,8 @@ def main(argv=None):
                     NYARLATHACK_OBSERVATIONS=str(int(enabled)),
                     WHISTLE_CHAOS_STATE=str(work / "chaos-state.json"),
                 )
+                if descriptor:
+                    child_env["WHISTLE_SEED"] = str(calibrated["seed"])
                 raw, diagnostic = supervisor.bounded(
                     [exe, case],
                     g.game,
@@ -258,8 +299,36 @@ def main(argv=None):
                     True,
                     cancel=cancel,
                 )
-                assert raw.count(b"You produce a high whistling sound.") == 1
+                message = descriptor[0] if descriptor else "high whistling sound"
+                assert raw.count(("You produce a " + message + ".").encode()) == 1
                 state = json.loads(diagnostic)
+                if descriptor:
+                    _, _, draws, sleeping, whistle_time, cursed, hallucinated = (
+                        descriptor
+                    )
+                    assert state["case"] == case
+                    assert state["seed"] == calibrated["seed"]
+                    assert state["rng_draws"] == draws
+                    continuation = calibrated[
+                        "next_after_one" if draws else "next_after_zero"
+                    ]
+                    assert state["next_draw"] == state["expected_next"] == continuation
+                    assert state["return"] == (
+                        4 if case == "ordinary-cursed" else state["move_default"]
+                    )
+                    assert state["sleeping"] == sleeping
+                    assert state["whistletime"] == whistle_time
+                    assert state["cursed"] == cursed
+                    assert state["hallucinating"] == hallucinated
+                    assert state["hallucination_timeout"] == (10 if hallucinated else 0)
+                    for key in (
+                        "known",
+                        "dknown",
+                        "type_known",
+                        "tame",
+                        "hallucination_resistance",
+                    ):
+                        assert state[key] == 0
                 records = g.events()
                 chaos = json.loads((work / "chaos-state.json").read_text())
                 before, after = chaos["before"].copy(), chaos["after"].copy()
@@ -292,6 +361,7 @@ def main(argv=None):
                     }
                 )
             assert pair[0] == pair[1], "native terminal/state off-on mismatch"
+        assert len(results) == 14
         save(out / "native-results.json", results)
         # Expected aborts use owned status capture, never a caught bounded error.
         OwnedGame = supervisor.owned_game_type(gameplay_support.Game, cancel)
@@ -360,6 +430,7 @@ def main(argv=None):
                     observations=[e for e in records if e["v"] == 2],
                 )
             )
+        assert len(negatives) == 3
         save(out / "negative-results.json", negatives)
         for result in results:
             if result["enabled"]:
@@ -367,7 +438,13 @@ def main(argv=None):
                 expected = [
                     ("none", "enabled", "none"),
                     ("whistling", "started", "none"),
-                    ("whistling", "notice", "sound_high"),
+                    (
+                        "whistling",
+                        "notice",
+                        SOUND_CASES[result["case"]][1]
+                        if result["case"] in SOUND_CASES
+                        else "sound_high",
+                    ),
                     ("whistling", "completed", "none"),
                 ]
                 actual = [
@@ -385,6 +462,23 @@ def main(argv=None):
                     expected,
                 )
                 start, notice, end = obs[1:]
+                assert obs[0]["seq"] == 1 and obs[0]["observation"]["root_seq"] == 0
+                assert (start["seq"], notice["seq"], end["seq"]) == (6, 7, 8)
+                assert [e["phase"] for e in obs] == [
+                    "result",
+                    "attempt",
+                    "result",
+                    "result",
+                ]
+                for event in obs:
+                    assert set(event["observation"]) == {
+                        "operation",
+                        "stage",
+                        "root_seq",
+                        "fact",
+                    }
+                    assert event["detail"] == ""
+                assert start["turn"] == notice["turn"] == end["turn"]
                 assert start["observation"]["root_seq"] == 0
                 assert (
                     notice["observation"]["root_seq"]
