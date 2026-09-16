@@ -2111,7 +2111,10 @@ drinkfountain()
 				vomit();
 	    		} 
 			else {
+				chaos_observation_arm(CHAOS_OBS_OP_FOUNTAIN_DRINK,
+					CHAOS_OBS_FACT_WATER_FOUL);
 				pline_The("water is foul! It offends your olfactory receptors.");
+				chaos_observation_disarm();
 			}
 			
 			break;
