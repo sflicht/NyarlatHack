@@ -686,7 +686,17 @@ class EpisodePlatformTests(unittest.TestCase):
             value = os.environ.get("NYARLATHACK_PLATFORM_" + key)
             self.assertIsNotNone(value, "set NYARLATHACK_PLATFORM_" + key)
             args.extend(["--" + key.lower().replace("_", "-"), value])
-        main(args)
+        from native_driver_supervision import run_driver
+
+        code, logs = run_driver(
+            Path(__file__).resolve(),
+            args,
+            os.environ["NYARLATHACK_PLATFORM_ROOT"],
+            os.environ["NYARLATHACK_PLATFORM_ARTIFACTS"],
+        )
+        self.assertEqual(
+            code, 0, f"platform driver failed ({code}); diagnostics: {logs}"
+        )
 
 
 if __name__ == "__main__":
