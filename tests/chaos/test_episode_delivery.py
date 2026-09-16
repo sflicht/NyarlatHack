@@ -270,7 +270,7 @@ def main():
         process = None
         key = (
             b" "
-            if scenario == "pre-more-space"
+            if scenario == "pre-more-space" or scenario.endswith("-text-space")
             else b"\x1b"
             if scenario.endswith("-escape")
             else b""
@@ -528,6 +528,145 @@ def main():
                 "passed": True,
             }
         )
+    # Independent expected return/bytes/history, never inferred from a boolean.
+    # Direct calls leave a pending sentinel untouched and emit no notice, even
+    # when the actual native message text (or raw/text-window fallback) renders.
+    target = b"You produce a high whistling sound."
+    short_prime = b"You wait."
+    long_prime = b"You wait beside the quiet fountain and listen to the water."
+    death = b"You die in a renderer test."
+    nonmatch = b"You Die in a renderer test."
+    # return, selected bytes, count, toplines, priming bytes, stopped, prompts
+    direct_cases = {
+        "render": (1, target, 1, target, b"", False, 0),
+        "append": (1, target, 1, short_prime + b"  " + target, short_prime, False, 0),
+        "stop-append": (
+            0,
+            target,
+            0,
+            short_prime + b"  " + target,
+            short_prime,
+            True,
+            0,
+        ),
+        "stop-replacement": (0, target, 0, target, long_prime, True, 0),
+        "empty": (0, target, 0, b"", b"", False, 0),
+        "empty-append": (0, target, 0, short_prime + b"  ", short_prime, False, 0),
+        "null": (0, target, 0, b"", b"", False, 0),
+        "win-err": (0, target, 1, b"", b"", False, 0),
+        "missing": (0, target, 1, b"", b"", False, 0),
+        "text-space": (0, target, 1, b"", b"", False, 1),
+        "newline-append": (
+            1,
+            b"A note.",
+            1,
+            short_prime + b"  A note.\nAn echo.",
+            short_prime,
+            False,
+            0,
+        ),
+        "die-fit": (1, death, 1, death, short_prime, False, 0),
+        "die-no-fit": (0, death, 0, death, long_prime, True, 0),
+        "die-nonmatch": (
+            0,
+            nonmatch,
+            0,
+            short_prime + b"  " + nonmatch,
+            short_prime,
+            True,
+            0,
+        ),
+    }
+    direct_pairs = []
+    for name, contract in direct_cases.items():
+        returned, selected, count, toplines, prime, stopped, prompts = contract
+        # The lower-level topline API requires a nonnull message and has no
+        # window argument. Cover its legal message cases, never raw/null/text.
+        families = (
+            ("",)
+            if name in ("null", "win-err", "missing", "text-space")
+            else ("", "topl-")
+        )
+        for family in families:
+            pairs = {}
+            for method in ("void", "helper"):
+                scenario = "direct-" + family + method + "-" + name
+                runs = []
+                for enabled in (False, True):
+                    terminal, rows, state, history = render(enabled, scenario)
+                    assert state.pop("method_return") == (
+                        returned if method == "helper" else -1
+                    )
+                    root_seq = state.pop("root")
+                    assert root_seq > 0 if enabled else root_seq == 0
+                    assert terminal.count(selected) == count, scenario
+                    assert terminal.count(b"--More--") == prompts, scenario
+                    assert history.startswith(
+                        b"toplines:" + toplines + b"\nprevmsg:\n"
+                    ), scenario
+                    assert bool(state["flags"] & 1) == stopped, (
+                        scenario
+                    )  # native WIN_STOP
+                    assert state["inmore"] == 0 and state["window_inited"] == 1
+                    if prime:
+                        assert terminal.count(prime) == 1, scenario
+                        if count:
+                            assert terminal.index(prime) < terminal.index(selected)
+                    if name == "newline-append":
+                        assert terminal.count(b"An echo.") == 1
+                        assert terminal.index(selected) < terminal.index(b"An echo.")
+                        assert state["message_y"] == 1 and state["toplin"] == 1
+                    if name == "text-space":
+                        assert terminal.index(selected) < terminal.index(b"--More--")
+                        assert b"0:\x01" + target + b"\n" in history
+                        assert state["morc"] == 32
+                    obs = [row for row in rows if "observation" in row]
+                    assert [row["observation"]["stage"] for row in obs] == (
+                        ["enabled", "started", "completed"] if enabled else []
+                    ), scenario
+                    if enabled:
+                        start, end = obs[1:]
+                        assert start["seq"] == root_seq < end["seq"]
+                        assert start["turn"] == end["turn"] == 10
+                        assert start["observation"] == {
+                            "operation": "whistling",
+                            "stage": "started",
+                            "root_seq": 0,
+                            "fact": "none",
+                        }
+                        assert end["observation"] == {
+                            "operation": "whistling",
+                            "stage": "completed",
+                            "root_seq": root_seq,
+                            "fact": "none",
+                        }
+                    work = out / (scenario + ("-on" if enabled else "-off"))
+                    events = (work / "run/events.jsonl").read_bytes()
+                    runs.append((terminal, state, history, events))
+                assert runs[0][:3] == runs[1][:3], scenario
+                pairs[method] = runs
+                results.append(
+                    {
+                        "scenario": scenario,
+                        "notices": 0,
+                        "prompt_count": prompts,
+                        "passed": True,
+                    }
+                )
+            # All native fields retained; only method-return and root removed
+            # above, and events still compare byte-for-byte at each opt-in value.
+            assert pairs["void"] == pairs["helper"], (family, name)
+            direct_pairs.append(
+                {
+                    "family": "update_topl" if family else "tty_putstr",
+                    "case": name,
+                    "expected_return": returned,
+                    "expected_target_count": count,
+                    "expected_prompt_count": prompts,
+                    "same_terminal_state_history_events": True,
+                }
+            )
+    save("direct-pairs.json", direct_pairs)
     final_hashes = {name: digest(Path(name)) for name in originals}
     save("final-original-object-hashes.json", final_hashes)
     assert originals == final_hashes, "native originals changed during execution"

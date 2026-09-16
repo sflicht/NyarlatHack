@@ -20,6 +20,131 @@ static void forwarding_putstr(winid window, int attr, const char *text)
     tty_putstr(window, attr, text);
 }
 
+/* Direct interfaces share native bodies. This proves their equivalence on this
+ * revision, not pre-refactor compatibility or an actual whistle/death action. */
+static void direct_case(const char *spec, int enabled)
+{
+    int helper, topl, expected_return, result = -1, expected_rng;
+    int append_case, stop, long_prime, text, missing, die, newline;
+    winid window = WIN_MESSAGE;
+    long root, i;
+    FILE *history;
+    struct chaos_observation_token token;
+    const char *name, *message = "You produce a high whistling sound.";
+    struct WinDesc *cw = wins[WIN_MESSAGE];
+
+    topl = !strncmp(spec, "topl-", 5);
+    if (topl) spec += 5;
+    helper = !strncmp(spec, "helper-", 7);
+    assert(helper || !strncmp(spec, "void-", 5));
+    name = spec + (helper ? 7 : 5);
+    append_case = !strcmp(name, "append") || !strcmp(name, "stop-append")
+        || !strcmp(name, "empty-append");
+    newline = !strcmp(name, "newline-append");
+    die = !strncmp(name, "die-", 4);
+    long_prime = !strcmp(name, "stop-replacement") || !strcmp(name, "die-no-fit");
+    stop = !strncmp(name, "stop-", 5) || die;
+    text = !strcmp(name, "text-space");
+    missing = !strcmp(name, "missing");
+    assert(append_case || newline || die || long_prime || text || missing
+           || !strcmp(name, "render") || !strcmp(name, "empty")
+           || !strcmp(name, "null") || !strcmp(name, "win-err"));
+    if (die) {
+        assert(!strcmp(name, "die-fit") || !strcmp(name, "die-no-fit")
+               || !strcmp(name, "die-nonmatch"));
+        message = !strcmp(name, "die-nonmatch")
+            ? "You Die in a renderer test." : "You die in a renderer test.";
+    }
+    if (newline) message = "A note.\nAn echo.";
+    if (!strcmp(name, "empty") || !strcmp(name, "empty-append")) message = "";
+    if (!strcmp(name, "null")) message = (const char *)0;
+    if (text || missing) {
+        window = create_nhwindow(NHW_TEXT);
+        assert(window >= 0 && wins[window] && !wins[window]->active);
+        if (missing) {
+            destroy_nhwindow(window);
+            assert(wins[window] == (struct WinDesc *)0);
+        }
+    }
+    if (!strcmp(name, "win-err")) window = WIN_ERR;
+    /* Never send NULL to raw fallback, or an out-of-range slot to wins[]. */
+    assert(message || window == WIN_MESSAGE);
+    assert(!topl || (window == WIN_MESSAGE && message));
+    if (append_case || long_prime || die || newline) {
+        tty_putstr(WIN_MESSAGE, 0, long_prime
+            ? "You wait beside the quiet fountain and listen to the water."
+            : "You wait.");
+        assert(ttyDisplay->toplin == 1 && cw->cury == 0);
+        if (die)
+            assert((strlen(message) + strlen(toplines) + 3 < (unsigned)(CO - 8))
+                   == !long_prime);
+    }
+    if (stop) cw->flags |= WIN_STOP;
+    expected_return = !strcmp(name, "render") || !strcmp(name, "append")
+        || newline || !strcmp(name, "die-fit");
+    expected_rng = test_rng_begin();
+    root = chaos_observation_begin(CHAOS_OBS_OP_WHISTLING);
+    assert(enabled ? root > 0 : root == 0);
+    /* Pending sentinel only: no claim that arbitrary renderer text is a sound.
+     * Direct output must neither take the vpline token nor emit a notice. */
+    chaos_observation_arm(CHAOS_OBS_OP_WHISTLING, CHAOS_OBS_FACT_SOUND_HIGH);
+    if (topl) {
+        if (helper) result = tty_update_topl_rendered(message);
+        else update_topl(message);
+    } else {
+        if (helper) result = tty_putstr_rendered(window, 0, message);
+        else tty_putstr(window, 0, message);
+    }
+    if (helper) assert(result == expected_return);
+    if (text) {
+        assert(wins[window]->maxrow == 1 && wins[window]->cury == 1);
+        assert(wins[window]->data[0][0] == 1);
+        assert(!strcmp(wins[window]->data[0] + 1, message));
+        /* Real text display uses defmorestr with SPACE, not a hidden-print
+         * assumption based on the message-specific FALSE return. */
+        display_nhwindow(window, TRUE);
+        assert(morc == ' ' && !(wins[window]->flags & WIN_CANCELLED));
+    }
+    token = chaos_observation_take_message();
+    assert(token.root == root);
+    if (enabled) assert(token.fact == CHAOS_OBS_FACT_SOUND_HIGH);
+    chaos_observation_disarm();
+    chaos_observation_end(root);
+    test_rng_unchanged(expected_rng);
+    assert(!!(cw->flags & WIN_STOP) == (stop && strcmp(name, "die-fit") != 0));
+    if (newline) {
+        assert(!strcmp(toplines, "You wait.  A note.\nAn echo."));
+        assert(ttyDisplay->toplin == 1 && cw->cury == 1);
+    }
+    fflush(stdout);
+    fprintf(stderr, "{\"root\":%ld,\"method_return\":%d,\"flags\":%d,"
+        "\"toplin\":%d,\"message_x\":%d,\"message_y\":%d,"
+        "\"display_x\":%d,\"display_y\":%d,\"lastwin\":%d,"
+        "\"rawprint\":%d,\"inmore\":%d,\"morc\":%d,\"window_inited\":%d}\n",
+        root, result, (int)cw->flags, (int)ttyDisplay->toplin,
+        (int)cw->curx, (int)cw->cury, (int)ttyDisplay->curx,
+        (int)ttyDisplay->cury, (int)ttyDisplay->lastwin,
+        (int)ttyDisplay->rawprint, (int)ttyDisplay->inmore,
+        (int)morc, (int)iflags.window_inited);
+    history = fopen("native-history.txt", "w");
+    assert(history);
+    fprintf(history, "toplines:%s\nprevmsg:%s\nmaxrow:%ld maxcol:%ld\n",
+            toplines, prevmsg, cw->maxrow, cw->maxcol);
+    for (i = 0; i < cw->rows; ++i)
+        fprintf(history, "%ld:%s\n", i, cw->data[i] ? cw->data[i] : "<null>");
+    if (text) {
+        cw = wins[window];
+        fprintf(history, "text:flags:%d active:%d x:%d y:%d rows:%d cols:%d "
+                "maxrow:%ld maxcol:%ld\n", (int)cw->flags, (int)cw->active,
+                (int)cw->curx, (int)cw->cury, (int)cw->rows, (int)cw->cols,
+                cw->maxrow, cw->maxcol);
+        for (i = 0; i < cw->rows; ++i)
+            fprintf(history, "%ld:%s\n", i, cw->data[i] ? cw->data[i] : "<null>");
+    }
+    assert(fclose(history) == 0);
+    tty_exit_nhwindows((char *)0);
+}
+
 int main(int argc, char **argv)
 {
     long root;
@@ -60,7 +185,7 @@ int main(int argc, char **argv)
     escape = !strcmp(argv[1], "--pre-more-escape") || post_newline || post_wrap;
     replacement = !strcmp(argv[1], "--stop-replacement") || pre_more;
     assert(stopped || pre_more || post_newline || post_wrap || append
-           || early || renamed || wrapped
+           || early || renamed || wrapped || !strncmp(argv[1], "--direct-", 9)
            || !strcmp(argv[1], "--render"));
     if (post_newline)
         message = "produce a high whistling sound.\nThe echo fades.";
@@ -105,6 +230,10 @@ int main(int argc, char **argv)
     u.ux = u.uy = 0; vision_full_recalc = FALSE;
     chaos_start();
     assert(u.chaos.safe == 1);
+    if (!strncmp(argv[1], "--direct-", 9)) {
+        direct_case(argv[1] + 9, enabled);
+        return 0;
+    }
     assert(msgpline_type("You produce a high whistling sound.") == MSGTYP_NORMAL);
     assert(!(wins[WIN_MESSAGE]->flags & WIN_STOP));
     if (stopped || pre_more || append) {
