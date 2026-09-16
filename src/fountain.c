@@ -2103,7 +2103,10 @@ drinkfountain()
 		case 20: /* Foul water */
 
 			if (!umechanoid){
+				chaos_observation_arm(CHAOS_OBS_OP_FOUNTAIN_DRINK,
+					CHAOS_OBS_FACT_WATER_FOUL);
 				pline_The("water is foul!  You gag and vomit.");
+				chaos_observation_disarm();
 				morehungry(rn1(20, 11));
 				vomit();
 	    		} 
