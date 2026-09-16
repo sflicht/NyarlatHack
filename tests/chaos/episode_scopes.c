@@ -24,9 +24,10 @@ extern long chaos_observation_begin(int) __attribute__((weak));
 extern void chaos_observation_end(long) __attribute__((weak));
 extern void chaos_observation_arm(int, int) __attribute__((weak));
 extern void chaos_observation_disarm(void) __attribute__((weak));
-extern int chaos_observation_take_message(void) __attribute__((weak));
-extern void chaos_observation_delivered(int) __attribute__((weak));
-extern void chaos_observation_map_delivered(void) __attribute__((weak));
+extern struct chaos_observation_token chaos_observation_take_message(void) __attribute__((weak));
+extern struct chaos_observation_token chaos_observation_take_map(void) __attribute__((weak));
+extern void chaos_observation_delivered(struct chaos_observation_token) __attribute__((weak));
+extern void chaos_observation_map_delivered(struct chaos_observation_token) __attribute__((weak));
 extern void chaos_observation_blocked(void) __attribute__((weak));
 ssize_t __real_write(int, const void *, size_t);
 int __real_fsync(int);
@@ -40,7 +41,10 @@ int __wrap_fsync(int fd) {
 }
 int main(void) {
     char cmd[80], text[80];
-    int a, b, token = 0;
+    int a, b;
+    struct chaos_observation_token token = {0L, CHAOS_OBS_FACT_NONE};
+    struct chaos_observation_token saved_token = {0L, CHAOS_OBS_FACT_NONE}, swap;
+    const struct chaos_observation_token empty = {0L, CHAOS_OBS_FACT_NONE};
     long root = 0, oldroot = 0;
     struct you before;
     u.usanity = 60; u.uinsight = 4;
@@ -79,14 +83,25 @@ int main(void) {
                 if (scanf("%d%d", &a, &b) != 2) return 2;
                 if (chaos_observation_arm) chaos_observation_arm(a, b);
             } else if (!strcmp(cmd, "take")) {
-                token = chaos_observation_take_message ? chaos_observation_take_message() : 0;
+                token = chaos_observation_take_message ? chaos_observation_take_message() : empty;
+            } else if (!strcmp(cmd, "save_token")) {
+                saved_token = token;
+            } else if (!strcmp(cmd, "swap_token")) {
+                swap = token; token = saved_token; saved_token = swap;
+            } else if (!strcmp(cmd, "take_map")) {
+                token = chaos_observation_take_map ? chaos_observation_take_map() : empty;
+            } else if (!strcmp(cmd, "token")) {
+                if (scanf("%ld%d", &token.root, &token.fact) != 2) return 2;
+            } else if (!strcmp(cmd, "empty_token")) {
+                if (token.root || token.fact != CHAOS_OBS_FACT_NONE) return 5;
             } else if (!strcmp(cmd, "deliver")) {
                 if (chaos_observation_delivered) chaos_observation_delivered(token);
             } else if (!strcmp(cmd, "fake")) {
                 if (scanf("%d", &a) != 1) return 2;
-                if (chaos_observation_delivered) chaos_observation_delivered(a);
+                swap.root = root; swap.fact = a;
+                if (chaos_observation_delivered) chaos_observation_delivered(swap);
             } else if (!strcmp(cmd, "map")) {
-                if (chaos_observation_map_delivered) chaos_observation_map_delivered();
+                if (chaos_observation_map_delivered) chaos_observation_map_delivered(token);
             } else if (!strcmp(cmd, "disarm")) {
                 if (chaos_observation_disarm) chaos_observation_disarm();
             } else if (!strcmp(cmd, "block")) {
@@ -101,7 +116,7 @@ int main(void) {
             if (memcmp(&before, &u, sizeof u)) return 4;
         }
         printf("%s %ld %ld %ld %d %d %d %d\n", cmd, root, u.chaos.seq,
-               u.chaos.safe, u.chaos.spent, u.chaos.reserved, u.chaos.last_id, token);
+               u.chaos.safe, u.chaos.spent, u.chaos.reserved, u.chaos.last_id, token.fact);
     }
     return 0;
 }

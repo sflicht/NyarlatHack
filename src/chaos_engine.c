@@ -10,8 +10,9 @@ static int started, oldsanity, oldinsight;
 static int observations;
 static long observation_root, observation_turn;
 static int observation_operation;
-/* Positive pending facts are armed; negative ones were taken by vpline.
- * This keeps a delivery token without another persistent or transient field. */
+/* Positive pending facts are armed; negative ones were taken by their channel.
+ * Root binding closes identical-fact reentry ambiguity: an old caller cannot
+ * deliver a replacement action's notice. This is not proof of UI delivery. */
 static int observation_pending, observation_used, observation_blocked;
 static void observation_clear(void) {
     observation_root = observation_turn = 0;
@@ -163,13 +164,23 @@ void chaos_observation_arm(int operation, int fact) {
 void chaos_observation_disarm(void) {
     observation_pending = 0;
 }
-int chaos_observation_take_message(void) {
-    int fact;
+struct chaos_observation_token chaos_observation_take_message(void) {
+    struct chaos_observation_token token = {0L, CHAOS_OBS_FACT_NONE};
     if (!observation_current() || observation_used || observation_pending <= 0
-        || observation_pending == CHAOS_OBS_FACT_DETECTION_PRESENTED) return 0;
-    fact = observation_pending;
-    observation_pending = -fact;
-    return fact;
+        || observation_pending == CHAOS_OBS_FACT_DETECTION_PRESENTED) return token;
+    token.root = observation_root;
+    token.fact = observation_pending;
+    observation_pending = -token.fact;
+    return token;
+}
+struct chaos_observation_token chaos_observation_take_map(void) {
+    struct chaos_observation_token token = {0L, CHAOS_OBS_FACT_NONE};
+    if (!observation_current() || observation_used
+        || observation_pending != CHAOS_OBS_FACT_DETECTION_PRESENTED) return token;
+    token.root = observation_root;
+    token.fact = observation_pending;
+    observation_pending = -token.fact;
+    return token;
 }
 static void observation_notice(int fact) {
     struct chaos_context c = context();
@@ -179,17 +190,20 @@ static void observation_notice(int fact) {
     (void)chaos_io_observation(&io, &u.chaos, &c, observation_operation,
         CHAOS_OBS_STAGE_NOTICE, observation_root, fact);
 }
-void chaos_observation_delivered(int fact) {
-    if (!observation_current() || observation_used
-        || fact < CHAOS_OBS_FACT_SOUND_HIGH || fact > CHAOS_OBS_FACT_CANNOT_REACH
-        || observation_pending != -fact) return;
-    observation_notice(fact);
+void chaos_observation_delivered(struct chaos_observation_token token) {
+    if (token.root <= 0 || token.root != observation_root
+        || !observation_current() || observation_used
+        || token.fact < CHAOS_OBS_FACT_SOUND_HIGH || token.fact > CHAOS_OBS_FACT_CANNOT_REACH
+        || observation_pending != -token.fact) return;
+    observation_notice(token.fact);
 }
-void chaos_observation_map_delivered(void) {
-    if (!observation_current() || observation_used
+void chaos_observation_map_delivered(struct chaos_observation_token token) {
+    if (token.root <= 0 || token.root != observation_root
+        || !observation_current() || observation_used
         || observation_operation != CHAOS_OBS_OP_FOUNTAIN_DRINK
-        || observation_pending != CHAOS_OBS_FACT_DETECTION_PRESENTED) return;
-    observation_notice(CHAOS_OBS_FACT_DETECTION_PRESENTED);
+        || token.fact != CHAOS_OBS_FACT_DETECTION_PRESENTED
+        || observation_pending != -token.fact) return;
+    observation_notice(token.fact);
 }
 void chaos_observation_blocked(void) {
     if (observation_current() && observation_operation == CHAOS_OBS_OP_FOUNTAIN_DRINK)

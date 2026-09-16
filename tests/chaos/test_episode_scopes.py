@@ -216,7 +216,7 @@ class EpisodeScopesTests(unittest.TestCase):
 
     def test_map_and_message_channels(self):
         raw, rows, out = self.run_scope(
-            "start begin 2 arm 2 9 take deliver map map end"
+            "start begin 2 arm 2 9 take deliver take_map map map end"
         )
         self.assertIn("take 5 5 1 0 0 0 0", out)
         self.assertEqual(rows[-2]["observation"]["fact"], "detection_presented")
@@ -308,7 +308,7 @@ class EpisodeScopesTests(unittest.TestCase):
             self.assertFalse(
                 any(r.get("observation", {}).get("stage") == "notice" for r in rows)
             )
-        # Nested vpline sees zero, while the outer caller retains its local fact.
+        # Nested vpline sees zero, while the outer caller retains its local token.
         _, rows, out = self.run_scope("start begin 1 arm 1 1 take take fake 1 end")
         self.assertIn("take 5 5 1 0 0 0 0", out)
         self.assertEqual(rows[-2]["observation"]["fact"], "sound_high")
@@ -340,6 +340,174 @@ class EpisodeScopesTests(unittest.TestCase):
             self.assertNotIn('"stage": "notice"', json.dumps(rows))
             self.assertIn("begin 0 ", out)
 
+    def test_identical_fact_message_reentry_rejects_old_token(self):
+        self.check_identical_fact_reentry(1, 1, "take", "deliver")
+
+    def test_identical_fact_map_reentry_rejects_old_token(self):
+        self.check_identical_fact_reentry(2, 9, "take_map", "map")
+
+    def check_identical_fact_reentry(self, operation, fact, take, deliver):
+        _, rows, output = self.run_scope(
+            f"start begin {operation} arm {operation} {fact} {take} save_token "
+            f"begin {operation} arm {operation} {fact} {take} swap_token "
+            f"{deliver} swap_token {deliver} end"
+        )
+        deliveries = [
+            line.split()
+            for line in output.splitlines()
+            if line.startswith(deliver + " ")
+        ]
+        self.assertEqual([int(line[2]) for line in deliveries], [6, 7])
+        notices = [r for r in rows if r.get("observation", {}).get("stage") == "notice"]
+        self.assertEqual(len(notices), 1)
+        self.assertEqual(notices[0]["observation"]["root_seq"], 6)
+
+    def test_map_requires_taken_token(self):
+        for delivery in ["map", "token 5 9 map"]:
+            with self.subTest(delivery=delivery):
+                _, rows, _ = self.run_scope(f"start begin 2 arm 2 9 {delivery} end")
+                self.assertEqual(
+                    [r["observation"]["stage"] for r in rows[4:]],
+                    ["started", "completed"],
+                )
+
+    def test_forged_root_or_fact_preserves_taken_pending(self):
+        for operation, fact, take, deliver in [
+            (1, 1, "take", "deliver"),
+            (2, 9, "take_map", "map"),
+        ]:
+            invalid = [(root, fact) for root in [0, -1, 4, 6]]
+            invalid += [(5, wrong) for wrong in [-1, 0, 2, 6, 8, 99]]
+            invalid += [(5, 9 if fact == 1 else 1)]
+            for root, wrong in invalid:
+                with self.subTest(operation=operation, root=root, fact=wrong):
+                    _, rows, out = self.run_scope(
+                        f"start begin {operation} arm {operation} {fact} {take} "
+                        f"save_token token {root} {wrong} {deliver} swap_token "
+                        f"{deliver} {deliver} end"
+                    )
+                    self.assertEqual(
+                        [
+                            int(line.split()[2])
+                            for line in out.splitlines()
+                            if line.startswith(deliver + " ")
+                        ],
+                        [5, 6, 6],
+                    )
+                    self.assertEqual(
+                        [r["observation"]["stage"] for r in rows[4:]],
+                        ["started", "notice", "completed"],
+                    )
+
+    def test_nested_and_wrong_channel_takes_do_not_steal_token(self):
+        for operation, fact, take, other, deliver, wrong in [
+            (1, 1, "take", "take_map", "deliver", "map"),
+            (2, 9, "take_map", "take", "map", "deliver"),
+        ]:
+            with self.subTest(operation=operation):
+                _, rows, out = self.run_scope(
+                    f"start begin {operation} arm {operation} {fact} "
+                    f"{other} empty_token {take} save_token {take} empty_token "
+                    f"{other} empty_token swap_token {wrong} {deliver} {deliver} end"
+                )
+                self.assertEqual(
+                    [r["observation"]["stage"] for r in rows[4:]],
+                    ["started", "notice", "completed"],
+                )
+                self.assertIn(f"{wrong} 5 5 1 0 0 0 {fact}", out)
+
+    def test_boundary_reentry_old_tokens_do_not_consume_new_pending(self):
+        for operation, fact, take, deliver in [
+            (1, 1, "take", "deliver"),
+            (2, 9, "take_map", "map"),
+        ]:
+            for boundary in [
+                "turn",
+                "event session",
+                "event level_enter",
+                "event level_leave",
+                "event death",
+                "shadow event level_enter shadow",
+            ]:
+                with self.subTest(operation=operation, boundary=boundary):
+                    _, rows, out = self.run_scope(
+                        f"start begin {operation} arm {operation} {fact} {take} "
+                        f"save_token {boundary} begin {operation} "
+                        f"arm {operation} {fact} {take} swap_token {deliver} "
+                        f"swap_token {deliver} end"
+                    )
+                    roots = [
+                        r["seq"]
+                        for r in rows
+                        if r.get("observation", {}).get("stage") == "started"
+                    ]
+                    self.assertEqual(
+                        [
+                            int(line.split()[2])
+                            for line in out.splitlines()
+                            if line.startswith(deliver + " ")
+                        ],
+                        [roots[-1], roots[-1] + 1],
+                    )
+                    notices = [
+                        r
+                        for r in rows
+                        if r.get("observation", {}).get("stage") == "notice"
+                    ]
+                    self.assertEqual(len(notices), 1)
+                    self.assertEqual(notices[0]["observation"]["root_seq"], roots[-1])
+
+    def test_both_channels_reject_invalidated_delivery_and_take(self):
+        for operation, fact, take, deliver in [
+            (1, 1, "take", "deliver"),
+            (2, 9, "take_map", "map"),
+        ]:
+            for guard in [
+                "disarm",
+                "end",
+                "turn",
+                "dead",
+                "shadow",
+                "event level_leave",
+                "begin 2",
+            ]:
+                for taken in [True, False]:
+                    with self.subTest(operation=operation, guard=guard, taken=taken):
+                        commands = f"start begin {operation} arm {operation} {fact} "
+                        commands += (
+                            f"{take} {guard}"
+                            if taken
+                            else f"{guard} {take} empty_token"
+                        )
+                        _, rows, _ = self.run_scope(f"{commands} {deliver} end")
+                        self.assertFalse(
+                            any(
+                                r.get("observation", {}).get("stage") == "notice"
+                                for r in rows
+                            )
+                        )
+
+    def test_tokens_from_different_channel_do_not_consume_new_pending(self):
+        for old_fact, fact, take, old_take, deliver in [
+            (6, 9, "take_map", "take", "map"),
+            (9, 6, "take", "take_map", "deliver"),
+        ]:
+            with self.subTest(fact=fact):
+                _, rows, out = self.run_scope(
+                    f"start begin 2 arm 2 {old_fact} {old_take} save_token "
+                    f"begin 2 arm 2 {fact} {take} swap_token {deliver} "
+                    f"swap_token {deliver} end"
+                )
+                self.assertEqual(
+                    [
+                        int(line.split()[2])
+                        for line in out.splitlines()
+                        if line.startswith(deliver + " ")
+                    ],
+                    [6, 7],
+                )
+                self.assertEqual(rows[-2]["observation"]["root_seq"], 6)
+
     def test_chaos_off_real_header_macros(self):
         source = Path(self.build.name) / "off.c"
         source.write_text("""#include "chaos.h"
@@ -349,10 +517,12 @@ int main(void) {
     chaos_observation_end(++touched);
     chaos_observation_arm(++touched, ++touched);
     chaos_observation_disarm();
-    chaos_observation_delivered(++touched);
-    chaos_observation_map_delivered();
+    chaos_observation_delivered(((struct chaos_observation_token){++touched, ++touched}));
+    chaos_observation_map_delivered(((struct chaos_observation_token){++touched, ++touched}));
     chaos_observation_blocked();
-    return touched || root || chaos_observation_take_message()
+    struct chaos_observation_token message = chaos_observation_take_message();
+    struct chaos_observation_token map = chaos_observation_take_map();
+    return touched || root || message.root || message.fact || map.root || map.fact
         || CHAOS_OBS_OP_WHISTLING != 1;
 }
 """)

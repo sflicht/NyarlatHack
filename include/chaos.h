@@ -2,6 +2,8 @@
 #ifndef CHAOS_H
 #define CHAOS_H
 #include "chaos_protocol.h"
+/* Transient, unsaved delivery identity; available in CHAOS-off callers too. */
+struct chaos_observation_token { long root; int fact; };
 #ifdef CHAOS
 #include "chaos_shadow.h"
 void chaos_start(void);
@@ -15,9 +17,10 @@ long chaos_observation_begin(int);
 void chaos_observation_end(long);
 void chaos_observation_arm(int, int);
 void chaos_observation_disarm(void);
-int chaos_observation_take_message(void);
-void chaos_observation_delivered(int);
-void chaos_observation_map_delivered(void);
+struct chaos_observation_token chaos_observation_take_message(void);
+struct chaos_observation_token chaos_observation_take_map(void);
+void chaos_observation_delivered(struct chaos_observation_token);
+void chaos_observation_map_delivered(struct chaos_observation_token);
 void chaos_observation_blocked(void);
 #else
 #define chaos_shadow_active() (0)
@@ -32,9 +35,10 @@ void chaos_observation_blocked(void);
 #define chaos_observation_end(root) ((void)0)
 #define chaos_observation_arm(operation,fact) ((void)0)
 #define chaos_observation_disarm() ((void)0)
-#define chaos_observation_take_message() (0)
-#define chaos_observation_delivered(fact) ((void)0)
-#define chaos_observation_map_delivered() ((void)0)
+#define chaos_observation_take_message() ((struct chaos_observation_token){0L, CHAOS_OBS_FACT_NONE})
+#define chaos_observation_take_map() ((struct chaos_observation_token){0L, CHAOS_OBS_FACT_NONE})
+#define chaos_observation_delivered(token) ((void)0)
+#define chaos_observation_map_delivered(token) ((void)0)
 #define chaos_observation_blocked() ((void)0)
 #endif
 #endif
