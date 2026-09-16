@@ -568,6 +568,262 @@ class NativeCIPreparationTests(unittest.TestCase):
         self.assertNotIn("--retry", job)
 
 
+class NativeCallerWiringTests(unittest.TestCase):
+    """Source wiring and stdlib allocation units, not native acceptance."""
+
+    def setUp(self):
+        self.workflow = (ROOT / ".github/workflows/quality.yml").read_text()
+        self.game = self.workflow.split("  game:\n", 1)[1].split("  secrets:\n", 1)[0]
+        self.suite = self.game.split(
+            "      - name: Run the complete offline suite once\n", 1
+        )[1].split("      - name: Retain selected", 1)[0]
+        self.local = (
+            (ROOT / "docs/quality-control.md")
+            .read_text()
+            .split("## Local equivalents", 1)[1]
+            .split("```", 2)[1]
+        )
+
+    def test_exact_platform_and_whistle_environment_in_both_callers(self):
+        expected = {
+            "PLATFORM_ROOT": "$root",
+            "PLATFORM_RECEIPT": "$out/system-gcc13",
+            "PLATFORM_REVISION": "$revision",
+            "PLATFORM_ARTIFACTS": "$invocation/platform",
+            "PLATFORM_OFF_TUPLE": "$out/stock",
+            "WHISTLE_ROOT": "$root",
+            "WHISTLE_RECEIPT": "$out/system-gcc13",
+            "WHISTLE_REVISION": "$revision",
+            "WHISTLE_ARTIFACTS": "$invocation/whistle",
+        }
+        for label, source in (("CI", self.suite), ("local", self.local)):
+            with self.subTest(caller=label):
+                command = source.split("env -i", 1)[1]
+                assignments = re.findall(
+                    r'NYARLATHACK_((?:PLATFORM|WHISTLE)_[A-Z_]+)="([^"]+)"',
+                    command,
+                )
+                self.assertEqual(len(assignments), 9)
+                self.assertEqual(dict(assignments), expected)
+                for assignment in (
+                    'NYARLATHACK_STOCK_DIR="$out/stock"',
+                    'NYARLATHACK_PRECURIO_DIR="$out/precurio"',
+                    "NYARLATHACK_NATIVE_FIXTURE_MODE=source-build",
+                    'NYARLATHACK_NATIVE_BUILD_RECEIPT="$out/system-gcc13"',
+                    'NYARLATHACK_NATIVE_EXPECTED_REVISION="$revision"',
+                    'HOME="$out/home"',
+                    'MAIL="$out/MAIL"',
+                    'TMPDIR="$out/fixtures"',
+                ):
+                    self.assertIn(assignment, command)
+                self.assertNotIn("NYARLATHACK_OBSERVATIONS", source)
+                self.assertEqual(command.count("-m unittest discover"), 1)
+                self.assertNotIn("--retry", source)
+
+    def test_private_absent_output_published_before_preparation(self):
+        preparation = self.game.split(
+            "      - name: Prepare authenticated native tuples\n", 1
+        )[1].split("      - name: Run the complete", 1)[0]
+        allocation = "container=$(mktemp -d /tmp/nyarl-native-ci.XXXXXX)"
+        publish = 'printf \'NYARLATHACK_CI_OUT=%s\\n\' "$out" >> "$GITHUB_ENV"'
+        for source in (preparation, self.local):
+            with self.subTest(source=source[:40]):
+                self.assertIn(allocation, source)
+                self.assertLess(source.index("umask 077"), source.index(allocation))
+                self.assertIn('out="$container/output"', source)
+                self.assertIn('--output-dir "$out"', source)
+                self.assertNotRegex(source, r"\b(?:mkdir|rm|ln)\b")
+        self.assertIn(publish, preparation)
+        self.assertLess(
+            preparation.index(publish), preparation.index("/usr/bin/python3")
+        )
+        self.assertIn('--root "$GITHUB_WORKSPACE"', preparation)
+        self.assertIn('--expected-revision "$GITHUB_SHA"', preparation)
+        self.assertIn('out="$NYARLATHACK_CI_OUT"', self.suite)
+        self.assertIn('root="$GITHUB_WORKSPACE"', self.suite)
+        self.assertIn('revision="$GITHUB_SHA"', self.suite)
+        self.assertIn('cd "$GITHUB_WORKSPACE"', self.suite)
+        self.assertIn('cd "$root"', self.local)
+        self.assertIn("revision=REVIEWED_REV\n", self.local)
+        self.assertNotIn("rev-parse", self.local)
+        self.assertNotIn("timeout-minutes: 0", self.game)
+        self.assertIn("timeout-minutes: 15", self.game)
+
+    def test_invocation_allocation_is_private_unique_with_absent_leaves(self):
+        allocation = 'invocation=$(mktemp -d "$out/fixtures/full-suite.XXXXXX")'
+        for source in (self.suite, self.local.split('cd "$root"', 1)[1]):
+            self.assertIn(allocation, source)
+            self.assertLess(source.index("umask 077"), source.index(allocation))
+            self.assertLess(source.index(allocation), source.index("umask 022"))
+            self.assertLess(source.index("umask 022"), source.index("env -i"))
+            self.assertNotRegex(source, r"\b(?:mkdir|rm|ln)\b")
+        # Unit-only analogue of two launches; never create/reuse artifact leaves.
+        with tempfile.TemporaryDirectory(prefix="caller-unit-", dir="/tmp") as base:
+            fixtures = Path(base) / "fixtures"
+            fixtures.mkdir(mode=0o700)
+            parents = [
+                Path(tempfile.mkdtemp(prefix="full-suite.", dir=fixtures))
+                for _ in range(2)
+            ]
+            leaves = [p / name for p in parents for name in ("platform", "whistle")]
+            self.assertEqual(len(set(parents)), 2)
+            self.assertEqual(len(set(leaves)), 4)
+            for parent in parents:
+                self.assertEqual(stat.S_IMODE(parent.stat().st_mode), 0o700)
+            self.assertTrue(all(not leaf.exists() for leaf in leaves))
+
+    def upload_steps(self):
+        # Deliberately narrow source parser; no PyYAML dependency in CI tests.
+        blocks = re.split(r"(?m)^      - ", self.game)[1:]
+        uploads = []
+        for block in blocks:
+            if "uses: actions/upload-artifact@" not in block:
+                continue
+            condition = re.findall(r"(?m)^        if: (.+)$", block)
+            self.assertEqual(len(condition), 1, block)
+            paths = re.search(
+                r"(?m)^          path: \|\n((?:            .+\n)+)", block
+            )
+            self.assertIsNotNone(paths, block)
+            name = re.findall(r"(?m)^          name: (.+)$", block)
+            self.assertEqual(len(name), 1, block)
+            uploads.append((name[0], condition[0], paths[1].splitlines(), block))
+        self.assertTrue(uploads)
+        return uploads
+
+    def selected_uploads(self, env, previous_success):
+        """Unit model of only these source conditions, not a hosted runner."""
+        self.assertIsInstance(previous_success, bool)
+        selected = {}
+        for name, condition, paths, _ in self.upload_steps():
+            # always() ignores the previous step's success/failure.
+            if condition in ("always()", "${{ always() }}"):
+                invoke = True
+            elif condition == "${{ always() && env.NYARLATHACK_CI_OUT != '' }}":
+                invoke = env.get("NYARLATHACK_CI_OUT", "") != ""
+            else:
+                self.fail("unsupported upload condition: " + condition)
+            if not invoke:
+                continue  # No dynamic path interpolation for a skipped action.
+            self.assertNotIn(name, selected)
+            selected[name] = [
+                line.strip()
+                .replace("${{ runner.temp }}", "/tmp/runner-unit")
+                .replace(
+                    "${{ env.NYARLATHACK_CI_OUT }}",
+                    env.get("NYARLATHACK_CI_OUT", ""),
+                )
+                for line in paths
+            ]
+        return selected
+
+    def test_preparation_log_upload_is_always_separate_from_dynamic_paths(self):
+        uploads = self.upload_steps()
+        self.assertEqual(len(uploads), 2)
+        preparation = next(u for u in uploads if u[0] == "native-preparation-log")
+        self.assertEqual(preparation[1], "always()")
+        self.assertEqual(
+            [line.strip() for line in preparation[2]],
+            ["${{ runner.temp }}/native-preparation.log"],
+        )
+        self.assertNotIn("NYARLATHACK_CI_OUT", preparation[3])
+        for _, _, _, block in uploads:
+            self.assertIn(
+                "uses: actions/upload-artifact@"
+                "ea165f8d65b6e75b540449e92b4886f43607fa02 # v4",
+                block,
+            )
+            self.assertIn("          if-no-files-found: ignore\n", block)
+            self.assertIn("          retention-days: 7\n", block)
+
+    def test_before_publication_missing_or_empty_output_skips_dynamic_upload(self):
+        # Checkout, dependency, or allocation failure: no published output.
+        # These are string-only selections; never expand filesystem globs.
+        for env in ({}, {"NYARLATHACK_CI_OUT": ""}):
+            for previous_success in (False, True):
+                with self.subTest(env=env, previous_success=previous_success):
+                    self.assertEqual(
+                        self.selected_uploads(env, previous_success),
+                        {
+                            "native-preparation-log": [
+                                "/tmp/runner-unit/native-preparation.log"
+                            ]
+                        },
+                    )
+
+    def test_after_publication_failed_preparer_retains_selected_private_paths(self):
+        # Published before the preparer runs; failure must not suppress logs.
+        out = "/tmp/nyarl-native-ci.UNIT/output"
+        for previous_success in (False, True):
+            with self.subTest(previous_success=previous_success):
+                selected = self.selected_uploads(
+                    {"NYARLATHACK_CI_OUT": out}, previous_success
+                )
+                self.assertEqual(
+                    set(selected),
+                    {"native-preparation-log", "native-build-and-test-logs"},
+                )
+                self.assertEqual(
+                    selected["native-preparation-log"],
+                    ["/tmp/runner-unit/native-preparation.log"],
+                )
+                paths = selected["native-build-and-test-logs"]
+                self.assertTrue(paths)
+                self.assertTrue(all(p.lstrip("!").startswith(out + "/") for p in paths))
+                self.assertIn(out + "/old-on/*.log", paths)
+                self.assertIn(out + "/system-gcc13/*.json", paths)
+                self.assertIn("!" + out + "/fixtures/**/.git/**", paths)
+
+    def test_upload_dynamic_base_selects_diagnostics_not_whole_tree(self):
+        upload = next(
+            u for u in self.upload_steps() if u[0] == "native-build-and-test-logs"
+        )
+        guard = "${{ always() && env.NYARLATHACK_CI_OUT != '' }}"
+        self.assertEqual(upload[1], guard)
+        self.assertLess(upload[3].index("if: " + guard), upload[3].index("uses:"))
+        self.assertLess(upload[3].index("if: " + guard), upload[3].index("path: |"))
+        paths = [line.strip() for line in upload[2]]
+        base = "${{ env.NYARLATHACK_CI_OUT }}"
+        expected = {
+            base + "/*.json",
+            base + "/full-suite.log",
+            "!" + base + "/fixtures/**/.git/**",
+        }
+        expected.update(
+            f"{base}/{folder}/*.{suffix}"
+            for folder in ("system-gcc13", "old-on")
+            for suffix in ("json", "log", "txt")
+        )
+        expected.update(
+            f"{base}/fixtures/**/*.{suffix}"
+            for suffix in (
+                "json",
+                "jsonl",
+                "raw",
+                "log",
+                "txt",
+                "stdout",
+                "stderr",
+                "bin",
+            )
+        )
+        self.assertEqual(set(paths), expected)
+        self.assertEqual(len(paths), len(expected))
+        self.assertIn("if-no-files-found: ignore", upload[3])
+        self.assertIn("retention-days: 7", upload[3])
+        self.assertNotIn("$RUNNER_TEMP/native-ci", self.game)
+
+    def test_readme_keeps_offline_default_and_links_native_recipe(self):
+        readme = (ROOT / "README.md").read_text()
+        verification = readme.split("## Verification", 1)[1].split("## ", 1)[0]
+        self.assertIn(
+            "python3 -m unittest discover -s tests/chaos -p 'test_*.py' -v",
+            verification,
+        )
+        self.assertNotIn("NYARLATHACK_GAME_TESTS=1", verification)
+        self.assertIn("docs/quality-control.md#local-equivalents", verification)
+
+
 # These programs are Python-only. The recipe and its writer stay in the exact
 # new session created by the runner; only the isolated harness is a subreaper.
 RECIPE = r"""

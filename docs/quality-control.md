@@ -54,19 +54,34 @@ secret is absent.
 
 ## Local equivalents
 
+**Platform/whistle acceptance is pending.** Caller wiring alone is not full-suite
+acceptance: both unittest adapters still need process isolation for their
+process-global umask and hard resource limits. Until that separate fix and the
+held hook/fixture reviews pass, do not run this native recipe or treat the
+workflow as ready to merge. Source-wiring unit tests do not verify native receipts.
+
+After authorization and both reviews, use a fresh canonical full-history checkout
+already at the independently approved revision, with reviewed hooks and fixtures
+committed. All drivers, helpers, fixtures and discovery must come from that same
+checkout. `REVIEWED_REV` below is deliberately invalid 40hex: replace it with the
+approved full lowercase SHA, never automatically with HEAD or a receipt value.
+
 ```bash
 set -euo pipefail
 ruff check chaos tests/chaos scripts
 ruff format --check chaos tests/chaos scripts
 # Use a fresh disposable full-history checkout: builds modify this checkout.
 # Select a reviewed full revision independently, not from a receipt.
-root=/absolute/path/to/disposable-checkout
-revision=FULL_REVIEWED_LOWERCASE_40_HEX_REVISION
-out=/absolute/path/to/nonexistent-private-output
+root=/absolute/path/to/fresh-reviewed-checkout
+revision=REVIEWED_REV
+umask 077
+container=$(mktemp -d /tmp/nyarl-native-ci.XXXXXX)
+out="$container/output" # absent; preparer creates it
 /usr/bin/python3 "$root/scripts/prepare_native_ci.py" \
   --root "$root" --output-dir "$out" --expected-revision "$revision"
 cd "$root"
 umask 077
+invocation=$(mktemp -d "$out/fixtures/full-suite.XXXXXX")
 : > "$out/full-suite.log"
 # Keep the log private without changing intentionally public negative fixtures.
 umask 022
@@ -78,9 +93,34 @@ env -i PATH=/usr/bin:/bin HOME="$out/home" LANG=C.UTF-8 TZ=America/New_York \
   NYARLATHACK_NATIVE_FIXTURE_MODE=source-build \
   NYARLATHACK_NATIVE_BUILD_RECEIPT="$out/system-gcc13" \
   NYARLATHACK_NATIVE_EXPECTED_REVISION="$revision" \
+  NYARLATHACK_PLATFORM_ROOT="$root" \
+  NYARLATHACK_PLATFORM_RECEIPT="$out/system-gcc13" \
+  NYARLATHACK_PLATFORM_REVISION="$revision" \
+  NYARLATHACK_PLATFORM_ARTIFACTS="$invocation/platform" \
+  NYARLATHACK_PLATFORM_OFF_TUPLE="$out/stock" \
+  NYARLATHACK_WHISTLE_ROOT="$root" \
+  NYARLATHACK_WHISTLE_RECEIPT="$out/system-gcc13" \
+  NYARLATHACK_WHISTLE_REVISION="$revision" \
+  NYARLATHACK_WHISTLE_ARTIFACTS="$invocation/whistle" \
   /usr/bin/python3 -m unittest discover -s tests/chaos -p 'test_*.py' -v \
   2>&1 | tee "$out/full-suite.log"
 ```
+
+Preparation gets an absent output child of a private unique parent under `/tmp`.
+CI publishes this path as `NYARLATHACK_CI_OUT` through `GITHUB_ENV` before running
+the preparer. The selected build/test diagnostic upload runs only when that path
+is nonempty, including after a preparer failure. Failures before publication
+skip that upload entirely; no empty-base or root fallback globs are used.
+A separate always-on upload retains only `runner.temp/native-preparation.log`
+when present. Both uploads ignore missing files and retain artifacts for seven
+days. Each suite or separately authorized standalone native launch needs a fresh
+private invocation parent under `out/fixtures` and distinct **absent**
+platform/whistle leaves.
+Never precreate, delete for reuse, or reuse those leaves; do not use symlinks as a
+canonical-path workaround. Retain distinct logs for later authorized launches,
+not overwrites or automatic retries. Delivery allocates its own private parent
+under the same `/tmp`-backed `TMPDIR`. Observations remain child-scoped, not enabled
+globally in the suite environment.
 
 The preparer rejects existing/symlinked/overlapping output paths, shallow history,
 revision mismatch, tracked changes, hidden index flags, and any `local.mk`.
@@ -114,11 +154,17 @@ shared historical installation is touched or made writable. The isolated old
 clone remains under the private output directory; no worktree cleanup or
 shared-object/hardlink clone is used.
 
+Platform `OFF_TUPLE` selects the executable current-revision mode-0 `stock` copy,
+not the nonexecutable `off-archive` or the mode-1 live installation. This is not an
+independently built upstream baseline or off-object calibration. Historical
+`precurio` remains separate; whistle has no `OFF_TUPLE` variable.
+
 The suite uses system Python (3.11+), system tool `PATH`, an empty private home,
 and a private `TMPDIR` to retain fixture diagnostics without importing ambient
 credentials. Uploads select build receipts/logs and fixture JSON/JSONL, raw
-terminal output, logs and text only, for seven days even on failure; binaries,
-object files, Git directories and the private home are not uploaded. Any ledgers
+terminal output (including selected `.bin` evidence), `.stdout`, `.stderr`, logs
+and text, for seven days even on failure; game executables, shared libraries,
+object files, Git directories, private HOME and MAIL are not uploaded. Any ledgers
 in those offline fixture records belong to fake clients, not live Luna calls.
 Never add a live credential directory or real provider ledger to these globs.
 

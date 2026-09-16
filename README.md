@@ -100,14 +100,10 @@ Fast protocol/director tests (real-game tests are explicitly skipped):
 python3 -m unittest discover -s tests/chaos -p 'test_*.py' -v
 ```
 
-Full acceptance, after building `CHAOS=1`; supply an unmodified stock build
-installation containing `dnethack`, `nhdat`, and `license`:
-
-```sh
-NYARLATHACK_STOCK_DIR=/absolute/path/to/stock-install \
-NYARLATHACK_GAME_TESTS=1 \
-python3 -m unittest discover -s tests/chaos -p 'test_*.py' -v
-```
+For full native acceptance, use the maintained
+[fresh reviewed-checkout recipe](docs/quality-control.md#local-equivalents).
+Platform/whistle driver isolation and native review/acceptance gates remain
+pending; caller wiring alone is not a passing full-suite result.
 
 The terminal harness is Linux-specific and uses a test-only preload library.
 It records actual input bytes, terminal output, event logs, score logs and
