@@ -66,7 +66,7 @@ static void calibrate(void)
     static const unsigned seeds[] = {1, 2, 3, 4, 5, 6, 7, 8,
                                      9, 10, 11, 12, 13, 14, 15, 16};
     unsigned i;
-    int branch, zero, one, two, selection, wisdom;
+    int branch, zero, one, two, selection, wisdom, damage, pit_count, pit_next;
     puts("[");
     for (i = 0; i < sizeof seeds / sizeof seeds[0]; ++i) {
         seeded_reset(seeds[i]);
@@ -79,10 +79,17 @@ static void calibrate(void)
         selection = rn2(8);
         wisdom = rn2(19);
         two = rn2(100000);
+        seeded_reset(seeds[i]);
+        assert(rn2(8) == selection);
+        damage = rnd(6);
+        pit_count = reseed_count;
+        pit_next = rn2(100000);
         printf("%s{\"seed\":%u,\"first_rn2_2\":%d,\"next_after_zero\":%d,"
                "\"next_after_one\":%d,\"next_after_two\":%d,"
-               "\"pet_selection\":%d,\"wisdom_draw\":%d}",
-               i ? ",\n" : "", seeds[i], branch, zero, one, two, selection, wisdom);
+               "\"pet_selection\":%d,\"wisdom_draw\":%d,"
+               "\"pit_damage\":%d,\"pit_count\":%d,\"pit_next\":%d}",
+               i ? ",\n" : "", seeds[i], branch, zero, one, two, selection, wisdom,
+               damage, pit_count, pit_next);
     }
     puts("\n]");
 }
@@ -110,6 +117,8 @@ int main(int argc, char **argv)
     int saved_type_known;
     int pet, pet_known, x, y, selection = -1, wisdom = -1, wisdom_delta = 0;
     int discovery_slot = -1;
+    int pit, damage = 0, pit_count = 0, pit_request = -1;
+    struct trap *arrival = NULL, saved_trap;
     int noshow, norep, suppression, request_before = -1, primer_before = -1;
     char previous[BUFSZ];
     const char *high_message = "You produce a high whistling sound.";
@@ -138,7 +147,8 @@ int main(int argc, char **argv)
     suppression = noshow || norep;
     known = !strcmp(argv[1], "known") || !strcmp(argv[1], "noshow-known")
         || !strcmp(argv[1], "norep-known");
-    pet_known = !strcmp(argv[1], "magic-pet-known");
+    pit = !strcmp(argv[1], "magic-pet-pit-known");
+    pet_known = pit || !strcmp(argv[1], "magic-pet-known");
     pet = pet_known || !strcmp(argv[1], "magic-pet-unknown");
     cancel_apply = !strcmp(argv[1], "apply-cancel");
     inert = !strcmp(argv[1], "tagged-curio-inert");
@@ -227,12 +237,36 @@ int main(int argc, char **argv)
         assert(canspotmon((&sleeper)) && canseemon((&sleeper)));
         assert(fmon == &sleeper && !sleeper.nmon && m_at(15,10) == &sleeper);
         assert(!ftrap && !sleeper.mtrapped && distu(15,10) > 2);
+        if (pit) {
+            /* Inherited hero-memory-disabled fixture: seetrap/newsym must
+             * preserve remembered glyphs; compare every levl byte below. */
+            assert(!level.flags.hero_memory);
+            /* This bounded fixture does not run init_dungeon: zero-initialized
+             * branch IDs otherwise alias its ordinary dnum 0 to both branches. */
+            assert(u.uz.dnum == 0);
+            sokoban_dnum = 1;
+            neutral_dnum = 2;
+            assert(!In_sokoban(&u.uz) && !In_outlands(&u.uz));
+            assert(!u.usteed && !sleeper.wormno && !sleeper.minvent);
+            assert(!MON_WEP(&sleeper) && !sleeper.mtrapseen);
+            assert(!mon_resistance(&sleeper, FLYING));
+            assert(!mon_resistance(&sleeper, LEVITATION));
+            assert(!mon_resistance(&sleeper, PASSES_WALLS));
+            assert(!is_clinger(sleeper.data) && sleeper.mhp == 10);
+            assert(!fobj && !m_at(11,9));
+            arrival = maketrap(11, 9, PIT);
+            assert(arrival && ftrap == arrival && !arrival->ntrap);
+            assert(arrival->tx == 11 && arrival->ty == 9 && arrival->ttyp == PIT);
+            assert(!arrival->tseen && !arrival->madeby_u && !arrival->ammo);
+            memcpy(&saved_trap, arrival, sizeof saved_trap);
+        }
         memcpy(saved_map, levl, sizeof saved_map);
         memcpy(saved_disco, disco, sizeof saved_disco);
         for (x = 0; x < COLNO; ++x)
             for (y = 0; y < ROWNO; ++y) {
                 assert(level.monsters[x][y] == ((x == 15 && y == 10) ? &sleeper : NULL));
-                assert(!t_at(x,y));
+                assert(t_at(x,y) == ((pit && x == 11 && y == 9) ? arrival : NULL));
+                if (pit) assert(!level.objects[x][y]);
             }
         for (i = 0; i < 8; ++i)
             assert(goodpos(positions[i][0], positions[i][1], &sleeper, 0));
@@ -299,6 +333,12 @@ int main(int argc, char **argv)
         seed = 2;
         seeded_reset(seed);
         selection = rn2(8);
+        if (pit) {
+            damage = rnd(6);
+            pit_count = reseed_count;
+            assert(pit_count == 2 && damage >= 1 && damage <= 6 && damage < sleeper.mhp);
+            pit_request = lastmsg;
+        }
         if (!pet_known) {
             wisdom = rn2(19);
             wisdom_delta = wisdom > ACURR(A_WIS);
@@ -368,21 +408,43 @@ int main(int argc, char **argv)
         fputs(",\"discovery_before\":", stderr);
         hex_record(stderr, saved_disco, sizeof saved_disco);
         fputs(",\"discovery_after\":", stderr); hex_record(stderr, disco, sizeof saved_disco);
+        if (pit) {
+            fprintf(stderr, ",\"pit_damage\":%d,\"pit_count\":%d,\"hero_memory\":%d,"
+                    "\"trap_type\":%d,\"trap_seen_before\":%d,\"trap_seen_after\":%d,"
+                    "\"trap_knowledge_before\":%lu,\"trap_knowledge_after\":%lu",
+                    damage, pit_count, level.flags.hero_memory, arrival->ttyp,
+                    saved_trap.tseen, arrival->tseen,
+                    (unsigned long)saved_mon.mtrapseen, (unsigned long)sleeper.mtrapseen);
+        }
         fputs("}\n", stderr); fflush(stderr);
         assert(!nextgetobj && result == MOVE_DEFAULT);
-        assert(draws == (pet_known ? 1 : 2) && next == expected);
+        assert(draws == (pit ? pit_count : pet_known ? 1 : 2) && next == expected);
         assert(reseed_period == INT_MAX);
         assert(sleeper.mx == positions[selection][0] && sleeper.my == positions[selection][1]);
         assert(invent == &o && isok(sleeper.mx, sleeper.my));
         assert(levl[sleeper.mx][sleeper.my].typ == ROOM);
         assert(distu(sleeper.mx, sleeper.my) <= 2 && distu(sleeper.mx, sleeper.my) > 0);
         assert(canspotmon((&sleeper)) && canseemon((&sleeper)));
-        assert(fmon == &sleeper && !sleeper.nmon && !ftrap && !sleeper.mtrapped);
+        assert(fmon == &sleeper && !sleeper.nmon);
+        if (pit) {
+            assert(ftrap == arrival && !arrival->ntrap && arrival->tseen == 1);
+            assert(!saved_trap.tseen);
+            saved_trap.tseen = 1;
+            assert(!memcmp(&saved_trap, arrival, sizeof saved_trap));
+            assert(sleeper.mhp == saved_mon.mhp - damage && sleeper.mtrapped == 1);
+            assert(sleeper.mtrapseen == (saved_mon.mtrapseen | (1L << (PIT - 1))));
+            assert(!level.flags.hero_memory && !fobj);
+            assert(lastmsg == (pit_request + 2) % DUMPMSGS);
+            assert(!strcmp(msgs[(pit_request + 1) % DUMPMSGS],
+                           "You produce a strange whistling sound."));
+            assert(!strcmp(msgs[lastmsg], "The little dog falls into a pit!"));
+        } else assert(!ftrap && !sleeper.mtrapped);
         for (x = 0; x < COLNO; ++x)
             for (y = 0; y < ROWNO; ++y) {
                 assert(level.monsters[x][y] ==
                        ((x == sleeper.mx && y == sleeper.my) ? &sleeper : NULL));
-                assert(!t_at(x,y));
+                assert(t_at(x,y) == ((pit && x == 11 && y == 9) ? arrival : NULL));
+                if (pit) assert(!level.objects[x][y]);
             }
         assert(!memcmp(saved_map, levl, sizeof saved_map));
         assert(objects[o.otyp].oc_name_known == 1);
@@ -406,6 +468,11 @@ int main(int argc, char **argv)
         assert(sleeper.mux == u.ux && sleeper.muy == u.uy);
         saved_mon.mx = positions[selection][0]; saved_mon.my = positions[selection][1];
         saved_mon.mux = u.ux; saved_mon.muy = u.uy;
+        if (pit) {
+            saved_mon.mhp -= damage;
+            saved_mon.mtrapped = 1;
+            saved_mon.mtrapseen |= 1L << (PIT - 1);
+        }
     } else if (dispatch) {
         assert(sleeper.msleeping == !leaf);
         assert(EDOG(&sleeper)->whistletime == (leaf ? moves : 0));
@@ -495,6 +562,7 @@ int main(int argc, char **argv)
             known, result, MOVE_PARTIAL, moves, monstermoves, draws, next,
             sleeper.msleeping, EDOG(&sleeper)->whistletime);
     fflush(stdout);
+    if (pit) deltrap(arrival);
     rem_all_mx(&sleeper); fmon = 0; invent = 0;
     exit_nhwindows((char *)0);
     return 0;

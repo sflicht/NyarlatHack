@@ -42,17 +42,20 @@ SOUND_CASES = {
 
 
 DISPATCH_CASES = ("tagged-curio-inert", "leaf-ordinary", "apply-cancel")
-PET_CASES = ("magic-pet-known", "magic-pet-unknown")
+PET_CASES = ("magic-pet-known", "magic-pet-unknown", "magic-pet-pit-known")
 SUPPRESSION_CASES = ("noshow-known", "noshow-unknown", "norep-known", "norep-unknown")
 
 
-def cancel_at_prompt(g, exe, child_env, work, supervisor, cancel):
-    """Use the pinned Game stdin-read proof, then send exactly one ESC."""
+def cancel_at_prompt(g, exe, child_env, work, supervisor, cancel, *, pit=False):
+    """Use pinned stdin-read proof; ESC selection or native pit More handling."""
     # Game readiness pins /proc/exe to this private path. The native tuple was
     # verified before replacing ONLY this private copy with the linked fixture.
     shutil.copy2(exe, g.game / "dnethack")
     assert supervisor.digest(g.game / "dnethack") == supervisor.digest(exe)
-    command = [str(g.game / "dnethack"), "apply-cancel"]
+    command = [
+        str(g.game / "dnethack"),
+        "magic-pet-pit-known" if pit else "apply-cancel",
+    ]
     supervisor.save(work / "terminal.command.json", command)
     diagnostic_path = work / "terminal.stderr"
     try:
@@ -70,12 +73,16 @@ def cancel_at_prompt(g, exe, child_env, work, supervisor, cancel):
             fcntl.ioctl(fd, termios.TIOCSWINSZ, struct.pack("HHHH", 24, 80, 0, 0))
             prompt = g.read(5)
             assert len(g.raw) <= 65536, "selection prompt cap"
-            assert b"What do you want to use or apply? [a or ?*]" in prompt, prompt
+            if pit:
+                assert b"You produce a strange whistling sound." in prompt
+                assert b"--More--" in prompt, prompt
+            else:
+                assert b"What do you want to use or apply? [a or ?*]" in prompt, prompt
             assert g._reader_pid == pid, "native terminal stdin read required"
             (work / "selection-prompt.stdout").write_bytes(bytes(g.raw))
-            status = g.finish(g.send(b"\x1b"))
+            status = g.finish(prompt if pit else g.send(b"\x1b"))
             assert status == 0, status
-            assert g.inputs == ["1b"], g.inputs
+            assert g.inputs == (["20"] if pit else ["1b"]), g.inputs
     finally:
         if g.pid is not None or g.fd is not None:
             g.cleanup()
@@ -324,6 +331,15 @@ def main(argv=None):
                 "chosen": seeds,
             },
         )
+        # Independent real rnd(6) preflight measured in pit-eclfotxq; never
+        # infer damage from the old rn2(19) Wisdom calibration.
+        assert {
+            key: seeds[0][key] for key in ("pit_damage", "pit_count", "pit_next")
+        } == {
+            "pit_damage": 2,
+            "pit_count": 2,
+            "pit_next": 86788,
+        }
         OwnedGame = supervisor.owned_game_type(gameplay_support.Game, cancel)
         results = []
         for case in (
@@ -337,13 +353,16 @@ def main(argv=None):
             descriptor = SOUND_CASES.get(case)
             suppression = case in SUPPRESSION_CASES
             pet = case in PET_CASES
+            pit = case == "magic-pet-pit-known"
             dispatch = case in DISPATCH_CASES
             calibrated = seeds[case == "magic-cursed-success"]
             pair = []
             for enabled in (False, True):
                 work = out / (case + ("-on" if enabled else "-off"))
                 game_type = (
-                    OwnedGame if case == "apply-cancel" else gameplay_support.Game
+                    OwnedGame
+                    if case == "apply-cancel" or pit
+                    else gameplay_support.Game
                 )
                 g = game_type(selection.tuple_dir, clock, root=work)
                 selection.verify_copy(g.game)
@@ -363,9 +382,9 @@ def main(argv=None):
                 )
                 if descriptor or dispatch or pet or suppression:
                     child_env["WHISTLE_SEED"] = str(calibrated["seed"])
-                if case == "apply-cancel":
+                if case == "apply-cancel" or pit:
                     raw, diagnostic = cancel_at_prompt(
-                        g, exe, child_env, work, supervisor, cancel
+                        g, exe, child_env, work, supervisor, cancel, pit=pit
                     )
                 else:
                     raw, diagnostic = supervisor.bounded(
@@ -446,13 +465,19 @@ def main(argv=None):
                     ):
                         assert state[key] is True
                 if pet:
-                    known = case == "magic-pet-known"
+                    known = case != "magic-pet-unknown"
                     assert state["case"] == case and state["seed"] == 2
-                    assert state["rng_draws"] == (1 if known else 2)
+                    assert state["rng_draws"] == (1 if known and not pit else 2)
                     assert (
                         state["next_draw"]
                         == state["expected_next"]
-                        == calibrated["next_after_one" if known else "next_after_two"]
+                        == calibrated[
+                            "pit_next"
+                            if pit
+                            else "next_after_one"
+                            if known
+                            else "next_after_two"
+                        ]
                     )
                     assert state["selection"] == calibrated["pet_selection"]
                     assert state["wisdom_draw"] == (
@@ -468,7 +493,30 @@ def main(argv=None):
                     assert state["old"] == [15, 10] and state["new"] != state["old"]
                     assert state["new"] == [11, 9]
                     assert state["player_before"] == state["player_after"]
-                    assert state["monster_before"][:5] == state["monster_after"][:5]
+                    if pit:
+                        assert state["pit_damage"] == calibrated["pit_damage"]
+                        assert state["pit_count"] == calibrated["pit_count"] == 2
+                        assert state["hero_memory"] == 0
+                        assert state["trap_type"] == 11
+                        assert (
+                            state["trap_seen_before"] == 0
+                            and state["trap_seen_after"] == 1
+                        )
+                        assert state["trap_knowledge_before"] == 0
+                        assert state["trap_knowledge_after"] == 1 << (
+                            state["trap_type"] - 1
+                        )
+                        monster = state["monster_before"][:5]
+                        assert monster[2:5] == [10, 10, 0]
+                        monster[2] -= calibrated["pit_damage"]
+                        monster[4] = 1
+                        assert monster == state["monster_after"][:5]
+                        whistle = b"You produce a strange whistling sound."
+                        fall = b"The little dog falls into a pit!"
+                        assert raw.count(fall) == 1
+                        assert raw.index(whistle) < raw.index(fall)
+                    else:
+                        assert state["monster_before"][:5] == state["monster_after"][:5]
                     assert state["monster_before"][5:] == [0, 0]
                     assert state["monster_after"][5:] == [10, 10]
                     assert state["sleeping"] == state["whistletime"] == 0
@@ -528,7 +576,7 @@ def main(argv=None):
                     (3 if suppression else 4) if enabled and not dispatch else 1
                 )
                 assert before == after, chaos
-                if dispatch or suppression:
+                if dispatch or suppression or pit:
                     attempts = [e for e in records if e["event"] == "apply"]
                     assert len(attempts) == 1 and attempts[0]["phase"] == "attempt"
                     assert attempts[0]["detail"] == ""
@@ -546,6 +594,32 @@ def main(argv=None):
                 assert len(before["effects"]) == 3
                 assert not any(e["event"] == "ack" for e in records)
                 obs = [e for e in records if e["v"] == 2]
+                if pit:
+                    for event in obs:
+                        assert set(event) == {
+                            "v",
+                            "seq",
+                            "turn",
+                            "safe",
+                            "event",
+                            "phase",
+                            "detail",
+                            "sanity",
+                            "insight",
+                            "budget",
+                            "spent",
+                            "reserved",
+                            "last_id",
+                            "vitals",
+                            "observation",
+                        }
+                        assert set(event["vitals"]) == {
+                            "hp",
+                            "hp_max",
+                            "power",
+                            "power_max",
+                        }
+                        assert event["event"] == "observation"
                 if not enabled:
                     assert not obs
                 pair.append((raw, state, before))
@@ -559,7 +633,16 @@ def main(argv=None):
                     }
                 )
             assert pair[0] == pair[1], "native terminal/state off-on mismatch"
-        assert len(results) == 32
+        assert len(results) == 34
+        for family in ("noshow", "norep"):
+            for enabled in (False, True):
+                public = [
+                    row["observations"]
+                    for row in results
+                    if row["enabled"] == enabled
+                    and row["case"] in (family + "-known", family + "-unknown")
+                ]
+                assert len(public) == 2 and public[0] == public[1]
         save(out / "native-results.json", results)
         # Expected aborts use owned status capture, never a caught bounded error.
         OwnedGame = supervisor.owned_game_type(gameplay_support.Game, cancel)
@@ -630,7 +713,7 @@ def main(argv=None):
             )
         assert len(negatives) == 3
         save(out / "negative-results.json", negatives)
-        assert len(results) == 35
+        assert len(results) == 37
         for result in results:
             if result["enabled"]:
                 obs = result["observations"]
