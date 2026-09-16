@@ -9,6 +9,7 @@
 #include <stdlib.h>
 
 extern short disco[NUM_OBJECTS]; /* only copied o_init.o is globalized */
+extern struct obj *nextgetobj; /* inspected only; copied invent.o */
 
 static void seeded_reset(unsigned seed)
 {
@@ -42,12 +43,26 @@ static void hex_record(FILE *f, const void *data, size_t size)
     fputc('"', f);
 }
 
-static void empty_world(void)
+static void empty_world(struct obj *potion)
 {
     int x,y;
-    assert(!invent && !fmon && !fobj && !ftrap && !migrating_mons && !migrating_objs);
+    assert(invent == potion && !fmon && !fobj && !ftrap && !migrating_mons && !migrating_objs);
+    assert(!nextgetobj);
+    if (potion) assert(!potion->nobj && !potion->cobj && !potion->oextra_p
+                       && !potion->mp && potion->where == OBJ_INVENT);
     for (x = 0; x < COLNO; ++x) for (y = 0; y < ROWNO; ++y)
         assert(!level.monsters[x][y] && !level.objects[x][y] && !t_at(x,y));
+}
+
+static void context_record(FILE *f, const struct you *hero, long turn)
+{
+    fprintf(f,"{\"turn\":%ld,\"safe\":%ld,\"sanity\":%d,\"insight\":%d,"
+            "\"budget\":%d,\"spent\":%d,\"reserved\":%d,\"last_id\":%d,"
+            "\"vitals\":{\"hp\":%d,\"hp_max\":%d,\"power\":%d,\"power_max\":%d}}",
+            turn,hero->chaos.safe,hero->usanity,hero->uinsight,
+            chaos_budget(&hero->chaos,hero->usanity),hero->chaos.spent,
+            hero->chaos.reserved,hero->chaos.last_id,
+            hero->uhp,hero->uhpmax,hero->uen,hero->uenmax);
 }
 
 int main(int argc, char **argv)
@@ -60,9 +75,10 @@ int main(int argc, char **argv)
     short discovery[NUM_OBJECTS];
     struct objclass definitions[NUM_OBJECTS];
     struct flag saved_flags;
+    struct obj *potion = 0, saved_potion;
     long old_moves, old_monstermoves;
     unsigned seed;
-    int i,x,y,result,count,next, total = 0;
+    int i,x,y,result,count,next,decline, total = 0;
     FILE *f;
     assert(argc == 2);
     test_rng_control();
@@ -79,10 +95,17 @@ int main(int argc, char **argv)
         }
         assert(total <= 256); puts("\n]"); return 0;
     }
-    assert(!strcmp(argv[1], "confirmed-refreshed"));
+    decline = !strcmp(argv[1], "decline-selection-cancel");
+    assert(decline || !strcmp(argv[1], "confirmed-refreshed"));
     assert(getenv("FOUNTAIN_SEED")); seed = (unsigned)atoi(getenv("FOUNTAIN_SEED"));
     assert(seed >= 1 && seed <= 64);
     t = preflight(seed); assert(t.fate < 10 && t.dry > 0 && t.count == 3);
+    if (decline) {
+        seeded_reset(seed);
+        t.fate = t.dry = -1; t.hunger = 0;
+        t.count = reseed_count; t.next = rn2(100000);
+        assert(t.count == 0);
+    }
     choose_windows("tty"); initoptions(); init_nhwindows(&argc, argv);
     WIN_MESSAGE = create_nhwindow(NHW_MESSAGE);
     WIN_STATUS = create_nhwindow(NHW_STATUS); WIN_MAP = create_nhwindow(NHW_MAP);
@@ -115,7 +138,18 @@ int main(int argc, char **argv)
     assert(!FOUNTAIN_IS_WARNED(u.ux,u.uy));
     vision_init(); vision_reset(); vision_recalc(0);
     for (x = 1; x < COLNO; ++x) for (y = 0; y < ROWNO; ++y) newsym(x,y);
-    empty_world(); chaos_start(); assert(u.chaos.safe == 1);
+    empty_world(0);
+    if (decline) {
+        potion = mksobj(POT_WATER, MKOBJ_NOINIT); assert(potion);
+        potion->obj_material = objects[POT_WATER].oc_material;
+        potion->quan = 1; potion->known = potion->dknown = potion->bknown = 1;
+        potion->blessed = potion->cursed = 0;
+        potion->owt = weight(potion);
+        potion->invlet = 'a'; potion->where = OBJ_INVENT; invent = potion;
+        assert(potion->oclass == POTION_CLASS && potion->owt > 0);
+        saved_potion = *potion;
+    }
+    empty_world(potion); chaos_start(); assert(u.chaos.safe == 1);
     before = u; saved_youmonst = youmonst; level_flags = level.flags;
     saved_flags = flags;
     memcpy(map,levl,sizeof map); memcpy(discovery,disco,sizeof discovery);
@@ -124,17 +158,18 @@ int main(int argc, char **argv)
     seeded_reset(seed);
     result = dodrink();
     count = reseed_count; next = rn2(100000);
-    fprintf(stderr,"{\"case\":\"confirmed-refreshed\",\"seed\":%u,\"return\":%d,"
-            "\"move_quaffed\":%d,\"count\":%d,\"next\":%d,\"expected_next\":%d,"
+    fprintf(stderr,"{\"case\":\"%s\",\"seed\":%u,\"return\":%d,"
+            "\"move_quaffed\":%d,\"move_cancelled\":%d,\"count\":%d,\"next\":%d,\"expected_next\":%d,"
             "\"hunger_before\":%d,\"hunger_after\":%d,\"hunger_delta\":%d,"
             "\"status_before\":%d,\"status_after\":%d,\"fate\":%d,\"dry\":%d,",
-            seed,result,MOVE_QUAFFED,count,next,t.next,before.uhunger,u.uhunger,t.hunger,
+            argv[1],seed,result,MOVE_QUAFFED,MOVE_CANCELLED,count,next,t.next,before.uhunger,u.uhunger,t.hunger,
             before.uhs,u.uhs,t.fate,t.dry);
     fflush(stderr);
-    assert(result == MOVE_QUAFFED && count == t.count && next == t.next);
+    assert(result == (decline ? MOVE_CANCELLED : MOVE_QUAFFED) && count == t.count && next == t.next);
     assert(reseed_period == INT_MAX && moves == old_moves && monstermoves == old_monstermoves);
     assert(u.uhunger == before.uhunger+t.hunger && u.uhs == NOT_HUNGRY);
-    assert(!occupation && multi == 0); empty_world();
+    assert(!occupation && multi == 0); empty_world(potion);
+    if (potion) assert(!memcmp(&saved_potion,potion,sizeof saved_potion));
     normalized = u; normalized.uhunger = before.uhunger;
     normalized.chaos.seq = before.chaos.seq; /* driver verifies exact sequence delta */
     assert(!memcmp(&before,&normalized,sizeof before));
@@ -148,10 +183,16 @@ int main(int argc, char **argv)
     fprintf(f,"{\"seq_before\":%ld,\"seq_after\":%ld,\"player_before_hex\":",before.chaos.seq,u.chaos.seq);
     hex_record(f,&before,sizeof before); fputs(",\"player_after_hex\":",f); hex_record(f,&u,sizeof u);
     fputs(",\"map_before_hex\":",f); hex_record(f,map,sizeof map);
-    fputs(",\"map_after_hex\":",f); hex_record(f,levl,sizeof map); fputs("}\n",f); assert(!fclose(f));
+    fputs(",\"map_after_hex\":",f); hex_record(f,levl,sizeof map);
+    fputs(",\"context_before\":",f); context_record(f,&before,old_moves);
+    fputs(",\"context_after\":",f); context_record(f,&u,moves);
+    fputs(",\"inventory_before_hex\":",f); hex_record(f,&saved_potion,potion ? sizeof saved_potion : 0);
+    fputs(",\"inventory_after_hex\":",f); hex_record(f,potion,potion ? sizeof *potion : 0);
+    fputs("}\n",f); assert(!fclose(f));
     fprintf(stderr,"\"hp\":%d,\"hp_max\":%d,\"power\":%d,\"power_max\":%d,"
             "\"sanity\":%d,\"insight\":%d,\"moves\":%ld,\"monstermoves\":%ld,"
             "\"nfountains\":%d,\"native_oracles_passed\":true}\n",
             u.uhp,u.uhpmax,u.uen,u.uenmax,u.usanity,u.uinsight,moves,monstermoves,level.flags.nfountains);
+    if (potion) { invent = 0; potion->where = OBJ_FREE; obfree(potion,(struct obj *)0); }
     fflush(stdout); exit_nhwindows((char *)0); return 0;
 }

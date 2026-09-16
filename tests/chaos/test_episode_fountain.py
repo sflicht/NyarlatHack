@@ -21,7 +21,55 @@ import signal
 import sys
 
 
-def confirmed_at_prompt(g, exe, child_env, work, supervisor, cancel):
+def validate_history(records, context, *, enabled, future):
+    """Exact whole history from native context, never from journal envelopes."""
+    assert context["safe"] == 1
+    expected = []
+
+    def add(event, detail="", safe=0, observation=None, phase="result"):
+        record = dict(
+            context, v=1, seq=len(expected) + 1, event=event, phase=phase, detail=detail
+        )
+        record["safe"] = safe
+        if observation is not None:
+            record.update(v=2, observation=observation)
+        expected.append(record)
+
+    if enabled:
+        add(
+            "observation",
+            observation=dict(
+                operation="none", stage="enabled", root_seq=0, fact="none"
+            ),
+        )
+    # chaos_start emits session/level before chaos_io_safe increments safe.
+    add("session", "new")
+    add("level_enter")
+    add("safe_point", "level_enter", safe=context["safe"])
+    if enabled and future:
+        for stage, fact, root, phase in (
+            ("started", "none", 0, "attempt"),
+            ("notice", "water_refreshed", 5, "result"),
+            ("completed", "none", 5, "result"),
+        ):
+            add(
+                "observation",
+                safe=context["safe"],
+                phase=phase,
+                observation=dict(
+                    operation="fountain_drink", stage=stage, root_seq=root, fact=fact
+                ),
+            )
+    assert records == expected, "complete fountain history mismatch"
+
+
+def validate_legacy_pair(off, on):
+    """Only the enabled marker's single sequence offset is normalized."""
+    legacy = [dict(record, seq=record["seq"] - 1) for record in on if record["v"] == 1]
+    assert off == legacy, "legacy envelope OFF/ON mismatch"
+
+
+def confirmed_at_prompt(g, exe, child_env, work, supervisor, cancel, case):
     """Use pinned stdin-read proof; physical fountain confirmation."""
     # Game readiness pins /proc/exe to this private path. The native tuple was
     # verified before replacing ONLY this private copy with the linked fixture.
@@ -29,7 +77,7 @@ def confirmed_at_prompt(g, exe, child_env, work, supervisor, cancel):
     assert supervisor.digest(g.game / "dnethack") == supervisor.digest(exe)
     command = [
         str(g.game / "dnethack"),
-        "confirmed-refreshed",
+        case,
     ]
     supervisor.save(work / "terminal.command.json", command)
     diagnostic_path = work / "terminal.stderr"
@@ -54,22 +102,34 @@ def confirmed_at_prompt(g, exe, child_env, work, supervisor, cancel):
             assert b"Drink from the fountain?" in prompt, prompt
             assert g._reader_pid == pid, "native terminal stdin read required"
             (work / "selection-prompt.stdout").write_bytes(bytes(g.raw))
-            supervisor.save(
-                work / "prompt-proof.json",
-                dict(pid=pid, reader_pid=g._reader_pid, input="79"),
-            )
-            status = g.finish(g.send(b"y"))
+            decline = case == "decline-selection-cancel"
+            first = b"n" if decline else b"y"
+            proof = [dict(pid=pid, reader_pid=g._reader_pid, input=first.hex())]
+            supervisor.save(work / "prompt-proof.json", proof)
+            response = g.send(first)
+            if decline:
+                assert b"What do you want to drink?" in response, response
+                assert g._reader_pid == pid, "fresh native selection read required"
+                assert len(g.raw) <= 65536, "selection prompt cap"
+                (work / "drink-selection-prompt.stdout").write_bytes(response)
+                proof.append(dict(pid=pid, reader_pid=g._reader_pid, input="1b"))
+                supervisor.save(work / "prompt-proof.json", proof)
+                response = g.send(b"\x1b")
+            status = g.finish(response)
             assert status == 0, status
-            assert g.inputs == ["79"], g.inputs
+            assert g.inputs == (["6e", "1b"] if decline else ["79"]), g.inputs
     finally:
         if g.pid is not None or g.fd is not None:
             g.cleanup()
         (work / "terminal.stdout").write_bytes(bytes(g.raw))
+    # Retained post-exit cap; this is not an in-flight stderr file-size limit.
     assert diagnostic_path.stat().st_size <= supervisor.LIMIT
     return bytes(g.raw), diagnostic_path.read_bytes()
 
 
 def main(argv=None):
+    if not __debug__:
+        raise RuntimeError("optimized Python is not supported")
     parser = argparse.ArgumentParser(description=__doc__)
     for name in ("root", "receipt", "revision", "artifacts"):
         parser.add_argument("--" + name, required=True)
@@ -213,6 +273,7 @@ def main(argv=None):
             + sorted((root / "win/curses").glob("*.o"))
         )
         transforms = {
+            root / "src/invent.o": ["--globalize-symbol=nextgetobj"],
             root / "src/o_init.o": ["--globalize-symbol=disco"],
             root / "sys/unix/unixmain.o": ["--redefine-sym=main=original_game_main"],
             root / "src/rnd.o": [
@@ -294,83 +355,125 @@ def main(argv=None):
 
         assert Path(chaos.episodes.__file__).resolve() == root / "chaos/episodes.py"
         OwnedGame = supervisor.owned_game_type(gameplay_support.Game, cancel)
-        results, pair = [], []
-        for enabled in (False, True):
-            work = out / ("confirmed-refreshed-" + ("on" if enabled else "off"))
-            g = OwnedGame(selection.tuple_dir, clock, root=work)
-            selection.verify_copy(g.game)
-            options = work / "options"
-            options.write_text("OPTIONS=!splash_screen,!perm_invent\n")
-            child_env = dict(
-                env,
-                HOME=str(work),
-                TERM="xterm",
-                LINES="24",
-                COLUMNS="80",
-                NETHACKOPTIONS="@" + str(options),
-                LD_PRELOAD=str(clock),
-                NYARLATHACK_RUN_DIR=str(g.run),
-                NYARLATHACK_OBSERVATIONS=str(int(enabled)),
-                FOUNTAIN_SEED=str(chosen["seed"]),
-                FOUNTAIN_STATE=str(work / "state.json"),
-            )
-            raw, diagnostic = confirmed_at_prompt(
-                g, exe, child_env, work, supervisor, cancel
-            )
-            assert raw.count(b"The cool draught refreshes you.") == 1
-            state = json.loads(diagnostic)
-            assert state["native_oracles_passed"] is True
-            assert state["return"] == state["move_quaffed"]
-            for key in ("seed", "count", "next", "fate", "dry"):
-                assert state[key] == chosen[key]
-            assert state["hunger_after"] - state["hunger_before"] == chosen["hunger"]
-            assert state["status_before"] == state["status_after"]
-            records_raw = (g.run / "events.jsonl").read_bytes()
-            records = [parse_episode_event(line) for line in records_raw.splitlines()]
-            projection = project_episodes(records_raw)
-            save(work / "projection.json", projection)
-            native = json.loads((work / "state.json").read_text())
-            obs = [r for r in records if r["v"] == 2]
-            startup = records[: 4 if enabled else 3]
-            assert [r["event"] for r in startup] == (
-                ["observation"] if enabled else []
-            ) + ["session", "level_enter", "safe_point"]
-            assert native["seq_before"] == startup[-1]["seq"]
-            assert native["seq_after"] == records[-1]["seq"]
-            if enabled:
-                assert obs[0]["seq"] == 1 and obs[0]["safe"] == 0
-                assert obs[0]["observation"] == dict(
-                    operation="none", stage="enabled", root_seq=0, fact="none"
+        results = []
+        for case in ("decline-selection-cancel", "confirmed-refreshed"):
+            pair, histories = [], []
+            for enabled in (False, True):
+                work = out / (case + "-" + ("on" if enabled else "off"))
+                g = OwnedGame(selection.tuple_dir, clock, root=work)
+                selection.verify_copy(g.game)
+                options = work / "options"
+                options.write_text("OPTIONS=!splash_screen,!perm_invent\n")
+                child_env = dict(
+                    env,
+                    HOME=str(work),
+                    TERM="xterm",
+                    LINES="24",
+                    COLUMNS="80",
+                    NETHACKOPTIONS="@" + str(options),
+                    LD_PRELOAD=str(clock),
+                    NYARLATHACK_RUN_DIR=str(g.run),
+                    NYARLATHACK_OBSERVATIONS=str(int(enabled)),
+                    FOUNTAIN_SEED=str(chosen["seed"]),
+                    FOUNTAIN_STATE=str(work / "state.json"),
                 )
-            else:
-                assert not obs and len(records) == 3
-            assert native["seq_after"] - native["seq_before"] == len(records) - len(
-                startup
-            )
-            assert not any(r["event"] == "ack" for r in records)
-            pair.append(
-                (
-                    raw,
-                    state,
-                    g.inputs,
-                    native["map_before_hex"],
-                    native["map_after_hex"],
+                raw, diagnostic = confirmed_at_prompt(
+                    g, exe, child_env, work, supervisor, cancel, case
                 )
-            )
-            results.append(
-                dict(
-                    case="confirmed-refreshed",
-                    enabled=enabled,
-                    state=state,
-                    observations=obs,
-                    records=records,
-                    projection=projection,
-                    native_returncode=0,
+                assert raw.count(b"The cool draught refreshes you.") == int(
+                    case == "confirmed-refreshed"
                 )
-            )
-        assert pair[0] == pair[1], "terminal/input/native state OFF/ON mismatch"
-        assert len(results) == 2
+                state = json.loads(diagnostic)
+                assert state["native_oracles_passed"] is True
+                assert state["case"] == case
+                if case == "confirmed-refreshed":
+                    assert state["return"] == state["move_quaffed"]
+                    for key in ("seed", "count", "next", "fate", "dry"):
+                        assert state[key] == chosen[key]
+                    assert (
+                        state["hunger_after"] - state["hunger_before"]
+                        == chosen["hunger"]
+                    )
+                else:
+                    assert state["return"] == state["move_cancelled"]
+                    assert state["seed"] == chosen["seed"]
+                    assert state["count"] == 0
+                    assert state["next"] == state["expected_next"]
+                    assert state["hunger_after"] == state["hunger_before"]
+                assert state["status_before"] == state["status_after"]
+                records_raw = (g.run / "events.jsonl").read_bytes()
+                records = [
+                    parse_episode_event(line) for line in records_raw.splitlines()
+                ]
+                projection = project_episodes(records_raw)
+                save(work / "projection.json", projection)
+                native = json.loads((work / "state.json").read_text())
+                obs = [r for r in records if r["v"] == 2]
+                assert native["context_before"] == native["context_after"]
+                assert native["inventory_before_hex"] == native["inventory_after_hex"]
+                assert native["seq_before"] == 3 + int(enabled)
+                assert native["seq_after"] == len(records)
+                # A strict pre-hook run must still validate the entire actual
+                # prefix, before reporting only the missing future feature.
+                future = (
+                    args.oracle == "strict-desired"
+                    and enabled
+                    and case == "confirmed-refreshed"
+                    and len(obs) > 1
+                )
+                validate_history(
+                    records, native["context_before"], enabled=enabled, future=future
+                )
+                if not future:
+                    assert projection["episodes"] == []
+                histories.append(records)
+                pair.append(
+                    (
+                        raw,
+                        state,
+                        g.inputs,
+                        native["map_before_hex"],
+                        native["map_after_hex"],
+                    )
+                )
+                results.append(
+                    dict(
+                        case=case,
+                        enabled=enabled,
+                        state=state,
+                        observations=obs,
+                        records=records,
+                        projection=projection,
+                        native_returncode=0,
+                    )
+                )
+            assert pair[0] == pair[1], "terminal/input/native state OFF/ON mismatch"
+            validate_legacy_pair(*histories)
+        assert len(results) == 4
         save(out / "native-results.json", results)
+        # native_rng.h: 34 calls in test_rng_control + one in its unused
+        # negative-control dispatch, for every native process including calibration.
+        header_calls = 35
+        per_action_calls = [
+            header_calls
+            + chosen["count"]
+            + 1
+            + int(result["case"] == "decline-selection-cancel")
+            + result["state"]["count"]
+            + 1
+            for result in results
+        ]
+        total_calls = header_calls + calls + sum(per_action_calls)
+        assert total_calls < 4096
+        save(
+            out / "rng-call-budget.json",
+            dict(
+                calibration_calls=header_calls + calls,
+                per_action_calls=per_action_calls,
+                total_calls=total_calls,
+                scope="native RNG control/preflight/action/sentinel; initialization excluded",
+            ),
+        )
     finally:
         signal.alarm(0)
         try:
@@ -402,7 +505,7 @@ def main(argv=None):
             ),
         )
         return 0
-    obs = results[1]["observations"]
+    obs = results[3]["observations"]
     if len(obs) == 1:
         save(
             out / "strict-failure.json",
@@ -423,48 +526,9 @@ def main(argv=None):
             file=sys.stderr,
         )
         return 1
-    assert len(obs) == 4
-    start, notice, end = obs[1:]
-    root_seq = results[1]["records"][3]["seq"] + 1
-    assert [r["seq"] for r in obs[1:]] == [root_seq, root_seq + 1, root_seq + 2]
-    assert [r["phase"] for r in obs[1:]] == ["attempt", "result", "result"]
-    assert [r["observation"] for r in obs[1:]] == [
-        dict(operation="fountain_drink", stage="started", root_seq=0, fact="none"),
-        dict(
-            operation="fountain_drink",
-            stage="notice",
-            root_seq=root_seq,
-            fact="water_refreshed",
-        ),
-        dict(
-            operation="fountain_drink",
-            stage="completed",
-            root_seq=root_seq,
-            fact="none",
-        ),
-    ]
-    assert start["turn"] == notice["turn"] == end["turn"]
-    assert start["safe"] == notice["safe"] == end["safe"]
-    for r in obs:
-        assert r["detail"] == "" and r["event"] == "observation"
-        assert set(r) == {
-            "v",
-            "seq",
-            "turn",
-            "safe",
-            "event",
-            "phase",
-            "detail",
-            "sanity",
-            "insight",
-            "budget",
-            "spent",
-            "reserved",
-            "last_id",
-            "vitals",
-            "observation",
-        }
-    assert results[1]["projection"]["episodes"] == [
+    root_seq = 5
+    notice, end = obs[2:]
+    assert results[3]["projection"]["episodes"] == [
         dict(
             operation="fountain_drink",
             count=1,
