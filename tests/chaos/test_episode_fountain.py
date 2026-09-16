@@ -76,6 +76,8 @@ DETECTION_CASES = (
     "confirmed-detection-presented",
     "confirmed-detection-map-cancelled",
     "confirmed-detection-empty",
+    "confirmed-detection-escape",
+    "confirmed-detection-forwarded",
 )
 
 
@@ -296,7 +298,8 @@ def confirmed_at_prompt(
             supervisor.save(work / "prompt-proof.json", proof)
             response = g.send(first)
             if case in DETECTION_CASES:
-                presented = case == DETECTION_CASES[0]
+                has_prompt = case in (DETECTION_CASES[0], *DETECTION_CASES[3:])
+                dismiss = b"\x1b" if case == DETECTION_CASES[3] else b" "
                 (work / "detection-action.stdout").write_bytes(
                     bytes(g.raw)[len((work / "selection-prompt.stdout").read_bytes()) :]
                 )
@@ -307,7 +310,7 @@ def confirmed_at_prompt(
                     b"\x1b[12;10H\x1b[1m\x1b[37m@\x1b[0m\x1b[C\x1b[1m\x1b[37md\x1b[0m"
                 )
                 assert (glyphs in action_bytes) == (case != DETECTION_CASES[2])
-                if presented:
+                if has_prompt:
                     assert b"You sense the presence of monsters." not in response
                     assert response.count(b"--More--") == 1
                     assert g._reader_pid == pid, "fresh detection stdin read required"
@@ -320,13 +323,15 @@ def confirmed_at_prompt(
                     )
                     (work / "detection-prompt.events.jsonl").write_bytes(prefix)
                     (work / "detection-prompt.stdout").write_bytes(bytes(g.raw))
-                    proof.append(dict(pid=pid, reader_pid=g._reader_pid, input="20"))
+                    proof.append(
+                        dict(pid=pid, reader_pid=g._reader_pid, input=dismiss.hex())
+                    )
                     supervisor.save(work / "prompt-proof.json", proof)
-                    response = g.send(b" ")
+                    response = g.send(dismiss)
                 else:
                     assert b"--More--" not in response
                 finish_without_input(g, supervisor, cancel)
-                assert g.inputs == (["79", "20"] if presented else ["79"])
+                assert g.inputs == (["79", dismiss.hex()] if has_prompt else ["79"])
                 return bytes(g.raw), diagnostic_path.read_bytes()
             if decline:
                 assert b"What do you want to drink?" in response, response
@@ -749,12 +754,13 @@ def main(argv=None):
                     and len(obs) > 1
                 )
                 if detection:
-                    presented = case == DETECTION_CASES[0]
+                    presented = case in (DETECTION_CASES[0], DETECTION_CASES[3])
+                    has_prompt = presented or case == DETECTION_CASES[4]
                     empty = case == DETECTION_CASES[2]
                     assert b"You sense the presence of monsters." not in raw
-                    assert raw.count(b"--More--") == int(presented)
+                    assert raw.count(b"--More--") == int(has_prompt)
                     private = native["detection"]
-                    if presented:
+                    if has_prompt:
                         prefix = (work / "detection-prompt.events.jsonl").read_bytes()
                         assert [
                             json.loads(line) for line in prefix.splitlines()
@@ -775,6 +781,16 @@ def main(argv=None):
                     if not empty:
                         assert private["monster_hp"] > 0
                         assert (private["monster_x"], private["monster_y"]) == (12, 10)
+                    if case in DETECTION_CASES[3:]:
+                        followup = native["presentation_followup"]
+                        forwarded = case == DETECTION_CASES[4]
+                        assert followup["message_flags_before"] == 0
+                        assert followup["message_flags_after"] == int(not forwarded)
+                        assert (
+                            followup["forwarded_calls"] == followup["forwarded_returns"]
+                        )
+                        assert followup["forwarded_blocking_maps"] == int(forwarded)
+                        assert (followup["forwarded_calls"] > 0) == forwarded
                     try:
                         validate_detection_history(
                             records,
@@ -804,6 +820,22 @@ def main(argv=None):
                             projection, blocked=False, prehook=enabled
                         )
                     else:
+                        if case == DETECTION_CASES[3]:
+                            assert projection == dict(
+                                episode_context_v=1,
+                                scope="selected_whistle_fountain",
+                                lookback_roots=32,
+                                episodes=projection["episodes"],
+                                coverage={
+                                    key: dict(count=0, saturated=False)
+                                    for key in (
+                                        "incomplete",
+                                        "blocked",
+                                        "completed_without_notice",
+                                        "omitted_roots",
+                                    )
+                                },
+                            )
                         assert projection["episodes"] == [
                             dict(
                                 operation="fountain_drink",
@@ -912,6 +944,7 @@ def main(argv=None):
                         native["map_before_hex"],
                         native["map_after_hex"],
                         native.get("detection"),
+                        native.get("presentation_followup"),
                     )
                 )
                 results.append(
@@ -928,7 +961,7 @@ def main(argv=None):
                 save(out / "native-results.json", results)
             assert pair[0] == pair[1], "terminal/input/native state OFF/ON mismatch"
             validate_legacy_pair(*histories)
-        assert len(results) == 20
+        assert len(results) == 24
         save(out / "native-results.json", results)
         negatives = []
         for mode in ("native", "raw", "budget"):

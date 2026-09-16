@@ -74,6 +74,62 @@ def synthetic_reach(noshow=False, prehook=False):
 
 
 class FountainOracleTests(unittest.TestCase):
+    def test_detection_followups_are_native_cases(self):
+        self.assertIn("confirmed-detection-escape", driver.DETECTION_CASES)
+        self.assertIn("confirmed-detection-forwarded", driver.DETECTION_CASES)
+
+    def test_escape_notice_and_forwarded_no_notice_contract(self):
+        # Synthetic contract checks only; native input/rendering is separate.
+        positive = synthetic(True, True)
+        positive[5]["observation"]["fact"] = "detection_presented"
+        negative = copy.deepcopy(positive)
+        negative.pop(5)
+        negative[-1]["seq"] = 6
+        for records, presented in ((positive, True), (negative, False)):
+            driver.validate_detection_history(
+                records, CONTEXT, enabled=True, presented=presented
+            )
+            with self.assertRaises(AssertionError):
+                driver.validate_detection_history(
+                    records, CONTEXT, enabled=True, presented=not presented
+                )
+            raw = b"".join(json.dumps(r).encode() + b"\n" for r in records)
+            public = project_episodes(raw)
+            if presented:
+                self.assertEqual(
+                    public["episodes"][0]["evidence"],
+                    [
+                        dict(
+                            root_seq=5,
+                            notice_seq=6,
+                            end_seq=7,
+                            fact="detection_presented",
+                        )
+                    ],
+                )
+                self.assertTrue(
+                    all(
+                        v == dict(count=0, saturated=False)
+                        for v in public["coverage"].values()
+                    )
+                )
+            else:
+                driver.validate_reach_projection(public, blocked=False, prehook=True)
+            for stage in ("blocked", "started"):
+                bad = copy.deepcopy(records)
+                bad[-1]["observation"]["stage"] = stage
+                with self.assertRaises(AssertionError):
+                    driver.validate_detection_history(
+                        bad, CONTEXT, enabled=True, presented=presented
+                    )
+            for key in ("monster_x", "display_callback", "message_flags", "input"):
+                bad = copy.deepcopy(records)
+                bad[-1]["observation"][key] = 1
+                with self.assertRaises(AssertionError):
+                    driver.validate_detection_history(
+                        bad, CONTEXT, enabled=True, presented=presented
+                    )
+
     def test_detection_presented_and_cancelled_are_distinct(self):
         records = synthetic(True, True)
         records[5]["observation"]["fact"] = "detection_presented"

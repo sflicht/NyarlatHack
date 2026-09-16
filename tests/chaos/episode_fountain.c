@@ -28,6 +28,16 @@ static void seeded_reset(unsigned seed)
 struct trace { int fate, hunger, dry, count, next; };
 static int predicted_wisdom;
 static struct monst *prepared_monster;
+static int forwarded_calls, forwarded_returns, forwarded_blocking_maps;
+/* Unsupported identity, not a renderer stub. Forward once per callback;
+ * the public native renderer's internal recursion stays unchanged. */
+static void forwarding_display(winid window, BOOLEAN_P blocking)
+{
+    ++forwarded_calls;
+    if (window == WIN_MAP && blocking) ++forwarded_blocking_maps;
+    tty_display_nhwindow(window, blocking);
+    ++forwarded_returns;
+}
 static struct trace preflight_detection(unsigned seed)
 {
     struct trace t;
@@ -118,6 +128,7 @@ int main(int argc, char **argv)
     int i,x,y,result,count,next,decline,foul,mechanoid, total = 0;
     int reach, noshow, lev_cancel, levitating, returned = 0;
     int detection, map_cancelled, no_live, map_flags = 0;
+    int map_escape, map_forwarded, message_flags = 0;
     long root = 0;
     const char *injection = 0;
     FILE *f;
@@ -184,7 +195,10 @@ int main(int argc, char **argv)
     levitating = reach || lev_cancel;
     map_cancelled = !strcmp(argv[1], "confirmed-detection-map-cancelled");
     no_live = !strcmp(argv[1], "confirmed-detection-empty");
-    detection = map_cancelled || no_live || !strcmp(argv[1], "confirmed-detection-presented");
+    map_escape = !strcmp(argv[1], "confirmed-detection-escape");
+    map_forwarded = !strcmp(argv[1], "confirmed-detection-forwarded");
+    detection = map_cancelled || no_live || map_escape || map_forwarded
+        || !strcmp(argv[1], "confirmed-detection-presented");
     assert(decline || foul || mechanoid || levitating || detection || !strcmp(argv[1], "confirmed-refreshed"));
     assert(getenv("FOUNTAIN_SEED")); seed = (unsigned)atoi(getenv("FOUNTAIN_SEED"));
     assert(seed >= 1 && seed <= 256);
@@ -278,6 +292,14 @@ int main(int argc, char **argv)
         assert(!(wins[WIN_MAP]->flags & WIN_CANCELLED));
         if (map_cancelled) wins[WIN_MAP]->flags |= WIN_CANCELLED;
         map_flags = wins[WIN_MAP]->flags;
+        if (map_escape || map_forwarded) {
+            message_flags = wins[WIN_MESSAGE]->flags;
+            assert(message_flags == 0 && map_flags == 0);
+            assert(windowprocs.win_clear_nhwindow == tty_clear_nhwindow);
+            assert(windowprocs.win_curs == tty_curs);
+            if (map_forwarded)
+                windowprocs.win_display_nhwindow = forwarding_display;
+        }
         /* Matched control: suppress only sense text in BOTH map cases.
          * vpline still flushes real glyphs before NOSHOW. Otherwise cancelled
          * map display is followed by an unrelated message More in docrt/cls.
@@ -391,6 +413,16 @@ int main(int argc, char **argv)
         normalized.aexe.a[A_WIS] = before.aexe.a[A_WIS];
         assert(wins[WIN_MAP]->flags == map_flags);
         if (prepared_monster) assert(!memcmp(&saved_monster,prepared_monster,sizeof saved_monster));
+        if (map_escape || map_forwarded) {
+            /* Native post-render Escape sets STOP; final docrt does not clear
+             * it. Assert the exact aftermath, never clear/normalize it. */
+            assert(wins[WIN_MESSAGE]->flags == (map_escape ? WIN_STOP : 0));
+            assert(windowprocs.win_display_nhwindow ==
+                   (map_forwarded ? forwarding_display : tty_display_nhwindow));
+            assert(forwarded_calls == forwarded_returns);
+            assert(forwarded_blocking_maps == map_forwarded);
+            assert(map_forwarded ? forwarded_calls > 0 : forwarded_calls == 0);
+        }
     }
     assert(!memcmp(&before,&normalized,sizeof before));
     assert(!memcmp(&saved_youmonst,&youmonst,sizeof youmonst));
@@ -431,6 +463,10 @@ int main(int argc, char **argv)
                 !!prepared_monster,prepared_monster ? prepared_monster->mhp : 0,
                 prepared_monster ? prepared_monster->mtyp : -1,
                 prepared_monster ? prepared_monster->mx : 0,prepared_monster ? prepared_monster->my : 0);
+    if (map_escape || map_forwarded)
+        fprintf(f,",\"presentation_followup\":{\"message_flags_before\":%d,\"message_flags_after\":%d,\"forwarded_calls\":%d,\"forwarded_returns\":%d,\"forwarded_blocking_maps\":%d}",
+                message_flags,wins[WIN_MESSAGE]->flags,forwarded_calls,
+                forwarded_returns,forwarded_blocking_maps);
     fputs("}\n",f); assert(!fclose(f));
     fprintf(stderr,"\"hp\":%d,\"hp_max\":%d,\"power\":%d,\"power_max\":%d,"
             "\"sanity\":%d,\"insight\":%d,\"moves\":%ld,\"monstermoves\":%ld,"
