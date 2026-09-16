@@ -12,6 +12,10 @@ import tempfile
 import unittest
 
 HERE = Path(__file__).resolve().parent
+ADAPTERS = (
+    ("test_episode_platforms.py", "EpisodePlatformTests", "test_explicit_source_platforms", "PLATFORM"),
+    ("test_episode_whistle.py", "EpisodeWhistleTests", "test_selected_ordinary_whistle", "WHISTLE"),
+)
 
 
 class AdapterTests(unittest.TestCase):
@@ -21,7 +25,9 @@ import ctypes, importlib.util, json, os, resource, signal, sys
 from pathlib import Path
 from unittest import mock
 sys.path.insert(0, sys.argv[1])
-spec = importlib.util.spec_from_file_location('adapter', Path(sys.argv[1]) / 'test_episode_platforms.py')
+filename, classname, method, prefix = sys.argv[3:]
+prefix = 'NYARLATHACK_' + prefix + '_'
+spec = importlib.util.spec_from_file_location('adapter', Path(sys.argv[1]) / filename)
 m = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(m)
 root = Path(sys.argv[2])
@@ -30,20 +36,23 @@ script.write_text("import json,os,resource,signal,sys\nfrom pathlib import Path\
 os.umask(0o022)
 os.environ['NYARLATHACK_OBSERVATIONS'] = 'leaked'
 os.environ['PYTHONPATH'] = 'leaked'
-values = {'ROOT':str(root), 'RECEIPT':str(root/'receipt'), 'REVISION':'a'*40, 'ARTIFACTS':str(root/'absent'), 'OFF_TUPLE':str(root/'stock')}
-for key,value in values.items(): os.environ['NYARLATHACK_PLATFORM_'+key] = value
+values = {'ROOT':str(root), 'RECEIPT':str(root/'receipt'), 'REVISION':'a'*40, 'ARTIFACTS':str(root/'absent')}
+if prefix == 'NYARLATHACK_PLATFORM_': values['OFF_TUPLE'] = str(root/'stock')
+for key,value in values.items(): os.environ[prefix+key] = value
+adapter = getattr(getattr(m, classname)(method), method)
 libc = ctypes.CDLL(None)
 def state():
     mask = os.umask(0o022); os.umask(mask)
     sub = ctypes.c_int(); assert libc.prctl(37,ctypes.byref(sub),0,0,0) == 0
-    return (mask,resource.getrlimit(resource.RLIMIT_CORE),dict(os.environ),signal.getsignal(signal.SIGTERM),signal.getitimer(signal.ITIMER_REAL),sub.value)
+    limits = {name:resource.getrlimit(value) for name,value in vars(resource).items() if name.startswith('RLIMIT_')}
+    return (mask,limits,dict(os.environ),{sig:signal.getsignal(sig) for sig in signal.valid_signals()},signal.getitimer(signal.ITIMER_REAL),sub.value,os.getcwd())
 def poison(args):
     os.umask(0o077)
     resource.setrlimit(resource.RLIMIT_CORE,(0,0))
     os.environ['poison'] = 'yes'
 before = state()
 with mock.patch.object(m,'main',side_effect=poison), mock.patch.object(m,'__file__',str(script)):
-    m.EpisodePlatformTests('test_explicit_source_platforms').test_explicit_source_platforms()
+    adapter()
 assert before == state(), 'inline adapter changed caller state'
 assert not (root/'absent').exists()
 logs = list(root.glob('absent.driver-*'))
@@ -56,39 +65,57 @@ assert (logs[0]/'driver.stderr').read_text() == 'diagnostic\n'
 assert logs[0].stat().st_mode & 0o777 == 0o700
 assert (logs[0]/'driver.stdout').stat().st_mode & 0o777 == 0o600
 script.write_text("import sys\nprint('failure diagnostic',file=sys.stderr)\nsys.exit(9)\n")
-os.environ['NYARLATHACK_PLATFORM_ARTIFACTS'] = str(root/'other-absent')
+os.environ[prefix+'ARTIFACTS'] = str(root/'other-absent')
+before = state()
 with mock.patch.object(m,'__file__',str(script)):
-    try: m.EpisodePlatformTests().test_explicit_source_platforms()
-    except AssertionError as exc: assert 'driver failed (9)' in str(exc)
+    try: adapter()
+    except AssertionError as exc:
+        assert 'driver failed (9)' in str(exc)
+        failure_logs = list(root.glob('other-absent.driver-*'))
+        assert len(failure_logs) == 1
+        assert str(failure_logs[0]) in str(exc), str(exc)
+        assert (failure_logs[0]/'driver.stderr').read_text() == 'failure diagnostic\n'
     else: raise AssertionError('adapter swallowed nonzero exit')
+assert before == state(), 'failed adapter changed caller state'
 assert not (root/'other-absent').exists()
 assert len(list(root.glob('other-absent.driver-*'))) == 1
 """
-        with tempfile.TemporaryDirectory() as root:
-            result = subprocess.run(
-                [sys.executable, "-c", probe, str(HERE), root],
-                capture_output=True,
-                text=True,
-                timeout=15,
-            )
-            self.assertEqual(result.returncode, 0, result.stderr)
+        for adapter in ADAPTERS:
+            with self.subTest(adapter=adapter[0]), tempfile.TemporaryDirectory() as root:
+                result = subprocess.run(
+                    [sys.executable, "-c", probe, str(HERE), root, *adapter],
+                    capture_output=True,
+                    text=True,
+                    timeout=15,
+                )
+                self.assertEqual(result.returncode, 0, result.stderr)
 
     def test_missing_required_environment_still_asserts(self):
         probe = r"""
 import importlib.util, os, sys
 from pathlib import Path
-spec = importlib.util.spec_from_file_location('adapter', Path(sys.argv[1])/'test_episode_platforms.py')
+filename, classname, method, prefix = sys.argv[2:]
+prefix = 'NYARLATHACK_' + prefix + '_'
+spec = importlib.util.spec_from_file_location('adapter', Path(sys.argv[1])/filename)
 m = importlib.util.module_from_spec(spec); spec.loader.exec_module(m)
-for name in list(os.environ):
-    if name.startswith('NYARLATHACK_PLATFORM_'): del os.environ[name]
-try: m.EpisodePlatformTests().test_explicit_source_platforms()
-except AssertionError as e: assert 'NYARLATHACK_PLATFORM_ROOT' in str(e)
-else: raise AssertionError('missing selection accepted')
+keys = ['ROOT', 'RECEIPT', 'REVISION', 'ARTIFACTS']
+if prefix == 'NYARLATHACK_PLATFORM_': keys.append('OFF_TUPLE')
+adapter = getattr(getattr(m, classname)(method), method)
+for missing in keys:
+    for key in keys: os.environ[prefix+key] = 'unit-only-unused'
+    del os.environ[prefix+missing]
+    try: adapter()
+    except AssertionError as e: assert prefix+missing in str(e), str(e)
+    else: raise AssertionError('missing selection accepted: '+missing)
 """
-        p = subprocess.run(
-            [sys.executable, "-c", probe, str(HERE)], capture_output=True, timeout=5
-        )
-        self.assertEqual(p.returncode, 0, p.stderr)
+        for adapter in ADAPTERS:
+            with self.subTest(adapter=adapter[0]):
+                p = subprocess.run(
+                    [sys.executable, "-c", probe, str(HERE), *adapter],
+                    capture_output=True,
+                    timeout=5,
+                )
+                self.assertEqual(p.returncode, 0, p.stderr)
 
 
 @unittest.skipUnless(

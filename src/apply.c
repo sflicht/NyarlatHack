@@ -730,8 +730,12 @@ use_whistle(obj)
 struct obj *obj;
 {
 	register struct monst *mtmp;
+	boolean shrill = obj->cursed;
 
-	You(whistle_str, obj->cursed ? "shrill" : "high");
+	chaos_observation_arm(CHAOS_OBS_OP_WHISTLING,
+		shrill ? CHAOS_OBS_FACT_SOUND_SHRILL : CHAOS_OBS_FACT_SOUND_HIGH);
+	You(whistle_str, shrill ? "shrill" : "high");
+	chaos_observation_disarm();
 	wake_nearby_noisy();
 	for(mtmp = fmon; mtmp; mtmp = mtmp->nmon) {
 	    if (!DEADMONSTER(mtmp)) {
@@ -748,11 +752,18 @@ struct obj *obj;
 	register struct monst *mtmp, *nextmon;
 
 	if(obj->cursed && !rn2(2)) {
+		chaos_observation_arm(CHAOS_OBS_OP_WHISTLING,
+			CHAOS_OBS_FACT_SOUND_HUMMING);
 		You("produce a high-pitched humming noise.");
+		chaos_observation_disarm();
 		wake_nearby();
 	} else {
 		int pet_cnt = 0;
-		You(whistle_str, Hallucination ? "normal" : "strange");
+		boolean hallucinating = !!Hallucination;
+		chaos_observation_arm(CHAOS_OBS_OP_WHISTLING,
+			hallucinating ? CHAOS_OBS_FACT_SOUND_NORMAL : CHAOS_OBS_FACT_SOUND_STRANGE);
+		You(whistle_str, hallucinating ? "normal" : "strange");
+		chaos_observation_disarm();
 		for(mtmp = fmon; mtmp; mtmp = nextmon) {
 		    nextmon = mtmp->nmon; /* trap might kill mon */
 		    if (DEADMONSTER(mtmp)) continue;
@@ -12246,13 +12257,21 @@ doapply()
 		res = use_saddle(obj);
 		break;
 #endif
-	case MAGIC_WHISTLE:
+	case MAGIC_WHISTLE: {
+		long root = chaos_observation_begin(CHAOS_OBS_OP_WHISTLING);
 		use_magic_whistle(obj);
+		chaos_observation_end(root);
+		(void)root; /* CHAOS-off end does not evaluate its argument. */
 		break;
-	case WHISTLE:
+	}
+	case WHISTLE: {
+		long root = chaos_observation_begin(CHAOS_OBS_OP_WHISTLING);
 		use_whistle(obj);
+		chaos_observation_end(root);
+		(void)root;
 		res = MOVE_PARTIAL;
 		break;
+	}
 	case EUCALYPTUS_LEAF:
 		/* MRKR: Every Australian knows that a gum leaf makes an */
 		/*	 excellent whistle, especially if your pet is a  */
