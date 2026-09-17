@@ -116,7 +116,21 @@ def dwarf_fixture(root="/synthetic", fields=None, producer=PRODUCER):
     ]:
         sizes[size] = die(1, "base_type", name=name, byte_size=size)
     die(1, "pointer_type", byte_size=8)
-    for size in (49, 4097, 80, 4176):
+    for size in (
+        49,
+        4097,
+        80,
+        4176,
+        *sorted(
+            {
+                width
+                for _, members in fields.values()
+                for _, width in members.values()
+                if width not in sizes
+            }
+            - {49, 4097, 80, 4176}
+        ),
+    ):
         sizes[size] = die(1, "array_type", type=sizes[1])
         die(2, "subrange_type", upper_bound=size - 1)
     for name, (size, members) in fields.items():
@@ -402,6 +416,9 @@ class ProfileTests(unittest.TestCase):
         (self.root / "include/chaos_curio.h").write_text(
             "#define CHAOS_CURIO_VERSION 1\n#define CHAOS_CURIO_SOURCE 4096\n"
         )
+        (self.root / "include/chaos_protocol.h").write_text(
+            "#define CHAOS_STATE_VERSION 1\n"
+        )
         self.inputs = SourceBuildInputs(
             self.root,
             self.root / "dnethackdir",
@@ -643,6 +660,132 @@ class ProfileTests(unittest.TestCase):
                             self.c.validate_native_profile(self.inputs, self.schema)
                 finally:
                     path.write_bytes(original)
+
+
+class CosmeticProfileTests(ProfileTests):
+    """Current policy inputs are separate from the historical fixture above."""
+
+    def setUp(self):
+        super().setUp()
+        fields = copy.deepcopy(FIELDS)
+        fields["chaos_state"] = (
+            96,
+            {
+                "spent": (4, 4),
+                "version": (0, 4),
+                "cosmetic_seen": (80, 4),
+                "cosmetic_last_turn": (88, 8),
+            },
+        )
+        # The synthetic you keeps its historical allocation, with ample space.
+        fields["you"][1]["chaos"] = (0, 96)
+        self.dwarf = dwarf_fixture(str(self.root), fields=fields)
+        self.schema["you"]["chaos"]["size"] = 96
+        self.schema.update(
+            chaos_state_version=2,
+            chaos_size=96,
+            chaos_fields={
+                k: {"offset": o, "size": s}
+                for k, (o, s) in fields["chaos_state"][1].items()
+                if k != "spent"
+            },
+        )
+        path = self.root / "include/chaos_protocol.h"
+        path.write_text("#define CHAOS_STATE_VERSION 2\n")
+        self.baseline[path] = path.read_bytes()
+        original = self.c._disassemble
+        self.init_ops = [
+            "endbr64",
+            "push %rbp",
+            "mov %rsp,%rbp",
+            "sub $0x10,%rsp",
+            "mov %rdi,-0x8(%rbp)",
+            "mov -0x8(%rbp),%rax",
+            "mov $0x60,%edx",
+            "mov $0x0,%esi",
+            "mov %rax,%rdi",
+            "call 1234 <memset@plt>",
+            "mov -0x8(%rbp),%rax",
+            "movl $0x2,(%rax)",
+            "nop",
+            "leave",
+            "ret",
+        ]
+
+        def disassemble(path, image, symbol):
+            if symbol == "chaos_state_init":
+                return "", self.init_ops
+            return original(path, image, symbol)
+
+        patch.object(self.c, "_disassemble", disassemble).start()
+
+    def test_every_current_schema_field_rejects_missing_extra_wrong_type_or_value(self):
+        self.c.validate_native_profile(self.inputs, self.schema)
+        paths: list[tuple[str, ...]] = [
+            (k,) for k in ("chaos_state_version", "chaos_size", "chaos_fields")
+        ]
+        for field in self.schema["chaos_fields"]:
+            paths.append(("chaos_fields", field))
+            paths.extend(("chaos_fields", field, k) for k in ("offset", "size"))
+        for path in paths:
+            for mutation in ("missing", "extra", "type", "value"):
+                with self.subTest(path=path, mutation=mutation):
+                    bad = copy.deepcopy(self.schema)
+                    parent = bad
+                    for key in path[:-1]:
+                        parent = parent[key]
+                    key = path[-1]
+                    if mutation == "missing":
+                        del parent[key]
+                    elif mutation == "extra":
+                        parent["unexpected"] = 0
+                    elif mutation == "type":
+                        parent[key] = str(parent[key])
+                    else:
+                        parent[key] = -1
+                    with self.assertRaises(self.c.CalibrationError):
+                        self.c.validate_native_profile(self.inputs, bad)
+
+    def test_current_dwarf_missing_member_or_header_disagreement_rejects(self):
+        original = self.dwarf
+        for field in ("version", "cosmetic_seen", "cosmetic_last_turn"):
+            with self.subTest(field=field):
+                # Keep all other structures intact; only corrupt chaos_state.
+                start = original.index("(string) chaos_state\n")
+                end = original.index("(string) you\n", start)
+                self.dwarf = (
+                    original[:start]
+                    + original[start:end].replace(
+                        "(string) " + field + "\n", "(string) absent\n"
+                    )
+                    + original[end:]
+                )
+                with self.assertRaisesRegex(
+                    self.c.CalibrationError, "missing DWARF members"
+                ):
+                    self.c.validate_native_profile(self.inputs, self.schema)
+        self.dwarf = original
+        path = self.root / "include/chaos_protocol.h"
+        path.write_text("#define CHAOS_STATE_VERSION 3\n")
+        self.baseline[path] = path.read_bytes()
+        with self.assertRaisesRegex(
+            self.c.CalibrationError, "unsupported chaos state policy"
+        ):
+            self.c.validate_native_profile(self.inputs, self.schema)
+
+    def test_init_value_size_operand_or_extra_instruction_rejects(self):
+        original = self.init_ops[:]
+        for old, new in (
+            ("movl $0x2,(%rax)", "movl $0x1,(%rax)"),
+            ("mov $0x60,%edx", "mov $0x50,%edx"),
+            ("movl $0x2,(%rax)", "movl $0x2,0x4(%rax)"),
+        ):
+            self.init_ops = [new if op == old else op for op in original]
+            with self.assertRaises(self.c.CalibrationError):
+                self.c.validate_native_profile(self.inputs, self.schema)
+        self.init_ops = original + ["nop"]
+        with self.assertRaises(self.c.CalibrationError):
+            self.c.validate_native_profile(self.inputs, self.schema)
 
 
 class ToolBoundTests(unittest.TestCase):
