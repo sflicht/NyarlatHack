@@ -72,40 +72,9 @@ jobs:
           root="$GITHUB_WORKSPACE"
           revision="$GITHUB_SHA"
           cd "$GITHUB_WORKSPACE"
-          umask 077
           out="$NYARLATHACK_CI_OUT"
-          invocation=$(mktemp -d "$out/fixtures/full-suite.XXXXXX")
-          : > "$out/full-suite.log"
-          # Preserve intentionally public negative fixtures inside private TMPDIR.
-          umask 022
-          env -i PATH=/usr/bin:/bin HOME="$out/home" LANG=C.UTF-8 TZ=America/New_York \
-            PKG_CONFIG_LIBDIR=/usr/lib/x86_64-linux-gnu/pkgconfig:/usr/share/pkgconfig \
-            MAIL="$out/MAIL" TMPDIR="$out/fixtures" PYTHONDONTWRITEBYTECODE=1 \
-            NYARLATHACK_STOCK_DIR="$out/stock" NYARLATHACK_GAME_TESTS=1 \
-            NYARLATHACK_PRECURIO_DIR="$out/precurio" \
-            NYARLATHACK_NATIVE_FIXTURE_MODE=source-build \
-            NYARLATHACK_NATIVE_BUILD_RECEIPT="$out/system-gcc13" \
-            NYARLATHACK_NATIVE_EXPECTED_REVISION="$revision" \
-            NYARLATHACK_PLATFORM_ROOT="$root" \
-            NYARLATHACK_PLATFORM_RECEIPT="$out/system-gcc13" \
-            NYARLATHACK_PLATFORM_REVISION="$revision" \
-            NYARLATHACK_PLATFORM_ARTIFACTS="$invocation/platform" \
-            NYARLATHACK_PLATFORM_OFF_TUPLE="$out/stock" \
-            NYARLATHACK_WHISTLE_ROOT="$root" \
-            NYARLATHACK_WHISTLE_RECEIPT="$out/system-gcc13" \
-            NYARLATHACK_WHISTLE_REVISION="$revision" \
-            NYARLATHACK_WHISTLE_ARTIFACTS="$invocation/whistle" \
-            NYARLATHACK_FOUNTAIN_ROOT="$root" \
-            NYARLATHACK_FOUNTAIN_RECEIPT="$out/system-gcc13" \
-            NYARLATHACK_FOUNTAIN_REVISION="$revision" \
-            NYARLATHACK_FOUNTAIN_ARTIFACTS="$invocation/fountain" \
-            NYARLATHACK_FOUNTAIN_MATRIX_ARTIFACTS="$invocation/fountain-matrix" \
-            NYARLATHACK_ACTION_TRANSPORT_ROOT="$root" \
-            NYARLATHACK_ACTION_TRANSPORT_RECEIPT="$out/system-gcc13" \
-            NYARLATHACK_ACTION_TRANSPORT_REVISION="$revision" \
-            NYARLATHACK_ACTION_TRANSPORT_ARTIFACTS="$invocation/action-transport" \
-            /usr/bin/python3 -m unittest discover -s tests/chaos -p 'test_*.py' -v \
-            2>&1 | tee "$out/full-suite.log"
+          /usr/bin/python3 scripts/run_native_tests.py \
+            --root "$root" --expected-revision "$revision" --build-output "$out"
       - name: Retain selected preparation log
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4

@@ -20,6 +20,10 @@ import shutil
 import signal
 import sys
 import unittest
+from native_fixture_config import (
+    arguments as fixture_arguments,
+    enabled as fixture_enabled,
+)
 
 
 # Private fixture expectations, never observation metadata. Draw counts are
@@ -877,21 +881,16 @@ def main(argv=None):
                 signal.signal(sig, handler)
 
 
-@unittest.skipUnless(os.environ.get("NYARLATHACK_GAME_TESTS") == "1", "native opt-in")
+@unittest.skipUnless(fixture_enabled("whistle"), "native opt-in")
 class EpisodeWhistleTests(unittest.TestCase):
     def test_selected_ordinary_whistle(self):
-        args = []
-        for key in ("ROOT", "RECEIPT", "REVISION", "ARTIFACTS"):
-            value = os.environ.get("NYARLATHACK_WHISTLE_" + key)
-            self.assertIsNotNone(value, "set NYARLATHACK_WHISTLE_" + key)
-            args.extend(["--" + key.lower(), value])
+        if not __debug__:
+            self.fail("optimized Python is not supported")
+        values, args = fixture_arguments("whistle", Path(__file__).resolve().parents[2])
         from native_driver_supervision import run_driver
 
         code, logs = run_driver(
-            Path(__file__).resolve(),
-            args,
-            os.environ["NYARLATHACK_WHISTLE_ROOT"],
-            os.environ["NYARLATHACK_WHISTLE_ARTIFACTS"],
+            Path(__file__).resolve(), args, values["root"], values["artifacts"]
         )
         self.assertEqual(
             code, 0, f"whistle driver failed ({code}); diagnostics: {logs}"

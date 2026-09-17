@@ -21,6 +21,10 @@ import shutil
 import signal
 import sys
 import unittest
+from native_fixture_config import (
+    arguments as fixture_arguments,
+    enabled as fixture_enabled,
+)
 
 
 def validate_history(
@@ -1255,24 +1259,19 @@ def main(argv=None):
     return 0
 
 
-@unittest.skipUnless(os.environ.get("NYARLATHACK_GAME_TESTS") == "1", "native opt-in")
+@unittest.skipUnless(fixture_enabled("fountain"), "native opt-in")
 class EpisodeFountainTests(unittest.TestCase):
     def test_strict_fountain(self):
         if not __debug__:
             self.fail("optimized Python is not supported")
-        args = []
-        for key in ("ROOT", "RECEIPT", "REVISION", "ARTIFACTS"):
-            value = os.environ.get("NYARLATHACK_FOUNTAIN_" + key)
-            self.assertTrue(value, "set NYARLATHACK_FOUNTAIN_" + key)
-            args.extend(["--" + key.lower(), value])
+        values, args = fixture_arguments(
+            "fountain", Path(__file__).resolve().parents[2]
+        )
         args.extend(["--oracle", "strict-desired"])
         from native_driver_supervision import run_driver
 
         code, logs = run_driver(
-            Path(__file__).resolve(),
-            args,
-            os.environ["NYARLATHACK_FOUNTAIN_ROOT"],
-            os.environ["NYARLATHACK_FOUNTAIN_ARTIFACTS"],
+            Path(__file__).resolve(), args, values["root"], values["artifacts"]
         )
         self.assertEqual(
             code, 0, f"fountain driver failed ({code}); diagnostics: {logs}"

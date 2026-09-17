@@ -640,34 +640,9 @@ class NativeCIPreparationTests(unittest.TestCase):
         )
 
     def test_suite_mask_preserves_public_negative_fixture_and_private_log(self):
-        workflow = (ROOT / ".github/workflows/quality.yml").read_text()
-        block = workflow.split(
-            "      - name: Run the complete offline suite once\n", 1
-        )[1]
-        block = block.split("      - name: Retain selected", 1)[0]
-        docs = (ROOT / "docs/quality-control.md").read_text()
-        docs = docs.split('cd "$root"\n', 1)[1].split("```", 1)[0]
-        for label, commands in (("workflow", block), ("docs", docs)):
-            with self.subTest(label=label):
-                before_env = commands.split("env -i", 1)[0]
-                masks = re.findall(r"(?m)^\s*umask ([0-7]{3,4})\s*$", before_env)
-                self.assertTrue(masks)
-                prior = os.umask(int(masks[-1], 8))
-                try:
-                    public = self.base / (label + "-public")
-                    public.mkdir(mode=0o755)
-                finally:
-                    os.umask(prior)
-                self.assertEqual(stat.S_IMODE(public.stat().st_mode), 0o755)
-                self.assertIn(': > "$out/full-suite.log"', before_env)
-                self.assertLess(
-                    before_env.index("umask 077"),
-                    before_env.index(': > "$out/full-suite.log"'),
-                )
-                self.assertLess(
-                    before_env.index(': > "$out/full-suite.log"'),
-                    before_env.index("umask 022"),
-                )
+        runner = (ROOT / "scripts/run_native_tests.py").read_text()
+        self.assertIn("umask=0o022", runner)
+        self.assertIn("os.O_EXCL, 0o600", runner)
 
     def test_workflow_full_discovery_private_environment_and_receipts(self):
         text = (ROOT / ".github/workflows/quality.yml").read_text()
@@ -677,14 +652,8 @@ class NativeCIPreparationTests(unittest.TestCase):
             "persist-credentials: false",
             "prepare_native_ci.py",
             '--expected-revision "$GITHUB_SHA"',
-            "NYARLATHACK_PRECURIO_DIR=",
-            "NYARLATHACK_NATIVE_FIXTURE_MODE=source-build",
-            "NYARLATHACK_NATIVE_BUILD_RECEIPT=",
-            "NYARLATHACK_NATIVE_EXPECTED_REVISION=",
-            "PYTHONDONTWRITEBYTECODE=1",
-            'TMPDIR="$out/fixtures"',
-            'MAIL="$out/MAIL"',
-            "env -i",
+            "scripts/run_native_tests.py",
+            '--build-output "$out"',
             "full-suite.log",
             "**/*.raw",
             "**/*.json",
@@ -692,9 +661,7 @@ class NativeCIPreparationTests(unittest.TestCase):
             "if: always()",
         ):
             self.assertIn(expected, job)
-        self.assertEqual(
-            job.count("-m unittest discover -s tests/chaos -p 'test_*.py' -v"), 1
-        )
+        self.assertEqual(job.count("scripts/run_native_tests.py"), 1)
         self.assertNotIn("--retry", job)
 
 
@@ -714,41 +681,18 @@ class NativeCallerWiringTests(unittest.TestCase):
             .split("```", 2)[1]
         )
 
-    def test_exact_platform_and_whistle_environment_in_both_callers(self):
-        expected = {
-            "PLATFORM_ROOT": "$root",
-            "PLATFORM_RECEIPT": "$out/system-gcc13",
-            "PLATFORM_REVISION": "$revision",
-            "PLATFORM_ARTIFACTS": "$invocation/platform",
-            "PLATFORM_OFF_TUPLE": "$out/stock",
-            "WHISTLE_ROOT": "$root",
-            "WHISTLE_RECEIPT": "$out/system-gcc13",
-            "WHISTLE_REVISION": "$revision",
-            "WHISTLE_ARTIFACTS": "$invocation/whistle",
-        }
-        for label, source in (("CI", self.suite), ("local", self.local)):
-            with self.subTest(caller=label):
-                command = source.split("env -i", 1)[1]
-                assignments = re.findall(
-                    r'NYARLATHACK_((?:PLATFORM|WHISTLE)_[A-Z_]+)="([^"]+)"',
-                    command,
-                )
-                self.assertEqual(len(assignments), 9)
-                self.assertEqual(dict(assignments), expected)
-                for assignment in (
-                    'NYARLATHACK_STOCK_DIR="$out/stock"',
-                    'NYARLATHACK_PRECURIO_DIR="$out/precurio"',
-                    "NYARLATHACK_NATIVE_FIXTURE_MODE=source-build",
-                    'NYARLATHACK_NATIVE_BUILD_RECEIPT="$out/system-gcc13"',
-                    'NYARLATHACK_NATIVE_EXPECTED_REVISION="$revision"',
-                    'HOME="$out/home"',
-                    'MAIL="$out/MAIL"',
-                    'TMPDIR="$out/fixtures"',
-                ):
-                    self.assertIn(assignment, command)
-                self.assertNotIn("NYARLATHACK_OBSERVATIONS", source)
-                self.assertEqual(command.count("-m unittest discover"), 1)
-                self.assertNotIn("--retry", source)
+    def test_same_descriptor_entry_point_in_both_callers(self):
+        for source in (self.suite, self.local):
+            self.assertEqual(source.count("scripts/run_native_tests.py"), 1)
+            self.assertIn('--root "$root"', source)
+            self.assertIn('--expected-revision "$revision"', source)
+            self.assertIn('--build-output "$out"', source)
+            self.assertNotIn("env -i", source)
+            self.assertNotRegex(
+                source, r"NYARLATHACK_(PLATFORM|WHISTLE|FOUNTAIN|ACTION_TRANSPORT)_"
+            )
+            self.assertNotIn("NYARLATHACK_OBSERVATIONS", source)
+            self.assertNotIn("--retry", source)
 
     def test_private_absent_output_published_before_preparation(self):
         preparation = self.game.split(
@@ -780,13 +724,11 @@ class NativeCallerWiringTests(unittest.TestCase):
         self.assertIn("timeout-minutes: 15", self.game)
 
     def test_invocation_allocation_is_private_unique_with_absent_leaves(self):
-        allocation = 'invocation=$(mktemp -d "$out/fixtures/full-suite.XXXXXX")'
-        for source in (self.suite, self.local.split('cd "$root"', 1)[1]):
-            self.assertIn(allocation, source)
-            self.assertLess(source.index("umask 077"), source.index(allocation))
-            self.assertLess(source.index(allocation), source.index("umask 022"))
-            self.assertLess(source.index("umask 022"), source.index("env -i"))
-            self.assertNotRegex(source, r"\b(?:mkdir|rm|ln)\b")
+        runner = (ROOT / "scripts/run_native_tests.py").read_text()
+        self.assertIn(
+            'tempfile.mkdtemp(prefix="full-suite.", dir=out / "fixtures")', runner
+        )
+        self.assertIn("config.family(name, ROOT, env)", runner)
         # Unit-only analogue of two launches; never create/reuse artifact leaves.
         with tempfile.TemporaryDirectory(prefix="caller-unit-", dir="/tmp") as base:
             fixtures = Path(base) / "fixtures"
@@ -1007,6 +949,9 @@ def supervision_case(mode):
         ready = threading.Event()
         peer = []
         thread_errors = []
+        sampled = threading.Event()
+        delivery_threads = []
+        inspection_error = mode.startswith("inspection-error")
 
         def baseline_term(signum, frame):
             # Also keep RED teardown reachable with the old unsupervised code.
@@ -1038,12 +983,38 @@ def supervision_case(mode):
         thread.start()
         real_run = subprocess.run
         runner = getattr(ci, "_run_build", None)
-        if mode == "inspection-error":
+        if inspection_error:
 
             def unreadable_group(pgid):
                 raise OSError("fixture proc read failure")
 
             ci._group_running = unreadable_group
+        if mode == "inspection-error-delayed":
+            # Model asynchronous signal completion, not successful cleanup:
+            # the leader exits first; the owned writer's requested KILL is
+            # delivered only after the immediate state sample. The subreaper
+            # owns this child and does not reap it until finally, pinning its
+            # identity. All production exception handling remains intact.
+            class DelayedKillOS:
+                def __getattr__(self, name):
+                    return getattr(os, name)
+
+                def killpg(self, pgid, sig):
+                    if sig != signal.SIGKILL:
+                        return os.killpg(pgid, sig)
+                    pid = peer[0][1]
+
+                    def deliver():
+                        if not sampled.wait(5):
+                            thread_errors.append("state sample not reached")
+                        os.kill(pid, signal.SIGKILL)
+
+                    delivery = threading.Thread(target=deliver, daemon=True)
+                    delivery_threads.append(delivery)
+                    delivery.start()
+                    os.kill(pgid, sig)
+
+            ci.os = DelayedKillOS()
         argv = [sys.executable, "-c", RECIPE, str(root), mode, WRITER]
 
         def run_recipe(unused_argv, **kwargs):
@@ -1075,6 +1046,10 @@ def supervision_case(mode):
                 except BaseException as exc:
                     result["exception"] = type(exc).__name__
                     result["message"] = str(exc)
+                    result["cleanup_failed"] = getattr(
+                        exc, "_build_cleanup_failed", False
+                    )
+                    result["exception_notes"] = getattr(exc, "__notes__", [])
             thread.join(timeout=5)
             result["ready"] = ready.is_set()
             result["thread_errors"] = thread_errors
@@ -1097,6 +1072,25 @@ def supervision_case(mode):
                 state = "absent"
             result["descendant_state"] = state
             result["running_descendant"] = state not in ("absent", "Z", "X")
+            sampled.set()
+            if inspection_error:
+                # Cleanup explicitly failed verification. Observe this owned
+                # child's actual exit independently, without killing/reaping it
+                # or relabelling the production result as cleanup success.
+                deadline = time.monotonic() + 2
+                while True:
+                    exited = os.waitid(
+                        os.P_PID, pid, os.WEXITED | os.WNOHANG | os.WNOWAIT
+                    )
+                    if exited or time.monotonic() >= deadline:
+                        break
+                    time.sleep(0.01)
+                result["descendant_exit_observed"] = exited is not None
+                result["descendant_killed"] = bool(
+                    exited
+                    and exited.si_code == os.CLD_KILLED
+                    and exited.si_status == signal.SIGKILL
+                )
             before = (receipts / "1-clean.log").read_bytes()
             try:
                 conn.sendall(b"w")
@@ -1107,6 +1101,9 @@ def supervision_case(mode):
             result["log_stable"] = before == (receipts / "1-clean.log").read_bytes()
             result["commands"] = json.loads((receipts / "1-commands.json").read_text())
         finally:
+            sampled.set()
+            for delivery in delivery_threads:
+                delivery.join(timeout=6)
             # Retain only this invocation's leader/group. Reap our adopted
             # descendants even on RED; production does not claim to reap them.
             if (root / "leader").exists():
@@ -1150,7 +1147,11 @@ class BuildProcessSupervisionTests(unittest.TestCase):
         self.assertEqual(result["thread_errors"], [], result)
         self.assertTrue(result["fixture_reaped"], result)
         self.assertTrue(result["leader_reaped"], result)
-        self.assertFalse(result["running_descendant"], result)
+        if mode.startswith("inspection-error"):
+            self.assertTrue(result["descendant_exit_observed"], result)
+            self.assertTrue(result["descendant_killed"], result)
+        else:
+            self.assertFalse(result["running_descendant"], result)
         self.assertFalse(result["late_write_ack"], result)
         self.assertTrue(result["log_stable"], result)
         self.assertTrue(result["handlers_restored"], result)
@@ -1160,6 +1161,16 @@ class BuildProcessSupervisionTests(unittest.TestCase):
     def test_proc_inspection_error_still_kills_and_reaps_direct_child(self):
         result = self.check_case("inspection-error")
         self.assertEqual(result["exception"], "TimeoutExpired")
+        self.assertTrue(result["cleanup_failed"], result)
+        self.assertIn("fixture proc read failure", " ".join(result["exception_notes"]))
+        self.assertIsNone(result["commands"][0]["exit_code"])
+
+    def test_proc_inspection_error_does_not_claim_synchronous_descendant_exit(self):
+        result = self.check_case("inspection-error-delayed")
+        self.assertTrue(result["running_descendant"], result)
+        self.assertTrue(result["cleanup_failed"], result)
+        self.assertEqual(result["exception"], "TimeoutExpired")
+        self.assertIn("fixture proc read failure", " ".join(result["exception_notes"]))
         self.assertIsNone(result["commands"][0]["exit_code"])
 
     def test_normal_exit_stops_remaining_writer_before_next_command(self):

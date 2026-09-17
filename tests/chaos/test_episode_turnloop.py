@@ -16,6 +16,7 @@ import shutil
 import signal
 import sys
 import unittest
+from native_fixture_config import KEY, family, enabled as fixture_enabled
 
 from gameplay_support import Game
 from test_episode_platforms import Cancellation, bounded, owned_game_type
@@ -531,13 +532,24 @@ def main(argv=None):
         )
 
 
-@unittest.skipUnless(
-    os.environ.get("NYARLATHACK_TURNLOOP_TESTS") == "1", "opt-in real turn-loop driver"
-)
+@unittest.skipUnless(fixture_enabled("turnloop"), "opt-in real turn-loop driver")
 class TurnloopTests(unittest.TestCase):
     def test_explicit_native_matrix(self):
         from native_driver_supervision import run_driver
 
+        if KEY in os.environ:
+            values = family("turnloop", Path(__file__).resolve().parents[2])
+            if values is None:
+                self.skipTest(
+                    "core profile excludes additional historical-stock turn-loop gate"
+                )
+            args = [part for key, val in values.items() for part in ("--" + key, val)]
+            args.extend(["--matrix", "--provenance-dumps"])
+            code, logs = run_driver(
+                Path(__file__).resolve(), args, values["root"], values["artifacts"]
+            )
+            self.assertEqual(code, 0, str(logs))
+            return
         args = []
         for key in ("ROOT", "RECEIPT", "REVISION", "OFF_TUPLE", "ARTIFACTS"):
             value = os.environ["NYARLATHACK_TURNLOOP_" + key]

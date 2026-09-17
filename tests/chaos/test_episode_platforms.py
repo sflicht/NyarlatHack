@@ -25,6 +25,10 @@ import sys
 import termios
 import time
 import unittest
+from native_fixture_config import (
+    arguments as fixture_arguments,
+    enabled as fixture_enabled,
+)
 
 LIMIT = 1_000_000
 
@@ -674,25 +678,18 @@ def main(argv=None):
     cancel.checkpoint()
 
 
-@unittest.skipUnless(
-    os.environ.get("NYARLATHACK_GAME_TESTS") == "1", "opt-in actual game tests"
-)
+@unittest.skipUnless(fixture_enabled("platform"), "native opt-in")
 class EpisodePlatformTests(unittest.TestCase):
     def test_explicit_source_platforms(self):
-        """Explicit parameters prevent implicit archived or working-tree fallback."""
-        keys = ("ROOT", "RECEIPT", "REVISION", "ARTIFACTS", "OFF_TUPLE")
-        args = []
-        for key in keys:
-            value = os.environ.get("NYARLATHACK_PLATFORM_" + key)
-            self.assertIsNotNone(value, "set NYARLATHACK_PLATFORM_" + key)
-            args.extend(["--" + key.lower().replace("_", "-"), value])
+        if not __debug__:
+            self.fail("optimized Python is not supported")
+        values, args = fixture_arguments(
+            "platform", Path(__file__).resolve().parents[2]
+        )
         from native_driver_supervision import run_driver
 
         code, logs = run_driver(
-            Path(__file__).resolve(),
-            args,
-            os.environ["NYARLATHACK_PLATFORM_ROOT"],
-            os.environ["NYARLATHACK_PLATFORM_ARTIFACTS"],
+            Path(__file__).resolve(), args, values["root"], values["artifacts"]
         )
         self.assertEqual(
             code, 0, f"platform driver failed ({code}); diagnostics: {logs}"

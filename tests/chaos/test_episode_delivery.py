@@ -29,6 +29,7 @@ import termios
 import tempfile
 import time
 import unittest
+from native_fixture_config import enabled as fixture_enabled
 
 
 # Independent fixed wire contract for the synthetic context, not parsed from a
@@ -923,9 +924,7 @@ def main():
     print(json.dumps({"artifacts": str(out), "cases": results}), flush=True)
 
 
-@unittest.skipUnless(
-    os.environ.get("NYARLATHACK_GAME_TESTS") == "1", "real game opt-in"
-)
+@unittest.skipUnless(fixture_enabled("delivery"), "real game opt-in")
 class EpisodeDeliveryTests(unittest.TestCase):
     def test_full_linked_delivery(self):
         root = Path(__file__).resolve().parents[2]
@@ -933,10 +932,18 @@ class EpisodeDeliveryTests(unittest.TestCase):
         self.assertEqual(
             os.environ.get("NYARLATHACK_NATIVE_FIXTURE_MODE"), "source-build"
         )
-        receipt = os.environ["NYARLATHACK_NATIVE_BUILD_RECEIPT"]
-        revision = os.environ["NYARLATHACK_NATIVE_EXPECTED_REVISION"]
-        container = Path(tempfile.mkdtemp(prefix="nyarl-episode-delivery-"))
-        artifacts = container / "evidence"
+        from native_fixture_config import KEY, family
+
+        if KEY in os.environ:
+            values = family("delivery", root)
+            receipt, revision = values["receipt"], values["revision"]
+            artifacts = Path(values["artifacts"])
+            container = artifacts.parent
+        else:
+            receipt = os.environ["NYARLATHACK_NATIVE_BUILD_RECEIPT"]
+            revision = os.environ["NYARLATHACK_NATIVE_EXPECTED_REVISION"]
+            container = Path(tempfile.mkdtemp(prefix="nyarl-episode-delivery-"))
+            artifacts = container / "evidence"
         print("EPISODE_DELIVERY_ARTIFACTS=" + str(artifacts), flush=True)
         # Keep the driver's umask, signal, environment and resource changes private.
         env = {

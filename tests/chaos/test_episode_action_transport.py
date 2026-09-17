@@ -21,6 +21,10 @@ import shutil
 import signal
 import sys
 import unittest
+from native_fixture_config import (
+    arguments as fixture_arguments,
+    enabled as fixture_enabled,
+)
 
 
 def compare_native(healthy, candidate):
@@ -513,24 +517,22 @@ def main(argv=None):
     return 0
 
 
-@unittest.skipUnless(os.environ.get("NYARLATHACK_GAME_TESTS") == "1", "native opt-in")
+@unittest.skipUnless(fixture_enabled("action-transport"), "native opt-in")
 class EpisodeActionTransportTests(unittest.TestCase):
     def test_selected_transport(self):
         if not __debug__:
-            raise RuntimeError("optimized Python is not supported")
+            self.fail("optimized Python is not supported")
+        values, args = fixture_arguments(
+            "action-transport", Path(__file__).resolve().parents[2]
+        )
         from native_driver_supervision import run_driver
 
-        args = []
-        for key in ("ROOT", "RECEIPT", "REVISION", "ARTIFACTS"):
-            value = os.environ["NYARLATHACK_ACTION_TRANSPORT_" + key]
-            args.extend(["--" + key.lower(), value])
         code, logs = run_driver(
-            Path(__file__).resolve(),
-            args,
-            os.environ["NYARLATHACK_ACTION_TRANSPORT_ROOT"],
-            os.environ["NYARLATHACK_ACTION_TRANSPORT_ARTIFACTS"],
+            Path(__file__).resolve(), args, values["root"], values["artifacts"]
         )
-        self.assertEqual(code, 0, str(logs))
+        self.assertEqual(
+            code, 0, f"action-transport driver failed ({code}); diagnostics: {logs}"
+        )
 
 
 if __name__ == "__main__":

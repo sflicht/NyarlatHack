@@ -953,6 +953,27 @@ def native(args):
 
 class HistoryGameplayNativeTests(unittest.TestCase):
     def test_explicit_native_driver(self):
+        from native_fixture_config import KEY, family
+
+        if KEY in os.environ:
+            values = family("history", Path(__file__).resolve().parents[2])
+            from native_driver_supervision import run_driver
+
+            argv = [
+                "--root",
+                values["root"],
+                "--receipt",
+                str(Path(values["receipt"]) / "1-manifest.json"),
+                "--revision",
+                values["revision"],
+                "--output",
+                values["artifacts"],
+            ]
+            code, logs = run_driver(
+                Path(__file__).resolve(), argv, values["root"], values["artifacts"]
+            )
+            self.assertEqual(code, 0, str(logs))
+            return
         # Reuse the common native-build profile; no per-family environment set.
         names = (
             "NYARLATHACK_GAME_TESTS",
