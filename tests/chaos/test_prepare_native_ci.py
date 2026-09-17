@@ -640,34 +640,9 @@ class NativeCIPreparationTests(unittest.TestCase):
         )
 
     def test_suite_mask_preserves_public_negative_fixture_and_private_log(self):
-        workflow = (ROOT / ".github/workflows/quality.yml").read_text()
-        block = workflow.split(
-            "      - name: Run the complete offline suite once\n", 1
-        )[1]
-        block = block.split("      - name: Retain selected", 1)[0]
-        docs = (ROOT / "docs/quality-control.md").read_text()
-        docs = docs.split('cd "$root"\n', 1)[1].split("```", 1)[0]
-        for label, commands in (("workflow", block), ("docs", docs)):
-            with self.subTest(label=label):
-                before_env = commands.split("env -i", 1)[0]
-                masks = re.findall(r"(?m)^\s*umask ([0-7]{3,4})\s*$", before_env)
-                self.assertTrue(masks)
-                prior = os.umask(int(masks[-1], 8))
-                try:
-                    public = self.base / (label + "-public")
-                    public.mkdir(mode=0o755)
-                finally:
-                    os.umask(prior)
-                self.assertEqual(stat.S_IMODE(public.stat().st_mode), 0o755)
-                self.assertIn(': > "$out/full-suite.log"', before_env)
-                self.assertLess(
-                    before_env.index("umask 077"),
-                    before_env.index(': > "$out/full-suite.log"'),
-                )
-                self.assertLess(
-                    before_env.index(': > "$out/full-suite.log"'),
-                    before_env.index("umask 022"),
-                )
+        runner = (ROOT / "scripts/run_native_tests.py").read_text()
+        self.assertIn("umask=0o022", runner)
+        self.assertIn("os.O_EXCL, 0o600", runner)
 
     def test_workflow_full_discovery_private_environment_and_receipts(self):
         text = (ROOT / ".github/workflows/quality.yml").read_text()
@@ -677,14 +652,8 @@ class NativeCIPreparationTests(unittest.TestCase):
             "persist-credentials: false",
             "prepare_native_ci.py",
             '--expected-revision "$GITHUB_SHA"',
-            "NYARLATHACK_PRECURIO_DIR=",
-            "NYARLATHACK_NATIVE_FIXTURE_MODE=source-build",
-            "NYARLATHACK_NATIVE_BUILD_RECEIPT=",
-            "NYARLATHACK_NATIVE_EXPECTED_REVISION=",
-            "PYTHONDONTWRITEBYTECODE=1",
-            'TMPDIR="$out/fixtures"',
-            'MAIL="$out/MAIL"',
-            "env -i",
+            "scripts/run_native_tests.py",
+            '--build-output "$out"',
             "full-suite.log",
             "**/*.raw",
             "**/*.json",
@@ -692,9 +661,7 @@ class NativeCIPreparationTests(unittest.TestCase):
             "if: always()",
         ):
             self.assertIn(expected, job)
-        self.assertEqual(
-            job.count("-m unittest discover -s tests/chaos -p 'test_*.py' -v"), 1
-        )
+        self.assertEqual(job.count("scripts/run_native_tests.py"), 1)
         self.assertNotIn("--retry", job)
 
 
@@ -714,41 +681,18 @@ class NativeCallerWiringTests(unittest.TestCase):
             .split("```", 2)[1]
         )
 
-    def test_exact_platform_and_whistle_environment_in_both_callers(self):
-        expected = {
-            "PLATFORM_ROOT": "$root",
-            "PLATFORM_RECEIPT": "$out/system-gcc13",
-            "PLATFORM_REVISION": "$revision",
-            "PLATFORM_ARTIFACTS": "$invocation/platform",
-            "PLATFORM_OFF_TUPLE": "$out/stock",
-            "WHISTLE_ROOT": "$root",
-            "WHISTLE_RECEIPT": "$out/system-gcc13",
-            "WHISTLE_REVISION": "$revision",
-            "WHISTLE_ARTIFACTS": "$invocation/whistle",
-        }
-        for label, source in (("CI", self.suite), ("local", self.local)):
-            with self.subTest(caller=label):
-                command = source.split("env -i", 1)[1]
-                assignments = re.findall(
-                    r'NYARLATHACK_((?:PLATFORM|WHISTLE)_[A-Z_]+)="([^"]+)"',
-                    command,
-                )
-                self.assertEqual(len(assignments), 9)
-                self.assertEqual(dict(assignments), expected)
-                for assignment in (
-                    'NYARLATHACK_STOCK_DIR="$out/stock"',
-                    'NYARLATHACK_PRECURIO_DIR="$out/precurio"',
-                    "NYARLATHACK_NATIVE_FIXTURE_MODE=source-build",
-                    'NYARLATHACK_NATIVE_BUILD_RECEIPT="$out/system-gcc13"',
-                    'NYARLATHACK_NATIVE_EXPECTED_REVISION="$revision"',
-                    'HOME="$out/home"',
-                    'MAIL="$out/MAIL"',
-                    'TMPDIR="$out/fixtures"',
-                ):
-                    self.assertIn(assignment, command)
-                self.assertNotIn("NYARLATHACK_OBSERVATIONS", source)
-                self.assertEqual(command.count("-m unittest discover"), 1)
-                self.assertNotIn("--retry", source)
+    def test_same_descriptor_entry_point_in_both_callers(self):
+        for source in (self.suite, self.local):
+            self.assertEqual(source.count("scripts/run_native_tests.py"), 1)
+            self.assertIn('--root "$root"', source)
+            self.assertIn('--expected-revision "$revision"', source)
+            self.assertIn('--build-output "$out"', source)
+            self.assertNotIn("env -i", source)
+            self.assertNotRegex(
+                source, r"NYARLATHACK_(PLATFORM|WHISTLE|FOUNTAIN|ACTION_TRANSPORT)_"
+            )
+            self.assertNotIn("NYARLATHACK_OBSERVATIONS", source)
+            self.assertNotIn("--retry", source)
 
     def test_private_absent_output_published_before_preparation(self):
         preparation = self.game.split(
@@ -780,13 +724,11 @@ class NativeCallerWiringTests(unittest.TestCase):
         self.assertIn("timeout-minutes: 15", self.game)
 
     def test_invocation_allocation_is_private_unique_with_absent_leaves(self):
-        allocation = 'invocation=$(mktemp -d "$out/fixtures/full-suite.XXXXXX")'
-        for source in (self.suite, self.local.split('cd "$root"', 1)[1]):
-            self.assertIn(allocation, source)
-            self.assertLess(source.index("umask 077"), source.index(allocation))
-            self.assertLess(source.index(allocation), source.index("umask 022"))
-            self.assertLess(source.index("umask 022"), source.index("env -i"))
-            self.assertNotRegex(source, r"\b(?:mkdir|rm|ln)\b")
+        runner = (ROOT / "scripts/run_native_tests.py").read_text()
+        self.assertIn(
+            'tempfile.mkdtemp(prefix="full-suite.", dir=out / "fixtures")', runner
+        )
+        self.assertIn("config.family(name, ROOT, env)", runner)
         # Unit-only analogue of two launches; never create/reuse artifact leaves.
         with tempfile.TemporaryDirectory(prefix="caller-unit-", dir="/tmp") as base:
             fixtures = Path(base) / "fixtures"

@@ -10,6 +10,10 @@ import unittest
 from unittest import mock
 
 import native_driver_supervision
+from native_fixture_config import (
+    arguments as fixture_arguments,
+    enabled as fixture_enabled,
+)
 
 HERE = Path(__file__).resolve().parent
 DRIVER = HERE / "test_episode_fountain_matrix.py"
@@ -20,15 +24,8 @@ ARTIFACTS = "NYARLATHACK_FOUNTAIN_MATRIX_ARTIFACTS"
 def run_native(test):
     if not __debug__ or sys.flags.optimize or os.environ.get("PYTHONOPTIMIZE"):
         raise RuntimeError("optimized Python is not supported")
-    args = []
-    for key in ("ROOT", "RECEIPT", "REVISION"):
-        value = os.environ.get(PREFIX + key)
-        test.assertTrue(value, "explicit " + PREFIX + key + " required")
-        args.extend(["--" + key.lower(), value])
-    out = os.environ.get(ARTIFACTS)
-    test.assertTrue(out, "explicit " + ARTIFACTS + " required")
-    args.extend(["--artifacts", out])
-    root = os.environ[PREFIX + "ROOT"]
+    values, args = fixture_arguments("fountain-matrix", HERE.parents[1])
+    root, out = values["root"], values["artifacts"]
     code, logs = native_driver_supervision.run_driver(DRIVER, args, root, out)
     test.assertEqual(code, 0, f"matrix driver failed ({code}); diagnostics: {logs}")
     # Fresh interpreter: oracle import-time evidence cannot be stale discovery state.
@@ -41,7 +38,7 @@ def run_native(test):
     test.assertEqual(code, 0, f"matrix oracle failed ({code}); diagnostics: {logs}")
 
 
-@unittest.skipUnless(os.environ.get("NYARLATHACK_GAME_TESTS") == "1", "native opt-in")
+@unittest.skipUnless(fixture_enabled("fountain-matrix"), "native opt-in")
 class FountainMatrixNativeTests(unittest.TestCase):
     def test_fresh_matrix_and_all_artifact_oracles(self):
         run_native(self)
@@ -129,7 +126,7 @@ class MatrixAdapterUnitTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             values = self.values(Path(tmp))
             with (
-                mock.patch.dict(os.environ, values),
+                mock.patch.dict(os.environ, values, clear=True),
                 mock.patch.object(
                     native_driver_supervision, "run_driver", return_value=(0, Path(tmp))
                 ) as run,
@@ -157,7 +154,7 @@ class MatrixAdapterUnitTests(unittest.TestCase):
             for code in (1, 9, 124, 125):
                 with (
                     self.subTest(code=code),
-                    mock.patch.dict(os.environ, self.values(Path(tmp))),
+                    mock.patch.dict(os.environ, self.values(Path(tmp)), clear=True),
                     mock.patch.object(
                         native_driver_supervision,
                         "run_driver",
@@ -173,7 +170,7 @@ class MatrixAdapterUnitTests(unittest.TestCase):
     def test_synthetic_oracle_failure_is_not_native_pass(self):
         with tempfile.TemporaryDirectory() as tmp:
             with (
-                mock.patch.dict(os.environ, self.values(Path(tmp))),
+                mock.patch.dict(os.environ, self.values(Path(tmp)), clear=True),
                 mock.patch.object(
                     native_driver_supervision,
                     "run_driver",
@@ -207,7 +204,7 @@ class MatrixAdapterUnitTests(unittest.TestCase):
     def test_bad_receipt_fails_real_preflight_before_build(self):
         with tempfile.TemporaryDirectory() as tmp:
             parent = Path(tmp)
-            with mock.patch.dict(os.environ, self.values(parent)):
+            with mock.patch.dict(os.environ, self.values(parent), clear=True):
                 with self.assertRaisesRegex(AssertionError, "driver failed"):
                     self.invoke()
             self.assertFalse((parent / "matrix").exists())
@@ -220,7 +217,13 @@ class MatrixAdapterUnitTests(unittest.TestCase):
     def test_discovery_registers_one_native_test_and_optin_is_honest(self):
         for enabled in ("", "0", "yes"):
             env = dict(
-                os.environ, NYARLATHACK_GAME_TESTS=enabled, PYTHONDONTWRITEBYTECODE="1"
+                {
+                    k: v
+                    for k, v in os.environ.items()
+                    if not k.startswith("NYARLATHACK_")
+                },
+                NYARLATHACK_GAME_TESTS=enabled,
+                PYTHONDONTWRITEBYTECODE="1",
             )
             p = subprocess.run(
                 [
@@ -306,7 +309,7 @@ class MatrixAdapterUnitTests(unittest.TestCase):
     def test_real_preflight_repeated_attempts_keep_unique_diagnostics(self):
         with tempfile.TemporaryDirectory() as tmp:
             parent = Path(tmp)
-            with mock.patch.dict(os.environ, self.values(parent)):
+            with mock.patch.dict(os.environ, self.values(parent), clear=True):
                 for _ in range(2):
                     with self.assertRaisesRegex(AssertionError, "driver failed"):
                         self.invoke()
@@ -324,7 +327,27 @@ class MatrixAdapterUnitTests(unittest.TestCase):
 
     def test_ci_has_dedicated_absent_leaf_and_preserves_upload_guard(self):
         workflow = (HERE.parents[1] / ".github/workflows/quality.yml").read_text()
-        self.assertIn(ARTIFACTS + '="$invocation/fountain-matrix"', workflow)
+        from test_native_fixture_config import DescriptorTests, RunnerTests
+
+        self.assertIn("scripts/run_native_tests.py", workflow)
+        with tempfile.TemporaryDirectory() as tmp:
+            path, data = DescriptorTests().fixture(Path(tmp))
+            env = RunnerTests().api().suite_environment(path, data)
+            with (
+                mock.patch.dict(os.environ, env, clear=True),
+                mock.patch.object(
+                    native_driver_supervision, "run_driver", return_value=(0, Path(tmp))
+                ) as run,
+            ):
+                self.invoke()
+                leaf = Path(data["artifact_parent"]) / "fountain-matrix"
+                self.assertEqual(run.call_args_list[0].args[3], str(leaf))
+                self.assertFalse(leaf.exists())
+                leaf.mkdir()
+                run.reset_mock()
+                with self.assertRaisesRegex(ValueError, "artifact leaf must be absent"):
+                    self.invoke()
+                run.assert_not_called()
         self.assertIn("${{ always() && env.NYARLATHACK_CI_OUT != '' }}", workflow)
         self.assertNotIn("test_episode_fountain_matrix.py", workflow)
 

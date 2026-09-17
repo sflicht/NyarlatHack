@@ -37,6 +37,7 @@ from unittest import mock
 sys.path.insert(0, sys.argv[1])
 filename, classname, method, prefix = sys.argv[3:]
 prefix = 'NYARLATHACK_' + prefix + '_'
+os.environ.pop('NYARLATHACK_NATIVE_DESCRIPTOR', None)
 spec = importlib.util.spec_from_file_location('adapter', Path(sys.argv[1]) / filename)
 m = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(m)
@@ -107,8 +108,10 @@ assert len(list(root.glob('other-absent.driver-*'))) == 1
         probe = r"""
 import importlib.util, os, sys
 from pathlib import Path
+sys.path.insert(0, sys.argv[1])
 filename, classname, method, prefix = sys.argv[2:]
 prefix = 'NYARLATHACK_' + prefix + '_'
+os.environ.pop('NYARLATHACK_NATIVE_DESCRIPTOR', None)
 spec = importlib.util.spec_from_file_location('adapter', Path(sys.argv[1])/filename)
 m = importlib.util.module_from_spec(spec); spec.loader.exec_module(m)
 keys = ['ROOT', 'RECEIPT', 'REVISION', 'ARTIFACTS']

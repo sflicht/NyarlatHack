@@ -18,7 +18,9 @@ PREFIX = "NYARLATHACK_ACTION_TRANSPORT_"
 
 class ActionTransportAdapterUnitTests(unittest.TestCase):
     def load(self, enabled="1"):
-        with mock.patch.dict(os.environ, {"NYARLATHACK_GAME_TESTS": enabled}):
+        with mock.patch.dict(
+            os.environ, {"NYARLATHACK_GAME_TESTS": enabled}, clear=enabled != "1"
+        ):
             spec = importlib.util.spec_from_file_location(
                 "transport_adapter_unit", DRIVER
             )
@@ -54,7 +56,7 @@ class ActionTransportAdapterUnitTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             values = self.values(Path(tmp))
             with (
-                mock.patch.dict(os.environ, values),
+                mock.patch.dict(os.environ, values, clear=True),
                 mock.patch.object(
                     native_driver_supervision, "run_driver", return_value=(0, Path(tmp))
                 ) as run,
@@ -74,7 +76,7 @@ class ActionTransportAdapterUnitTests(unittest.TestCase):
             for code in (1, 9, 124, 125):
                 with (
                     self.subTest(code=code),
-                    mock.patch.dict(os.environ, self.values(Path(tmp))),
+                    mock.patch.dict(os.environ, self.values(Path(tmp)), clear=True),
                     mock.patch.object(
                         native_driver_supervision,
                         "run_driver",
@@ -98,14 +100,14 @@ class ActionTransportAdapterUnitTests(unittest.TestCase):
                     mock.patch.object(native_driver_supervision, "run_driver") as run,
                 ):
                     result = self.run_suite()
-                    self.assertEqual(len(result.errors), 1)
-                    self.assertIn(key, result.errors[0][1])
+                    self.assertEqual(len(result.failures), 1)
+                    self.assertIn(key, result.failures[0][1])
                     run.assert_not_called()
 
     def test_bad_receipt_fails_real_preflight_without_build(self):
         with tempfile.TemporaryDirectory() as tmp:
             parent = Path(tmp)
-            with mock.patch.dict(os.environ, self.values(parent)):
+            with mock.patch.dict(os.environ, self.values(parent), clear=True):
                 result = self.run_suite()
             self.assertEqual(len(result.failures), 1, result.errors)
             self.assertFalse((parent / "transport").exists())
@@ -141,16 +143,10 @@ class ActionTransportAdapterUnitTests(unittest.TestCase):
 
     def test_ci_wires_existing_adapter_without_duplicate_native_launch(self):
         workflow = (HERE.parents[1] / ".github/workflows/quality.yml").read_text()
-        for key, value in (
-            ("ROOT", "$root"),
-            ("RECEIPT", "$out/system-gcc13"),
-            ("REVISION", "$revision"),
-            ("ARTIFACTS", "$invocation/action-transport"),
-        ):
-            self.assertIn(f'{PREFIX}{key}="{value}"', workflow)
-        self.assertIn(
-            'invocation=$(mktemp -d "$out/fixtures/full-suite.XXXXXX")', workflow
-        )
+        self.assertIn("scripts/run_native_tests.py", workflow)
+        self.assertIn('--build-output "$out"', workflow)
+        self.assertNotIn(PREFIX + "ROOT=", workflow)
+        self.assertIn("scripts/run_native_tests.py", workflow)
         self.assertNotIn("test_episode_action_transport.py", workflow)
         self.assertIn("${{ always() && env.NYARLATHACK_CI_OUT != '' }}", workflow)
 

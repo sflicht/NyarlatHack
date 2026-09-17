@@ -18,7 +18,9 @@ PREFIX = "NYARLATHACK_FOUNTAIN_"
 
 class FountainIntegrationTests(unittest.TestCase):
     def load(self, enabled="1"):
-        with mock.patch.dict(os.environ, {"NYARLATHACK_GAME_TESTS": enabled}):
+        with mock.patch.dict(
+            os.environ, {"NYARLATHACK_GAME_TESTS": enabled}, clear=enabled != "1"
+        ):
             spec = importlib.util.spec_from_file_location(
                 "fountain_adapter_unit", DRIVER
             )
@@ -61,7 +63,7 @@ class FountainIntegrationTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             values = self.values(Path(tmp))
             with (
-                mock.patch.dict(os.environ, values),
+                mock.patch.dict(os.environ, values, clear=True),
                 mock.patch.object(
                     native_driver_supervision, "run_driver", return_value=(0, Path(tmp))
                 ) as run,
@@ -82,7 +84,7 @@ class FountainIntegrationTests(unittest.TestCase):
             for code in (1, 9, 124, 125):
                 with (
                     self.subTest(code=code),
-                    mock.patch.dict(os.environ, self.values(Path(tmp))),
+                    mock.patch.dict(os.environ, self.values(Path(tmp)), clear=True),
                     mock.patch.object(
                         native_driver_supervision,
                         "run_driver",
@@ -120,7 +122,7 @@ class FountainIntegrationTests(unittest.TestCase):
     def test_nonexistent_receipt_fails_real_preflight_without_link(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
-            with mock.patch.dict(os.environ, self.values(root)):
+            with mock.patch.dict(os.environ, self.values(root), clear=True):
                 result = self.run_suite(self.load())
             self.assertEqual(len(result.failures), 1, result.errors)
             self.assertFalse(result.skipped)
@@ -136,7 +138,7 @@ class FountainIntegrationTests(unittest.TestCase):
             root = Path(tmp)
             values = self.values(root)
             values[PREFIX + "REVISION"] = "malformed-not-normalized"
-            with mock.patch.dict(os.environ, values):
+            with mock.patch.dict(os.environ, values, clear=True):
                 result = self.run_suite(self.load())
             self.assertEqual(len(result.failures), 1, result.errors)
             logs = list(root.glob("absent.driver-*"))
@@ -188,13 +190,9 @@ class FountainIntegrationTests(unittest.TestCase):
 
     def test_ci_supplies_explicit_selection_without_duplicate_cli(self):
         workflow = (HERE.parents[1] / ".github/workflows/quality.yml").read_text()
-        for key, value in (
-            ("ROOT", "$root"),
-            ("RECEIPT", "$out/system-gcc13"),
-            ("REVISION", "$revision"),
-            ("ARTIFACTS", "$invocation/fountain"),
-        ):
-            self.assertIn(f'{PREFIX}{key}="{value}"', workflow)
+        self.assertIn("scripts/run_native_tests.py", workflow)
+        self.assertIn('--build-output "$out"', workflow)
+        self.assertNotIn(PREFIX + "ROOT=", workflow)
         self.assertIn("${{ always() && env.NYARLATHACK_CI_OUT != '' }}", workflow)
         self.assertIn("${{ env.NYARLATHACK_CI_OUT }}/fixtures/**/*.jsonl", workflow)
         self.assertNotIn("test_episode_fountain.py", workflow)

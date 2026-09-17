@@ -97,39 +97,8 @@ out="$container/output" # absent; preparer creates it
 /usr/bin/python3 "$root/scripts/prepare_native_ci.py" \
   --root "$root" --output-dir "$out" --expected-revision "$revision"
 cd "$root"
-umask 077
-invocation=$(mktemp -d "$out/fixtures/full-suite.XXXXXX")
-: > "$out/full-suite.log"
-# Keep the log private without changing intentionally public negative fixtures.
-umask 022
-env -i PATH=/usr/bin:/bin HOME="$out/home" LANG=C.UTF-8 TZ=America/New_York \
-  PKG_CONFIG_LIBDIR=/usr/lib/x86_64-linux-gnu/pkgconfig:/usr/share/pkgconfig \
-  MAIL="$out/MAIL" TMPDIR="$out/fixtures" PYTHONDONTWRITEBYTECODE=1 \
-  NYARLATHACK_STOCK_DIR="$out/stock" NYARLATHACK_GAME_TESTS=1 \
-  NYARLATHACK_PRECURIO_DIR="$out/precurio" \
-  NYARLATHACK_NATIVE_FIXTURE_MODE=source-build \
-  NYARLATHACK_NATIVE_BUILD_RECEIPT="$out/system-gcc13" \
-  NYARLATHACK_NATIVE_EXPECTED_REVISION="$revision" \
-  NYARLATHACK_PLATFORM_ROOT="$root" \
-  NYARLATHACK_PLATFORM_RECEIPT="$out/system-gcc13" \
-  NYARLATHACK_PLATFORM_REVISION="$revision" \
-  NYARLATHACK_PLATFORM_ARTIFACTS="$invocation/platform" \
-  NYARLATHACK_PLATFORM_OFF_TUPLE="$out/stock" \
-  NYARLATHACK_WHISTLE_ROOT="$root" \
-  NYARLATHACK_WHISTLE_RECEIPT="$out/system-gcc13" \
-  NYARLATHACK_WHISTLE_REVISION="$revision" \
-  NYARLATHACK_WHISTLE_ARTIFACTS="$invocation/whistle" \
-  NYARLATHACK_FOUNTAIN_ROOT="$root" \
-  NYARLATHACK_FOUNTAIN_RECEIPT="$out/system-gcc13" \
-  NYARLATHACK_FOUNTAIN_REVISION="$revision" \
-  NYARLATHACK_FOUNTAIN_ARTIFACTS="$invocation/fountain" \
-  NYARLATHACK_FOUNTAIN_MATRIX_ARTIFACTS="$invocation/fountain-matrix" \
-  NYARLATHACK_ACTION_TRANSPORT_ROOT="$root" \
-  NYARLATHACK_ACTION_TRANSPORT_RECEIPT="$out/system-gcc13" \
-  NYARLATHACK_ACTION_TRANSPORT_REVISION="$revision" \
-  NYARLATHACK_ACTION_TRANSPORT_ARTIFACTS="$invocation/action-transport" \
-  /usr/bin/python3 -m unittest discover -s tests/chaos -p 'test_*.py' -v \
-  2>&1 | tee "$out/full-suite.log"
+/usr/bin/python3 scripts/run_native_tests.py \
+  --root "$root" --expected-revision "$revision" --build-output "$out"
 ```
 
 Preparation gets an absent output child of a private unique parent under `/tmp`.
@@ -150,11 +119,65 @@ always uses `strict-desired`; the command-line interface (CLI) retains
 Discovery runs the strict adapter once, without a duplicate fountain CLI launch.
 The accepted fountain matrix and selected-action transport are also required
 native discovery gates, run serially through the existing bounded external
-supervisor. The matrix reuses the explicit `NYARLATHACK_FOUNTAIN_ROOT`,
-`RECEIPT`, and `REVISION` selection; its dedicated
-`NYARLATHACK_FOUNTAIN_MATRIX_ARTIFACTS` leaf must be absent. Transport retains its
-existing four `NYARLATHACK_ACTION_TRANSPORT_*` selection variables and a separate
-absent artifact leaf. No extra production build or upstream comparison is added.
+supervisor. All configured adapters use the same checked descriptor and derive
+separate absent artifact leaves from its private invocation parent. No extra
+production build or upstream comparison is added.
+
+### Shared descriptor and result contract
+
+`scripts/run_native_tests.py` is the official entry point in both the local
+recipe and Actions. It calls the existing source selector before creating a
+fresh private invocation directory under `out/fixtures`; it does not build or
+infer a revision from HEAD or receipts. The required `--expected-revision` is
+independently reviewed job input. The descriptor must match the actual checkout
+containing the runner/tests. Source/header/object checks and native calibration
+remain in the existing selector and drivers, not in a new provenance framework.
+
+The runner writes a bounded strict JSON descriptor, owned by the current user,
+mode `0600`, with no symlinks or hardlinks, and a `0700` artifact parent. Schema
+version 1 has exactly `schema`, `root`, `revision`, `receipt`, `build_output`,
+`artifact_parent`, `profile`, and `historical_stock`. Core uses `profile: "core"`
+and `historical_stock: null`. Paths must be canonical absolute paths. Duplicate
+keys, unknown fields/versions, partial selections and mixed family environment
+configuration fail closed before game launch. The read-only helper is
+`tests/chaos/native_fixture_config.py`; `NYARLATHACK_NATIVE_DESCRIPTOR` selects
+this file. The runner supplies the independent revision separately and bridges
+only the old common game-player selection keys for unchanged archived players.
+Wholly unconfigured ordinary discovery still skips native gates; skips are not
+acceptance. Existing archived fixture defaults and literal historical pins are
+unchanged.
+
+Registration inventory: platform, whistle, strict fountain, fountain matrix,
+selected-action transport, delivery and history adapters consult the shared
+helper. Platform gets the current off tuple; history maps the shared receipt
+directory to its existing `1-manifest.json` interface. Delivery retains its
+existing subprocess isolation. The matrix retains its fresh seven-method oracle
+child and zero-skip receipt. Turn-loop is the optional profile below; its three
+artifact oracles and historical mutation check use validated evidence bridges.
+Other legacy game-player tests use the common compatibility bridge. The fatal
+fountain CLI remains an explicitly authorized manual diagnostic, not a newly
+registered death-run gate. Historical standalone CLIs keep their explicit
+arguments and existing guards. A new family adds one registration and a helper-
+consuming adapter, not a recipe environment prefix or copied root/revision block.
+
+The runner invokes real unittest discovery exactly once in a sanitized environment
+and returns its actual process exit status (signals remain nonzero). It never
+parses printed status lines. Opaque merged output is retained in the invocation's
+private `full-suite.log`, whose path is printed with the exit code. A fresh
+invocation is required every time; no artifact leaves are precreated or reused.
+The child umask is `022` so intentionally public negative fixtures remain public
+inside private TMPDIR; descriptor/log creation is independently private.
+
+For the additional, separately authorized local selected-command gate, use the
+same command with `--profile selected-turnloop` and all three
+`--historical-stock-tuple`, `--historical-stock-receipt`, and
+`--historical-stock-revision` arguments selected from the frozen accepted stock
+evidence. Its descriptor's `historical_stock` object has exactly `tuple`,
+`receipt`, and `revision`. The existing historical verifier checks the literal
+accepted tuple, revision, receipt and dump; the adapter uses the approved
+`--provenance-dumps` comparison and retains the original strict result. No stock
+revision is guessed or substituted. Actions has no external historical stock
+baseline and runs core only, not this additional local gate.
 
 After the new matrix succeeds, its adapter starts a separately supervised fresh
 Python interpreter against the current fixture's oracle module, explicitly
