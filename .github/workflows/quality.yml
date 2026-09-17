@@ -60,14 +60,21 @@ jobs:
         run: |
           set -euo pipefail
           umask 077
+          container=$(mktemp -d /tmp/nyarl-native-ci.XXXXXX)
+          out="$container/output" # absent; preparer creates it
+          printf 'NYARLATHACK_CI_OUT=%s\n' "$out" >> "$GITHUB_ENV"
           /usr/bin/python3 scripts/prepare_native_ci.py \
-            --root "$GITHUB_WORKSPACE" --output-dir "$RUNNER_TEMP/native-ci" \
+            --root "$GITHUB_WORKSPACE" --output-dir "$out" \
             --expected-revision "$GITHUB_SHA" 2>&1 | tee "$RUNNER_TEMP/native-preparation.log"
       - name: Run the complete offline suite once
         run: |
           set -euo pipefail
+          root="$GITHUB_WORKSPACE"
+          revision="$GITHUB_SHA"
+          cd "$GITHUB_WORKSPACE"
           umask 077
-          out="$RUNNER_TEMP/native-ci"
+          out="$NYARLATHACK_CI_OUT"
+          invocation=$(mktemp -d "$out/fixtures/full-suite.XXXXXX")
           : > "$out/full-suite.log"
           # Preserve intentionally public negative fixtures inside private TMPDIR.
           umask 022
@@ -78,30 +85,61 @@ jobs:
             NYARLATHACK_PRECURIO_DIR="$out/precurio" \
             NYARLATHACK_NATIVE_FIXTURE_MODE=source-build \
             NYARLATHACK_NATIVE_BUILD_RECEIPT="$out/system-gcc13" \
-            NYARLATHACK_NATIVE_EXPECTED_REVISION="$GITHUB_SHA" \
+            NYARLATHACK_NATIVE_EXPECTED_REVISION="$revision" \
+            NYARLATHACK_PLATFORM_ROOT="$root" \
+            NYARLATHACK_PLATFORM_RECEIPT="$out/system-gcc13" \
+            NYARLATHACK_PLATFORM_REVISION="$revision" \
+            NYARLATHACK_PLATFORM_ARTIFACTS="$invocation/platform" \
+            NYARLATHACK_PLATFORM_OFF_TUPLE="$out/stock" \
+            NYARLATHACK_WHISTLE_ROOT="$root" \
+            NYARLATHACK_WHISTLE_RECEIPT="$out/system-gcc13" \
+            NYARLATHACK_WHISTLE_REVISION="$revision" \
+            NYARLATHACK_WHISTLE_ARTIFACTS="$invocation/whistle" \
+            NYARLATHACK_FOUNTAIN_ROOT="$root" \
+            NYARLATHACK_FOUNTAIN_RECEIPT="$out/system-gcc13" \
+            NYARLATHACK_FOUNTAIN_REVISION="$revision" \
+            NYARLATHACK_FOUNTAIN_ARTIFACTS="$invocation/fountain" \
+            NYARLATHACK_FOUNTAIN_MATRIX_ARTIFACTS="$invocation/fountain-matrix" \
+            NYARLATHACK_ACTION_TRANSPORT_ROOT="$root" \
+            NYARLATHACK_ACTION_TRANSPORT_RECEIPT="$out/system-gcc13" \
+            NYARLATHACK_ACTION_TRANSPORT_REVISION="$revision" \
+            NYARLATHACK_ACTION_TRANSPORT_ARTIFACTS="$invocation/action-transport" \
             /usr/bin/python3 -m unittest discover -s tests/chaos -p 'test_*.py' -v \
             2>&1 | tee "$out/full-suite.log"
-      - name: Retain selected build and test diagnostics
+      - name: Retain selected preparation log
         if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: native-preparation-log
+          path: |
+            ${{ runner.temp }}/native-preparation.log
+          if-no-files-found: ignore
+          retention-days: 7
+      - name: Retain selected build and test diagnostics
+        if: ${{ always() && env.NYARLATHACK_CI_OUT != '' }}
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: native-build-and-test-logs
           path: |
-            ${{ runner.temp }}/native-preparation.log
-            ${{ runner.temp }}/native-ci/*.json
-            ${{ runner.temp }}/native-ci/full-suite.log
-            ${{ runner.temp }}/native-ci/system-gcc13/*.json
-            ${{ runner.temp }}/native-ci/system-gcc13/*.log
-            ${{ runner.temp }}/native-ci/system-gcc13/*.txt
-            ${{ runner.temp }}/native-ci/old-on/*.json
-            ${{ runner.temp }}/native-ci/old-on/*.log
-            ${{ runner.temp }}/native-ci/old-on/*.txt
-            ${{ runner.temp }}/native-ci/fixtures/**/*.json
-            ${{ runner.temp }}/native-ci/fixtures/**/*.jsonl
-            ${{ runner.temp }}/native-ci/fixtures/**/*.raw
-            ${{ runner.temp }}/native-ci/fixtures/**/*.log
-            ${{ runner.temp }}/native-ci/fixtures/**/*.txt
-            !${{ runner.temp }}/native-ci/fixtures/**/.git/**
+            ${{ env.NYARLATHACK_CI_OUT }}/*.json
+            ${{ env.NYARLATHACK_CI_OUT }}/full-suite.log
+            ${{ env.NYARLATHACK_CI_OUT }}/system-gcc13/*.json
+            ${{ env.NYARLATHACK_CI_OUT }}/system-gcc13/*.log
+            ${{ env.NYARLATHACK_CI_OUT }}/system-gcc13/*.txt
+            ${{ env.NYARLATHACK_CI_OUT }}/system-gcc13/*-date.h
+            ${{ env.NYARLATHACK_CI_OUT }}/old-on/*.json
+            ${{ env.NYARLATHACK_CI_OUT }}/old-on/*.log
+            ${{ env.NYARLATHACK_CI_OUT }}/old-on/*.txt
+            ${{ env.NYARLATHACK_CI_OUT }}/old-on/*-date.h
+            ${{ env.NYARLATHACK_CI_OUT }}/fixtures/**/*.json
+            ${{ env.NYARLATHACK_CI_OUT }}/fixtures/**/*.jsonl
+            ${{ env.NYARLATHACK_CI_OUT }}/fixtures/**/*.raw
+            ${{ env.NYARLATHACK_CI_OUT }}/fixtures/**/*.log
+            ${{ env.NYARLATHACK_CI_OUT }}/fixtures/**/*.txt
+            ${{ env.NYARLATHACK_CI_OUT }}/fixtures/**/*.stdout
+            ${{ env.NYARLATHACK_CI_OUT }}/fixtures/**/*.stderr
+            ${{ env.NYARLATHACK_CI_OUT }}/fixtures/**/*.bin
+            !${{ env.NYARLATHACK_CI_OUT }}/fixtures/**/.git/**
           if-no-files-found: ignore
           retention-days: 7
 

@@ -159,7 +159,9 @@ E boolean FDECL(parse_resetcolor, (char *));
 
 E void FDECL(addtopl, (const char *));
 E void NDECL(more);
+E boolean NDECL(tty_more_presented);
 E void FDECL(update_topl, (const char *));
+E boolean FDECL(tty_update_topl_rendered, (const char *));
 E void FDECL(putsyms, (const char*));
 
 /* ### wintty.c ### */
@@ -182,10 +184,16 @@ E void NDECL(tty_resume_nhwindows);
 E winid FDECL(tty_create_nhwindow, (int));
 E void FDECL(tty_clear_nhwindow, (winid));
 E void FDECL(tty_display_nhwindow, (winid, BOOLEAN_P));
+#ifdef CHAOS
+E boolean FDECL(tty_display_map_presented, (winid, BOOLEAN_P));
+#endif
 E void FDECL(tty_dismiss_nhwindow, (winid));
 E void FDECL(tty_destroy_nhwindow, (winid));
 E void FDECL(tty_curs, (winid,int,int));
 E void FDECL(tty_putstr, (winid, int, const char *));
+#ifdef CHAOS
+E boolean FDECL(tty_putstr_rendered, (winid, int, const char *));
+#endif
 E void FDECL(tty_display_file, (const char *, BOOLEAN_P));
 E void FDECL(tty_start_menu, (winid));
 E void FDECL(tty_add_menu, (winid,int,const ANY_P *,

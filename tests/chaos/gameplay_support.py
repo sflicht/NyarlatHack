@@ -183,7 +183,7 @@ class Game:
             self.raw.extend(data)
         return ANSI.sub(b"", bytes(data))
 
-    def send(self, value):
+    def send(self, value, *, deadline=None):
         assert self.fd is not None
         if isinstance(value, str):
             value = value.encode()
@@ -194,7 +194,9 @@ class Game:
             )
         self.inputs.append(value.hex())
         os.write(self.fd, value)
-        return self.read()
+        if deadline is None:
+            return self.read()
+        return self.read(min(3.0, max(0.0, deadline - time.monotonic())))
 
     def more(self, text):
         for _ in range(30):
@@ -319,7 +321,11 @@ class Game:
 
     def finish(self, text):
         assert self.pid is not None and self.fd is not None
-        for _ in range(40):
+        # EOF/EIO can precede waitability; forty immediate reads are not an
+        # exit grace period. Keep the input cap separate from elapsed time.
+        deadline = time.monotonic() + 8.0
+        prompts = 0
+        while True:
             done, status = os.waitpid(self.pid, os.WNOHANG)
             if done:
                 self.pid = None
@@ -328,12 +334,28 @@ class Game:
                 self.fd = None
                 self.save_artifacts()
                 return self.exitcode
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                break
             if b"--More--" in text:
-                text = self.send(" ")
+                response = " "
             elif b"[ynq]" in text:
-                text = self.send("n")
+                response = "n"
             else:
-                text = self.read(0.2)
+                response = None
+            if response is not None:
+                if prompts >= 40:
+                    break
+                prompts += 1
+                text = self.send(response, deadline=deadline)
+            else:
+                text = self.read(min(0.2, remaining))
+            if not text:
+                # A closed PTY (or silent input boundary) returns immediately.
+                # Yield without injecting keys, and charge this to the deadline.
+                remaining = deadline - time.monotonic()
+                if remaining > 0:
+                    time.sleep(min(0.01, remaining))
         raise AssertionError("game failed to exit: " + repr(text[-500:]))
 
     def quit(self):

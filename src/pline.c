@@ -6,6 +6,10 @@
 #include <math.h>
 #include "hack.h"
 #include "hashmap.h"
+#include "chaos.h"
+#if defined(CHAOS) && defined(TTY_GRAPHICS)
+#include "wintty.h"
+#endif
 
 #ifdef OVLB
 
@@ -120,6 +124,12 @@ pline VA_DECL(const char *, line)
 
 	char pbuf[BUFSZ];
 	int typ;
+#ifdef CHAOS
+	struct chaos_observation_token token = chaos_observation_take_message();
+#ifndef TTY_GRAPHICS
+	(void) token;
+#endif
+#endif
 /* Do NOT use VA_START and VA_END in here... see above */
 
 	if (!line || !*line) return;
@@ -149,7 +159,13 @@ pline VA_DECL(const char *, line)
 	if (u.ux) flush_screen(1);		/* %% */
 	if (typ == MSGTYP_NOSHOW) return;
 	if (typ == MSGTYP_NOREP && !strcmp(line, prevmsg)) return;
-	putstr(WIN_MESSAGE, 0, line);
+#if defined(CHAOS) && defined(TTY_GRAPHICS)
+	if (token.root > 0 && windowprocs.win_putstr == tty_putstr) {
+	    if (tty_putstr_rendered(WIN_MESSAGE, 0, line))
+		chaos_observation_delivered(token);
+	} else
+#endif
+	    putstr(WIN_MESSAGE, 0, line);
 	strncpy(prevmsg, line, BUFSZ);
 	if (typ == MSGTYP_STOP) display_nhwindow(WIN_MESSAGE, TRUE); /* --more-- */
 }

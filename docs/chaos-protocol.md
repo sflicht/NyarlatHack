@@ -1,6 +1,8 @@
-# Crawling Chaos engine protocol v1
+# Crawling Chaos protocol: v1 baseline and opt-in v2 observations
 
-Status: Tier 2 engine contract with review-foundation observation extensions.
+Status: implemented Tier 2 contract and bounded observation foundation;
+[local native acceptance under the approved dump contract](haunting-observations-evidence.md)
+is distinct from publication; literal strict cross-build comparison remains failed.
 This mailbox does not accept executable code; the separate First Haunting
 Lua admission path is documented in `milestone2.md`.
 All new engine code is under the NetHack General Public License (`dat/license`).
@@ -108,7 +110,7 @@ CHAOS-on builds (use CHAOS=0 to load stock saves).
 
 ## Events and acknowledgements
 
-Each event is one JSON object plus newline. Envelope fields are:
+By default, each event is one v1 JSON object plus newline. Envelope fields are:
 `v` (1), `seq` (persistent increasing integer), `turn` (engine moves), `safe`
 (persistent safe counter, initially 0), `event`, `phase`, `detail` (escaped
 strings), `sanity`, `insight`, `budget`, `spent`, `reserved`, `last_id` (integers).
@@ -157,6 +159,131 @@ Reasons: `ok`, `schema`, `oversize`, `duplicate`, `schedule`, `budget`, `active`
 `ineligible`, `log_failure`. The admission journal uses the same request fields
 plus `v`, `turn`, `safe`; it records status `admitted`. `telegraph`/`result`
 precedes `ack` accepted; `expiry`/`result` records effect name.
+
+## Opt-in selected-action observations (v2)
+
+Set `NYARLATHACK_OBSERVATIONS=1` **on the game process**, together with the
+normal private `NYARLATHACK_RUN_DIR`, in a `CHAOS=1` build. The flag is read once
+at `chaos_start`; absent or any other value means off. Healthy event transport
+is required. Off retains the default v1 bytes and sequence schedule. On adds
+v2 records to the same `events.jsonl` and authoritative sequence, not a second
+stream: an `enabled` marker immediately precedes each process's v1 `session`.
+Legacy `parse_event`, `State`, `EventReader`, replay and authoring readers reject
+v2; do not feed opt-in logs to them. There is no live episode adapter.
+
+V2 has exactly these envelope keys:
+`v,seq,turn,safe,event,phase,detail,sanity,insight,budget,spent,reserved,last_id,vitals,observation`.
+`v` is 2, `event` is `observation`, and `detail` is empty. `vitals` is mandatory,
+with the four status fields defined above. Numeric fields retain the 32-bit
+integer bounds (no booleans); `seq` is positive, Sanity is at most 100,
+`budget/spent/reserved` at most 12, and reserved cannot exceed spent.
+`observation` has exactly `operation,stage,root_seq,fact`. Duplicate/extra keys,
+nonfinite numbers and illegal enum combinations reject. Requests remain v1.
+
+| stage | operation | root_seq | fact | phase |
+|---|---|---|---|---|
+| `enabled` | `none` | 0 | `none` | `result` |
+| `started` | `whistling` or `fountain_drink` | 0 | `none` | `attempt` |
+| `notice` | same as root | earlier root's sequence | allowed fact below | `result` |
+| `completed` | same as root | earlier root's sequence | `none` | `result` |
+| `blocked` | `fountain_drink` | earlier root's sequence | `none` | `result` |
+
+A root is the `started` record itself: zero is not a guessed future sequence.
+It is established only after successful append and filesystem synchronization.
+Its envelope captures public context **before** the selected native call;
+a notice captures context at delivery; a terminal captures context **after**
+return. These are snapshots, not automatic causal deltas or effect attribution.
+One transient root permits at most one notice and one terminal, in that order,
+linked within the same operation, turn and session. A replacement root, session,
+level boundary or death ends attribution. No terminal is appended after final
+death. Failed observation transport suppresses records, never cancels the native
+action; a physically written line whose synchronization failed is not proof of
+commitment. A parser cannot reconstruct that transport failure from bytes alone.
+
+`completed` means the selected routine returned, not success, survival,
+identification or pet obedience. `blocked` means the native fountain reach guard
+ran, not player cancellation. Missing terminal means **incomplete**, even with a
+notice; completed without notice means unknown selected-notice coverage, not
+“nothing happened.” Selection cancel, unsupported apply, fountain decline,
+no-mouth and Levitation bypass create no selected root. Decline can continue to
+actual inventory-potion consumption in the same native call; that remains outside
+this observation slice. A low-level reach-guard fixture is not a normal confirmed
+drink through the prompt.
+
+| operation | allowed notice facts | what is witnessed |
+|---|---|---|
+| `whistling` | `sound_high`, `sound_shrill`, `sound_normal`, `sound_strange`, `sound_humming` | selected native message wording |
+| `fountain_drink` | `water_refreshed`, `water_foul`, `cannot_reach` | selected native message wording |
+| `fountain_drink` | `detection_presented` | native blocking map presentation |
+
+Message evidence requires rendering through the native terminal (TTY) callback,
+not merely calling `pline`. NOSHOW/NOREP, pre-window fallback and WIN_STOP before
+rendering can suppress a notice. A stop after rendering does not undo delivery.
+Unsupported or wrapped callbacks retain normal output but produce no certified
+notice. Map evidence requires the native display, glyph, clear, cursor and text
+callbacks and actual map presentation; an empty detection branch is not enough.
+Action-bound tokens prevent nested/replacement actions from stealing a notice.
+No claim is made about every window port or whether a human perceived the output.
+
+Whistle tones do not reveal ordinary/magic identity, curse status, hearing or
+companion response. Fountain notices omit fate, magical flags, entity locations
+and hidden eligibility. No names, targets, coordinates, arbitrary text or model
+handles are exported. Other fountain outcomes may complete without a notice.
+The hooks add no random-number-generator (RNG) draws, naming, identification,
+rendering calls or safe-point polling. Native actions may themselves draw RNG;
+purity compares equal draws and aftermath, not zero draws. Shadow observations
+are suppressed. Scope is transient, not saved; no new gameplay effect, budget,
+Lua, Luna, recurrence or save-layout mechanism is introduced.
+
+Implementation anchors: [scope and snapshots](../src/chaos_engine.c),
+[bounded writer](../src/chaos_io.c), [message delivery](../src/pline.c),
+[map delivery](../src/detect.c), and [offline validation](../chaos/episodes.py).
+
+## Offline episode projection and limits
+
+The separate `chaos.episodes` API accepts mixed v1/v2 histories:
+
+- `parse_episode_event(raw) -> dict` validates one row, not chronology, native
+  delivery or authenticity. V2 has a 4096-byte row cap; v1 retains its existing
+  parser semantics, optional vitals and unknown top-level keys. A parsed legacy
+  row is **not** redacted public context.
+- `project_episodes(raw: bytes) -> dict` requires complete nonempty,
+  newline-terminated history from `session/result/new`, optionally preceded by
+  the enabled marker. Sequences start at 1 and are contiguous; turn, safe,
+  spent and last_id cannot roll back. Restore sessions and enabled markers must
+  form a valid chain; action records require that session's marker. References
+  cannot cross attribution boundaries; records after final death reject.
+- `snapshot_episodes(path, *, checkpoint=None) -> (public, proof)` reads the run
+  directory's `events.jsonl` without writing or repairing it. The directory must
+  be owned mode 0700, the file owned mode 0600, regular and single-link; symlink
+  traversal rejects. It reopens/rechecks the supplied target. Host-only proof is
+  `{directory,event:{identity,length,sha256}}`, with device/inode pairs as
+  identities. A checkpoint verifies the same resource and exact consumed prefix;
+  append is allowed, replacement/rewrite/truncation is not. Only the checked
+  prefix is projected; even with a checkpoint the whole file must fit the byte
+  cap. Proof is local integrity evidence, not a signature, hostile same-user
+  authentication or future immutability. Keep it separate from public output.
+
+Full validated history is capped at **16 MiB and 50,000 events**; do not truncate
+it to make it fit. The public window keeps the **newest 32 selected roots in the
+latest session**, resetting on restore. This is summary reduction, not partial
+log validation. Output has exactly `episode_context_v:1`,
+`scope:"selected_whistle_fountain"`, `lookback_roots:32`, `episodes`, `coverage`.
+There are at most two groups, sorted by operation. Each is
+`{operation,count,saturated,evidence}`; only completed roots with a notice qualify.
+Each evidence entry is `{root_seq,notice_seq,end_seq,fact}`; retain at most three:
+the first two and latest qualifying roots, ordered by root sequence.
+
+Coverage has exactly `incomplete`, `blocked`, `completed_without_notice`,
+`omitted_roots`, each `{count,saturated}`. All counts cap at three; saturation
+means **strictly more than three**. Coverage concerns retained roots except
+omitted_roots, which counts evictions since the latest session. Counts describe
+actions, not distinct targets or future eligibility. Incomplete notices remain
+in the raw history but are not positive episodes. Canonical ASCII JSON output
+is at most **4096 bytes**, failing rather than clipping if exceeded. No hidden
+facts, host identities, reward scores or editorial narrative enter this summary.
+See [usage](../chaos/README.md#offline-selected-action-observations) and the
+[bounded acceptance ledger](haunting-observations-evidence.md).
 
 ## Live acknowledgement boundary
 

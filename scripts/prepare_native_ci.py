@@ -318,6 +318,17 @@ def build_mode(root, receipts, revision, env, mode, *, historical=False):
     headers = {
         str(p.relative_to(root)): digest(p) for p in (root / "include").glob("*.h")
     }
+    require("include/date.h" in headers, "missing generated include/date.h")
+    # Preserve this mode before the next clean; bind raw bytes to the existing hash.
+    date_bytes = (root / "include/date.h").read_bytes()
+    capture = receipts / f"{mode}-date.h"
+    with os.fdopen(
+        os.open(capture, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600), "wb"
+    ) as stream:
+        stream.write(date_bytes)
+    require(
+        digest(capture) == headers["include/date.h"], "date.h capture hash mismatch"
+    )
     objects = {
         str(p.relative_to(root)): digest(p)
         for d in ("src", "util", "sys", "win")

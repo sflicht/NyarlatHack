@@ -25,6 +25,10 @@ ARCHIVED_HASHES = {
     "license": "93a3ae2cb8dee482daddfaebe53bcffe5b114b603def19b4dca21621cbc5a747",
 }
 DRIVER_HASH = "9d341b28a4ab3f4453b09e4f49a2e8701a7c78345184f487e2f0b32d70db7270"
+# Source mode alone pins the explicitly reviewed EOF/reaping + send-deadline
+# helper correction. DRIVER_HASH above remains the frozen historical identity;
+# this is not an archive refresh or a substitute for exact-source calibration.
+SOURCE_DRIVER_HASH = "d22eae5cb3f1610a8f950c4c4ebc95af99296db0a02e1c0b967c8f164bb95ccc"
 ORACLE_SOURCES = (
     "tests/chaos/gameplay_support.py",
     "tests/chaos/replay_clock.c",
@@ -83,7 +87,9 @@ def _committed_sources(root, revision):
             ) from exc
         hashes[name] = hashlib.sha256(result.stdout).hexdigest()
         _require(_hash(root / name) == hashes[name], f"oracle source mismatch: {name}")
-    _require(hashes[ORACLE_SOURCES[0]] == DRIVER_HASH, "reviewed driver pin mismatch")
+    _require(
+        hashes[ORACLE_SOURCES[0]] == SOURCE_DRIVER_HASH, "reviewed driver pin mismatch"
+    )
     return hashes
 
 

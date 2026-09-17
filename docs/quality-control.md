@@ -54,19 +54,51 @@ secret is absent.
 
 ## Local equivalents
 
+**Platform/whistle process isolation is implemented and accepted.** Their
+supervisors isolate process-global umask and hard resource limits. The narrow
+fountain hook/fixture and strict native adapter reviews are also accepted; this
+does not accept the whole phase or establish hosted CI success. The configured
+fresh local suite at `8f317763a3560bd774d0b61e134e7028a744412a` is independently
+accepted: 679 unique tests in 303.455 seconds, 672 passed and seven top-level
+skips (three ownership limits, four artifact-dependent matrix invocations).
+Seven configured matrix-oracle child methods ran with zero skips; they are not
+additional top-level tests or seven missing gates. The native command succeeded;
+its reporting wrapper exited 1 on a multiline test-status parsing error and its
+failed receipt is preserved. See the [evidence ledger](haunting-observations-evidence.md)
+for approved turn-loop acceptance, strict-failure history and provenance.
+Hosted execution and publication remain unverified; whole-phase sign-off is open.
+
+The portable same-checkout reproduction recipe below requires authorization and a fresh
+full-history checkout already at the independently approved revision, with
+reviewed hooks and fixtures committed. All drivers, helpers, fixtures and
+discovery must come from that same checkout. Separately verified reuse of frozen
+production with external committed Python tests is not a fresh production build
+at the tests' revision, nor execution of this same-checkout recipe. Keep those
+revision identities and evidence separate. Changing the working directory does
+not make external full-suite discovery compatible with frozen receipts: some
+adapters derive their source root from their own file location and reject a
+revision mismatch. Use the same-checkout recipe for full-suite acceptance.
+`REVIEWED_REV` below is deliberately invalid as a 40-character hexadecimal
+revision: replace it with the approved
+full lowercase commit identifier, never automatically with HEAD or a receipt
+value.
+
 ```bash
 set -euo pipefail
 ruff check chaos tests/chaos scripts
 ruff format --check chaos tests/chaos scripts
 # Use a fresh disposable full-history checkout: builds modify this checkout.
 # Select a reviewed full revision independently, not from a receipt.
-root=/absolute/path/to/disposable-checkout
-revision=FULL_REVIEWED_LOWERCASE_40_HEX_REVISION
-out=/absolute/path/to/nonexistent-private-output
+root=/absolute/path/to/fresh-reviewed-checkout
+revision=REVIEWED_REV
+umask 077
+container=$(mktemp -d /tmp/nyarl-native-ci.XXXXXX)
+out="$container/output" # absent; preparer creates it
 /usr/bin/python3 "$root/scripts/prepare_native_ci.py" \
   --root "$root" --output-dir "$out" --expected-revision "$revision"
 cd "$root"
 umask 077
+invocation=$(mktemp -d "$out/fixtures/full-suite.XXXXXX")
 : > "$out/full-suite.log"
 # Keep the log private without changing intentionally public negative fixtures.
 umask 022
@@ -78,9 +110,78 @@ env -i PATH=/usr/bin:/bin HOME="$out/home" LANG=C.UTF-8 TZ=America/New_York \
   NYARLATHACK_NATIVE_FIXTURE_MODE=source-build \
   NYARLATHACK_NATIVE_BUILD_RECEIPT="$out/system-gcc13" \
   NYARLATHACK_NATIVE_EXPECTED_REVISION="$revision" \
+  NYARLATHACK_PLATFORM_ROOT="$root" \
+  NYARLATHACK_PLATFORM_RECEIPT="$out/system-gcc13" \
+  NYARLATHACK_PLATFORM_REVISION="$revision" \
+  NYARLATHACK_PLATFORM_ARTIFACTS="$invocation/platform" \
+  NYARLATHACK_PLATFORM_OFF_TUPLE="$out/stock" \
+  NYARLATHACK_WHISTLE_ROOT="$root" \
+  NYARLATHACK_WHISTLE_RECEIPT="$out/system-gcc13" \
+  NYARLATHACK_WHISTLE_REVISION="$revision" \
+  NYARLATHACK_WHISTLE_ARTIFACTS="$invocation/whistle" \
+  NYARLATHACK_FOUNTAIN_ROOT="$root" \
+  NYARLATHACK_FOUNTAIN_RECEIPT="$out/system-gcc13" \
+  NYARLATHACK_FOUNTAIN_REVISION="$revision" \
+  NYARLATHACK_FOUNTAIN_ARTIFACTS="$invocation/fountain" \
+  NYARLATHACK_FOUNTAIN_MATRIX_ARTIFACTS="$invocation/fountain-matrix" \
+  NYARLATHACK_ACTION_TRANSPORT_ROOT="$root" \
+  NYARLATHACK_ACTION_TRANSPORT_RECEIPT="$out/system-gcc13" \
+  NYARLATHACK_ACTION_TRANSPORT_REVISION="$revision" \
+  NYARLATHACK_ACTION_TRANSPORT_ARTIFACTS="$invocation/action-transport" \
   /usr/bin/python3 -m unittest discover -s tests/chaos -p 'test_*.py' -v \
   2>&1 | tee "$out/full-suite.log"
 ```
+
+Preparation gets an absent output child of a private unique parent under `/tmp`.
+CI publishes this path as `NYARLATHACK_CI_OUT` through `GITHUB_ENV` before running
+the preparer. The selected build/test diagnostic upload runs only when that path
+is nonempty, including after a preparer failure. Failures before publication
+skip that upload entirely; no empty-base or root fallback globs are used.
+A separate always-on upload retains only `runner.temp/native-preparation.log`
+when present. Both uploads ignore missing files and retain artifacts for seven
+days. Each suite or separately authorized standalone native launch needs a fresh
+private invocation parent under `out/fixtures` and distinct, independent
+**absent** platform/whistle/fountain leaves.
+Never precreate, delete for reuse, or reuse those leaves; do not use symlinks as a
+canonical-path workaround. Retain distinct logs for later authorized launches,
+not overwrites or automatic retries. The registered fountain native adapter
+always uses `strict-desired`; the command-line interface (CLI) retains
+`observed-prehook` only for explicit historical diagnosis, never acceptance.
+Discovery runs the strict adapter once, without a duplicate fountain CLI launch.
+The accepted fountain matrix and selected-action transport are also required
+native discovery gates, run serially through the existing bounded external
+supervisor. The matrix reuses the explicit `NYARLATHACK_FOUNTAIN_ROOT`,
+`RECEIPT`, and `REVISION` selection; its dedicated
+`NYARLATHACK_FOUNTAIN_MATRIX_ARTIFACTS` leaf must be absent. Transport retains its
+existing four `NYARLATHACK_ACTION_TRANSPORT_*` selection variables and a separate
+absent artifact leaf. No extra production build or upstream comparison is added.
+
+After the new matrix succeeds, its adapter starts a separately supervised fresh
+Python interpreter against the current fixture's oracle module, explicitly
+setting **both** `FOUNTAIN_MATRIX_EVIDENCE` and
+`FOUNTAIN_MATRIX_CONTROL_EVIDENCE` to that invocation's matrix output. The
+`oracle-execution.json` receipt names all seven executed test methods and records
+zero skips as a condition of success. Ordinary discovery without these evidence
+variables currently skips four artifact-dependent oracle methods; those skips
+are not native acceptance and cannot replace the adapter's subsequent explicit
+oracle execution. Driver or oracle nonzero exits fail the gate. The new adapter
+unit tests use synthetic supervision results or real preflight failures without
+building; they are not native acceptance evidence.
+
+The recipe above is the core native recipe, not the complete selected-command
+acceptance invocation. The accepted `8f317763a` run additionally configured the
+turn-loop adapter, its native evidence methods and historical-stock provenance.
+Its seven-configuration gate is locally accepted under the approved
+[supplemental dump contract](turnloop-dump-comparison-contract.md); all three
+native strict-oracle methods and configured historical mutations executed without
+skips. Literal strict cross-build dump comparison remains **FAILED**, separately
+preserved; `task8_closed:false` is not rewritten by the independent review.
+Whole-phase publication/sign-off and hosted CI remain unverified. The earlier
+controlled native fatal run satisfies Task 7's fatal-interruption requirement,
+not Task 8's turn-loop contract; no fatal-driver gate is registered here.
+Delivery allocates its own private parent
+under the same `/tmp`-backed `TMPDIR`. Observations remain child-scoped, not enabled
+globally in the suite environment.
 
 The preparer rejects existing/symlinked/overlapping output paths, shallow history,
 revision mismatch, tracked changes, hidden index flags, and any `local.mk`.
@@ -114,11 +215,17 @@ shared historical installation is touched or made writable. The isolated old
 clone remains under the private output directory; no worktree cleanup or
 shared-object/hardlink clone is used.
 
+Platform `OFF_TUPLE` selects the executable current-revision mode-0 `stock` copy,
+not the nonexecutable `off-archive` or the mode-1 live installation. This is not an
+independently built upstream baseline or off-object calibration. Historical
+`precurio` remains separate; whistle has no `OFF_TUPLE` variable.
+
 The suite uses system Python (3.11+), system tool `PATH`, an empty private home,
 and a private `TMPDIR` to retain fixture diagnostics without importing ambient
 credentials. Uploads select build receipts/logs and fixture JSON/JSONL, raw
-terminal output, logs and text only, for seven days even on failure; binaries,
-object files, Git directories and the private home are not uploaded. Any ledgers
+terminal output (including selected `.bin` evidence), `.stdout`, `.stderr`, logs
+and text, for seven days even on failure; game executables, shared libraries,
+object files, Git directories, private HOME and MAIL are not uploaded. Any ledgers
 in those offline fixture records belong to fake clients, not live Luna calls.
 Never add a live credential directory or real provider ledger to these globs.
 

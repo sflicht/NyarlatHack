@@ -3,6 +3,7 @@
 /* NetHack may be freely redistributed.  See license for details. */
 
 #include "hack.h"
+#include "chaos.h"
 #include "xhity.h"
 
 #ifdef OVLB
@@ -449,7 +450,10 @@ dodrink()
 	/* Is there a fountain to drink from here? */
 	if (IS_FOUNTAIN(levl[u.ux][u.uy].typ) && !Levitation && !booze_only) {
 		if(yn("Drink from the fountain?") == 'y') {
+			long root = chaos_observation_begin(CHAOS_OBS_OP_FOUNTAIN_DRINK);
 			drinkfountain();
+			chaos_observation_end(root);
+			(void)root; /* CHAOS-off end does not evaluate its argument. */
 			return MOVE_QUAFFED;
 		}
 	}

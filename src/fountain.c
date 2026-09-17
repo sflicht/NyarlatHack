@@ -5,6 +5,7 @@
 /* Code for drinking from fountains. */
 
 #include "hack.h"
+#include "chaos.h"
 #include "artifact.h"
 
 
@@ -2050,7 +2051,11 @@ drinkfountain()
 	register int fate = rnd(30);
 
 	if (Levitation) {
+		chaos_observation_blocked();
+		chaos_observation_arm(CHAOS_OBS_OP_FOUNTAIN_DRINK,
+			CHAOS_OBS_FACT_CANNOT_REACH);
 		floating_above("fountain");
+		chaos_observation_disarm();
 		return;
 	}
 
@@ -2079,7 +2084,10 @@ drinkfountain()
 	}
 
 	if (fate < 10) {
+		chaos_observation_arm(CHAOS_OBS_OP_FOUNTAIN_DRINK,
+			CHAOS_OBS_FACT_WATER_REFRESHED);
 		pline_The("cool draught refreshes you.");
+		chaos_observation_disarm();
 		if(Race_if(PM_INCANTIFIER)) u.uen += rnd(10); /* don't choke on water */
 		else u.uhunger += rnd(10); /* don't choke on water */
 		newuhs(FALSE);
@@ -2099,12 +2107,18 @@ drinkfountain()
 		case 20: /* Foul water */
 
 			if (!umechanoid){
+				chaos_observation_arm(CHAOS_OBS_OP_FOUNTAIN_DRINK,
+					CHAOS_OBS_FACT_WATER_FOUL);
 				pline_The("water is foul!  You gag and vomit.");
+				chaos_observation_disarm();
 				morehungry(rn1(20, 11));
 				vomit();
 	    		} 
 			else {
+				chaos_observation_arm(CHAOS_OBS_OP_FOUNTAIN_DRINK,
+					CHAOS_OBS_FACT_WATER_FOUL);
 				pline_The("water is foul! It offends your olfactory receptors.");
+				chaos_observation_disarm();
 			}
 			
 			break;
@@ -2164,7 +2178,10 @@ drinkfountain()
 
 		case 26: /* See Monsters */
 
+			chaos_observation_arm(CHAOS_OBS_OP_FOUNTAIN_DRINK,
+			    CHAOS_OBS_FACT_DETECTION_PRESENTED);
 			(void) monster_detect((struct obj *)0, 0);
+			chaos_observation_disarm();
 			exercise(A_WIS, TRUE);
 			break;
 

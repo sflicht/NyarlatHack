@@ -9,6 +9,10 @@
 
 #include "hack.h"
 #include "artifact.h"
+#include "chaos.h"
+#if defined(CHAOS) && defined(TTY_GRAPHICS)
+#include "wintty.h"
+#endif
 
 extern boolean known;	/* from read.c */
 
@@ -859,6 +863,12 @@ int mclass;			/* monster class, 0 for all */
 {
 	register struct monst *mtmp;
 	int mcnt = 0;
+#ifdef CHAOS
+	struct chaos_observation_token token = chaos_observation_take_map();
+#ifndef TTY_GRAPHICS
+	(void) token;
+#endif
+#endif
 
 
 	/* Note: This used to just check fmon for a non-zero value
@@ -913,7 +923,19 @@ int mclass;			/* monster class, 0 for all */
 	You("sense the presence of monsters.");
 	if (woken)
 		pline("Monsters sense the presence of you.");
-	display_nhwindow(WIN_MAP, TRUE);
+#if defined(CHAOS) && defined(TTY_GRAPHICS)
+	/* Certify only this blocking presentation through native TTY callbacks. */
+	if (token.root > 0
+	    && windowprocs.win_display_nhwindow == tty_display_nhwindow
+	    && windowprocs.win_print_glyph == tty_print_glyph
+	    && windowprocs.win_clear_nhwindow == tty_clear_nhwindow
+	    && windowprocs.win_curs == tty_curs
+	    && windowprocs.win_putstr == tty_putstr) {
+	    if (tty_display_map_presented(WIN_MAP, TRUE))
+		chaos_observation_map_delivered(token);
+	} else
+#endif
+	    display_nhwindow(WIN_MAP, TRUE);
 	docrt();
 	if (Underwater) under_water(2);
 	if (u.uburied) under_ground(2);

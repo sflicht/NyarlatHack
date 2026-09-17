@@ -52,6 +52,17 @@ Protocol) tests. The separate pinned ChatGPT OAuth route has now been exercised
 with real GPT-5.6 Luna calls. Long-run balance and adversarial public-server
 hosting remain unvalidated.
 
+## Phase-one observation foundation
+
+An optional version-2 event extension records selected whistle actions and
+confirmed fountain drinks, with delivered public notices and bounded offline
+episode summaries. Default version-1 events and the whisper request API remain
+unchanged. Opt-in logs are **not inputs to the existing director or authoring
+pipeline**; use the [offline observation guide](chaos/README.md#offline-selected-action-observations).
+This adds no whisper mechanic, fountain remapping, companion behavior, Lua or
+Luna change, budget change, or new recurrence. It does not deliver the requested
+consequential-vision feature (#26), nor close #21 or the whole phase.
+
 ## Build
 
 On Debian/Ubuntu, install the compiler and build dependencies:
@@ -100,14 +111,14 @@ Fast protocol/director tests (real-game tests are explicitly skipped):
 python3 -m unittest discover -s tests/chaos -p 'test_*.py' -v
 ```
 
-Full acceptance, after building `CHAOS=1`; supply an unmodified stock build
-installation containing `dnethack`, `nhdat`, and `license`:
-
-```sh
-NYARLATHACK_STOCK_DIR=/absolute/path/to/stock-install \
-NYARLATHACK_GAME_TESTS=1 \
-python3 -m unittest discover -s tests/chaos -p 'test_*.py' -v
-```
+For full native acceptance, use the maintained
+[fresh reviewed-checkout recipe](docs/quality-control.md#local-equivalents).
+The configured native suite and selected-command turn-loop gate are independently
+accepted locally at `8f317763a3560bd774d0b61e134e7028a744412a`, under the approved
+provenance-validated dump contract. Literal strict cross-build comparison remains
+**FAILED**; the successful suite and failed reporting wrapper are separate results.
+Publication, hosted CI and whole-phase sign-off remain unverified. See the
+[bounded evidence ledger](docs/haunting-observations-evidence.md).
 
 The terminal harness is Linux-specific and uses a test-only preload library.
 It records actual input bytes, terminal output, event logs, score logs and

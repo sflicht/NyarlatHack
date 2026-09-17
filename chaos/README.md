@@ -261,6 +261,81 @@ runtime; 12 submissions; 50,000 events; 16 MiB of event input (MiB means
 1,048,576 bytes). No new request is issued without a fresh eligible decision
 point or while a previous request remains unacknowledged.
 
+The legacy model summary retains the newest **12 events**, with only whitelisted
+status fields, validated vitals and the exact confirmed/cancelled prayer enums;
+arbitrary details and hidden facts are excluded. `--max-context` bounds serialized
+messages (default 8192 bytes; allowed 2048–32768); overflow fails, it does not
+silently truncate or make an extra call. `--max-calls` permits 1–100 (default 4),
+`--timeout` greater than zero through 120 seconds (default 10), and
+`--max-response` 512–65536 bytes (default 16384). These existing model limits
+are separate from the offline episode window below, which is not fed to Luna.
+
+## Offline selected-action observations
+
+This observation foundation records selected whistle actions and confirmed
+fountain drinks, not new whispers or effects. It does not change Luna, Lua,
+cruelty budgets or recurring gameplay. Default events remain v1. To opt in to
+mixed v1/v2 logs, start the already-built game directly, without a director:
+
+```sh
+RUN=$(mktemp -d)
+(cd dnethackdir && NYARLATHACK_RUN_DIR="$RUN" NYARLATHACK_OBSERVATIONS=1 ./dnethack)
+```
+
+Keep `$RUN` for that game's restore and evidence; use a new private directory for
+another game. Only the exact value `1`, read once at startup in a `CHAOS=1`
+build with healthy run transport, enables observations. The enabled marker
+precedes the v1 session record. **Do not enable this for `chaos play`, live
+directors, replay or existing authoring/continuity readers:** their unchanged v1
+parsers reject v2. There is no episode CLI, live tailer or automatic model feed.
+
+After the game exits, from the repository root, replace the path in this Python
+example with your retained private run directory. It reads only existing data:
+
+```python
+import json
+from chaos.episodes import snapshot_episodes
+
+public, proof = snapshot_episodes("/absolute/path/to/private/run")
+print(json.dumps(public, ensure_ascii=True, sort_keys=True, separators=(",", ":")))
+# Recheck exactly the same prefix, even if valid later records were appended.
+same_public, same_proof = snapshot_episodes(
+    "/absolute/path/to/private/run", checkpoint=proof
+)
+assert same_public == public and same_proof == proof
+```
+
+`proof` is host-only device/inode, length and SHA-256 evidence; do not send it to
+a model. The target must be an owned mode-0700 directory with an owned,
+regular single-link mode-0600 `events.jsonl`, without symlink traversal. Replaced,
+rewritten, truncated, malformed or over-cap history rejects; nothing is repaired.
+The checkpoint verifies local prefix integrity, not source authenticity or
+protection against a malicious process running as the same user.
+
+For already-loaded bytes, import `parse_episode_event` and `project_episodes`
+from `chaos.episodes`. The first validates a single row (not a safe public
+projection); the second validates the full serial history before reducing it.
+The [protocol](../docs/chaos-protocol.md#offline-episode-projection-and-limits)
+defines every schema field and limit: 16 MiB/50,000 events of complete history,
+newest 32 selected roots since the latest session, at most two operation groups,
+three evidence entries per group, counts capped at three with saturation flags,
+and at most 4096 bytes of canonical ASCII public JSON. Do not trim raw history to
+32 roots: full history and a bounded summary are different things.
+
+Started/notice/terminal records capture public context before the native call,
+at actual supported delivery, and after return. A completed action need not be
+beneficial; a missing terminal, including native death, remains incomplete.
+Completed-without-notice is not “nothing happened.” Blocked is a native reach
+guard, not cancellation. Cancel/decline/unsupported actions create no selected
+root. Only completed roots with delivered allowed notices become positive
+episodes. Whistle tone is not object identity or proof of companion obedience;
+map presentation exports no monster locations. Other window ports or suppressed
+output need not supply a notice. See the
+[evidence ledger](../docs/haunting-observations-evidence.md) for accepted local
+scope at `8f317763a`, including the approved provenance-validated turn-loop
+acceptance and preserved **strict comparison failure**. Local acceptance is not
+publication, whole-phase sign-off or consequential-vision (#26) completion.
+
 ## Safety and lifecycle limits
 
 - The engine currently allows at most 12 lifetime cruelty points; ambient costs
