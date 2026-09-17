@@ -108,6 +108,17 @@ class EngineTests(unittest.TestCase):
             json.loads((self.path / "whispers.jsonl").read_text())["at"], 1
         )
 
+    def test_frozen_journal_and_ack_bytes(self):
+        self.execute(REQUEST)
+        self.assertEqual(
+            (self.path / "whispers.jsonl").read_bytes(),
+            b'{"v":1,"turn":10,"safe":1,"id":1,"status":"admitted","mutation":"ambient","value":1,"duration":0,"telegraph":1,"at":1,"cost":1,"expires":0}\n',
+        )
+        self.assertEqual(
+            (self.path / "events.jsonl").read_bytes().splitlines()[2],
+            b'{"v":1,"seq":3,"turn":10,"safe":1,"event":"ack","phase":"result","detail":"ok","sanity":0,"insight":0,"budget":11,"spent":1,"reserved":0,"last_id":1,"vitals":{"hp":0,"hp_max":0,"power":0,"power_max":0},"id":1,"status":"accepted","mutation":"ambient","value":1,"duration":0,"telegraph":1,"at":1,"cost":1,"expires":0}',
+        )
+
     def test_hunger_rule_and_expiry(self):
         s = self.execute(
             dict(REQUEST, mutation="hunger_rate", value=2, duration=1, telegraph=3),

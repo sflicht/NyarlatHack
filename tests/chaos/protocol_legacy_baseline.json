@@ -1,0 +1,17 @@
+{
+  "baseline": "ff0ecd30b71be47a90349ca414e076a7208a35de; captured before production edits",
+  "random": [
+    "{\"v\":1,\"id\":1,\"at\":1,\"mutation\":\"ward_efficacy\",\"value\":50,\"duration\":10,\"telegraph\":2}",
+    "{\"v\":1,\"id\":2,\"at\":2,\"mutation\":\"ward_efficacy\",\"value\":50,\"duration\":42,\"telegraph\":2}",
+    "{\"v\":1,\"id\":3,\"at\":3,\"mutation\":\"ambient\",\"value\":1,\"duration\":0,\"telegraph\":1}",
+    "{\"v\":1,\"id\":4,\"at\":4,\"mutation\":\"hunger_rate\",\"value\":2,\"duration\":7,\"telegraph\":3}",
+    "{\"v\":1,\"id\":5,\"at\":5,\"mutation\":\"ward_efficacy\",\"value\":50,\"duration\":38,\"telegraph\":2}",
+    "{\"v\":1,\"id\":6,\"at\":6,\"mutation\":\"ambient\",\"value\":3,\"duration\":0,\"telegraph\":1}",
+    "{\"v\":1,\"id\":7,\"at\":7,\"mutation\":\"ambient\",\"value\":1,\"duration\":0,\"telegraph\":1}",
+    "{\"v\":1,\"id\":8,\"at\":8,\"mutation\":\"ambient\",\"value\":2,\"duration\":0,\"telegraph\":1}",
+    "{\"v\":1,\"id\":9,\"at\":9,\"mutation\":\"ward_efficacy\",\"value\":50,\"duration\":5,\"telegraph\":2}",
+    "{\"v\":1,\"id\":10,\"at\":10,\"mutation\":\"ambient\",\"value\":1,\"duration\":0,\"telegraph\":1}",
+    "{\"v\":1,\"id\":11,\"at\":11,\"mutation\":\"hunger_rate\",\"value\":2,\"duration\":28,\"telegraph\":3}",
+    "{\"v\":1,\"id\":12,\"at\":12,\"mutation\":\"ambient\",\"value\":3,\"duration\":0,\"telegraph\":1}"
+  ]
+}

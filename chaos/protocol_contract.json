@@ -1,0 +1,427 @@
+{
+  "format": 1,
+  "versions": {
+    "request": 1,
+    "event": 1,
+    "state": 1
+  },
+  "limits": {
+    "max_int": 2147483647,
+    "max_counter": 2147483647,
+    "request_bytes": 512,
+    "event_input_cap": 4096,
+    "event_detail_characters": 256,
+    "request_string_buffer": 24,
+    "admission_turn_headroom": 50
+  },
+  "budget": {
+    "sanity_min": 0,
+    "sanity_max": 100,
+    "base": 2,
+    "step": 10,
+    "ceiling": 12
+  },
+  "request_fields": [
+    {
+      "wire": "v",
+      "member": "v",
+      "type": "int",
+      "bounds": [
+        1,
+        1
+      ]
+    },
+    {
+      "wire": "id",
+      "member": "id",
+      "type": "int",
+      "bounds": [
+        1,
+        2147483647
+      ]
+    },
+    {
+      "wire": "mutation",
+      "member": "kind",
+      "type": "mutation"
+    },
+    {
+      "wire": "value",
+      "member": "value",
+      "type": "int",
+      "bounds": [
+        0,
+        2147483647
+      ]
+    },
+    {
+      "wire": "duration",
+      "member": "duration",
+      "type": "int",
+      "bounds": [
+        0,
+        2147483647
+      ]
+    },
+    {
+      "wire": "telegraph",
+      "member": "telegraph",
+      "type": "int",
+      "bounds": [
+        0,
+        2147483647
+      ]
+    },
+    {
+      "wire": "at",
+      "member": "at",
+      "type": "int",
+      "bounds": [
+        1,
+        2147483647
+      ]
+    }
+  ],
+  "mutations": [
+    {
+      "symbol": "CHAOS_AMBIENT",
+      "id": 0,
+      "name": "ambient",
+      "cost": 1,
+      "value": [
+        1,
+        3
+      ],
+      "duration": [
+        0,
+        0
+      ],
+      "telegraph": 1,
+      "engine_sanity_max": null,
+      "director_sanity_max": 100,
+      "ordinary_food": false,
+      "persistent": false,
+      "rule": "none"
+    },
+    {
+      "symbol": "CHAOS_WARD",
+      "id": 1,
+      "name": "ward_efficacy",
+      "cost": 4,
+      "value": [
+        50,
+        50
+      ],
+      "duration": [
+        1,
+        50
+      ],
+      "telegraph": 2,
+      "engine_sanity_max": 80,
+      "director_sanity_max": 80,
+      "ordinary_food": false,
+      "persistent": true,
+      "rule": "halve"
+    },
+    {
+      "symbol": "CHAOS_HUNGER",
+      "id": 2,
+      "name": "hunger_rate",
+      "cost": 3,
+      "value": [
+        2,
+        2
+      ],
+      "duration": [
+        1,
+        50
+      ],
+      "telegraph": 3,
+      "engine_sanity_max": 90,
+      "director_sanity_max": 90,
+      "ordinary_food": true,
+      "persistent": true,
+      "rule": "double"
+    }
+  ],
+  "telegraphs": [
+    {
+      "id": 1,
+      "text": "A distant whisper brushes against your thoughts."
+    },
+    {
+      "id": 2,
+      "text": "The lines of your wards seem thin and uncertain."
+    },
+    {
+      "id": 3,
+      "text": "An unnatural hunger coils in your stomach."
+    }
+  ],
+  "ambient_messages": [
+    {
+      "value": 1,
+      "text": "The shadows lean closer."
+    },
+    {
+      "value": 2,
+      "text": "Something beyond the walls listens."
+    },
+    {
+      "value": 3,
+      "text": "For a moment, silence has teeth."
+    }
+  ],
+  "results": [
+    {
+      "symbol": "CHAOS_OK",
+      "id": 0,
+      "name": "ok",
+      "ack": true
+    },
+    {
+      "symbol": "CHAOS_SCHEMA",
+      "id": 1,
+      "name": "schema",
+      "ack": true
+    },
+    {
+      "symbol": "CHAOS_OVERSIZE",
+      "id": 2,
+      "name": "oversize",
+      "ack": true
+    },
+    {
+      "symbol": "CHAOS_DUPLICATE",
+      "id": 3,
+      "name": "duplicate",
+      "ack": true
+    },
+    {
+      "symbol": "CHAOS_SCHEDULE",
+      "id": 4,
+      "name": "schedule",
+      "ack": true
+    },
+    {
+      "symbol": "CHAOS_BUDGET",
+      "id": 5,
+      "name": "budget",
+      "ack": true
+    },
+    {
+      "symbol": "CHAOS_ACTIVE",
+      "id": 6,
+      "name": "active",
+      "ack": true
+    },
+    {
+      "symbol": "CHAOS_INELIGIBLE",
+      "id": 7,
+      "name": "ineligible",
+      "ack": true
+    },
+    {
+      "symbol": "CHAOS_LOG_FAILURE",
+      "id": 8,
+      "name": "log_failure",
+      "ack": true
+    },
+    {
+      "symbol": "CHAOS_FUTURE",
+      "id": 9,
+      "name": "future",
+      "ack": false
+    }
+  ],
+  "events": [
+    "eat",
+    "read",
+    "zap",
+    "apply",
+    "pray",
+    "kill",
+    "level_enter",
+    "level_leave",
+    "sanity",
+    "insight",
+    "death",
+    "sleep",
+    "session",
+    "safe_point",
+    "ack",
+    "telegraph",
+    "expiry",
+    "haunting",
+    "haunt_step",
+    "backtrack",
+    "curio"
+  ],
+  "phases": [
+    "attempt",
+    "result"
+  ],
+  "ack_statuses": [
+    "accepted",
+    "rejected"
+  ],
+  "journal_status": "admitted",
+  "event_numbers": [
+    {
+      "wire": "v",
+      "bounds": [
+        1,
+        1
+      ]
+    },
+    {
+      "wire": "seq",
+      "bounds": [
+        1,
+        2147483647
+      ]
+    },
+    {
+      "wire": "turn",
+      "bounds": [
+        0,
+        2147483647
+      ]
+    },
+    {
+      "wire": "safe",
+      "bounds": [
+        0,
+        2147483647
+      ]
+    },
+    {
+      "wire": "sanity",
+      "bounds": [
+        0,
+        100
+      ]
+    },
+    {
+      "wire": "insight",
+      "bounds": [
+        0,
+        2147483647
+      ]
+    },
+    {
+      "wire": "budget",
+      "bounds": [
+        0,
+        12
+      ]
+    },
+    {
+      "wire": "spent",
+      "bounds": [
+        0,
+        12
+      ]
+    },
+    {
+      "wire": "reserved",
+      "bounds": [
+        0,
+        12
+      ]
+    },
+    {
+      "wire": "last_id",
+      "bounds": [
+        0,
+        2147483647
+      ]
+    }
+  ],
+  "vitals": [
+    {
+      "wire": "hp",
+      "bounds": [
+        0,
+        2147483647
+      ]
+    },
+    {
+      "wire": "hp_max",
+      "bounds": [
+        0,
+        2147483647
+      ]
+    },
+    {
+      "wire": "power",
+      "bounds": [
+        -2147483647,
+        2147483647
+      ]
+    },
+    {
+      "wire": "power_max",
+      "bounds": [
+        0,
+        2147483647
+      ]
+    }
+  ],
+  "ack_numbers": [
+    "id",
+    "value",
+    "duration",
+    "telegraph",
+    "at",
+    "cost",
+    "expires"
+  ],
+  "ack_number_bounds": [
+    0,
+    2147483647
+  ],
+  "reader_policy": {
+    "request_extra_fields": "reject",
+    "event_extra_fields": "preserve",
+    "vitals_optional": true,
+    "vitals_extra_fields": "reject",
+    "duplicate_keys": "reject_recursively",
+    "event_cap_measure": "raw_len",
+    "detail_measure": "python_characters"
+  },
+  "wire_order": {
+    "event": [
+      "v",
+      "seq",
+      "turn",
+      "safe",
+      "event",
+      "phase",
+      "detail",
+      "sanity",
+      "insight",
+      "budget",
+      "spent",
+      "reserved",
+      "last_id",
+      "vitals"
+    ],
+    "ack_extra": [
+      "id",
+      "status",
+      "mutation",
+      "value",
+      "duration",
+      "telegraph",
+      "at",
+      "cost",
+      "expires"
+    ],
+    "journal_prefix": [
+      "v",
+      "turn",
+      "safe"
+    ]
+  }
+}

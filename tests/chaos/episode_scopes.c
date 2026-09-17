@@ -17,7 +17,16 @@ int multi;
 static int shadow, write_count, sync_count, fail_write, fail_sync;
 int chaos_shadow_active(void) { return shadow; }
 void chaos_curio_safe(int dir) { (void)dir; }
-void pline(const char *fmt, ...) { (void)fmt; abort(); }
+#include <stdarg.h>
+
+void pline(const char *fmt, ...) {
+    va_list args;
+    va_start(args, fmt);
+    fputs("message: ", stdout);
+    vprintf(fmt, args);
+    putchar('\n');
+    va_end(args);
+}
 
 /* Missing APIs produce behavioral RED (missing records), not link failure. */
 extern long chaos_observation_begin(int) __attribute__((weak));
@@ -52,7 +61,8 @@ int main(void) {
     urace.malenum = PM_HUMAN;
     while (scanf("%79s", cmd) == 1) {
         before = u;
-        if (!strcmp(cmd, "start")) chaos_start();
+        if (!strcmp(cmd, "food")) mons[PM_HUMAN].mflagst = MT_CARNIVORE;
+        else if (!strcmp(cmd, "start")) chaos_start();
         else if (!strcmp(cmd, "restore")) {
             chaos_state_init(&u.chaos); u.chaos.seq = 20;
             u.chaos.safe = 7; u.chaos.spent = 1; u.chaos.last_id = 3;

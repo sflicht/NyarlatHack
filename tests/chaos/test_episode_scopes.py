@@ -76,8 +76,10 @@ class EpisodeScopesTests(unittest.TestCase):
             raise RuntimeError(result.stderr.decode())
         print(f"ENGINE-UNIT evidence: {cls.logs}")
 
-    def run_scope(self, commands, flag="1", directory=True):
+    def run_scope(self, commands, flag="1", directory=True, whisper=None):
         with tempfile.TemporaryDirectory(prefix="nyarl-obs5b-run-") as tmp:
+            if whisper is not None:
+                (Path(tmp) / "whisper.json").write_text(json.dumps(whisper))
             env = {
                 k: v for k, v in os.environ.items() if not k.startswith("NYARLATHACK_")
             }
@@ -117,6 +119,49 @@ class EpisodeScopesTests(unittest.TestCase):
                 [json.loads(line) for line in raw.splitlines()],
                 result.stdout.decode(),
             )
+
+    def test_exact_legacy_messages_through_real_engine(self):
+        signals = (
+            "A distant whisper brushes against your thoughts.",
+            "The lines of your wards seem thin and uncertain.",
+            "An unnatural hunger coils in your stomach.",
+        )
+        ambient = (
+            "The shadows lean closer.",
+            "Something beyond the walls listens.",
+            "For a moment, silence has teeth.",
+        )
+        for name, value, duration, telegraph in [
+            *(("ambient", v, 0, 1) for v in (1, 2, 3)),
+            ("ward_efficacy", 50, 1, 2),
+            ("hunger_rate", 2, 1, 3),
+        ]:
+            with self.subTest(name=name, value=value):
+                _, rows, output = self.run_scope(
+                    "food start",
+                    flag="0",
+                    whisper=dict(
+                        v=1,
+                        id=1,
+                        at=1,
+                        mutation=name,
+                        value=value,
+                        duration=duration,
+                        telegraph=telegraph,
+                    ),
+                )
+                expected = [signals[telegraph - 1]]
+                if name == "ambient":
+                    expected.append(ambient[value - 1])
+                self.assertEqual(
+                    [
+                        line.removeprefix("message: ")
+                        for line in output.splitlines()
+                        if line.startswith("message: ")
+                    ],
+                    expected,
+                )
+                self.assertEqual(rows[-1]["status"], "accepted")
 
     def test_opt_in_marker_before_legacy_session(self):
         _, rows, _ = self.run_scope("start")

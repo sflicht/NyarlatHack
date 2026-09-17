@@ -3,31 +3,27 @@
 import json
 import re
 
-MAX_INT = 2147483647
-FIELDS = ("v", "id", "mutation", "value", "duration", "telegraph", "at")
-REGISTRY = {
-    "ambient": (1, 100, 1),
-    "ward_efficacy": (4, 80, 2),
-    "hunger_rate": (3, 90, 3),
-}
-EVENTS = frozenset(
-    "eat read zap apply pray kill level_enter level_leave sanity insight death sleep session safe_point ack telegraph expiry haunting haunt_step backtrack curio".split()
-)
-REASONS = frozenset(
-    "ok schema oversize duplicate schedule budget active ineligible log_failure".split()
-)
-VITALS = ("hp", "hp_max", "power", "power_max")
-NUMBERS = (
-    "v",
-    "seq",
-    "turn",
-    "safe",
-    "sanity",
-    "insight",
-    "budget",
-    "spent",
-    "reserved",
-    "last_id",
+from ._protocol_contract import (
+    MAX_INT as MAX_INT,
+    FIELDS as FIELDS,
+    REGISTRY as REGISTRY,
+    EVENTS as EVENTS,
+    REASONS as REASONS,
+    VITALS as VITALS,
+    NUMBERS as NUMBERS,
+    MUTATIONS,
+    REQUEST_BOUNDS,
+    EVENT_BOUNDS,
+    VITAL_BOUNDS,
+    REQUEST_CAP,
+    EVENT_CAP,
+    DETAIL_CAP,
+    PHASES,
+    ACK_STATUSES,
+    ACK_NUMBERS,
+    ACK_BOUNDS,
+    REQUEST_VERSION,
+    EVENT_VERSION,
 )
 
 
@@ -70,24 +66,19 @@ def parse_request(raw):
         raise ValueError("request must use literal ASCII")
     if re.search(rb":\s*-", raw):
         raise ValueError("signed integers forbidden")
-    r = strict_json(raw, 512)
+    r = strict_json(raw, REQUEST_CAP)
     if set(r) != set(FIELDS):
         raise ValueError("request fields do not match protocol")
     for k in FIELDS:
         if k != "mutation":
-            integer(r[k], 1 if k in ("id", "at") else 0)
+            integer(r[k], *REQUEST_BOUNDS[k])
     name = r["mutation"]
-    if type(name) is not str or name not in REGISTRY or r["v"] != 1:
+    if type(name) is not str or name not in REGISTRY or r["v"] != REQUEST_VERSION:
         raise ValueError("unknown mutation or version")
     if r["telegraph"] != REGISTRY[name][2]:
         raise ValueError("registered telegraph required")
-    if name == "ambient":
-        valid = r["value"] in (1, 2, 3) and r["duration"] == 0
-    else:
-        valid = (
-            r["value"] == (50 if name == "ward_efficacy" else 2)
-            and 1 <= r["duration"] <= 50
-        )
+    row = MUTATIONS[name]
+    valid = all(row[k][0] <= r[k] <= row[k][1] for k in ("value", "duration"))
     if not valid:
         raise ValueError("mutation bounds violated")
     return r
@@ -100,19 +91,17 @@ def encode_request(r):
 
 
 def parse_event(raw):
-    e = strict_json(raw, 4096)
+    e = strict_json(raw, EVENT_CAP)
     for key in NUMBERS:
-        integer(e.get(key), 1 if key == "seq" else 0)
+        integer(e.get(key), *EVENT_BOUNDS[key])
     if (
-        e["v"] != 1
+        e["v"] != EVENT_VERSION
         or e["event"] not in EVENTS
-        or e.get("phase") not in ("attempt", "result")
+        or e.get("phase") not in PHASES
     ):
         raise ValueError("invalid event envelope")
-    if type(e.get("detail")) is not str or len(e["detail"]) > 256:
+    if type(e.get("detail")) is not str or len(e["detail"]) > DETAIL_CAP:
         raise ValueError("invalid event detail")
-    if e["sanity"] > 100 or any(e[k] > 12 for k in ("spent", "reserved", "budget")):
-        raise ValueError("invalid event budget or sanity")
     if e["reserved"] > e["spent"]:
         raise ValueError("invalid reservation")
     if "vitals" in e:
@@ -120,14 +109,11 @@ def parse_event(raw):
         if type(vitals) is not dict or set(vitals) != set(VITALS):
             raise ValueError("invalid vitals fields")
         for key in VITALS:
-            integer(vitals[key], -MAX_INT if key == "power" else 0)
+            integer(vitals[key], *VITAL_BOUNDS[key])
     if e["event"] == "ack":
-        for k in ("id", "value", "duration", "telegraph", "at", "cost", "expires"):
-            integer(e.get(k))
-        if (
-            e.get("status") not in ("accepted", "rejected")
-            or e["detail"] not in REASONS
-        ):
+        for k in ACK_NUMBERS:
+            integer(e.get(k), *ACK_BOUNDS)
+        if e.get("status") not in ACK_STATUSES or e["detail"] not in REASONS:
             raise ValueError("invalid acknowledgement")
         if type(e.get("mutation")) is not str or e["mutation"] not in ("", *REGISTRY):
             raise ValueError("invalid acknowledgement mutation")
