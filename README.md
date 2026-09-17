@@ -57,11 +57,24 @@ hosting remain unvalidated.
 An optional version-2 event extension records selected whistle actions and
 confirmed fountain drinks, with delivered public notices and bounded offline
 episode summaries. Default version-1 events and the whisper request API remain
-unchanged. Opt-in logs are **not inputs to the existing director or authoring
-pipeline**; use the [offline observation guide](chaos/README.md#offline-selected-action-observations).
-This adds no whisper mechanic, fountain remapping, companion behavior, Lua or
-Luna change, budget change, or new recurrence. It does not deliver the requested
-consequential-vision feature (#26), nor close #21 or the whole phase.
+unchanged. The legacy director and authoring pipeline still reject these logs;
+use the [offline observation guide](chaos/README.md#offline-selected-action-observations)
+or the separate opt-in pilot below. The foundation itself adds no mechanic,
+fountain remapping, companion behavior, Lua or budget change.
+
+### History-conditioned whisper pilot
+
+The new explicit `chaos history` command connects a completed delivered fountain
+refresh to the existing hunger rule: double ordinary food consumption for 10 or
+20 turns. Prior accepted hunger suppresses another proposal, even after expiry.
+There is no new native mechanic, larger budget or default launcher change.
+
+Controlled native development runs measured both an offline-selected effect and
+a genuine GPT-5.6 Luna-selected effect, with expiry, empty controls and exact
+replay. See the [pilot guide and evidence](docs/history-conditioned-whispers.md)
+for commands, distinct acceptance scopes and limitations. This is one bounded
+consequential use of history—not completion of the broader vision in #26 or
+closure of #21, #22 or #27.
 
 ## Build
 
@@ -117,7 +130,9 @@ The configured native suite and selected-command turn-loop gate are independentl
 accepted locally at `8f317763a3560bd774d0b61e134e7028a744412a`, under the approved
 provenance-validated dump contract. Literal strict cross-build comparison remains
 **FAILED**; the successful suite and failed reporting wrapper are separate results.
-Publication, hosted CI and whole-phase sign-off remain unverified. See the
+Hosted continuous integration passed for foundation PR #28 and its merged main
+revision; whole-phase sign-off is not implied. The new pilot has separate
+acceptance evidence. See the
 [bounded evidence ledger](docs/haunting-observations-evidence.md).
 
 The terminal harness is Linux-specific and uses a test-only preload library.
