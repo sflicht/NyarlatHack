@@ -70,42 +70,15 @@ int chaos_io_event(struct chaos_io *io, struct chaos_state *s, const struct chao
 int chaos_io_observation(struct chaos_io *io, struct chaos_state *s,
                          const struct chaos_context *c, int operation, int stage,
                          long root_seq, int fact) {
-    static const char *const operations[] = { "none", "whistling", "fountain_drink" };
-    static const char *const stages[] = { "enabled", "started", "notice", "completed", "blocked" };
-    static const char *const facts[] = { "none", "sound_high", "sound_shrill", "sound_normal",
-        "sound_strange", "sound_humming", "water_refreshed", "water_foul", "cannot_reach",
-        "detection_presented" };
     char extra[512];
     int n;
-    if(operation < CHAOS_OBS_OP_NONE || operation > CHAOS_OBS_OP_FOUNTAIN_DRINK ||
-       stage < CHAOS_OBS_STAGE_ENABLED || stage > CHAOS_OBS_STAGE_BLOCKED ||
-       fact < CHAOS_OBS_FACT_NONE || fact > CHAOS_OBS_FACT_DETECTION_PRESENTED) return 0;
-    /* Compare roots to the actual next record, without overflowing or advancing.
-     * Active-root ownership and duplicate suppression belong to engine scopes. */
+    /* Check before +1; row validity does not authenticate an active root. */
     if(s->seq < 0 || s->seq >= CHAOS_MAX_COUNTER ||
-       root_seq < 0 || root_seq > CHAOS_MAX_COUNTER) return 0;
-    if(stage == CHAOS_OBS_STAGE_ENABLED) {
-        if(operation != CHAOS_OBS_OP_NONE || root_seq || fact != CHAOS_OBS_FACT_NONE) return 0;
-    } else {
-        if(operation == CHAOS_OBS_OP_NONE) return 0;
-        if(stage == CHAOS_OBS_STAGE_STARTED) {
-            if(root_seq || fact != CHAOS_OBS_FACT_NONE) return 0;
-        } else {
-            if(!root_seq || root_seq > s->seq) return 0;
-            if(stage == CHAOS_OBS_STAGE_NOTICE) {
-                if(operation == CHAOS_OBS_OP_WHISTLING) {
-                    if(fact < CHAOS_OBS_FACT_SOUND_HIGH || fact > CHAOS_OBS_FACT_SOUND_HUMMING) return 0;
-                } else if(fact < CHAOS_OBS_FACT_WATER_REFRESHED ||
-                          fact > CHAOS_OBS_FACT_DETECTION_PRESENTED) return 0;
-            } else if(fact != CHAOS_OBS_FACT_NONE ||
-                      (stage == CHAOS_OBS_STAGE_BLOCKED &&
-                       operation != CHAOS_OBS_OP_FOUNTAIN_DRINK)) return 0;
-        }
-    }
+       !chaos_obs_row_valid(operation, stage, s->seq + 1, root_seq, fact)) return 0;
     n=snprintf(extra,sizeof extra,",\"observation\":{\"operation\":\"%s\",\"stage\":\"%s\","
-        "\"root_seq\":%ld,\"fact\":\"%s\"}",operations[operation],stages[stage],root_seq,facts[fact]);
+        "\"root_seq\":%ld,\"fact\":\"%s\"}",chaos_obs_operation_name(operation),chaos_obs_stage(stage)->name,root_seq,chaos_obs_fact_name(fact));
     if(n < 0 || (size_t)n >= sizeof extra) return 0;
-    return event(io,s,c,2,"observation",stage == CHAOS_OBS_STAGE_STARTED ? "attempt" : "result","",extra);
+    return event(io,s,c,2,"observation",chaos_obs_stage(stage)->phase,"",extra);
 }
 static void fields(char *buf, size_t cap, const struct chaos_request *r, const char *status, long expires) {
     snprintf(buf,cap,CHAOS_ACK_FORMAT,

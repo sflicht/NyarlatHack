@@ -9,6 +9,58 @@
 #if INT_MAX < CHAOS_MAX_INT
 #error int cannot represent protocol integers
 #endif
+#define OBS_FAMILY(id, blocked, name) {id, blocked, name},
+static const struct chaos_obs_family_info obs_families[] = { CHAOS_OBS_FAMILY_ROWS(OBS_FAMILY) };
+#undef OBS_FAMILY
+#define OBS_FACT(id, op, channel, blocked, name) {id, op, channel, blocked, name},
+static const struct chaos_obs_fact_info obs_facts[] = { CHAOS_OBS_FACT_ROWS(OBS_FACT) };
+#undef OBS_FACT
+#define OBS_STAGE(id, role, name, phase) {id, role, name, phase},
+static const struct chaos_obs_stage_info obs_stages[] = { CHAOS_OBS_STAGE_ROWS(OBS_STAGE) };
+#undef OBS_STAGE
+const struct chaos_obs_family_info *chaos_obs_family(int op) {
+    size_t i;
+    for (i = 0; i < sizeof obs_families / sizeof *obs_families; ++i)
+        if (obs_families[i].id == op) return &obs_families[i];
+    return 0;
+}
+const struct chaos_obs_fact_info *chaos_obs_fact(int op, int fact) {
+    size_t i;
+    for (i = 0; i < sizeof obs_facts / sizeof *obs_facts; ++i)
+        if (obs_facts[i].id == fact && obs_facts[i].operation == op) return &obs_facts[i];
+    return 0;
+}
+const struct chaos_obs_stage_info *chaos_obs_stage(int stage) {
+    size_t i;
+    for (i = 0; i < sizeof obs_stages / sizeof *obs_stages; ++i)
+        if (obs_stages[i].id == stage) return &obs_stages[i];
+    return 0;
+}
+const char *chaos_obs_operation_name(int op) {
+    const struct chaos_obs_family_info *f = chaos_obs_family(op);
+    return op == CHAOS_OBS_OP_NONE ? "none" : f ? f->name : 0;
+}
+const char *chaos_obs_fact_name(int fact) {
+    size_t i;
+    if (fact == CHAOS_OBS_FACT_NONE) return "none";
+    for (i = 0; i < sizeof obs_facts / sizeof *obs_facts; ++i)
+        if (obs_facts[i].id == fact) return obs_facts[i].name;
+    return 0;
+}
+/* Row-local grammar only: engine/projector own root lifetime and chronology. */
+int chaos_obs_row_valid(int op, int stage, long seq, long root, int fact) {
+    const struct chaos_obs_family_info *f = chaos_obs_family(op);
+    const struct chaos_obs_stage_info *s = chaos_obs_stage(stage);
+    if (!s || seq <= 0 || seq > CHAOS_MAX_COUNTER || root < 0 || root > CHAOS_MAX_COUNTER) return 0;
+    if (s->role == CHAOS_OBS_ROLE_ENABLE)
+        return op == CHAOS_OBS_OP_NONE && !root && fact == CHAOS_OBS_FACT_NONE;
+    if (!f) return 0;
+    if (s->role == CHAOS_OBS_ROLE_START) return !root && fact == CHAOS_OBS_FACT_NONE;
+    if (!root || root >= seq) return 0;
+    if (s->role == CHAOS_OBS_ROLE_NOTICE) return chaos_obs_fact(op, fact) != 0;
+    return fact == CHAOS_OBS_FACT_NONE && (s->role == CHAOS_OBS_ROLE_COMPLETE
+        || (s->role == CHAOS_OBS_ROLE_BLOCK && f->allow_blocked));
+}
 struct mutation {
     const char *name;
     int cost, low, high, duration_low, duration_high, telegraph;

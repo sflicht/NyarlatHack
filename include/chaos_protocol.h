@@ -103,24 +103,44 @@ enum chaos_contract_rule { CHAOS_RULE_NONE, CHAOS_RULE_HALVE, CHAOS_RULE_DOUBLE 
 #define CHAOS_EVENT_FORMAT "{\"v\":%d,\"seq\":%ld,\"turn\":%ld,\"safe\":%ld,\"event\":%s,\"phase\":%s,\"detail\":%s,\"sanity\":%d,\"insight\":%d,\"budget\":%d,\"spent\":%d,\"reserved\":%d,\"last_id\":%d,\"vitals\":{\"hp\":%d,\"hp_max\":%d,\"power\":%d,\"power_max\":%d}%s}\n"
 #define CHAOS_ACK_FORMAT ",\"id\":%d,\"status\":\"%s\",\"mutation\":\"%s\",\"value\":%d,\"duration\":%d,\"telegraph\":%d,\"at\":%d,\"cost\":%d,\"expires\":%ld"
 #define CHAOS_JOURNAL_FORMAT "{\"v\":1,\"turn\":%ld,\"safe\":%ld%s}\n"
+enum chaos_observation_operation { CHAOS_OBS_OP_NONE = 0, CHAOS_OBS_OP_WHISTLING = 1, CHAOS_OBS_OP_FOUNTAIN_DRINK = 2 };
+enum chaos_observation_stage { CHAOS_OBS_STAGE_ENABLED = 0, CHAOS_OBS_STAGE_STARTED = 1, CHAOS_OBS_STAGE_NOTICE = 2, CHAOS_OBS_STAGE_COMPLETED = 3, CHAOS_OBS_STAGE_BLOCKED = 4 };
+enum chaos_observation_fact { CHAOS_OBS_FACT_NONE = 0, CHAOS_OBS_FACT_SOUND_HIGH = 1, CHAOS_OBS_FACT_SOUND_SHRILL = 2, CHAOS_OBS_FACT_SOUND_NORMAL = 3, CHAOS_OBS_FACT_SOUND_STRANGE = 4, CHAOS_OBS_FACT_SOUND_HUMMING = 5, CHAOS_OBS_FACT_WATER_REFRESHED = 6, CHAOS_OBS_FACT_WATER_FOUL = 7, CHAOS_OBS_FACT_CANNOT_REACH = 8, CHAOS_OBS_FACT_DETECTION_PRESENTED = 9 };
+enum chaos_obs_channel { CHAOS_OBS_CHANNEL_MESSAGE = 1, CHAOS_OBS_CHANNEL_MAP = 2 };
+enum chaos_obs_role { CHAOS_OBS_ROLE_ENABLE, CHAOS_OBS_ROLE_START, CHAOS_OBS_ROLE_NOTICE, CHAOS_OBS_ROLE_COMPLETE, CHAOS_OBS_ROLE_BLOCK };
+#define CHAOS_OBS_FAMILY_ROWS(X) \
+    X(CHAOS_OBS_OP_WHISTLING, 0, "whistling") \
+    X(CHAOS_OBS_OP_FOUNTAIN_DRINK, 1, "fountain_drink")
+
+#define CHAOS_OBS_FACT_ROWS(X) \
+    X(CHAOS_OBS_FACT_SOUND_HIGH, 1, CHAOS_OBS_CHANNEL_MESSAGE, 0, "sound_high") \
+    X(CHAOS_OBS_FACT_SOUND_SHRILL, 1, CHAOS_OBS_CHANNEL_MESSAGE, 0, "sound_shrill") \
+    X(CHAOS_OBS_FACT_SOUND_NORMAL, 1, CHAOS_OBS_CHANNEL_MESSAGE, 0, "sound_normal") \
+    X(CHAOS_OBS_FACT_SOUND_STRANGE, 1, CHAOS_OBS_CHANNEL_MESSAGE, 0, "sound_strange") \
+    X(CHAOS_OBS_FACT_SOUND_HUMMING, 1, CHAOS_OBS_CHANNEL_MESSAGE, 0, "sound_humming") \
+    X(CHAOS_OBS_FACT_WATER_REFRESHED, 2, CHAOS_OBS_CHANNEL_MESSAGE, 0, "water_refreshed") \
+    X(CHAOS_OBS_FACT_WATER_FOUL, 2, CHAOS_OBS_CHANNEL_MESSAGE, 0, "water_foul") \
+    X(CHAOS_OBS_FACT_CANNOT_REACH, 2, CHAOS_OBS_CHANNEL_MESSAGE, 1, "cannot_reach") \
+    X(CHAOS_OBS_FACT_DETECTION_PRESENTED, 2, CHAOS_OBS_CHANNEL_MAP, 0, "detection_presented")
+
+#define CHAOS_OBS_STAGE_ROWS(X) \
+    X(CHAOS_OBS_STAGE_ENABLED, CHAOS_OBS_ROLE_ENABLE, "enabled", "result") \
+    X(CHAOS_OBS_STAGE_STARTED, CHAOS_OBS_ROLE_START, "started", "attempt") \
+    X(CHAOS_OBS_STAGE_NOTICE, CHAOS_OBS_ROLE_NOTICE, "notice", "result") \
+    X(CHAOS_OBS_STAGE_COMPLETED, CHAOS_OBS_ROLE_COMPLETE, "completed", "result") \
+    X(CHAOS_OBS_STAGE_BLOCKED, CHAOS_OBS_ROLE_BLOCK, "blocked", "result")
+
 /* END GENERATED PROTOCOL CONTRACT */
-/* Closed observation v2 vocabulary; no persistent state or layout changes. */
-enum chaos_observation_operation {
-    CHAOS_OBS_OP_NONE = 0, CHAOS_OBS_OP_WHISTLING = 1,
-    CHAOS_OBS_OP_FOUNTAIN_DRINK = 2
-};
-enum chaos_observation_stage {
-    CHAOS_OBS_STAGE_ENABLED = 0, CHAOS_OBS_STAGE_STARTED = 1,
-    CHAOS_OBS_STAGE_NOTICE = 2, CHAOS_OBS_STAGE_COMPLETED = 3,
-    CHAOS_OBS_STAGE_BLOCKED = 4
-};
-enum chaos_observation_fact {
-    CHAOS_OBS_FACT_NONE = 0, CHAOS_OBS_FACT_SOUND_HIGH = 1,
-    CHAOS_OBS_FACT_SOUND_SHRILL = 2, CHAOS_OBS_FACT_SOUND_NORMAL = 3,
-    CHAOS_OBS_FACT_SOUND_STRANGE = 4, CHAOS_OBS_FACT_SOUND_HUMMING = 5,
-    CHAOS_OBS_FACT_WATER_REFRESHED = 6, CHAOS_OBS_FACT_WATER_FOUL = 7,
-    CHAOS_OBS_FACT_CANNOT_REACH = 8, CHAOS_OBS_FACT_DETECTION_PRESENTED = 9
-};
+/* Read-only metadata, not persistent state or root authenticity. */
+struct chaos_obs_family_info { int id, allow_blocked; const char *name; };
+struct chaos_obs_fact_info { int id, operation, channel, implies_blocked; const char *name; };
+struct chaos_obs_stage_info { int id, role; const char *name, *phase; };
+const struct chaos_obs_family_info *chaos_obs_family(int);
+const struct chaos_obs_fact_info *chaos_obs_fact(int, int);
+const struct chaos_obs_stage_info *chaos_obs_stage(int);
+const char *chaos_obs_operation_name(int);
+const char *chaos_obs_fact_name(int);
+int chaos_obs_row_valid(int, int, long, long, int);
 
 struct chaos_request { int v, id, kind, value, duration, telegraph, at; };
 struct chaos_effect { int value, cost; long expires; };

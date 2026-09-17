@@ -226,7 +226,9 @@ is required. Off retains the default v1 bytes and sequence schedule. On adds
 v2 records to the same `events.jsonl` and authoritative sequence, not a second
 stream: an `enabled` marker immediately precedes each process's v1 `session`.
 Legacy `parse_event`, `State`, `EventReader`, replay and authoring readers reject
-v2; do not feed opt-in logs to them. There is no live episode adapter.
+v2; do not feed opt-in logs to them. The separately approved, explicit
+`chaos history` pilot consumes mixed history; it is not the default director and
+registration does not extend its hunger policy or model choices.
 
 V2 has exactly these envelope keys:
 `v,seq,turn,safe,event,phase,detail,sanity,insight,budget,spent,reserved,last_id,vitals,observation`.
@@ -368,3 +370,30 @@ recorded. Time affects moon/night rules. The test harness uses
 an explicitly test-only preload interposer for stock and instrumented builds.
 Private diagnostics and manifests are never director events. Full gameplay
 replay/regression evidence is separate from protocol unit tests.
+
+## Shared observation registration
+
+The `observations` section of `chaos/protocol_contract.json` describes operation,
+fact and stage identities, native message/map witnesses, family `allow_blocked`,
+fact `implies_blocked`, public grouping and reviewed file/symbol/role hook
+provenance. Hook references are **review-only**: the generator checks lexical
+syntax and duplicates, not file existence, symbol existence, call placement or
+native execution. References generate no hooks. The independent #33 upstream
+lexical inventory and human source review remain required; neither proves native
+delivery. Channels select the two fixed supported witnesses, not arbitrary
+pluggable witness implementations. The existing generator emits header row macros
+and Python metadata;
+`chaos_protocol.c` owns constant tables and row-local validation. Engine root
+lifetime, native delivery and projector chronology remain separate trust layers.
+
+Build-time caps are 16 families, 64 facts and 31-byte ASCII names. Production is
+still exactly two families/nine facts, scope `selected_whistle_fountain`, 32 roots,
+count cap three, first-two plus latest evidence and 4096 public bytes. Family
+permission for explicit blocked terminals is distinct from a blocking notice;
+only cannot-reach implies blocked. No runtime JSON, saved fields or Lua API.
+
+For an isolated extension, append reviewed rows to a temporary contract, use a
+fixture-specific scope and honest test-harness provenance, regenerate/check both
+outputs, and exercise unchanged C scope/IO and isolated Python projection. A
+real action needs separate approval, upstream seams and native/privacy proof;
+registration does not authorize new model choices or presentation channels.
