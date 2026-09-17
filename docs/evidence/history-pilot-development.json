@@ -1,0 +1,159 @@
+{
+  "scope": "development; verified retained production base, separately identified fixture sources; not fresh-current-revision acceptance",
+  "base_revision": "8f317763a3560bd774d0b61e134e7028a744412a",
+  "genuine_choice": {
+    "selected": {
+      "at": 3,
+      "duration": 10,
+      "id": 1,
+      "mutation": "hunger_rate",
+      "telegraph": 3,
+      "v": 1,
+      "value": 2
+    },
+    "raw_response": "{\"at\":3,\"duration\":10,\"id\":1,\"mutation\":\"hunger_rate\",\"telegraph\":3,\"v\":1,\"value\":2}",
+    "receipt": {
+      "model": "gpt-5.6-luna",
+      "provider": "openai-codex",
+      "record_index": 3,
+      "record": {
+        "prompt_sha256": "d55706e3fa6eeca331f759a5aaa151d5a420ad0c6fb2fddda1f7035827b075ea",
+        "status": "completed",
+        "usage": {
+          "prompt_tokens": 666,
+          "completion_tokens": 90,
+          "total_tokens": 756
+        }
+      }
+    },
+    "prompt_sha256": "d55706e3fa6eeca331f759a5aaa151d5a420ad0c6fb2fddda1f7035827b075ea",
+    "prompt_bytes": 2417,
+    "source_prefix_sha256": "ef1688c0169f16020876fe9b7e6067cda3b2d95c243561c9034649b16d1655cb",
+    "ledger_attempts_before": 3,
+    "ledger_attempts_after": 4
+  },
+  "runs": {
+    "offline": {
+      "retained_artifact_root": "/tmp/nyarl-history-dev-a6hgyq7f/output",
+      "result_sha256": "354fce469d4af9defd5fbf9ad708ebd470f07119a46fa4f208c96c20b79aeadf",
+      "recipe_sha256": "9f057a042a016e18504b07ab3e3514aa812f64af6bc09df5e73fd9425017aa48",
+      "selected": {
+        "v": 1,
+        "id": 1,
+        "at": 3,
+        "mutation": "hunger_rate",
+        "value": 2,
+        "duration": 20,
+        "telegraph": 3
+      },
+      "native_passed": true,
+      "qualifying_drink_ordinals": [
+        6
+      ],
+      "arms": {
+        "primary": {
+          "phases": {
+            "before": 10,
+            "during": 19,
+            "after": 5
+          },
+          "food_calls": 34,
+          "hungry_calls": 34,
+          "capacity_calls": 17,
+          "total_loss": 53,
+          "additional_loss": 0
+        },
+        "control": {
+          "phases": {
+            "before": 34,
+            "during": 0,
+            "after": 0
+          },
+          "food_calls": 34,
+          "hungry_calls": 34,
+          "capacity_calls": 17,
+          "total_loss": 34,
+          "additional_loss": 0
+        },
+        "replay": {
+          "phases": {
+            "before": 10,
+            "during": 19,
+            "after": 5
+          },
+          "food_calls": 34,
+          "hungry_calls": 34,
+          "capacity_calls": 17,
+          "total_loss": 53,
+          "additional_loss": 0
+        }
+      },
+      "binary_sha256": "e242943aef107f7ee9efcefaa4e30ff778f48727eaf6431f161e6bc2f3075d69",
+      "clock_sha256": "76f30efb4a9de52d0c43028772d227ea9627e34814009f25c9f8851b55ddec5e"
+    },
+    "luna": {
+      "retained_artifact_root": "/tmp/nyarl-history-dev-ox6praig/output",
+      "result_sha256": "c83895a6abd86c99bd3f0b0c3d969611f067c319973acbe1ccc7d3458a92fd17",
+      "recipe_sha256": "a5b88b86fe444b153546c98b4111f1920f69f148dc77c9ccda09ad4ab643bd66",
+      "selected": {
+        "at": 3,
+        "duration": 10,
+        "id": 1,
+        "mutation": "hunger_rate",
+        "telegraph": 3,
+        "v": 1,
+        "value": 2
+      },
+      "native_passed": true,
+      "qualifying_drink_ordinals": [
+        6
+      ],
+      "arms": {
+        "primary": {
+          "phases": {
+            "before": 10,
+            "during": 9,
+            "after": 15
+          },
+          "food_calls": 34,
+          "hungry_calls": 34,
+          "capacity_calls": 17,
+          "total_loss": 43,
+          "additional_loss": 0
+        },
+        "control": {
+          "phases": {
+            "before": 34,
+            "during": 0,
+            "after": 0
+          },
+          "food_calls": 34,
+          "hungry_calls": 34,
+          "capacity_calls": 17,
+          "total_loss": 34,
+          "additional_loss": 0
+        },
+        "replay": {
+          "phases": {
+            "before": 10,
+            "during": 9,
+            "after": 15
+          },
+          "food_calls": 34,
+          "hungry_calls": 34,
+          "capacity_calls": 17,
+          "total_loss": 43,
+          "additional_loss": 0
+        }
+      },
+      "binary_sha256": "780c603aec24e38b0e3446117bae16064fb143d040fa6cc13caa9d9aae8483bf",
+      "clock_sha256": "76f30efb4a9de52d0c43028772d227ea9627e34814009f25c9f8851b55ddec5e"
+    }
+  },
+  "failed_harness_run": {
+    "path": "/tmp/nyarl-history-dev-5mhxkjjc/output",
+    "status": "FAILED: missing native Dry up fountain confirmation",
+    "preserved_prefix_records": 12,
+    "prefix_sha256": "d83b67c87de90747eafca78ab86919893befa062e0d02bdf7810f237f58f7bf0"
+  }
+}

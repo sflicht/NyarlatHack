@@ -10,6 +10,19 @@ repository root. No package installation or model key is needed for offline
 play. An application programming interface (API) key is needed only for the
 explicit `model` command.
 
+## Opt-in history-conditioned pilot
+
+Use the separate `python3 -m chaos history` command to consume mixed observation
+history. A completed delivered fountain refresh can qualify an existing 10- or
+20-turn hunger effect; a prior accepted hunger whisper suppresses repetition.
+Empty eligibility means no model request. Legacy `play` and authoring do not
+silently switch to this consumer.
+
+The [pilot guide](../docs/history-conditioned-whispers.md) documents two-terminal
+startup, ordinary-food affirmation, the existing-ledger-only Luna subscription
+route, strict mixed replay, measured native effects and limits. Publication,
+acceptance and a measured rule effect remain different claims.
+
 ## One-command offline play
 
 After building, from the repository root:

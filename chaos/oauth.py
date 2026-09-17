@@ -114,6 +114,8 @@ class OAuthBackend:
     A scoped call requires an existing ledger unless fresh_ledger=True explicitly
     allows initial creation, NEVER reset/recovery. Tests use temporary roots only.
     Legacy callers retain initial creation and route checks before reservation.
+    require_existing=True disables parent/lock/ledger creation, including races;
+    it retains the same global authorization limit and adds no new allowance.
     All calls preflight authorization before factory. No lock spans network I/O.
 
     last_receipt is known durable ledger data, NOT native acceptance. Lifecycle:
@@ -135,6 +137,7 @@ class OAuthBackend:
         client_factory=native_client,
         purpose=None,
         fresh_ledger=False,
+        require_existing=False,
     ):
         if type(timeout) not in (int, float) or not 0 < timeout <= 60:
             raise ValueError("OAuth request timeout outside bounds")
@@ -144,19 +147,24 @@ class OAuthBackend:
             raise ValueError("unknown authorization purpose")
         if type(fresh_ledger) is not bool:
             raise ValueError("fresh_ledger must be boolean")
+        if type(require_existing) is not bool or (require_existing and fresh_ledger):
+            raise ValueError("invalid existing-ledger requirement")
+        self.require_existing = require_existing
         self.ledger = Path(ledger).absolute()
         self.timeout = timeout
         self.deadline = float("inf")
         self.ordinary_food = ordinary_food
         self.factory = client_factory
         self.purpose = purpose
-        self.fresh_ledger = fresh_ledger or purpose is None
+        self.fresh_ledger = not require_existing and (fresh_ledger or purpose is None)
         self.last_receipt = None
         self.reservation_attempted = False
 
     def _ledger_update(self, update, *, write=True, create_lock=True):
-        if self.purpose is None and write:
+        if self.purpose is None and write and not self.require_existing:
             self.ledger.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
+        if self.require_existing:
+            create_lock = False
         with store._directory(self.ledger.parent) as directory:
             lock_name = self.ledger.name + ".lock"
             flags = (os.O_RDWR if write else os.O_RDONLY) | (
@@ -236,7 +244,7 @@ class OAuthBackend:
         Only legacy initial parent creation is retained. Scoped callers require
         existing private parents. Reservation repeats availability under lock.
         """
-        if self.purpose is None:
+        if self.purpose is None and not self.require_existing:
             self.ledger.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
         with store._directory(self.ledger.parent) as directory:
             if not store._exists(directory, self.ledger.name):

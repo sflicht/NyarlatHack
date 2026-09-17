@@ -264,6 +264,11 @@ def _validate_episode_checkpoint(proof):
 
 
 def snapshot_episodes(path, *, checkpoint=None):
+    """Return the unchanged public episode projection and checked host proof."""
+    return _snapshot_projection(path, project_episodes, checkpoint=checkpoint)
+
+
+def _snapshot_projection(path, project, *, checkpoint=None):
     """Return (public summary, host proof) for private run events.jsonl.
 
     A checkpoint selects only its complete prefix; later bytes are not history
@@ -291,7 +296,7 @@ def snapshot_episodes(path, *, checkpoint=None):
         if digest != expected["sha256"]:
             raise ValueError("episode checkpoint prefix changed")
         event = dict(identity=event["identity"], length=len(raw), sha256=digest)
-    public = project_episodes(raw)
+    public = project(raw)
     # Reopen the supplied path, not just the held inode: a renamed directory
     # can leave its old fd and child entry intact while the host path changes.
     with store._directory(path) as directory:
