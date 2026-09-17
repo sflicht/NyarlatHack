@@ -10,6 +10,8 @@ import argparse
 import json
 import os
 from pathlib import Path
+import native_observation_contract as wire
+
 import resource
 import shutil
 import signal
@@ -31,6 +33,12 @@ from test_episode_platforms import (
     owned_game_type,
     save,
 )
+
+# External helper is sibling-bound and copied/hashed in source manifests.
+assert Path(wire.__file__).resolve() == Path(__file__).resolve().with_name(
+    "native_observation_contract.py"
+)
+CURRENT, HISTORICAL = wire.CURRENT, wire.HISTORICAL
 
 # Frozen after the first successful preparation run, before final acceptance.
 # Endgame answers are disclosures only; this non-wizard run has no Die? prompt.
@@ -136,6 +144,7 @@ def main(argv=None):
         selection.validate_schema(json.loads(run([out / "layout"], "layout")))
         save(out / "selection.json", selection.record())
         sources = [
+            Path(__file__).with_name("native_observation_contract.py"),
             Path(__file__).resolve(),
             Path(__file__).with_name("episode_fountain_fatal.c"),
             Path(__file__).with_name("test_episode_fountain_fatal_oracle.py"),
@@ -289,6 +298,7 @@ def main(argv=None):
                 native = json.loads((game.game / "native-exit.json").read_text())
                 before = json.loads((game.game / "native-before.json").read_text())
                 records = game.events()
+                wire.validate_rows(records, CURRENT)
                 journal = (game.run / "events.jsonl").read_bytes()
                 public = project_episodes(journal)
                 xlog = (game.game / "xlogfile").read_bytes()
@@ -298,13 +308,19 @@ def main(argv=None):
                 terminal = bytes(game.raw)
                 if case == "fatal":
                     validate_fatal(
-                        records, native, terminal, xlog, public, enabled=enabled
+                        records,
+                        native,
+                        terminal,
+                        xlog,
+                        public,
+                        enabled=enabled,
+                        policy=CURRENT,
                     )
                     if enabled:
                         save(
                             work / "oracle-mutations-rejected.json",
                             reject_mutated_death_evidence(
-                                records, native, terminal, xlog, public
+                                records, native, terminal, xlog, public, policy=CURRENT
                             ),
                         )
                 else:
@@ -313,7 +329,11 @@ def main(argv=None):
                         and native["returned"] == 1
                         and native["hp"] > 0
                     )
-                    stages = [r["observation"]["stage"] for r in records if r["v"] == 2]
+                    stages = [
+                        r["observation"]["stage"]
+                        for r in records
+                        if r["v"] == CURRENT[1]
+                    ]
                     assert stages == (
                         ["enabled", "started", "completed"] if enabled else []
                     )
@@ -338,7 +358,7 @@ def main(argv=None):
                         before=before,
                     )
                 )
-            compare_pair(*pair)
+            compare_pair(*pair, policy=CURRENT)
         assert originals == {p: digest(Path(p)) for p in originals}
         save(
             out / "result.json",

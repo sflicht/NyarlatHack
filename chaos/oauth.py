@@ -12,7 +12,7 @@ import time
 import uuid
 from urllib.parse import urlsplit
 from . import curio_store as store
-from .director import eligible
+from .director import preferred_menu
 from .protocol import parse_request, strict_json
 from .response import normalize_whisper_response
 
@@ -427,7 +427,7 @@ class OAuthBackend:
                 client.close()
 
     def choose(self, state, ident, at):
-        options = eligible(state, self.ordinary_food)
+        options = preferred_menu(state, self.ordinary_food)
         if not options:
             return None
         prompt = (Path(__file__).parent / "prompts/director.txt").read_text()
@@ -437,7 +437,8 @@ class OAuthBackend:
                 {
                     "assigned_id": ident,
                     "assigned_at": at,
-                    "eligible": options,
+                    "eligible": list(options),
+                    "allowed_values": options,
                     "summary": json.loads(state.summary()),
                 },
                 separators=(",", ":"),
@@ -448,6 +449,7 @@ class OAuthBackend:
             request["id"] != ident
             or request["at"] != at
             or request["mutation"] not in options
+            or request["value"] not in options[request["mutation"]]
         ):
             raise ValueError("model changed assigned schedule or eligibility")
         return request

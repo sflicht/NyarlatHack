@@ -63,19 +63,20 @@ int chaos_obs_row_valid(int op, int stage, long seq, long root, int fact) {
 }
 struct mutation {
     const char *name;
-    int cost, low, high, duration_low, duration_high, telegraph;
+    int cost, cosmetic_cost, low, high, duration_low, duration_high, telegraph;
     int sanity_max, ordinary_food, persistent, rule;
 };
-#define MUTATION(k, name, cost, lo, hi, dlo, dhi, signal, sanity, food, active, rule) \
-    {name, cost, lo, hi, dlo, dhi, signal, sanity, food, active, rule},
+#define MUTATION(k, name, cost, cosmetic, lo, hi, dlo, dhi, signal, sanity, food, active, rule) \
+    {name, cost, cosmetic, lo, hi, dlo, dhi, signal, sanity, food, active, rule},
 static const struct mutation mutations[] = { CHAOS_MUTATION_ROWS(MUTATION) };
 #undef MUTATION
 #define REASON(k, name, ack) name,
 static const char *const reasons[] = { CHAOS_RESULT_ROWS(REASON) };
 #undef REASON
 const char *chaos_name(int k) { return k >= 0 && k < CHAOS_KINDS ? mutations[k].name : ""; }
-const char *chaos_reason(int r) { return r >= 0 && r <= CHAOS_FUTURE ? reasons[r] : "schema"; }
+const char *chaos_reason(int r) { return r >= 0 && (size_t)r < sizeof reasons / sizeof *reasons ? reasons[r] : "schema"; }
 int chaos_cost(int k) { return k >= 0 && k < CHAOS_KINDS ? mutations[k].cost : 0; }
+int chaos_cosmetic_cost(int k) { return k >= 0 && k < CHAOS_KINDS ? mutations[k].cosmetic_cost : 0; }
 struct cursor { const unsigned char *p, *end; };
 static void ws(struct cursor *c) {
     while(c->p < c->end && (*c->p == ' ' || *c->p == '\r' || *c->p == '\n' || *c->p == '\t')) ++c->p;
@@ -167,9 +168,12 @@ int chaos_quote(char *out, size_t cap, const char *src, size_t n) {
 void chaos_state_init(struct chaos_state *s) { memset(s, 0, sizeof *s); s->version = CHAOS_STATE_VERSION; }
 int chaos_state_valid(const struct chaos_state *s) {
     int i, reserved = 0;
-    if(s->version != CHAOS_STATE_VERSION || s->spent < 0 || s->spent > CHAOS_BUDGET_CEILING ||
+    if(!s || s->version != CHAOS_STATE_VERSION || s->spent < 0 || s->spent > CHAOS_BUDGET_CEILING ||
        s->last_id < 0 || s->safe < 0 || s->safe > CHAOS_MAX_COUNTER ||
-       s->seq < 0 || s->seq > CHAOS_MAX_COUNTER) return 0;
+       s->seq < 0 || s->seq > CHAOS_MAX_COUNTER ||
+       s->cosmetic_seen < 0 || s->cosmetic_seen > CHAOS_COSMETIC_MASK ||
+       s->cosmetic_last_turn < 0 || s->cosmetic_last_turn > CHAOS_MAX_COUNTER ||
+       (!s->cosmetic_seen && s->cosmetic_last_turn)) return 0;
     for(i = 0; i < CHAOS_KINDS; ++i) {
         const struct chaos_effect *e = &s->effects[i];
         if(e->value) {
@@ -212,7 +216,7 @@ void chaos_expire(struct chaos_state *s, long turn) {
 }
 int chaos_admit(struct chaos_state *s, const struct chaos_request *r, long turn, int sanity, int eligible) {
     int cost;
-    if(!request_valid(r)) return CHAOS_SCHEMA;
+    if(!s || !r || !chaos_state_valid(s) || !request_valid(r)) return CHAOS_SCHEMA;
     if(r->id <= s->last_id) return CHAOS_DUPLICATE;
     if(r->at > s->safe) return CHAOS_FUTURE;
     s->last_id = r->id;
@@ -221,6 +225,18 @@ int chaos_admit(struct chaos_state *s, const struct chaos_request *r, long turn,
     if(!eligible || turn < 0 || turn > LONG_MAX - CHAOS_TURN_HEADROOM ||
        (mutations[r->kind].sanity_max >= 0 && sanity > mutations[r->kind].sanity_max) ||
        (mutations[r->kind].ordinary_food && eligible != 1)) return CHAOS_INELIGIBLE;
+    if(r->kind == CHAOS_AMBIENT) {
+        int bit = 1 << (r->value - 1);
+        if(turn > CHAOS_MAX_COUNTER) return CHAOS_INELIGIBLE;
+        if(s->cosmetic_seen == CHAOS_COSMETIC_MASK) return CHAOS_COSMETIC_BUDGET;
+        if(s->cosmetic_seen & bit) return CHAOS_COSMETIC_REPEAT;
+        if(s->cosmetic_seen && (turn < s->cosmetic_last_turn ||
+           turn - s->cosmetic_last_turn < CHAOS_COSMETIC_SPACING))
+            return CHAOS_COSMETIC_COOLDOWN;
+        s->cosmetic_seen |= bit;
+        s->cosmetic_last_turn = turn;
+        return CHAOS_OK;
+    }
     if(s->effects[r->kind].value) return CHAOS_ACTIVE;
     cost = chaos_cost(r->kind);
     if(cost > chaos_budget(s,sanity)) return CHAOS_BUDGET;

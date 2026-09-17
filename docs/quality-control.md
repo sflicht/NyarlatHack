@@ -106,6 +106,13 @@ revision: replace it with the approved
 full lowercase commit identifier, never automatically with HEAD or a receipt
 value.
 
+Native fixtures inherit their parent environment. Use only the official runner
+below: it constructs a clean environment, excluding `NETHACKDIR` and `HACKDIR`.
+Changing cwd alone does not isolate the frozen `Game` helper. A separately
+authorized ad-hoc retained-old-save experiment must start under `env -i` with
+explicit reviewed variables and launch only disposable save copies. That is a
+separate experiment, not an alternative full-suite command.
+
 ```bash
 set -euo pipefail
 ruff check chaos tests/chaos scripts

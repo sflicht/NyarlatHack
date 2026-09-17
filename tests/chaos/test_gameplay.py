@@ -4,12 +4,14 @@ Run after make install CHAOS=1 with NYARLATHACK_GAME_TESTS=1.
 
 import json
 import os
+import re
 from pathlib import Path
 import shutil
 import subprocess
 import tempfile
 import unittest
 from gameplay_support import Game, ROOT
+from native_rng import controlled_rng_objects
 
 
 @unittest.skipUnless(
@@ -82,6 +84,7 @@ class GameplayTests(unittest.TestCase):
             + sorted((ROOT / "win/tty").glob("*.o"))
             + sorted((ROOT / "win/curses").glob("*.o"))
         )
+        objects = controlled_rng_objects(objects, b)
         subprocess.run(
             [
                 "cc",
@@ -102,13 +105,24 @@ class GameplayTests(unittest.TestCase):
             check=True,
             timeout=45,
         )
-        p = subprocess.run(
-            [str(b / "rules")], capture_output=True, text=True, timeout=15
-        )
-        (b / "result.txt").write_text(p.stdout + p.stderr)
-        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
-        self.assertIn("real gethungry", p.stdout)
-        self.assertIn("real onscary", p.stdout)
+        outputs = []
+        for name, args in (("control", []), ("ambient-prefix", ["--ambient-prefix"])):
+            command = [str(b / "rules"), *args]
+            (b / (name + "-command.json")).write_text(json.dumps(command))
+            p = subprocess.run(command, capture_output=True, text=True, timeout=15)
+            (b / (name + "-result.txt")).write_text(p.stdout + p.stderr)
+            self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+            self.assertEqual(p.stderr, "")
+            self.assertIn(
+                "real gethungry: normal=1, admitted hunger=2, expired=1", p.stdout
+            )
+            self.assertIn(
+                "real onscary: protected=1, admitted ward=0, expired=1; engraving retained",
+                p.stdout,
+            )
+            self.assertIn("seed=123 moves=10,15,20,25", p.stdout)
+            outputs.append(p.stdout)
+        self.assertEqual(outputs[0], outputs[1])
 
     def test_stock_inactive_and_on_empty_equal(self):
         games = []
@@ -134,14 +148,20 @@ class GameplayTests(unittest.TestCase):
 
     def test_real_save_active_and_pending_roundtrip(self):
         g = self.game("save-roundtrip", wizard=True)
+        g.request("ambient", 1, 1)
         g.start()
-        g.request("ward_efficacy", 1, 2, 10)
+        cosmetic = g.events()[-1]["cosmetic"]
+        self.assertEqual(cosmetic["seen"], 1)
+        g.request("ward_efficacy", 2, 2, 10)
         g.sanity(60)
         accepted = [
             e for e in g.events() if e["event"] == "ack" and e["status"] == "accepted"
         ]
-        self.assertEqual([e["id"] for e in accepted], [1])
-        g.request("hunger_rate", 2, 3, 5)
+        self.assertEqual([e["id"] for e in accepted], [1, 2])
+        self.assertEqual(accepted[0]["cost"], 0)
+        self.assertEqual(accepted[0]["cosmetic_cost"], 1)
+        g.request("hunger_rate", 3, 3, 5)
+        pending = (g.run / "whisper.json").read_bytes()
         self.assertEqual(g.save(), 0)
         self.assertTrue(list((g.game / "save").iterdir()))
         g.start()
@@ -151,6 +171,9 @@ class GameplayTests(unittest.TestCase):
             if e["event"] == "session" and e["detail"] == "restore"
         ]
         self.assertEqual(len(restored), 1)
+        self.assertEqual(restored[0]["v"], 3)
+        self.assertEqual(restored[0]["cosmetic"], cosmetic)
+        self.assertEqual((g.run / "whisper.json").read_bytes(), pending)
         self.assertEqual(
             (
                 restored[0]["spent"],
@@ -158,13 +181,14 @@ class GameplayTests(unittest.TestCase):
                 restored[0]["last_id"],
                 restored[0]["safe"],
             ),
-            (4, 4, 1, 2),
+            (4, 4, 2, 2),
         )
         g.sanity(40)
         accepted = [
             e for e in g.events() if e["event"] == "ack" and e["status"] == "accepted"
         ]
-        self.assertEqual([e["id"] for e in accepted], [1, 2])
+        self.assertEqual([e["id"] for e in accepted], [1, 2, 3])
+        self.assertEqual(accepted[-1]["cosmetic"], cosmetic)
         self.assertEqual(accepted[-1]["spent"], 7)
         g.wait_turns(12)
         self.assertEqual(g.quit(), 0)
@@ -173,6 +197,105 @@ class GameplayTests(unittest.TestCase):
             {"ward_efficacy", "hunger_rate"},
         )
         self.assertEqual((g.events()[-1]["spent"], g.events()[-1]["reserved"]), (7, 0))
+
+    def test_cosmetic_restore_remaining_interval_and_depletion(self):
+        """Declared wizard fixture, not ordinary gameplay; no driver-pin edits.
+
+        Existing replay_clock seeds/clock, idle route to native turns 21,50,51,
+        101,151 only. Sanity commands alternate 60/40 as existing safe hooks.
+        Fresh production State/backend objects simulate lost client history;
+        hand requests deliberately test native bounds regardless of preference.
+        """
+        from chaos.director import State, RandomBackend
+
+        g = self.game("cosmetic-restore", wizard=True)
+        g.request("ambient", 1, 1)
+        g.start()
+        first = next(
+            e for e in g.events() if e["event"] == "ack" and e["status"] == "accepted"
+        )
+        self.assertEqual(
+            (first["turn"], first["cosmetic"]), (1, {"seen": 1, "last_turn": 1})
+        )
+
+        def turn():
+            text = g.more(g.send(b"\x12"))
+            values = re.findall(rb"T:(\d+)", text)
+            self.assertTrue(values, text)
+            return int(values[-1])
+
+        def advance(target):
+            remaining = target - turn()
+            self.assertGreaterEqual(remaining, 0)
+            self.assertLessEqual(remaining, 50)
+            g.wait_turns(remaining)
+            self.assertEqual(turn(), target)
+
+        def restore(expected):
+            self.assertEqual(g.save(), 0)
+            g.start()
+            row = [e for e in g.events() if e["event"] == "session"][-1]
+            self.assertEqual(row["detail"], "restore")
+            self.assertEqual(row["cosmetic"], expected)
+            # New client/backend cannot replenish the engine-owned snapshot.
+            fresh = State()
+            fresh.ingest(row)
+            for seed in (0, 7):
+                candidate = RandomBackend(seed, True).choose(
+                    fresh, row["last_id"] + 1, row["safe"] + 1
+                )
+                if candidate and candidate["mutation"] == "ambient":
+                    self.assertFalse(expected["seen"] & (1 << (candidate["value"] - 1)))
+            return row
+
+        def attempt(value, sanity, reason, expected):
+            before = g.events()[-1]
+            request = dict(
+                v=1,
+                id=before["last_id"] + 1,
+                mutation="ambient",
+                value=value,
+                duration=0,
+                telegraph=1,
+                at=before["safe"] + 1,
+            )
+            path = g.run / "whisper.tmp"
+            path.write_text(json.dumps(request))
+            path.chmod(0o600)
+            path.replace(g.run / "whisper.json")
+            boundary = turn()
+            g.sanity(sanity)
+            ack = [e for e in g.events() if e["event"] == "ack"][-1]
+            self.assertEqual(
+                (ack["id"], ack["at"], ack["turn"]),
+                (request["id"], request["at"], boundary),
+            )
+            self.assertEqual(ack["detail"], reason)
+            self.assertEqual(
+                ack["status"], "accepted" if reason == "ok" else "rejected"
+            )
+            self.assertEqual(ack["cosmetic"], expected)
+            self.assertEqual(
+                (ack["spent"], ack["reserved"], ack["cost"], ack["cosmetic_cost"]),
+                (0, 0, 0, 1),
+            )
+
+        advance(21)
+        restore({"seen": 1, "last_turn": 1})
+        attempt(2, 60, "cosmetic_cooldown", {"seen": 1, "last_turn": 1})
+        attempt(1, 40, "cosmetic_repeat", {"seen": 1, "last_turn": 1})
+        advance(50)
+        attempt(2, 60, "cosmetic_cooldown", {"seen": 1, "last_turn": 1})
+        advance(51)
+        attempt(2, 40, "ok", {"seen": 3, "last_turn": 51})
+        restore({"seen": 3, "last_turn": 51})
+        attempt(3, 60, "cosmetic_cooldown", {"seen": 3, "last_turn": 51})
+        advance(101)
+        attempt(3, 40, "ok", {"seen": 7, "last_turn": 101})
+        restore({"seen": 7, "last_turn": 101})
+        advance(151)
+        attempt(1, 60, "cosmetic_budget", {"seen": 7, "last_turn": 101})
+        self.assertEqual(g.quit(), 0)
 
     def test_accepted_hunger_schedule_replays_in_real_game(self):
         first = self.game("replay-source", wizard=True)

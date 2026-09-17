@@ -132,8 +132,24 @@ def check_hunger(rows, request, ack, expiry):
             ack,
             "v id value telegraph duration at turn expires seq safe cost spent reserved last_id",
         )
+        # Archived v1 evidence remains readable; it is not current replay proof.
+        require(ack["v"] in (1, 3), "unsupported ordinary ACK policy")
+        if ack["v"] == 3:
+            _integers(ack, "cosmetic_cost")
+            require(ack["cosmetic_cost"] == 0, "hunger cosmetic tariff")
+            for event in (ack, expiry):
+                cosmetic = event.get("cosmetic")
+                require(isinstance(cosmetic, dict), "missing cosmetic snapshot")
+                _integers(cosmetic, "seen last_turn")
+                # This frozen hunger-only route has no cosmetic admissions.
+                require(
+                    cosmetic == {"seen": 0, "last_turn": 0},
+                    "unexpected route cosmetic state",
+                )
+        projected = {k: ack.get(k) for k in request}
+        projected["v"] = 1  # request grammar, not the event envelope version
         require(
-            all(ack.get(k) == v for k, v in request.items())
+            projected == request
             and ack.get("event") == "ack"
             and ack.get("phase") == "result"
             and ack.get("status") == "accepted"
@@ -150,7 +166,7 @@ def check_hunger(rows, request, ack, expiry):
         )
         _integers(expiry, "v turn seq safe spent reserved last_id")
         require(
-            expiry["v"] == 1
+            expiry["v"] == ack["v"]
             and expiry.get("event") == "expiry"
             and expiry.get("phase") == "result"
             and expiry.get("detail") == "hunger_rate"
@@ -496,7 +512,7 @@ def preparation(game):
     starts = [
         e
         for e in game.events()
-        if e.get("v") == 2
+        if e.get("v") == 4
         and e["observation"]["stage"] == "started"
         and e["observation"]["operation"] == "fountain_drink"
     ]
@@ -927,7 +943,7 @@ def native(args):
     origins = [
         e
         for e in first.events()
-        if e.get("v") == 2 and e.get("observation", {}).get("fact") == "water_refreshed"
+        if e.get("v") == 4 and e.get("observation", {}).get("fact") == "water_refreshed"
     ]
     save(
         out / "result.json",

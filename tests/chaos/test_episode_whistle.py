@@ -14,6 +14,8 @@ import importlib.util
 import json
 import os
 from pathlib import Path
+import native_observation_contract as wire
+
 import re
 import resource
 import shutil
@@ -24,6 +26,12 @@ from native_fixture_config import (
     arguments as fixture_arguments,
     enabled as fixture_enabled,
 )
+
+# External helper is sibling-bound and copied/hashed in source manifests.
+assert Path(wire.__file__).resolve() == Path(__file__).resolve().with_name(
+    "native_observation_contract.py"
+)
+CURRENT, HISTORICAL = wire.CURRENT, wire.HISTORICAL
 
 
 # Private fixture expectations, never observation metadata. Draw counts are
@@ -48,6 +56,57 @@ SOUND_CASES = {
 DISPATCH_CASES = ("tagged-curio-inert", "leaf-ordinary", "apply-cancel")
 PET_CASES = ("magic-pet-known", "magic-pet-unknown", "magic-pet-pit-known")
 SUPPRESSION_CASES = ("noshow-known", "noshow-unknown", "norep-known", "norep-unknown")
+
+
+def validate_observations(records, *, enabled, dispatch, suppressed, fact, policy):
+    """Current full-envelope/stage oracle, shared with build-free controls."""
+    wire.ordinary_projection(records, policy, renumber_seq=False)
+    assert [row["seq"] for row in records] == list(range(1, len(records) + 1)), (
+        "whistle chronology"
+    )
+    obs = [row for row in records if row["v"] == policy[1]]
+    if not enabled:
+        assert not obs
+        return obs
+    expected = [(1, "result", "none", "enabled", 0, "none")]
+    if not dispatch:
+        expected.append((6, "attempt", "whistling", "started", 0, "none"))
+        if not suppressed:
+            expected.append((7, "result", "whistling", "notice", 6, fact))
+        expected.append(
+            (7 if suppressed else 8, "result", "whistling", "completed", 6, "none")
+        )
+    assert len(obs) == len(expected), "selected whistle stages"
+    for row, (seq, phase, operation, stage, root, notice) in zip(obs, expected):
+        keys = {
+            "v",
+            "seq",
+            "turn",
+            "safe",
+            "event",
+            "phase",
+            "detail",
+            "sanity",
+            "insight",
+            "budget",
+            "spent",
+            "reserved",
+            "last_id",
+            "vitals",
+            "observation",
+        }
+        if policy == CURRENT:
+            keys.add("cosmetic")
+        assert set(row) == keys, "whistle envelope"
+        assert row["seq"] == seq and row["phase"] == phase, "whistle sequence/phase"
+        assert row["detail"] == ""
+        assert set(row["vitals"]) == {"hp", "hp_max", "power", "power_max"}
+        assert row["observation"] == dict(
+            operation=operation, stage=stage, root_seq=root, fact=notice
+        ), "whistle root/notice"
+    if not dispatch:
+        assert len({row["turn"] for row in obs[1:]}) == 1
+    return obs
 
 
 def cancel_at_prompt(g, exe, child_env, work, supervisor, cancel, *, pit=False):
@@ -186,6 +245,7 @@ def main(argv=None):
         source = Path(__file__).resolve().with_name("episode_whistle.c")
         fixture_paths = (
             source,
+            Path(__file__).with_name("native_observation_contract.py"),
             Path(__file__).resolve(),
             support,
             trusted / "native_rng.h",
@@ -603,6 +663,7 @@ def main(argv=None):
                     ):
                         assert state[key] == 0
                 records = g.events()
+                wire.validate_rows(records, CURRENT)
                 chaos = json.loads((work / "chaos-state.json").read_text())
                 before, after = chaos["before"].copy(), chaos["after"].copy()
                 assert after.pop("seq") - before.pop("seq") == (
@@ -632,7 +693,18 @@ def main(argv=None):
                 }
                 assert len(before["effects"]) == 3
                 assert not any(e["event"] == "ack" for e in records)
-                obs = [e for e in records if e["v"] == 2]
+                obs = validate_observations(
+                    records,
+                    enabled=enabled,
+                    dispatch=case in (*DISPATCH_CASES, "artifact-rally-dispatch"),
+                    suppressed=case in SUPPRESSION_CASES,
+                    fact=SOUND_CASES[case][1]
+                    if case in SOUND_CASES
+                    else "sound_strange"
+                    if case in PET_CASES
+                    else "sound_high",
+                    policy=CURRENT,
+                )
                 if pit or artifact:
                     for event in obs:
                         assert set(event) == {
@@ -651,6 +723,7 @@ def main(argv=None):
                             "last_id",
                             "vitals",
                             "observation",
+                            "cosmetic",
                         }
                         assert set(event["vitals"]) == {
                             "hp",
@@ -719,6 +792,15 @@ def main(argv=None):
                     g.cleanup()
             raw = bytes(g.raw)
             records = g.events()
+            wire.validate_rows(records, CURRENT)
+            validate_observations(
+                records,
+                enabled=True,
+                dispatch=False,
+                suppressed=False,
+                fact="sound_high",
+                policy=CURRENT,
+            )
             negative = dict(mode=mode, native_returncode=status, records=records)
             negatives.append(negative)
             save(out / "negative-results.json", negatives)
@@ -747,7 +829,7 @@ def main(argv=None):
                 dict(
                     case="negative-" + mode,
                     enabled=True,
-                    observations=[e for e in records if e["v"] == 2],
+                    observations=[e for e in records if e["v"] == CURRENT[1]],
                 )
             )
         assert len(negatives) == 3
@@ -798,6 +880,7 @@ def main(argv=None):
                             "last_id",
                             "vitals",
                             "observation",
+                            "cosmetic",
                         }
                     continue
                 if result["case"] in (*DISPATCH_CASES, "artifact-rally-dispatch"):

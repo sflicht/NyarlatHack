@@ -1404,6 +1404,34 @@
           ")",
           "{"
         ]
+      },
+      {
+        "symbol": "chaos_restore_reject",
+        "start": [
+          "chaos_restore_reject",
+          "(",
+          "int",
+          "fd",
+          ")"
+        ],
+        "end": [
+          "restgamestate",
+          "(",
+          "int",
+          "fd",
+          ",",
+          "unsigned",
+          "int",
+          "*",
+          "stuckid",
+          ",",
+          "unsigned",
+          "int",
+          "*",
+          "steedid",
+          ",",
+          "unsigned"
+        ]
       }
     ],
     "src/shk.c": [
@@ -7860,14 +7888,14 @@
       "file": "src/restore.c",
       "symbol": "restgamestate",
       "kind": "directive",
-      "purpose": "restgamestate: conditional compilation boundary ifdef CHAOS",
+      "purpose": "restgamestate: structural validation and restored-clock validation after moves read (#2)",
       "signature": [
         "#",
         "ifdef",
         "CHAOS"
       ],
       "guards": [],
-      "count": 1,
+      "count": 2,
       "chaos0": "CHAOS is undefined: this conditional excludes its CHAOS-enabled branch; any alternate branch remains subject to its other guards."
     },
     {
@@ -10399,6 +10427,96 @@
       ],
       "count": 1,
       "chaos0": "Compiled out by enclosing CHAOS condition (with any additional guards retained in guards)."
+    },
+    {
+      "id": "issue2-restore-helper-guard",
+      "file": "src/restore.c",
+      "symbol": "<file>",
+      "kind": "directive",
+      "purpose": "#2: compile private non-destructive rejection helper only with CHAOS",
+      "signature": [
+        "#",
+        "ifdef",
+        "CHAOS"
+      ],
+      "guards": [],
+      "count": 1,
+      "chaos0": "Omitted when CHAOS is undefined; stock restore rejection remains unchanged."
+    },
+    {
+      "id": "issue2-restore-helper",
+      "file": "src/restore.c",
+      "symbol": "chaos_restore_reject",
+      "kind": "call-or-declaration",
+      "purpose": "#2: preserve file and terminate without traversing partially restored state",
+      "signature": [
+        "#",
+        "ifdef",
+        "CHAOS",
+        "STATIC_OVL",
+        "boolean",
+        "chaos_restore_reject",
+        "(",
+        "int",
+        "fd",
+        ")",
+        "{"
+      ],
+      "guards": [
+        "ifdef CHAOS"
+      ],
+      "count": 1,
+      "chaos0": "Omitted when CHAOS is undefined; stock restore rejection remains unchanged."
+    },
+    {
+      "id": "issue2-restore-structural",
+      "file": "src/restore.c",
+      "symbol": "restgamestate",
+      "kind": "call-or-declaration",
+      "purpose": "#2: structural chaos/haunt/curio failure preserves save",
+      "signature": [
+        ".",
+        "curio",
+        ")",
+        ")",
+        "return",
+        "chaos_restore_reject",
+        "(",
+        "fd",
+        ")",
+        ";",
+        "#"
+      ],
+      "guards": [
+        "ifdef CHAOS"
+      ],
+      "count": 1,
+      "chaos0": "Omitted when CHAOS is undefined; stock restore rejection remains unchanged."
+    },
+    {
+      "id": "issue2-restore-clock",
+      "file": "src/restore.c",
+      "symbol": "restgamestate",
+      "kind": "call-or-declaration",
+      "purpose": "#2: negative restored clock or future cosmetic timestamp preserves save",
+      "signature": [
+        "cosmetic_last_turn",
+        ">",
+        "moves",
+        ")",
+        "return",
+        "chaos_restore_reject",
+        "(",
+        "fd",
+        ")",
+        ";",
+        "#"
+      ],
+      "guards": [
+        "ifdef CHAOS"
+      ],
+      "count": 1,
+      "chaos0": "Omitted when CHAOS is undefined; stock restore rejection remains unchanged."
     }
   ],
   "build_blocks": [

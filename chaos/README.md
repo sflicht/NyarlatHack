@@ -25,6 +25,34 @@ acceptance and a measured rule effect remain different claims.
 
 ## One-command offline play
 
+### Current prototype and old-save migration
+
+Ambient now costs **0 mechanical / 1 cosmetic**: at most three deliveries per
+game, each fixed value 1/2/3 once, at least 50 native moves apart. This is a
+prototype, not tuned pacing or continuous full-run presence. Mechanics retain
+the 12-point lifetime ceiling and Sanity gates: curio1, haunt2, hunger3, ward4.
+Expiry refunds no lifetime spending. Saved cosmetic mask/timestamp survive
+restore; restarting/changing directors or waiting cannot refill them.
+
+State/save version2 emits ordinary events3 and optional observations4; requests
+remain v1, and journals use policy2 with separate `cosmetic_cost`. Historical
+v1/v2 logs remain readable offline, **not current replay/publication inputs**.
+Both ordinary and history replay require exact current accepted ACKs matching
+the policy2 journal, including request, native turn/safe, both tariffs and expiry.
+Neither a journal nor a telegraph replaces a missing final ACK.
+
+**Answer NO to “Delete the old file?” on an incompatible old save.** Keep that
+save with its matching old binary and `nhdat`; use a separate new game and run
+directory for the new build. There is no automatic migration or fresh-credit
+interpretation of an old save. The new CHAOS structural/clock guard preserves
+the file, but stock short-read corruption handling still can delete damaged
+saves; this is not blanket save protection. Back up saves independently.
+
+Current full native save/replay gates remain pending reviewed fresh-build
+acceptance. The [policy and bounded synthetic comparison](../docs/chaos-protocol.md#cosmetic-pacing-prototype-and-migration)
+separate native-core accounting from actual gameplay/UI witnesses and retain
+historical evidence unchanged.
+
 After building, from the repository root:
 
 ```sh
@@ -204,6 +232,12 @@ permits hunger proposals. The engine independently rejects ineligible forms.
 The random director has its own seeded generator; it does not consume game
 randomness. Requests target the next safe index. If the player outruns a
 proposal, the engine rejects it rather than applying it at a different time.
+Current random and generic model menus prefer eligible ward/hunger. Only when
+neither is eligible do they offer unused, cooldown-eligible ambient values;
+model response validation rejects a used value even if `ambient` is eligible.
+Pack/replay may choose ambient despite eligible mechanics, but cannot bypass
+the native cosmetic clock, repetition or lifetime gates. Curio/haunt are not
+members of this menu, and mechanical starvation remains possible.
 
 ## Replay an accepted schedule
 
@@ -287,8 +321,8 @@ are separate from the offline episode window below, which is not fed to Luna.
 
 This observation foundation records selected whistle actions and confirmed
 fountain drinks, not new whispers or effects. It does not change Luna, Lua,
-cruelty budgets or recurring gameplay. Default events remain v1. To opt in to
-mixed v1/v2 logs, start the already-built game directly, without a director:
+cruelty budgets or recurring gameplay. Current default events are v3. To opt in to
+mixed v3/v4 logs, start the already-built game directly, without a director:
 
 ```sh
 RUN=$(mktemp -d)
@@ -298,9 +332,9 @@ RUN=$(mktemp -d)
 Keep `$RUN` for that game's restore and evidence; use a new private directory for
 another game. Only the exact value `1`, read once at startup in a `CHAOS=1`
 build with healthy run transport, enables observations. The enabled marker
-precedes the v1 session record. **Do not enable this for `chaos play`, live
-directors, replay or existing authoring/continuity readers:** their unchanged v1
-parsers reject v2. There is no episode CLI, live tailer or automatic model feed.
+precedes the v3 session record. **Do not enable this for ordinary `chaos play`,
+directors or ordinary replay:** their ordinary-event parsers reject observation
+rows (historical v2 and current v4). Use the explicit history pilot where needed.
 
 After the game exits, from the repository root, replace the path in this Python
 example with your retained private run directory. It reads only existing data:
@@ -351,8 +385,9 @@ publication, whole-phase sign-off or consequential-vision (#26) completion.
 
 ## Safety and lifecycle limits
 
-- The engine currently allows at most 12 lifetime cruelty points; ambient costs
-  1, hunger 3 and ward weakening 4. Capacity starts at 2 and gains one for each
+- The engine currently allows at most 12 lifetime mechanical cruelty points;
+  ambient costs 0 mechanical / 1 cosmetic, hunger 3 and ward weakening 4.
+  Mechanical capacity starts at 2 and gains one for each
   ten Sanity points lost. Expiry releases active reservation but **does not refund
   lifetime spending**. This is conservative prototype policy, not tuned balance.
 - Effects last at most 50 game turns, do not stack by type, and cannot be refreshed

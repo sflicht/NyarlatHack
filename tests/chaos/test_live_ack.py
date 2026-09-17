@@ -9,7 +9,7 @@ import unittest
 from unittest.mock import patch
 
 from chaos import director, launcher
-from test_director import REQ, ack, append, event
+from test_director import REQ, current_ack as ack, append, current_event as event
 
 
 # Exact first five records from the reproduced native launcher failure:
@@ -25,6 +25,19 @@ NATIVE = [
 {"v":1,"seq":5,"turn":1,"safe":1,"event":"ack","phase":"result","detail":"ok","sanity":100,"insight":0,"budget":1,"spent":1,"reserved":0,"last_id":1,"vitals":{"hp":13,"hp_max":13,"power":10,"power_max":10},"id":1,"status":"accepted","mutation":"ambient","value":1,"duration":0,"telegraph":1,"at":1,"cost":1,"expires":0}
 """.strip().splitlines()
 ]
+
+
+# Independently authored current-policy transaction; NATIVE above is archival.
+CURRENT = [
+    event(1, turn=1, safe=0, event="session", detail="new"),
+    event(2, turn=1, safe=0, event="level_enter", detail=""),
+    event(3, turn=1, safe=1, detail="level_enter"),
+    event(4, turn=1, safe=1, event="telegraph", detail="ambient", last_id=1),
+    ack(5, turn=1, safe=1),
+]
+NEXT_MECHANICAL = dict(
+    REQ, id=2, at=2, mutation="ward_efficacy", value=50, duration=10, telegraph=2
+)
 
 
 class LiveAckTests(unittest.TestCase):
@@ -52,7 +65,7 @@ class LiveAckTests(unittest.TestCase):
         self.target.chmod(0o600)
 
     def run_loop(self, loop, step, backend=None, *, preflight=None):
-        backend = backend or director.ScheduleBackend([REQ, dict(REQ, id=2, at=2)])
+        backend = backend or director.ScheduleBackend([REQ, NEXT_MECHANICAL])
 
         def sleep(seconds):
             self.assertGreater(seconds, 0)
@@ -101,23 +114,23 @@ class LiveAckTests(unittest.TestCase):
             for existing in (None, REQ):
                 for kind in ("schedule", "random"):
                     with self.subTest(loop=loop, existing=existing, backend=kind):
-                        self.setup_run(NATIVE[:2], existing)
+                        self.setup_run(CURRENT[:2], existing)
                         # Seed 2 chooses the captured ambient value 1 at safe 0.
                         backend = (
                             None if kind == "schedule" else director.RandomBackend(2)
                         )
                         raw = []
-                        ack_raw = json.dumps(NATIVE[4]).encode() + b"\n"
+                        ack_raw = json.dumps(CURRENT[4]).encode() + b"\n"
 
                         def step(n):
                             if n == 1:
                                 raw.append(self.target.read_bytes())
                                 self.assertEqual(json.loads(raw[0]), REQ)
                                 self.assert_pending(raw[0])
-                                append(self.events, NATIVE[2])
+                                append(self.events, CURRENT[2])
                             elif n == 2:
                                 self.assert_pending(raw[0])
-                                append(self.events, NATIVE[3])
+                                append(self.events, CURRENT[3])
                             elif n == 3:
                                 self.assert_pending(raw[0])
                                 with self.events.open("ab") as f:
@@ -126,9 +139,26 @@ class LiveAckTests(unittest.TestCase):
                                 self.assert_pending(raw[0])
                                 with self.events.open("ab") as f:
                                     f.write(ack_raw[40:])
+                                # Next legal mechanical opportunity, not a repeated ambient.
+                                append(
+                                    self.events,
+                                    event(
+                                        6,
+                                        turn=51,
+                                        sanity=80,
+                                        budget=4,
+                                        last_id=1,
+                                        cosmetic=dict(seen=1, last_turn=1),
+                                    ),
+                                )
                             else:
                                 self.assertEqual(self.state.accepted, {1: REQ})
                                 proposal = json.loads(self.target.read_bytes())
+                                self.assertEqual(proposal["mutation"], "ward_efficacy")
+                                self.assertEqual(
+                                    self.state.latest["cosmetic"],
+                                    dict(seen=1, last_turn=1),
+                                )
                                 self.assertEqual(
                                     (proposal["id"], proposal["at"]), (2, 2)
                                 )
@@ -227,8 +257,10 @@ class LiveAckTests(unittest.TestCase):
                             self.target.read_bytes() if self.target.exists() else None
                         )
 
-                    with self.assertRaises(ValueError):
+                    with self.assertRaises(ValueError) as caught:
                         self.run_loop(loop, step)
+                    self.assertNotIn("historical", str(caught.exception))
+                    self.assertNotIn("cosmetic", str(caught.exception))
                     self.assertEqual(self.sleeps, 1)
                     self.assertEqual(
                         self.target.read_bytes() if self.target.exists() else None,
@@ -259,7 +291,7 @@ class LiveAckTests(unittest.TestCase):
     def test_initial_consumed_missing_ack_is_strict_in_all_entrypoints(self):
         for entry in ("director", "launcher", "observe"):
             with self.subTest(entry=entry):
-                self.setup_run(NATIVE[:4], REQ)
+                self.setup_run(CURRENT[:4], REQ)
                 raw = self.target.read_bytes()
                 with self.assertRaisesRegex(
                     ValueError, "consumed mailbox lacks exact ACK"
@@ -279,12 +311,12 @@ class LiveAckTests(unittest.TestCase):
                 self.assertEqual(self.target.read_bytes(), raw)
 
     def test_launcher_readiness_rechecks_consumed_after_observe(self):
-        self.setup_run(NATIVE[:2], REQ)
+        self.setup_run(CURRENT[:2], REQ)
         with self.assertRaisesRegex(ValueError, "consumed mailbox lacks exact ACK"):
             self.run_loop(
                 "launcher",
                 lambda _: self.fail("readiness must not wait"),
-                preflight=lambda: append(self.events, *NATIVE[2:4]),
+                preflight=lambda: append(self.events, *CURRENT[2:4]),
             )
 
     def test_initial_overdue_pending_is_not_adopted_as_live(self):

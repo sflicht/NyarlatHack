@@ -8,6 +8,8 @@ import importlib.util
 import json
 import os
 from pathlib import Path
+import native_observation_contract as wire
+
 import pty
 import resource
 import shutil
@@ -16,6 +18,12 @@ import subprocess
 import sys
 import termios
 import time
+
+# External helper is sibling-bound and copied/hashed in source manifests.
+assert Path(wire.__file__).resolve() == Path(__file__).resolve().with_name(
+    "native_observation_contract.py"
+)
+CURRENT, HISTORICAL = wire.CURRENT, wire.HISTORICAL
 
 DOMAINS = (
     "player",
@@ -67,17 +75,18 @@ def validate_pair(off, on):
     assert off == on, "canonical native state / terminal / input / RNG mismatch"
 
 
-def validate_history(raw, before, after, fate, enabled, case=None):
+def validate_history(raw, before, after, fate, enabled, case=None, *, policy):
     from chaos.episodes import parse_episode_event, project_episodes
 
     records = [parse_episode_event(line) for line in raw.splitlines()]
+    wire.validate_rows(records, policy)
     public = project_episodes(raw)
     expected = []
 
     def add(context, event, detail="", safe=1, observation=None, phase="result"):
         row = dict(
             context,
-            v=1,
+            v=policy[0],
             seq=len(expected) + 1,
             event=event,
             detail=detail,
@@ -85,7 +94,9 @@ def validate_history(raw, before, after, fate, enabled, case=None):
             safe=safe,
         )
         if observation is not None:
-            row.update(v=2, observation=observation)
+            row.update(v=policy[1], observation=observation)
+        if policy == CURRENT:
+            row["cosmetic"] = dict(seen=0, last_turn=0)
         expected.append(row)
 
     def obs(context, stage, root=0, fact="none", safe=1):
@@ -285,6 +296,7 @@ def main():
     source = Path(__file__).with_name("episode_fountain_matrix.c").resolve()
     files = [
         source,
+        Path(__file__).with_name("native_observation_contract.py"),
         Path(__file__).resolve(),
         Path(__file__).with_name("test_episode_fountain_matrix_oracle.py"),
         Path(__file__).with_name("test_episode_platforms.py"),
@@ -531,6 +543,7 @@ def main():
                     row["fate"],
                     enabled,
                     row.get("case"),
+                    policy=CURRENT,
                 )
                 pair_histories.append(events)
                 fate = row["fate"]
@@ -599,10 +612,9 @@ def main():
                 assert digest(out / "chosen-manifest.json") == chosen_hash
                 continue
             validate_pair(*pair)
-            assert pair_histories[0] == [
-                dict(r, seq=i + 1)
-                for i, r in enumerate(r for r in pair_histories[1] if r["v"] == 1)
-            ]
+            assert wire.ordinary_projection(
+                pair_histories[0], CURRENT
+            ) == wire.ordinary_projection(pair_histories[1], CURRENT)
             assert digest(out / "chosen-manifest.json") == chosen_hash
             assert digest(out / "special-manifest.json") == special_hash
         assert len(results) == 60 + 2 * len(SPECIAL_CASES) and len(negatives) == 3

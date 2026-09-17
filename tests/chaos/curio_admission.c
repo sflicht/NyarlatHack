@@ -14,6 +14,7 @@
 
 static const char *mode;
 static int warned, evidence_fd=-1, evidence_synced, dir_synced, spend_calls, source_opens;
+static int initial_spent, prefixed;
 int __real_chaos_spend_non_effect(struct chaos_state *, int, int);
 int __wrap_chaos_spend_non_effect(struct chaos_state *s, int sanity, int spender) {
     assert(s != &u.chaos && spender == CHAOS_SPEND_CURIO);
@@ -58,10 +59,11 @@ int __wrap_fsync(int fd) {
 }
 void __wrap_pline(const char *fmt, ...) {
     struct chaos_state before;
-    if ((!strcmp(mode,"legacy") || !strcmp(mode,"tight")) && !strcmp(fmt,"%s")) return;
+    if (prefixed && !strcmp(fmt,"%s")) return;
     assert(strstr(fmt,"may appear"));
     assert(u.curio.phase==CHAOS_CURIO_REJECTED
-           && u.chaos.spent==(!strcmp(mode,"legacy")?1:0));
+           && u.chaos.spent==initial_spent);
+    assert(u.chaos.cosmetic_seen==prefixed && u.chaos.cosmetic_last_turn==(prefixed?10:0));
     assert(evidence_synced && dir_synced);
     ++warned;
     before=u.chaos;
@@ -72,6 +74,9 @@ int main(int argc, char **argv) {
     int expected, spent, rng; struct chaos_curio_state saved;
     if(argc==2) { test_rng_negative_control(argv[1]); return 0; }
     assert(argc==3); mode=argv[1]; expected=atoi(argv[2]);
+    prefixed=!strcmp(mode,"legacy")||!strcmp(mode,"tight")||!strcmp(mode,"exhausted");
+    initial_spent=(!strcmp(mode,"budget")||!strcmp(mode,"exhausted"))?2:
+                  (!strcmp(mode,"tight")||!strcmp(mode,"tight-control"))?1:0;
     test_rng_control();
     memset(&u,0,sizeof u); init_gods();
     urace.malenum=PM_HUMAN; urole.malenum=PM_WIZARD;
@@ -88,10 +93,10 @@ int main(int argc, char **argv) {
     if (!strcmp(mode,"gameover")) program_state.gameover=1;
     if (!strcmp(mode,"budget")) { chaos_state_init(&u.chaos); u.chaos.spent=2; }
     if (!strcmp(mode,"noadvance")) { chaos_state_init(&u.chaos); u.chaos.safe=CHAOS_MAX_COUNTER; }
-    if (!strcmp(mode,"tight")) { chaos_state_init(&u.chaos); u.chaos.spent=1; }
+    if (initial_spent) { chaos_state_init(&u.chaos); u.chaos.spent=initial_spent; }
     rng=test_rng_begin();
     chaos_start();
-    if (!strcmp(mode,"tight")) chaos_safe("sleep");
+    if (!strcmp(mode,"tight")||!strcmp(mode,"tight-control")||!strcmp(mode,"exhausted")) chaos_safe("sleep");
     if (!strcmp(mode,"invalidstate")) {
         struct chaos_state invalid;int dir;
         /* Exercise the caller directly, without startup repairing state. */
@@ -104,15 +109,16 @@ int main(int argc, char **argv) {
     if (!strcmp(mode,"noadvance") || !strcmp(mode,"budget")) chaos_safe("sleep");
     assert(u.curio.phase==(unsigned)expected);
     assert(chaos_curio_valid(&u.curio));
-    assert(u.chaos.last_id==(!strcmp(mode,"legacy")||!strcmp(mode,"tight")?1:0) && u.chaos.reserved==0);
+    assert(u.chaos.last_id==prefixed && u.chaos.reserved==0);
+    assert(u.chaos.cosmetic_seen==prefixed && u.chaos.cosmetic_last_turn==(prefixed?10:0));
     assert(u.chaos.safe==(!strcmp(mode,"noadvance")?CHAOS_MAX_COUNTER:1));
     if (expected==CHAOS_CURIO_ADMITTED) {
-        assert(warned==1 && u.chaos.spent==(!strcmp(mode,"legacy")?2:1));
+        assert(warned==1 && u.chaos.spent==initial_spent+1);
         assert(!strcmp(u.curio.name,"Exact counter"));
         assert(u.curio.charges==3 && !u.curio.state && !u.curio.owner);
         assert(u.usanity==100 && u.uhp==7 && u.uen==2);
-    } else { assert(!warned); assert(u.chaos.spent==(!strcmp(mode,"budget")||!strcmp(mode,"tight")?2:0)); }
-    if (!strcmp(mode,"tight")) assert(!source_opens);
+    } else { assert(!warned); assert(u.chaos.spent==initial_spent); }
+    if (!strcmp(mode,"exhausted")) assert(!source_opens);
     saved=u.curio; spent=u.chaos.spent;
     if (expected==CHAOS_CURIO_ADMITTED || expected==CHAOS_CURIO_REJECTED) {
         char path[1024]; int fd;
@@ -129,6 +135,7 @@ int main(int argc, char **argv) {
     if (expected==CHAOS_CURIO_VIRGIN || expected==CHAOS_CURIO_ADMITTED)
         assert(u.curio.phase==CHAOS_CURIO_EXPIRED);
     assert(chaos_curio_valid(&u.curio) && u.chaos.spent==spent);
+    assert(u.chaos.cosmetic_seen==prefixed && u.chaos.cosmetic_last_turn==(prefixed?10:0));
     assert(spend_calls == (expected==CHAOS_CURIO_ADMITTED));
     test_rng_unchanged(rng);
     puts("native admission, exact lifecycle, budget and safe schedule verified; RNG draws=0");

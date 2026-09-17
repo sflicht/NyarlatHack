@@ -84,7 +84,7 @@ ssize_t __wrap_write(int fd,const void *buf,size_t n) {
  return __real_write(fd,buf,n);
 }
 static void quietglyph(winid w,XCHAR_P x,XCHAR_P y,int g) {(void)w;(void)x;(void)y;(void)g;}
-static int admission(const char *which) {
+static int admission(const char *which, int prefixed) {
  int x,y,dir,reach,success,count,next;long seq;struct chaos_state before;
  static char visible[ROWNO][COLNO],*rows[ROWNO];
  mode=which;test_rng_control();id_permonst();init_objects();init_gods();
@@ -96,8 +96,18 @@ static int admission(const char *which) {
  u.uz.dnum=1;u.uz.dlevel=1;moves=10;flags.ident=1;
  windowprocs.win_print_glyph=quietglyph;
  for(y=0;y<ROWNO;++y){rows[y]=visible[y];for(x=1;x<COLNO;++x){levl[x][y].typ=ROOM;visible[y][x]=IN_SIGHT|COULD_SEE;}}
- viz_array=rows;chaos_state_init(&u.chaos);chaos_start();
+ viz_array=rows;chaos_state_init(&u.chaos);u.chaos.safe=1;
  initial_spent=ismode("budget")?1:0;u.chaos.spent=initial_spent;
+ if(prefixed) {
+  /* Real typed core admission at turn zero; no UI, journal, or RNG claim.
+   * Both arms have safe=1 and the same mechanical starting capacity. */
+  struct chaos_request ambient={1,1,CHAOS_AMBIENT,1,0,1,1};
+  int draw=test_rng_begin();
+  assert(chaos_admit(&u.chaos,&ambient,0,100,1)==CHAOS_OK);
+  assert(u.chaos.spent==initial_spent && !u.chaos.reserved);
+  test_rng_unchanged(draw);
+ }
+ chaos_start();
  if(ismode("invalid"))u.chaos.reserved=1;
  u.haunt.count=4;u.haunt.backtracks=1;u.haunt.last_turn=moves;
  u.haunt.dnum=1;u.haunt.dlevel=1;
@@ -113,12 +123,15 @@ static int admission(const char *which) {
  assert(spends==reach);
 #endif
  assert(u.chaos.spent==initial_spent+2*success);
+ assert(u.chaos.cosmetic_seen==prefixed && u.chaos.cosmetic_last_turn==0);
+ assert(u.chaos.last_id==prefixed && u.chaos.safe==1);
  assert(u.haunt.active==success);
  if(success)assert(u.haunt.target && u.haunt.until==moves+60);
  before.spent=u.chaos.spent;unchanged(before);
  seq=u.chaos.seq;chaos_haunt_tick(dir);
  assert(u.chaos.spent==initial_spent+2*success && spawns==reach);
  assert(u.chaos.seq==seq);
+ before.spent=u.chaos.spent;unchanged(before);
  printf("mode=%s spent=%d spawns=%d trials=%d rng_count=%d next_draw=%d seq=%ld\n",mode,u.chaos.spent,spawns,trials,count,next,seq);
  close(dir);return 0;
 }
@@ -134,7 +147,10 @@ int main(int argc,char **argv) {
   paniclog("paniclog","haunt lifecycle diagnostic negative control: paniclog");
   puts("diagnostic escaped");return 0;
  }
- if(argc==3 && !strcmp(argv[1],"--admission"))return admission(argv[2]);
+ if((argc==3 || argc==4) && !strcmp(argv[1],"--admission")) {
+  assert(argc==3 || !strcmp(argv[3],"--ambient-prefix"));
+  return admission(argv[2],argc==4);
+ }
  memset(&u,0,sizeof u);init_gods();
  urace.malenum=PM_HUMAN;urole.malenum=PM_WIZARD;
  u.umonnum=u.umonster=PM_HUMAN;youmonst.data=&mons[PM_HUMAN];

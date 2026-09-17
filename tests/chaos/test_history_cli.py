@@ -10,7 +10,7 @@ from unittest.mock import Mock, patch
 
 from chaos.__main__ import main
 from chaos.oauth import OAuthBackend
-import test_history as fixtures
+from current_history_fixtures import current_history_rows
 from test_episodes import wire
 
 
@@ -18,7 +18,7 @@ class HistoryCLITests(unittest.TestCase):
     def test_random_opt_in(self):
         with tempfile.TemporaryDirectory() as directory:
             events = Path(directory) / "events.jsonl"
-            events.write_bytes(wire(*fixtures.HistoryTests().rows()))
+            events.write_bytes(wire(*current_history_rows()))
             events.chmod(0o600)
             output = io.StringIO()
             with contextlib.redirect_stdout(output):

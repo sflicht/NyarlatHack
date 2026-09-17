@@ -28,6 +28,104 @@ BASELINE_HOOKS_STDOUT = (
 )
 
 
+# Independent current-policy full-wire specification, not migrated captures.
+# Core ambient admission precedes startup (no UI or shadow acceptance claim).
+def current_wire(hooks=False, prefixed=False):
+    sequence = [
+        ("session", "result", "restore", 0),
+        ("haunting", "result", "pre_admitted", 0),
+    ]
+    if hooks:
+        sequence += [("read", "attempt", "", 0)] * 2
+    sequence += [("haunting", "result", "accepted", 2)]
+    return b"".join(
+        (
+            json.dumps(
+                dict(
+                    v=3,
+                    seq=seq,
+                    turn=10,
+                    safe=1,
+                    event=name,
+                    phase=phase,
+                    detail=detail,
+                    sanity=100,
+                    insight=0,
+                    budget=2 - spent,
+                    spent=spent,
+                    reserved=0,
+                    last_id=int(prefixed),
+                    vitals=dict(hp=20, hp_max=20, power=0, power_max=0),
+                    cosmetic=dict(seen=int(prefixed), last_turn=0),
+                ),
+                separators=(",", ":"),
+            )
+            + "\n"
+        ).encode()
+        for seq, (name, phase, detail, spent) in enumerate(sequence, 1)
+    )
+
+
+CURRENT_SUCCESS = current_wire()
+CURRENT_HOOKS = current_wire(hooks=True)
+CURRENT_HOOKS_STDOUT = (
+    "mode=hooks spent=2 spawns=1 trials=1 rng_count=10 next_draw=99824 seq=5\n"
+)
+
+
+class HauntWireOracleTests(unittest.TestCase):
+    """Offline oracle controls; these do not execute native gameplay."""
+
+    def check_hooks(self, wire, stdout=CURRENT_HOOKS_STDOUT):
+        with tempfile.TemporaryDirectory() as directory:
+            run = Path(directory)
+            (run / "events.jsonl").write_bytes(wire)
+            HauntLifecycleTests().assert_hooks(run, stdout)
+
+    def test_current_positive(self):
+        self.check_hooks(CURRENT_HOOKS)
+
+    def test_sequence_rewind_rejected(self):
+        bad = CURRENT_HOOKS.replace(b'"seq":5', b'"seq":3')
+        with self.assertRaisesRegex(AssertionError, "hook event sequence"):
+            self.check_hooks(bad)
+
+    def test_precommit_debit_rejected(self):
+        rows = CURRENT_HOOKS.splitlines(keepends=True)
+        rows[1] = rows[1].replace(b'"budget":2,"spent":0', b'"budget":0,"spent":2')
+        bad = b"".join(rows)
+        with self.assertRaises(AssertionError):
+            self.check_hooks(bad)
+
+    def test_current_wire_reader_and_prefix(self):
+        from chaos.protocol import parse_event
+
+        for hooks in (False, True):
+            for prefixed in (False, True):
+                rows = [
+                    parse_event(line)
+                    for line in current_wire(hooks, prefixed).splitlines()
+                ]
+                self.assertEqual(
+                    [row["seq"] for row in rows], list(range(1, len(rows) + 1))
+                )
+                self.assertTrue(all(row["v"] == 3 for row in rows))
+                self.assertTrue(
+                    all(
+                        row["cosmetic"] == dict(seen=int(prefixed), last_turn=0)
+                        for row in rows
+                    )
+                )
+
+    def test_historical_captures_readable(self):
+        from chaos.protocol import parse_event
+
+        for wire in (BASELINE_SUCCESS, BASELINE_HOOKS):
+            rows = [parse_event(line) for line in wire.splitlines()]
+            self.assertTrue(all(row["v"] == 1 for row in rows))
+            self.assertEqual(rows[-1]["spent"], 2)
+
+
 @unittest.skipUnless(
     os.environ.get("NYARLATHACK_GAME_TESTS") == "1", "real game opt-in"
 )
@@ -183,18 +281,54 @@ class HauntLifecycleTests(unittest.TestCase):
                 self.assertIn(expected, p.stdout)
                 if mode == "valid":
                     self.assertEqual(
-                        (run / "events.jsonl").read_bytes(), BASELINE_SUCCESS
+                        (run / "events.jsonl").read_bytes(), CURRENT_SUCCESS
                     )
                 if mode == "hooks":
                     self.assert_hooks(run, p.stdout)
 
+                # Same seed=123, native tick/second tick, moves=10 and faults.
+                # Prefix is an actual typed core admission, not ambient UI.
+                prefixed = self.root / (mode + "-ambient-prefix")
+                prefixed.mkdir(mode=0o700)
+                if mode != "absent":
+                    (prefixed / "haunting.lua").write_bytes(
+                        (run / "haunting.lua").read_bytes()
+                    )
+                    (prefixed / "haunting.lua").chmod(0o600)
+                pair = self.run_native(
+                    prefixed, ["--admission", mode, "--ambient-prefix"], run=prefixed
+                )
+                self.assert_clean(pair, prefixed)
+                self.assertEqual(pair.stdout, p.stdout)
+                control_rows = [
+                    json.loads(line)
+                    for line in (run / "events.jsonl").read_bytes().splitlines()
+                ]
+                prefix_rows = [
+                    json.loads(line)
+                    for line in (prefixed / "events.jsonl").read_bytes().splitlines()
+                ]
+                self.assertTrue(control_rows)
+                self.assertEqual(len(prefix_rows), len(control_rows))
+                for control, prefix in zip(control_rows, prefix_rows):
+                    self.assertEqual(control.pop("cosmetic"), dict(seen=0, last_turn=0))
+                    self.assertEqual(prefix.pop("cosmetic"), dict(seen=1, last_turn=0))
+                    self.assertEqual(control.pop("last_id"), 0)
+                    self.assertEqual(prefix.pop("last_id"), 1)
+                    self.assertEqual(prefix, control)
+                if mode in ("valid", "hooks"):
+                    self.assertEqual(
+                        (prefixed / "events.jsonl").read_bytes(),
+                        current_wire(hooks=mode == "hooks", prefixed=True),
+                    )
+
     def assert_hooks(self, run, stdout):
         self.assertEqual(
             (run / "events.jsonl").read_bytes(),
-            BASELINE_HOOKS,
-            "hook event sequence differs from independent old-caller capture",
+            CURRENT_HOOKS,
+            "hook event sequence differs from current full-wire specification",
         )
-        self.assertEqual(stdout, BASELINE_HOOKS_STDOUT)
+        self.assertEqual(stdout, CURRENT_HOOKS_STDOUT)
 
     def test_whole_state_publication_negative_control(self):
         # Compile a separate defective caller; never edit the selected source or

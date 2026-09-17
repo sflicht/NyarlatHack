@@ -45,6 +45,13 @@ int main(void)
            offsetof(struct you, uinsight), sizeof(((struct you *)0)->uinsight));
     printf("\"spent_offset\":%zu,\"spent_size\":%zu,",
            offsetof(struct chaos_state, spent), sizeof(((struct chaos_state *)0)->spent));
+    printf("\"chaos_state_version\":%d,\"chaos_size\":%zu,\"chaos_fields\":{",
+           CHAOS_STATE_VERSION, sizeof(struct chaos_state));
+    FIELD(struct chaos_state, version);
+    FIELD(struct chaos_state, cosmetic_seen);
+    printf("\"cosmetic_last_turn\":{\"offset\":%zu,\"size\":%zu}},",
+           offsetof(struct chaos_state, cosmetic_last_turn),
+           sizeof(((struct chaos_state *)0)->cosmetic_last_turn));
     printf("\"save_header_size\":%zu,\"save_header\":{", sizeof(struct version_info));
     FIELD(struct version_info, incarnation);
     FIELD(struct version_info, feature_set);

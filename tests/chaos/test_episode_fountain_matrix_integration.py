@@ -55,6 +55,7 @@ def oracle_main(argv):
     parser.add_argument("--oracle-receipt", required=True)
     args = parser.parse_args(argv)
     evidence = str(Path(args.oracle_evidence).resolve(strict=True))
+    os.environ["FOUNTAIN_MATRIX_POLICY"] = "current"
     os.environ["FOUNTAIN_MATRIX_EVIDENCE"] = evidence
     os.environ["FOUNTAIN_MATRIX_CONTROL_EVIDENCE"] = evidence
     sys.path.insert(0, str(HERE.parents[1]))
@@ -89,6 +90,7 @@ def oracle_main(argv):
     passed = result.wasSuccessful() and result.testsRun == 7 and not result.skipped
     receipt = {
         "scope": "artifact-dependent oracle execution, not a fresh production build",
+        "FOUNTAIN_MATRIX_POLICY": "current",
         "FOUNTAIN_MATRIX_EVIDENCE": evidence,
         "FOUNTAIN_MATRIX_CONTROL_EVIDENCE": evidence,
         "oracle_module": str(Path(oracle.__file__).resolve()),
@@ -278,6 +280,7 @@ class MatrixAdapterUnitTests(unittest.TestCase):
             receipt = evidence / "oracle-execution.json"
             env = dict(
                 os.environ,
+                FOUNTAIN_MATRIX_POLICY="historical",
                 FOUNTAIN_MATRIX_EVIDENCE="/stale/not-input",
                 FOUNTAIN_MATRIX_CONTROL_EVIDENCE="/stale/not-input",
                 PYTHONDONTWRITEBYTECODE="1",
@@ -302,6 +305,7 @@ class MatrixAdapterUnitTests(unittest.TestCase):
             self.assertEqual(record["testsRun"], 7)
             self.assertEqual(len(set(record["executed"])), 7)
             self.assertEqual(record["skipped"], [])
+            self.assertEqual(record["FOUNTAIN_MATRIX_POLICY"], "current")
             self.assertEqual(record["FOUNTAIN_MATRIX_EVIDENCE"], tmp)
             self.assertEqual(record["FOUNTAIN_MATRIX_CONTROL_EVIDENCE"], tmp)
             self.assertEqual(record["errors"], 4)

@@ -33,6 +33,23 @@ int __wrap_dosave(void)
     assert(sizeof o->curio_tag == 1);
     dealloc_obj(o);
     u.curio = fixture();
+    /* Explicit test-only native save-entry faults; never touch live saves. */
+    {
+        char fault[16] = "";
+        FILE *f = fopen("chaos-save-fault", "r");
+        if (f) {
+            assert(fgets(fault, sizeof fault, f));
+            assert(!fclose(f));
+            if (!strcmp(fault, "future")) {
+                u.chaos.cosmetic_seen = 1;
+                u.chaos.cosmetic_last_turn = moves + 1;
+            } else if (!strcmp(fault, "mask")) u.chaos.cosmetic_seen = 8;
+            else if (!strcmp(fault, "version")) u.chaos.version = 1;
+            else if (!strcmp(fault, "haunt")) u.haunt.version = 99;
+            else if (!strcmp(fault, "curio")) u.curio.version = 99;
+            else assert(0);
+        }
+    }
     return __real_dosave();
 }
 int __wrap_dorecover(int fd)

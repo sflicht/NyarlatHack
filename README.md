@@ -33,6 +33,12 @@ This is not general source rewriting or an unrestricted scripting system.
   spending allowance of at most 12 points. Expiry does not refund spending.
   Consequently the director can run out of interventions early; this is not
   tuned game balance.
+  Ambient uses a separate prototype: three lifetime deliveries, each existing
+  message once, at least 50 native moves apart, no mechanical debit. It does not
+  promise full-run presence. Current state/save2, event3/observation4 and journal
+  policy2 require a new game on the new build; request grammar remains v1.
+  **Answer NO to old-save deletion prompts** and retain the matching old
+  binary/data/save. See [policy, migration and pending native gates](docs/chaos-protocol.md#cosmetic-pacing-prototype-and-migration).
 - [x] **Telegraphs:** fixed warnings precede admitted effects. Invalid requests
   fail closed; no model-generated terminal text or executable commands.
 - [x] **Python director:** hand-authored packs, seeded random proposals,
@@ -54,10 +60,11 @@ hosting remain unvalidated.
 
 ## Phase-one observation foundation
 
-An optional version-2 event extension records selected whistle actions and
+An optional version-4 event extension records selected whistle actions and
 confirmed fountain drinks, with delivered public notices and bounded offline
-episode summaries. Default version-1 events and the whisper request API remain
-unchanged. The legacy director and authoring pipeline still reject these logs;
+episode summaries. Current ordinary events are version3; the whisper request API
+remains version1. Historical v1/v2 logs remain readable but not current-replay
+inputs. The ordinary director still rejects observation logs;
 use the [offline observation guide](chaos/README.md#offline-selected-action-observations)
 or the separate opt-in pilot below. The foundation itself adds no mechanic,
 fountain remapping, companion behavior, Lua or budget change.

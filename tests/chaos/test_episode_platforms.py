@@ -282,6 +282,12 @@ def bounded(command, work, env, prefix, timeout=45, terminal=False, cancel=None)
 
 
 def main(argv=None):
+    import native_observation_contract as wire_policy
+
+    assert (
+        Path(wire_policy.__file__).resolve()
+        == Path(__file__).with_name("native_observation_contract.py").resolve()
+    ), "foreign observation helper"
     parser = argparse.ArgumentParser(description=__doc__)
     for name in ("root", "receipt", "revision", "artifacts", "off-tuple"):
         parser.add_argument("--" + name, required=True)
@@ -450,13 +456,23 @@ def main(argv=None):
         selection.validate_schema(json.loads(run([out / "layout"], "layout", 10)))
         save(out / "selection.json", selection.record())
         source = Path(__file__).resolve().with_name("episode_platforms.c")
-        for path in (source, Path(__file__).resolve(), trusted / "replay_clock.c"):
+        for path in (
+            source,
+            Path(__file__).resolve(),
+            trusted / "replay_clock.c",
+            Path(__file__).with_name("native_observation_contract.py"),
+        ):
             shutil.copyfile(path, out / path.name)
         save(
             out / "fixture-hashes.json",
             {
                 p.name: digest(p)
-                for p in (source, Path(__file__).resolve(), trusted / "replay_clock.c")
+                for p in (
+                    source,
+                    Path(__file__).resolve(),
+                    trusted / "replay_clock.c",
+                    Path(__file__).with_name("native_observation_contract.py"),
+                )
             },
         )
         run(
@@ -554,7 +570,8 @@ def main(argv=None):
             assert state["port"] == "curses" and state["pending"] == 0
             records = g.events()
             assert not any(e["event"] == "ack" for e in records)
-            observations = [e for e in records if e["v"] == 2]
+            wire_policy.validate_rows(records, wire_policy.CURRENT)
+            observations = [e for e in records if e["v"] == 4]
             if enabled:
                 assert [e["observation"]["stage"] for e in observations] == [
                     "enabled",
@@ -620,7 +637,8 @@ def main(argv=None):
                 events = g.events()
                 assert events and not any(e["event"] == "ack" for e in events)
                 assert [e["seq"] for e in events] == list(range(1, len(events) + 1))
-                obs = [e for e in events if e["v"] == 2]
+                wire_policy.validate_rows(events, wire_policy.CURRENT)
+                obs = [e for e in events if e["v"] == 4]
                 if v2:
                     assert obs == [events[0]] and events[1]["event"] == "session"
                     assert obs[0]["observation"] == {

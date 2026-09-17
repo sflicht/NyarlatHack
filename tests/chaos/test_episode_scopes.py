@@ -199,12 +199,31 @@ class EpisodeScopesTests(unittest.TestCase):
                 vitals=dict(hp=7, hp_max=20, power=2, power_max=10),
             )
             expected += json.dumps(row, separators=(",", ":")).encode() + b"\n"
+        # Keep old bytes readable independently of the current native writer.
+        from chaos.protocol import parse_event
+
+        for line in expected.splitlines():
+            self.assertEqual(parse_event(line)["v"], 1)
+        current_expected = b"".join(
+            (
+                '{"v":3,"seq":%d,"turn":1,"safe":%d,"event":"%s",'
+                '"phase":"result","detail":"%s","sanity":60,"insight":4,'
+                '"budget":6,"spent":0,"reserved":0,"last_id":0,'
+                '"vitals":{"hp":7,"hp_max":20,"power":2,"power_max":10},'
+                '"cosmetic":{"seen":0,"last_turn":0}}\n' % (seq, safe, name, detail)
+            ).encode()
+            for seq, name, detail, safe in [
+                (1, "session", "new", 0),
+                (2, "level_enter", "", 0),
+                (3, "safe_point", "level_enter", 1),
+            ]
+        )
         for flag in [None, "0", "true", "01", ""]:
             with self.subTest(flag=flag):
                 raw, _, output = self.run_scope(
                     "start begin 1 arm 1 1 take deliver block map end", flag
                 )
-                self.assertEqual(raw, expected)
+                self.assertEqual(raw, current_expected)
                 self.assertIn("end 0 3 1 0 0 0 0", output)
 
     def test_owned_root_interleaved_legacy_and_duplicate_end(self):
@@ -239,7 +258,7 @@ class EpisodeScopesTests(unittest.TestCase):
             with self.subTest(boundary=boundary):
                 _, rows, _ = self.run_scope(f"start begin 1 {boundary} end")
                 self.assertEqual(
-                    [r["observation"]["stage"] for r in rows[4:] if r["v"] == 2],
+                    [r["observation"]["stage"] for r in rows[4:] if r["v"] == 4],
                     ["started"],
                 )
 
@@ -312,7 +331,9 @@ class EpisodeScopesTests(unittest.TestCase):
             _, rows, _ = self.run_scope(
                 prefix + " begin 1 arm 1 1 take deliver map block end"
             )
-            self.assertFalse(any(r["v"] == 2 for r in rows))
+            self.assertFalse(
+                any(r.get("event") == "observation" or "observation" in r for r in rows)
+            )
         for guard in ["shadow", "dead"]:
             _, rows, _ = self.run_scope(
                 f"start begin 1 arm 1 1 take {guard} deliver end"

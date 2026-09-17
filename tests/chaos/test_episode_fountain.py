@@ -15,6 +15,8 @@ import importlib.util
 import json
 import os
 from pathlib import Path
+import native_observation_contract as wire
+
 import re
 import resource
 import shutil
@@ -26,21 +28,42 @@ from native_fixture_config import (
     enabled as fixture_enabled,
 )
 
+# External helper is sibling-bound and copied/hashed in source manifests.
+assert Path(wire.__file__).resolve() == Path(__file__).resolve().with_name(
+    "native_observation_contract.py"
+)
+CURRENT, HISTORICAL = wire.CURRENT, wire.HISTORICAL
+
 
 def validate_history(
-    records, context, *, enabled, future, fact="water_refreshed", missing_notice=False
+    records,
+    context,
+    *,
+    policy,
+    enabled,
+    future,
+    fact="water_refreshed",
+    missing_notice=False,
 ):
     """Exact whole history from native context, never from journal envelopes."""
+    wire.validate_rows(records, policy)
     assert context["safe"] == 1
     expected = []
 
     def add(event, detail="", safe=0, observation=None, phase="result"):
         record = dict(
-            context, v=1, seq=len(expected) + 1, event=event, phase=phase, detail=detail
+            context,
+            v=policy[0],
+            seq=len(expected) + 1,
+            event=event,
+            phase=phase,
+            detail=detail,
         )
         record["safe"] = safe
         if observation is not None:
-            record.update(v=2, observation=observation)
+            record.update(v=policy[1], observation=observation)
+        if policy == CURRENT:
+            record["cosmetic"] = dict(seen=0, last_turn=0)
         expected.append(record)
 
     if enabled:
@@ -85,9 +108,12 @@ DETECTION_CASES = (
 )
 
 
-def validate_detection_history(records, context, *, enabled, presented):
+def validate_detection_history(records, context, *, policy, enabled, presented):
+    wire.validate_rows(records, policy)
     prefix = 4 if enabled else 3
-    validate_history(records[:prefix], context, enabled=enabled, future=False)
+    validate_history(
+        records[:prefix], context, enabled=enabled, future=False, policy=policy
+    )
     expected = []
     if enabled:
         stages = [("started", "none", 0, "attempt")]
@@ -98,7 +124,7 @@ def validate_detection_history(records, context, *, enabled, presented):
             expected.append(
                 dict(
                     context,
-                    v=2,
+                    v=policy[1],
                     seq=prefix + len(expected) + 1,
                     event="observation",
                     phase=phase,
@@ -111,13 +137,19 @@ def validate_detection_history(records, context, *, enabled, presented):
                     ),
                 )
             )
+    if policy == CURRENT:
+        for row in expected:
+            row["cosmetic"] = dict(seen=0, last_turn=0)
+    wire.validate_rows(records, policy)
     assert records[prefix:] == expected, "detection presentation history mismatch"
 
 
-def validate_reach_history(records, context, *, enabled, noshow, prehook=False):
+def validate_reach_history(records, context, *, policy, enabled, noshow, prehook=False):
     """Desired blocked history; explicit prehook is diagnostic, not acceptance."""
     prefix = 4 if enabled else 3
-    validate_history(records[:prefix], context, enabled=enabled, future=False)
+    validate_history(
+        records[:prefix], context, enabled=enabled, future=False, policy=policy
+    )
     expected = []
     if enabled:
         stages = [("started", "none", 0, "attempt")]
@@ -128,7 +160,7 @@ def validate_reach_history(records, context, *, enabled, noshow, prehook=False):
             expected.append(
                 dict(
                     context,
-                    v=2,
+                    v=policy[1],
                     seq=prefix + len(expected) + 1,
                     event="observation",
                     phase=phase,
@@ -141,6 +173,10 @@ def validate_reach_history(records, context, *, enabled, noshow, prehook=False):
                     ),
                 )
             )
+    if policy == CURRENT:
+        for row in expected:
+            row["cosmetic"] = dict(seen=0, last_turn=0)
+    wire.validate_rows(records, policy)
     assert records[prefix:] == expected, (
         "reach: missing expected cannot_reach notice / blocked terminal or invalid history"
     )
@@ -198,9 +234,18 @@ def validate_mechanoid_aftermath(state, motion):
     )
 
 
-def validate_legacy_pair(off, on):
-    """Only the enabled marker's single sequence offset is normalized."""
-    legacy = [dict(record, seq=record["seq"] - 1) for record in on if record["v"] == 1]
+def validate_legacy_pair(off, on, *, policy):
+    """Only pre-action ordinary rows and the enabled marker offset are allowed."""
+    ordinary_off = wire.ordinary_projection(off, policy, renumber_seq=False)
+    ordinary_on = wire.ordinary_projection(on, policy, renumber_seq=False)
+    assert off == ordinary_off
+    assert on[0]["seq"] == 1 and on[0]["observation"] == dict(
+        operation="none", stage="enabled", root_seq=0, fact="none"
+    )
+    assert all(row["seq"] < 5 for row in ordinary_on), (
+        "pre-action ordinary prefix required"
+    )
+    legacy = [dict(record, seq=record["seq"] - 1) for record in ordinary_on]
     assert off == legacy, "legacy envelope OFF/ON mismatch"
 
 
@@ -453,6 +498,7 @@ def main(argv=None):
         source = Path(__file__).resolve().with_name("episode_fountain.c")
         fixture_paths = (
             source,
+            Path(__file__).with_name("native_observation_contract.py"),
             Path(__file__).resolve(),
             support,
             trusted / "native_rng.h",
@@ -744,7 +790,7 @@ def main(argv=None):
                 projection = project_episodes(records_raw)
                 save(work / "projection.json", projection)
                 native = json.loads((work / "state.json").read_text())
-                obs = [r for r in records if r["v"] == 2]
+                obs = [r for r in records if r["v"] == CURRENT[1]]
                 assert native["context_before"] == native["context_after"]
                 assert native["inventory_before_hex"] == native["inventory_after_hex"]
                 assert native["seq_before"] == 3 + int(enabled)
@@ -801,6 +847,7 @@ def main(argv=None):
                             native["context_before"],
                             enabled=enabled,
                             presented=presented,
+                            policy=CURRENT,
                         )
                     except AssertionError:
                         assert enabled and presented
@@ -809,6 +856,7 @@ def main(argv=None):
                             native["context_before"],
                             enabled=True,
                             presented=False,
+                            policy=CURRENT,
                         )
                         detection_failures.append(
                             dict(
@@ -864,6 +912,7 @@ def main(argv=None):
                             native["context_before"],
                             enabled=enabled,
                             noshow=noshow,
+                            policy=CURRENT,
                         )
                     except AssertionError:
                         # Only the exact known prehook history is a missing-feature
@@ -874,6 +923,7 @@ def main(argv=None):
                             enabled=enabled,
                             noshow=noshow,
                             prehook=True,
+                            policy=CURRENT,
                         )
                         assert enabled
                         validate_reach_projection(
@@ -903,6 +953,7 @@ def main(argv=None):
                         future=False if levitating else future,
                         fact="water_foul" if is_foul else "water_refreshed",
                         missing_notice=is_foul and enabled and len(obs) == 3,
+                        policy=CURRENT,
                     )
                 if levitating:
                     assert native["reach"] == dict(
@@ -964,7 +1015,7 @@ def main(argv=None):
                 )
                 save(out / "native-results.json", results)
             assert pair[0] == pair[1], "terminal/input/native state OFF/ON mismatch"
-            validate_legacy_pair(*histories)
+            validate_legacy_pair(*histories, policy=CURRENT)
         assert len(results) == 24
         save(out / "native-results.json", results)
         negatives = []
@@ -1013,6 +1064,7 @@ def main(argv=None):
                 interval["context_before"],
                 enabled=True,
                 future=len(results[3]["observations"]) > 1,
+                policy=CURRENT,
             )
             after_context = dict(interval["context_after"])
             after_context["spent"] -= int(mode == "budget")

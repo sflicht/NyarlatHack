@@ -18,6 +18,13 @@ BASELINE = (
 )
 
 
+def evidence_policy():
+    # Caller-owned mode, never inferred from versions or missing context.
+    mode = os.environ.get("FOUNTAIN_MATRIX_POLICY")
+    assert mode in ("current", "historical"), "explicit evidence policy"
+    return matrix.CURRENT if mode == "current" else matrix.HISTORICAL
+
+
 class MatrixOracleTests(unittest.TestCase):
     @unittest.skipUnless(
         os.environ.get("FOUNTAIN_MATRIX_EVIDENCE"), "explicit native evidence required"
@@ -63,9 +70,14 @@ class MatrixOracleTests(unittest.TestCase):
                 "last_id",
                 "vitals",
             )
-            before = state.get("context_before", {k: rows[-2][k] for k in keys})
-            after = state.get("context_after", {k: rows[-1][k] for k in keys})
-            matrix.validate_history(raw, before, after, fate, True)
+            if evidence_policy() == matrix.CURRENT:
+                before, after = state["context_before"], state["context_after"]
+            else:
+                before = state.get("context_before", {k: rows[-2][k] for k in keys})
+                after = state.get("context_after", {k: rows[-1][k] for k in keys})
+            matrix.validate_history(
+                raw, before, after, fate, True, policy=evidence_policy()
+            )
             mutations = []
             for name, change in (
                 ("secret-envelope", lambda r: r[-1].update(secret=42)),
@@ -73,6 +85,9 @@ class MatrixOracleTests(unittest.TestCase):
                 ("event", lambda r: r[-1].update(event="session")),
                 ("version-type", lambda r: r[-1].update(v=2.0)),
                 ("turn", lambda r: r[-1].update(turn=102)),
+                ("phase", lambda r: r[-1].update(phase="attempt")),
+                ("deleted-root", lambda r: r.pop(-2)),
+                ("ordinary-value", lambda r: r[1].update(spent=1)),
                 ("root", lambda r: r[-1]["observation"].update(root_seq=2)),
                 ("prefix-secret", lambda r: r[1].update(secret=42)),
                 ("interleaving", lambda r: r.insert(-1, dict(r[2], seq=len(r)))),
@@ -83,13 +98,33 @@ class MatrixOracleTests(unittest.TestCase):
                 mutations.append(
                     (name, b"".join(json.dumps(r).encode() + b"\n" for r in bad))
                 )
-            mutations.append(("duplicate", raw.replace(b'"v":2', b'"v":2,"v":2', 1)))
+            if evidence_policy() == matrix.CURRENT:
+                for value in (
+                    None,
+                    {},
+                    dict(seen=False, last_turn=0),
+                    dict(seen=1, last_turn=0),
+                ):
+                    bad = copy.deepcopy(rows)
+                    bad[1]["cosmetic"] = value
+                    mutations.append(
+                        (
+                            "cosmetic",
+                            b"".join(json.dumps(r).encode() + b"\n" for r in bad),
+                        )
+                    )
+            # Duplicate a real key independently of wire version/JSON spacing.
+            first = raw.index(b'"v"')
+            duplicate = raw[:first] + b'"v":0,' + raw[first:]
+            mutations.append(("duplicate", duplicate))
             for name, bad in mutations:
                 with (
                     self.subTest(fate=fate, mutation=name),
                     self.assertRaises((ValueError, AssertionError)),
                 ):
-                    matrix.validate_history(bad, before, after, fate, True)
+                    matrix.validate_history(
+                        bad, before, after, fate, True, policy=evidence_policy()
+                    )
 
     def test_optimization_rejected_before_work(self):
         script = Path(matrix.__file__).resolve()
@@ -194,6 +229,7 @@ class MatrixOracleTests(unittest.TestCase):
                     case["fate"],
                     enabled,
                     case["case"],
+                    policy=evidence_policy(),
                 )
                 pairs.append(
                     dict(
@@ -222,12 +258,13 @@ class MatrixOracleTests(unittest.TestCase):
                             self.assertRaises((ValueError, AssertionError)),
                         ):
                             matrix.validate_history(
-                                b"\n".join(json.dumps(r).encode() for r in bad),
+                                b"\n".join(json.dumps(r).encode() for r in bad) + b"\n",
                                 state["context_before"],
                                 state["context_after"],
                                 case["fate"],
                                 True,
                                 case["case"],
+                                policy=evidence_policy(),
                             )
             matrix.validate_pair(*pairs)
             for field in ("vision", "player"):

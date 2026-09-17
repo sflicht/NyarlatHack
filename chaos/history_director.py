@@ -14,10 +14,11 @@ from . import curio_continuity as continuity, curio_store as store
 from .director import (
     DEFAULT_BYTES,
     DEFAULT_EVENTS,
-    FIELDS,
     Mailbox,
     ScheduleBackend,
     secure_open,
+    require_current_replay,
+    replay_request,
 )
 from .history import (
     IncompleteHistory,
@@ -40,6 +41,7 @@ def load_history_replay(journal, evidence):
     if evidence.name != "events.jsonl":
         raise ValueError("original events.jsonl evidence required")
     state, proof = snapshot_history(evidence.parent)
+    require_current_replay(state)
     requests = []
     with os.fdopen(secure_open(journal), "rb") as f:
         if os.fstat(f.fileno()).st_size > DEFAULT_BYTES:
@@ -52,13 +54,7 @@ def load_history_replay(journal, evidence):
             if not line.endswith(b"\n"):
                 raise ValueError("partial admission journal")
             row = strict_json(line, 4096)
-            if row.get("status") != "admitted" or any(k not in row for k in FIELDS):
-                raise ValueError("invalid admission record")
-            request = {k: row[k] for k in FIELDS}
-            encode_request(request)
-            if state.accepted.get(request["id"]) != request:
-                raise ValueError("matching accepted ACK required")
-            requests.append(request)
+            requests.append(replay_request(row, state))
     ScheduleBackend(requests)
     if not _exact_source(evidence.parent, proof, DEFAULT_BYTES):
         raise ValueError("original replay evidence changed")

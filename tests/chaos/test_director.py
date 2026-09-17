@@ -53,6 +53,34 @@ def ack(seq=2, request=None, **kw):
     )
 
 
+def current_event(seq=1, **kw):
+    """New-policy synthetic live fixture; legacy event() remains unchanged."""
+    return event(seq, **dict(dict(v=3, cosmetic=dict(seen=0, last_turn=0)), **kw))
+
+
+def current_ack(seq=2, request=None, **kw):
+    """Explicit current tariffs and commit snapshot, not archived evidence."""
+    request = request or REQ
+    row = ack(seq, request, **kw)
+    accepted = row["status"] == "accepted"
+    ambient = request["mutation"] == "ambient"
+    row.update(
+        v=3,
+        cost={"ambient": 0, "ward_efficacy": 4, "hunger_rate": 3}[request["mutation"]],
+        cosmetic_cost=int(ambient),
+        cosmetic=dict(
+            seen=(1 << (request["value"] - 1)) if ambient and accepted else 0,
+            last_turn=row["turn"] if ambient and accepted else 0,
+        ),
+        expires=row["turn"] + request["duration"]
+        if accepted and request["duration"]
+        else 0,
+    )
+    if ambient:
+        row.update(spent=0, reserved=0, budget=2)
+    return row
+
+
 def append(path, *records):
     with open(path, "ab") as f:
         for r in records:
@@ -209,8 +237,8 @@ class DirectorTests(unittest.TestCase):
         self.assertEqual(target.stat().st_mode & 0o777, 0o600)
         with self.assertRaises(ValueError):
             box.submit(dict(REQ, id=2, at=2), s)
-        s.ingest(event())
-        s.ingest(ack())
+        s.ingest(current_event())
+        s.ingest(current_ack())
         box.submit(dict(REQ, id=2, at=2), s)
         self.assertEqual(json.loads(target.read_text())["id"], 2)
         box.close()
@@ -222,11 +250,11 @@ class DirectorTests(unittest.TestCase):
             with self.assertRaises((ValueError, OSError)):
                 resumed.pending(s)
 
-    def test_run_resume_stale_and_finite_no_events(self):
+    def test_current_run_resume_stale_and_finite_no_events(self):
         append(
             self.path / "events.jsonl",
-            event(),
-            ack(detail="schedule", status="rejected"),
+            current_event(),
+            current_ack(detail="schedule", status="rejected"),
         )
         self.assertEqual(
             self.d.run(self.path, self.d.RandomBackend(2), max_runtime=0.08, poll=0.02)[
@@ -244,7 +272,7 @@ class DirectorTests(unittest.TestCase):
         )
         append(
             self.path / "events.jsonl",
-            event(3, event="death", detail="quit", last_id=1, spent=1, budget=1),
+            current_event(3, event="death", detail="quit", last_id=1),
         )
         self.assertEqual(
             self.d.run(self.path, self.d.RandomBackend(2), max_runtime=0.08, poll=0.02)[
@@ -253,7 +281,7 @@ class DirectorTests(unittest.TestCase):
             "death",
         )
 
-    def test_replay_requires_ack_and_projects_fields(self):
+    def test_historical_replay_is_readable_but_not_authorizing(self):
         journal = self.path / "whispers.jsonl"
         evidence = self.path / "events.jsonl"
         append(journal, dict(REQ, status="admitted", turn=10, safe=1, secret="PRIVATE"))
@@ -261,7 +289,8 @@ class DirectorTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.d.load_replay(journal, evidence)
         append(evidence, ack())
-        self.assertEqual(self.d.load_replay(journal, evidence), [REQ])
+        with self.assertRaisesRegex(ValueError, "matching old build"):
+            self.d.load_replay(journal, evidence)
         # IDs need not be contiguous: rejected IDs are consumed, never renumber.
         r = dict(REQ, id=3, at=4)
         append(journal, dict(r, status="admitted", turn=11, safe=4))
@@ -270,9 +299,14 @@ class DirectorTests(unittest.TestCase):
             event(3, last_id=2, safe=3, spent=1, budget=1),
             ack(4, r, last_id=3, safe=4, turn=11, spent=2, budget=0),
         )
-        self.assertEqual(self.d.load_replay(journal, evidence), [REQ, r])
+        with self.assertRaisesRegex(ValueError, "matching old build"):
+            self.d.load_replay(journal, evidence)
+        state = self.d.State()
+        for row in self.d.EventReader(evidence).read():
+            state.ingest(row)
+        self.assertEqual(state.accepted, {1: REQ, 3: r})
 
-    def test_cli_pack_real_c_admission(self):
+    def test_current_cli_pack_real_c_admission(self):
         help_ = subprocess.run(
             ["python3", "-m", "chaos", "--help"],
             cwd=ROOT,
@@ -316,12 +350,18 @@ class DirectorTests(unittest.TestCase):
         result = json.loads(
             subprocess.check_output([str(exe), str(self.path), "normal"])
         )
-        self.assertEqual((result["spent"], result["telegraphs"]), (1, 1))
+        self.assertEqual((result["spent"], result["telegraphs"]), (0, 1))
         evidence = [
             json.loads(x) for x in (self.path / "events.jsonl").read_text().splitlines()
         ]
         self.assertTrue(
             any(e["event"] == "ack" and e["status"] == "accepted" for e in evidence)
+        )
+        self.assertEqual(
+            self.d.load_replay(
+                self.path / "whispers.jsonl", self.path / "events.jsonl"
+            ),
+            [REQ],
         )
 
 

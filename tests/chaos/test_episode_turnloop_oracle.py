@@ -9,6 +9,13 @@ import sys
 import tempfile
 import unittest
 
+import native_observation_contract as wire_policy
+
+assert (
+    Path(wire_policy.__file__).resolve()
+    == Path(__file__).with_name("native_observation_contract.py").resolve()
+), "foreign observation helper"
+
 
 class OptimizedDriverTests(unittest.TestCase):
     def test_optimized_entrypoints_reject_before_artifacts(self):
@@ -151,15 +158,32 @@ def compare_runs(reference, candidate):
 
 
 def legacy_projection(raw):
-    """Remove only v2 rows and the consequent shared sequence renumbering."""
-    rows = [json.loads(line) for line in raw.splitlines()]
-    result = []
-    for row in rows:
-        if row["v"] == 1:
-            row = dict(row)
-            row["seq"] = len(result) + 1
-            result.append(row)
-    return result
+    """Archived historical policy only; never the current source driver."""
+    return ordinary_projection(raw, wire_policy.HISTORICAL)
+
+
+def ordinary_projection(raw, policy):
+    return wire_policy.ordinary_projection(
+        [json.loads(line) for line in raw.splitlines()], policy
+    )
+
+
+def compare_current_events(off, on, operations):
+    """Current-only parity and selected roots; parser checks chronology separately."""
+    assert ordinary_projection(off, wire_policy.CURRENT) == ordinary_projection(
+        on, wire_policy.CURRENT
+    ), "ordinary parity"
+    rows = [json.loads(line) for line in on.splitlines()]
+    off_rows = [json.loads(line) for line in off.splitlines()]
+    assert not any(
+        r["event"] == "observation" or "observation" in r for r in off_rows
+    ), "OFF observations"
+    roots = [
+        r["observation"]["operation"]
+        for r in rows
+        if r["v"] == 4 and r["observation"]["stage"] == "started"
+    ]
+    assert roots == operations, "selected roots"
 
 
 class TurnloopOracleTests(unittest.TestCase):
@@ -206,6 +230,40 @@ class NativeOracleSensitivityTests(unittest.TestCase):
                 self.assertRaisesRegex(AssertionError, key + " parity"),
             ):
                 compare_runs(native, changed)
+
+    def test_current_record_projection_and_root_mutations(self):
+        import copy
+
+        root = Path(os.environ["NYARLATHACK_TURNLOOP_EVIDENCE"])
+        off = (root / "legacy-empty/run/events.jsonl").read_bytes()
+        on = (root / "v2-empty/run/events.jsonl").read_bytes()
+        matrix = json.loads((root / "provenance.json").read_text())["matrix"]
+        operations = (
+            ["whistling", "whistling", "fountain_drink"] if matrix else ["whistling"]
+        )
+        compare_current_events(off, on, operations)
+        rows = [json.loads(line) for line in on.splitlines()]
+
+        def raw(records):
+            return b"".join(json.dumps(r).encode() + b"\n" for r in records)
+
+        changed = copy.deepcopy(rows)
+        next(r for r in changed if r["v"] == 3)["detail"] = "semantic-change"
+        with self.assertRaisesRegex(AssertionError, "ordinary parity"):
+            compare_current_events(off, raw(changed), operations)
+        without_roots = [
+            r for r in rows if r["v"] == 3 or r["observation"]["stage"] != "started"
+        ]
+        with self.assertRaisesRegex(AssertionError, "selected roots"):
+            compare_current_events(off, raw(without_roots), operations)
+        with self.assertRaisesRegex(AssertionError, "ordinary"):
+            compare_current_events(
+                off, raw([r for r in rows if r["v"] == 4]), operations
+            )
+        changed = copy.deepcopy(rows)
+        changed[0]["v"] = 1
+        with self.assertRaisesRegex(AssertionError, "wire policy"):
+            compare_current_events(off, raw(changed), operations)
 
     def test_cross_build_dump_mismatch_is_not_suppressed(self):
         root = Path(os.environ["NYARLATHACK_TURNLOOP_EVIDENCE"])

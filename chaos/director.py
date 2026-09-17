@@ -19,9 +19,18 @@ from .protocol import (
     parse_event,
     parse_request,
     strict_json,
+    LEGACY_REGISTRY,
+    event_request,
+    validate_transition,
 )
 
-from ._protocol_contract import MUTATIONS, EVENT_CAP, REQUEST_CAP, REQUEST_VERSION
+from ._protocol_contract import (
+    MUTATIONS,
+    EVENT_CAP,
+    REQUEST_CAP,
+    REQUEST_VERSION,
+    COSMETIC,
+)
 
 DEFAULT_BYTES = 16 * 1024 * 1024
 DEFAULT_EVENTS = 50000
@@ -113,6 +122,7 @@ class State:
         self.recent = deque(maxlen=12)
         self.acks = {}  # bounded by reader's event cap
         self.accepted = {}
+        self.accepted_receipts = {}
         self.active = {}
         self.ended = False
 
@@ -128,6 +138,28 @@ class State:
             )
         if self.ended:
             raise ValueError("events after final death")
+        if (
+            p
+            and e["v"] == 3
+            and e["event"] == "session"
+            and (e["phase"] != "result" or e["detail"] != "restore")
+        ):
+            raise ValueError("new session/reset within existing run")
+        validate_transition(
+            p,
+            e,
+            restore=(
+                e["event"] == "session"
+                and e["phase"] == "result"
+                and e["detail"] == "restore"
+            ),
+        )
+        if e["event"] == "ack" and e["id"]:
+            previous = self.acks.get(e["id"])
+            if previous and previous["request"] != event_request(e):
+                raise ValueError("conflicting acknowledgement ID")
+            if e["v"] == 3 and e["status"] == "accepted" and e["id"] in self.accepted:
+                raise ValueError("repeated accepted acknowledgement")
         self.latest = e
         recent = {k: e[k] for k in ("event", "phase", "turn", "safe")}
         if "vitals" in e:
@@ -141,7 +173,7 @@ class State:
         self.active = {k: v for k, v in self.active.items() if v > e["turn"]}
         if e["event"] == "ack" and e["id"]:
             # Repeated duplicate ACKs must not erase accepted evidence.
-            r = {k: e[k] for k in FIELDS}
+            r = event_request(e)
             previous = self.acks.get(e["id"])
             if previous and previous["request"] != r:
                 raise ValueError("conflicting acknowledgement ID")
@@ -153,6 +185,7 @@ class State:
                 }
             if e["status"] == "accepted":
                 self.accepted[e["id"]] = r
+                self.accepted_receipts[e["id"]] = e
                 if MUTATIONS[r["mutation"]]["persistent"]:
                     self.active[r["mutation"]] = e["expires"]
         if e["event"] == "death" and e["phase"] == "result":
@@ -269,6 +302,10 @@ class Mailbox:
 
     def submit(self, request, state):
         raw = encode_request(request)
+        if state.latest and state.latest["v"] not in (3, 4):
+            raise ValueError(
+                "historical evidence requires its matching old build; cannot publish"
+            )
         if state.ended:
             raise ValueError("game has ended")
         if self.pending(state):
@@ -300,14 +337,45 @@ def eligible(state, ordinary_food=False):
     if state.ended or state.latest is None:
         return []
     e = state.latest
+    registry = REGISTRY if e["v"] in (3, 4) else LEGACY_REGISTRY
     return [
         name
-        for name, (cost, sanity, _) in REGISTRY.items()
+        for name, (cost, sanity, _) in registry.items()
         if cost <= e["budget"]
         and e["sanity"] <= sanity
         and name not in state.active
         and (not MUTATIONS[name]["ordinary_food"] or ordinary_food)
+        and (
+            name != "ambient"
+            or e["v"] not in (3, 4)
+            or (
+                e["cosmetic"]["seen"] != COSMETIC["mask"]
+                and (
+                    not e["cosmetic"]["seen"]
+                    or e["turn"] - e["cosmetic"]["last_turn"] >= COSMETIC["spacing"]
+                )
+            )
+        )
     ]
+
+
+def preferred_menu(state, ordinary_food=False):
+    """Backend preference, distinct from native/hand-pack eligibility."""
+    options = eligible(state, ordinary_food)
+    mechanics = [name for name in options if name != "ambient"]
+    names = mechanics or options
+    return {
+        name: [
+            value
+            for value in range(
+                MUTATIONS[name]["value"][0], MUTATIONS[name]["value"][1] + 1
+            )
+            if name != "ambient"
+            or state.latest["v"] not in (3, 4)
+            or not state.latest["cosmetic"]["seen"] & (1 << (value - 1))
+        ]
+        for name in names
+    }
 
 
 class RandomBackend:
@@ -316,19 +384,19 @@ class RandomBackend:
         self.ordinary_food = ordinary_food
 
     def choose(self, state, ident, at):
-        options = eligible(state, self.ordinary_food)
+        options = preferred_menu(state, self.ordinary_food)
         if not options:
             return None
-        name = self.rng.choice(options)
+        name = self.rng.choice(list(options))
         row = MUTATIONS[name]
         return dict(
             v=REQUEST_VERSION,
             id=ident,
             at=at,
             mutation=name,
-            value=self.rng.randint(*row["value"])
-            if row["value"][0] != row["value"][1]
-            else row["value"][0],
+            value=self.rng.choice(options[name])
+            if len(options[name]) > 1
+            else options[name][0],
             duration=self.rng.randint(*row["duration"])
             if row["duration"][0] != row["duration"][1]
             else row["duration"][0],
@@ -358,6 +426,65 @@ class ScheduleBackend:
         return None
 
 
+def require_current_replay(state):
+    """A request v1 grammar is not accounting-policy evidence."""
+    if not state.latest or state.latest["v"] not in (3, 4):
+        raise ValueError(
+            "current-policy evidence required; use the matching old build for historical playback"
+        )
+
+
+def replay_request(row, state):
+    """Match the exact native journal roles to an actual final accepted ACK."""
+    # CHAOS_JOURNAL_FORMAT prefix + CHAOS_ACK_FORMAT fields; no extras.
+    keys = set(FIELDS) | {
+        "policy",
+        "turn",
+        "safe",
+        "status",
+        "cost",
+        "cosmetic_cost",
+        "expires",
+    }
+    if set(row) != keys:
+        raise ValueError("invalid admission record fields")
+    from .protocol import integer
+
+    for key in keys - {"mutation", "status"}:
+        integer(row[key])
+    if row["policy"] != COSMETIC["policy"] or row["status"] != "admitted":
+        raise ValueError("current policy-2 admitted journal required")
+    request = {k: row[k] for k in FIELDS}
+    encode_request(request)
+    tariff = MUTATIONS[request["mutation"]]
+    expires = row["turn"] + request["duration"] if request["duration"] else 0
+    if (
+        row["safe"] != request["at"]
+        or row["expires"] != expires
+        or row["cost"] != tariff["cost"]
+        or row["cosmetic_cost"] != tariff["cosmetic_cost"]
+    ):
+        raise ValueError("inconsistent admission accounting")
+    receipt = state.accepted_receipts.get(request["id"])
+    if (
+        receipt is None
+        or receipt["v"] != 3
+        or receipt["event"] != "ack"
+        or receipt["phase"] != "result"
+        or receipt["status"] != "accepted"
+        or receipt["detail"] != "ok"
+        or event_request(receipt) != request
+        or any(
+            receipt[k] != row[k]
+            for k in ("turn", "safe", "cost", "cosmetic_cost", "expires")
+        )
+    ):
+        raise ValueError(
+            "matching exact current accepted ACK required; journal is not proof of application"
+        )
+    return request
+
+
 def load_replay(journal, evidence):
     reader = EventReader(evidence)
     state = State()
@@ -365,6 +492,7 @@ def load_replay(journal, evidence):
         state.ingest(e)
     if reader.tail:
         raise ValueError("incomplete ACK evidence")
+    require_current_replay(state)
     requests = []
     fd = secure_open(journal)
     with os.fdopen(fd, "rb") as f:
@@ -376,15 +504,7 @@ def load_replay(journal, evidence):
             if not line.endswith(b"\n"):
                 raise ValueError("partial admission journal")
             row = strict_json(line, 4096)
-            if row.get("status") != "admitted" or any(k not in row for k in FIELDS):
-                raise ValueError("invalid admission record")
-            r = {k: row[k] for k in FIELDS}
-            encode_request(r)
-            if state.accepted.get(r["id"]) != r:
-                raise ValueError(
-                    "admission journal is not proof of application: matching accepted ACK required"
-                )
-            requests.append(r)
+            requests.append(replay_request(row, state))
     ScheduleBackend(requests)
     return requests
 

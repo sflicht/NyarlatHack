@@ -14,7 +14,16 @@ from . import curio_continuity as continuity
 from . import curio_store as store
 from ._protocol_contract import OBSERVATIONS
 from .director import DEFAULT_BYTES, DEFAULT_EVENTS
-from .protocol import MAX_INT, NUMBERS, VITALS, integer, parse_event, strict_json
+from .protocol import (
+    MAX_INT,
+    NUMBERS,
+    VITALS,
+    integer,
+    parse_event,
+    strict_json,
+    validate_cosmetic,
+    validate_transition,
+)
 
 _ENVELOPE = frozenset((*NUMBERS, "event", "phase", "detail", "vitals", "observation"))
 _OBSERVATION = frozenset(("operation", "stage", "root_seq", "fact"))
@@ -41,14 +50,14 @@ def parse_episode_event(raw) -> dict:
         raise ValueError("JSON text or bytes required")
     row = strict_json(raw, 4096)
     integer(row.get("v"))
-    if row["v"] == 1:
+    if row["v"] in (1, 3):
         # The legacy parser indexes/hashes event directly. Validate this one
         # prerequisite so malformed rows raise ValueError, not KeyError/TypeError;
         # do not catch exceptions that could mask implementation bugs.
         if type(row.get("event")) is not str:
             raise ValueError("invalid legacy event name")
         return parse_event(raw)
-    if row["v"] != 2:
+    if row["v"] not in (2, 4):
         raise ValueError("unsupported observation version")
     if isinstance(raw, str):
         try:
@@ -57,7 +66,7 @@ def parse_episode_event(raw) -> dict:
             raise ValueError("invalid observation encoding") from exc
         if size > 4096:
             raise ValueError("JSON byte cap exceeded")
-    if set(row) != _ENVELOPE:
+    if set(row) != (_ENVELOPE | {"cosmetic"} if row["v"] == 4 else _ENVELOPE):
         raise ValueError("invalid observation envelope fields")
     for key in NUMBERS:
         integer(row[key], 1 if key == "seq" else 0)
@@ -69,6 +78,8 @@ def parse_episode_event(raw) -> dict:
         raise ValueError("invalid event budget or sanity")
     if row["reserved"] > row["spent"]:
         raise ValueError("invalid reservation")
+    if row["v"] == 4:
+        validate_cosmetic(row)
     vitals = row["vitals"]
     if type(vitals) is not dict or set(vitals) != set(VITALS):
         raise ValueError("invalid vitals fields")
@@ -132,15 +143,27 @@ def project_episodes(raw: bytes) -> dict:
             row[k] < previous[k] for k in ("turn", "safe", "spent", "last_id")
         ):
             raise ValueError("native counter rollback")
-        marker = row["v"] == 2 and row["observation"]["stage"] == "enabled"
-        native_session = row["v"] == 1 and row["event"] == "session"
+        marker = row["v"] in (2, 4) and row["observation"]["stage"] == "enabled"
+        native_session = row["v"] in (1, 3) and row["event"] == "session"
         if pending_marker and not native_session:
             raise ValueError("enabled marker must immediately precede session")
+        validate_transition(
+            previous,
+            row,
+            restore=(
+                seen_session
+                and (marker or (native_session and row["detail"] == "restore"))
+            ),
+        )
+        if pending_marker and row["v"] == 3 and row["cosmetic"] != previous["cosmetic"]:
+            raise ValueError("restore marker/session cosmetic mismatch")
         if not seen_session:
             if not (marker or native_session):
                 raise ValueError("full new-session history required")
             if any(row[k] for k in ("safe", "spent", "reserved", "last_id")):
                 raise ValueError("invalid fresh counters")
+            if row["v"] in (3, 4) and row["cosmetic"] != {"seen": 0, "last_turn": 0}:
+                raise ValueError("invalid fresh cosmetic state")
         if native_session:
             if row["phase"] != "result" or row["detail"] != (
                 "restore" if seen_session else "new"
@@ -152,7 +175,7 @@ def project_episodes(raw: bytes) -> dict:
             opted, pending_marker = pending_marker, False
         elif marker:
             pending_marker = True
-        elif row["v"] == 2:
+        elif row["v"] in (2, 4):
             if not opted:
                 raise ValueError("observation requires session marker")
             payload = row["observation"]
@@ -188,7 +211,7 @@ def project_episodes(raw: bytes) -> dict:
                     ):
                         raise ValueError("cannot_reach requires blocked terminal")
                     active.update(end_seq=seq, stage=stage)
-        if row["v"] == 1 and row["event"] in (
+        if row["v"] in (1, 3) and row["event"] in (
             "session",
             "level_enter",
             "level_leave",
