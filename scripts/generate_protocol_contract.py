@@ -22,6 +22,151 @@ def pairs(items):
     return result
 
 
+def validate_observations(o):
+    def require(ok, why):
+        if not ok:
+            raise ValueError("observations: " + why)
+
+    def keys(row, fields):
+        require(type(row) is dict and set(row) == set(fields.split()), "keys")
+
+    def word(value):
+        return type(value) is str and re.fullmatch(r"[a-z][a-z_]{0,30}", value)
+
+    def identities(rows, prefix, first, extra):
+        require(type(rows) is list and bool(rows), "rows")
+        for i, row in enumerate(rows, first):
+            keys(row, "symbol id name " + extra)
+            require(type(row["id"]) is int and row["id"] == i, "integer identity")
+            require(word(row["name"]), "literal name")
+            require(
+                type(row["symbol"]) is str
+                and re.fullmatch(prefix + r"[A-Z_]{1,31}", row["symbol"]),
+                "symbol",
+            )
+        for field in ("name", "symbol"):
+            require(len({r[field] for r in rows}) == len(rows), "unique " + field)
+
+    keys(
+        o,
+        "format wire_version operation_none fact_none stages channels families facts projection",
+    )
+    for key, value in (("format", 1), ("wire_version", 2)):
+        require(type(o[key]) is int and o[key] == value, key)
+    for key, prefix in (
+        ("operation_none", "CHAOS_OBS_OP_"),
+        ("fact_none", "CHAOS_OBS_FACT_"),
+    ):
+        require(
+            o[key] == dict(symbol=prefix + "NONE", id=0, name="none")
+            and type(o[key]["id"]) is int,
+            "sentinel",
+        )
+        keys(o[key], "symbol id name")
+    families, facts = o["families"], o["facts"]
+    require(type(families) is list and 1 <= len(families) <= 16, "family cap")
+    require(type(facts) is list and 1 <= len(facts) <= 64, "fact cap")
+    # Check original row containers/keys before indexing for sentinel collisions.
+    identities(families, "CHAOS_OBS_OP_", 1, "allow_blocked projection hook_refs")
+    identities(facts, "CHAOS_OBS_FACT_", 1, "operation channel implies_blocked")
+    identities(
+        [o["operation_none"]]
+        + [dict(symbol=r["symbol"], id=r["id"], name=r["name"]) for r in families],
+        "CHAOS_OBS_OP_",
+        0,
+        "",
+    )
+    identities(
+        [o["fact_none"]]
+        + [dict(symbol=r["symbol"], id=r["id"], name=r["name"]) for r in facts],
+        "CHAOS_OBS_FACT_",
+        0,
+        "",
+    )
+    identities(o["stages"], "CHAOS_OBS_STAGE_", 0, "phase role")
+    require(
+        [(r["symbol"], r["id"], r["name"], r["phase"], r["role"]) for r in o["stages"]]
+        == [
+            ("CHAOS_OBS_STAGE_ENABLED", 0, "enabled", "result", "enable"),
+            ("CHAOS_OBS_STAGE_STARTED", 1, "started", "attempt", "start"),
+            ("CHAOS_OBS_STAGE_NOTICE", 2, "notice", "result", "notice"),
+            ("CHAOS_OBS_STAGE_COMPLETED", 3, "completed", "result", "complete"),
+            ("CHAOS_OBS_STAGE_BLOCKED", 4, "blocked", "result", "block"),
+        ],
+        "stage semantics",
+    )
+    require(
+        o["channels"]
+        == [
+            dict(name="message", witness="native_tty_rendered"),
+            dict(name="map", witness="native_tty_blocking_map_presented"),
+        ],
+        "channel witnesses",
+    )
+    p = o["projection"]
+    keys(p, "context_version scope lookback_roots count_cap evidence summary_bytes")
+    for key, value in (
+        ("context_version", 1),
+        ("lookback_roots", 32),
+        ("count_cap", 3),
+        ("summary_bytes", 4096),
+    ):
+        require(type(p[key]) is int and p[key] == value, "projection bounds")
+    require(
+        word(p["scope"]) and p["evidence"] == "first_two_latest", "projection policy"
+    )
+    for row in families:
+        require(
+            type(row["allow_blocked"]) is bool
+            and row["projection"] == "completed_notice_by_operation",
+            "family policy",
+        )
+        require(
+            type(row["hook_refs"]) is list and bool(row["hook_refs"]), "hook provenance"
+        )
+        require(
+            len({json.dumps(r, sort_keys=True) for r in row["hook_refs"]})
+            == len(row["hook_refs"]),
+            "duplicate hook reference",
+        )
+        for ref in row["hook_refs"]:
+            keys(ref, "file symbol role")
+            require(
+                type(ref["file"]) is str
+                and re.fullmatch(
+                    r"(?:src|win/tty|tests/chaos)/[a-z_]+\.c", ref["file"]
+                ),
+                "hook file",
+            )
+            require(
+                type(ref["symbol"]) is str
+                and re.fullmatch(r"[A-Za-z_][A-Za-z_0-9]*", ref["symbol"])
+                and word(ref["role"]),
+                "hook symbol/role",
+            )
+    for row in facts:
+        require(
+            type(row["operation"]) is int and 1 <= row["operation"] <= len(families),
+            "fact owner",
+        )
+        require(
+            row["channel"] in ("message", "map")
+            and type(row["implies_blocked"]) is bool,
+            "fact policy",
+        )
+        require(
+            not row["implies_blocked"]
+            or families[row["operation"] - 1]["allow_blocked"],
+            "blocking fact owner",
+        )
+    # Names are literal ASCII, max 31 bytes; maximum root is ten digits.
+    suffix = (
+        ',"observation":{"operation":"%s","stage":"%s","root_seq":2147483647,"fact":"%s"}'
+        % ("x" * 31, "x" * 31, "x" * 31)
+    )
+    require(len(suffix) < 512, "writer suffix cap")
+
+
 def validate(d):
     def require(ok, why):
         if not ok:
@@ -30,7 +175,7 @@ def validate(d):
     require(
         set(d)
         == set(
-            "format versions limits budget non_effect_spenders request_fields mutations telegraphs ambient_messages results events phases ack_statuses journal_status event_numbers vitals ack_numbers ack_number_bounds reader_policy wire_order".split()
+            "format observations versions limits budget non_effect_spenders request_fields mutations telegraphs ambient_messages results events phases ack_statuses journal_status event_numbers vitals ack_numbers ack_number_bounds reader_policy wire_order".split()
         ),
         "contract keys",
     )
@@ -75,6 +220,7 @@ def validate(d):
             all(type(v) is int and v >= 0 for v in d[section].values()),
             f"integer {section}",
         )
+    validate_observations(d["observations"])
     limits = d["limits"]
     require(
         limits["max_int"] == 2147483647 and limits["max_counter"] == limits["max_int"],
@@ -429,8 +575,55 @@ def render(d):
         f"#define CHAOS_{name}_FORMAT {q(value)}"
         for name, value in (("EVENT", event), ("ACK", ack), ("JOURNAL", journal))
     ]
+    o = d["observations"]
+    for tag, rows in (
+        ("operation", [o["operation_none"]] + o["families"]),
+        ("stage", o["stages"]),
+        ("fact", [o["fact_none"]] + o["facts"]),
+    ):
+        h += [
+            "enum chaos_observation_"
+            + tag
+            + " { "
+            + ", ".join(f"{r['symbol']} = {r['id']}" for r in rows)
+            + " };"
+        ]
+    h += [
+        "enum chaos_obs_channel { CHAOS_OBS_CHANNEL_MESSAGE = 1, CHAOS_OBS_CHANNEL_MAP = 2 };"
+    ]
+    h += [
+        "enum chaos_obs_role { CHAOS_OBS_ROLE_ENABLE, CHAOS_OBS_ROLE_START, CHAOS_OBS_ROLE_NOTICE, CHAOS_OBS_ROLE_COMPLETE, CHAOS_OBS_ROLE_BLOCK };"
+    ]
+    h += [
+        macro(
+            "CHAOS_OBS_FAMILY_ROWS(X)",
+            [
+                f"X({r['symbol']}, {int(r['allow_blocked'])}, {q(r['name'])})"
+                for r in o["families"]
+            ],
+        )
+    ]
+    h += [
+        macro(
+            "CHAOS_OBS_FACT_ROWS(X)",
+            [
+                f"X({r['symbol']}, {r['operation']}, CHAOS_OBS_CHANNEL_{r['channel'].upper()}, {int(r['implies_blocked'])}, {q(r['name'])})"
+                for r in o["facts"]
+            ],
+        )
+    ]
+    h += [
+        macro(
+            "CHAOS_OBS_STAGE_ROWS(X)",
+            [
+                f"X({r['symbol']}, CHAOS_OBS_ROLE_{r['role'].upper()}, {q(r['name'])}, {q(r['phase'])})"
+                for r in o["stages"]
+            ],
+        )
+    ]
     h += [END]
     values = dict(
+        OBSERVATIONS=o,
         MAX_INT=d["limits"]["max_int"],
         FIELDS=tuple(r["wire"] for r in fields),
         REGISTRY={

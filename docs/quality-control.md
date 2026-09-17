@@ -19,6 +19,17 @@ or inference allowance.
   check independent legacy expectations, deliberately bypass consumers, and
   exercise a disposable fourth row. Engine-unit message and transport byte tests
   are not linked-game physics or native acceptance; all native gates below remain.
+- **Observation registration:** `test_observation_contract.py` pins production
+  metadata independently. Hook references are review-only provenance: generator
+  checks cover syntax/duplicates, not source existence, placement or execution;
+  #33's independent inventory and human review remain separate obligations.
+  The suite checks malformed registration through API and CLI, literal v2 bytes,
+  and an isolated third-family lifecycle including registration removal. Real
+  consumer-bypass controls mutate handwritten C family/channel/owner/writer checks
+  and Python grouping, requiring behavioral assertion failures after successful
+  compilation/import, without changing generated metadata. Existing IO/scope/episode/history
+  suites retain their independent compatibility oracles. These are ENGINE-UNIT
+  checks, not linked-game physics or native delivery acceptance.
 - **Python lint and format:** pinned Ruff checks `chaos`, `tests/chaos`, and
   `scripts` using Python 3.11.
 - **Native builds and offline tests:** Ubuntu 24.04 checks out full history at

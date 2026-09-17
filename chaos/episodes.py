@@ -12,18 +12,21 @@ import os
 
 from . import curio_continuity as continuity
 from . import curio_store as store
+from ._protocol_contract import OBSERVATIONS
 from .director import DEFAULT_BYTES, DEFAULT_EVENTS
 from .protocol import MAX_INT, NUMBERS, VITALS, integer, parse_event, strict_json
 
 _ENVELOPE = frozenset((*NUMBERS, "event", "phase", "detail", "vitals", "observation"))
 _OBSERVATION = frozenset(("operation", "stage", "root_seq", "fact"))
+_FAMILIES = {r["name"]: r for r in OBSERVATIONS["families"]}
+_FACT_INFO = {r["name"]: r for r in OBSERVATIONS["facts"]}
+_STAGES = {r["name"]: r for r in OBSERVATIONS["stages"]}
+_PROJECTION = OBSERVATIONS["projection"]
 _FACTS = {
-    "whistling": frozenset(
-        ("sound_high", "sound_shrill", "sound_normal", "sound_strange", "sound_humming")
-    ),
-    "fountain_drink": frozenset(
-        ("water_refreshed", "water_foul", "cannot_reach", "detection_presented")
-    ),
+    name: frozenset(
+        r["name"] for r in _FACT_INFO.values() if r["operation"] == family["id"]
+    )
+    for name, family in _FAMILIES.items()
 }
 
 
@@ -78,27 +81,31 @@ def parse_episode_event(raw) -> dict:
     if any(type(value) is not str for value in (operation, stage, fact)):
         raise ValueError("observation enums must be strings")
     root = integer(payload["root_seq"])
-    if stage == "enabled":
+    role = _STAGES.get(stage, {}).get("role")
+    if role == "enable":
         valid = operation == "none" and root == 0 and fact == "none"
-    elif stage == "started":
+    elif role == "start":
         valid = operation in _FACTS and root == 0 and fact == "none"
-    elif stage in ("notice", "completed", "blocked"):
+    elif role in ("notice", "complete", "block"):
         valid = operation in _FACTS and 0 < root < row["seq"]
-        if stage == "notice":
+        if role == "notice":
             valid = valid and fact in _FACTS[operation]
         else:
             valid = valid and fact == "none"
-            if stage == "blocked":
-                valid = valid and operation == "fountain_drink"
+            if role == "block":
+                valid = valid and _FAMILIES[operation]["allow_blocked"]
     else:
         valid = False
-    if not valid or row["phase"] != ("attempt" if stage == "started" else "result"):
+    if not valid or row["phase"] != _STAGES[stage]["phase"]:
         raise ValueError("invalid observation combination")
     return row
 
 
 def _count(value):
-    return dict(count=min(3, value), saturated=value > 3)
+    return dict(
+        count=min(_PROJECTION["count_cap"], value),
+        saturated=value > _PROJECTION["count_cap"],
+    )
 
 
 def project_episodes(raw: bytes) -> dict:
@@ -114,7 +121,7 @@ def project_episodes(raw: bytes) -> dict:
     if len(raw) > DEFAULT_BYTES or raw.count(b"\n") > DEFAULT_EVENTS:
         raise ValueError("native history cap exceeded")
     previous = active = None
-    roots = deque(maxlen=32)
+    roots = deque(maxlen=_PROJECTION["lookback_roots"])
     omitted = 0
     seen_session = opted = pending_marker = ended = False
     for seq, line in enumerate(raw.split(b"\n")[:-1], 1):
@@ -176,7 +183,9 @@ def project_episodes(raw: bytes) -> dict:
                         raise ValueError("duplicate notice")
                     active.update(notice_seq=seq, fact=payload["fact"])
                 else:
-                    if stage == "completed" and active["fact"] == "cannot_reach":
+                    if stage == "completed" and _FACT_INFO.get(active["fact"], {}).get(
+                        "implies_blocked", False
+                    ):
                         raise ValueError("cannot_reach requires blocked terminal")
                     active.update(end_seq=seq, stage=stage)
         if row["v"] == 1 and row["event"] in (
@@ -201,7 +210,9 @@ def project_episodes(raw: bytes) -> dict:
         omitted_roots=omitted,
     )
     coverage = {key: _count(value) for key, value in coverage.items()}
-    for operation in sorted(_FACTS):
+    for operation in sorted(_FAMILIES):
+        if _FAMILIES[operation]["projection"] != "completed_notice_by_operation":
+            continue
         qualifying = [
             r
             for r in roots
@@ -224,16 +235,16 @@ def project_episodes(raw: bytes) -> dict:
                 )
             )
     public = dict(
-        episode_context_v=1,
-        scope="selected_whistle_fountain",
-        lookback_roots=32,
+        episode_context_v=_PROJECTION["context_version"],
+        scope=_PROJECTION["scope"],
+        lookback_roots=_PROJECTION["lookback_roots"],
         episodes=groups,
         coverage=coverage,
     )
     encoded = json.dumps(
         public, ensure_ascii=True, sort_keys=True, separators=(",", ":")
     ).encode("ascii")
-    if len(encoded) > 4096:
+    if len(encoded) > _PROJECTION["summary_bytes"]:
         raise ValueError("episode summary byte cap exceeded")
     return public
 
