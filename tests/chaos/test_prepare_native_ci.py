@@ -949,6 +949,9 @@ def supervision_case(mode):
         ready = threading.Event()
         peer = []
         thread_errors = []
+        sampled = threading.Event()
+        delivery_threads = []
+        inspection_error = mode.startswith("inspection-error")
 
         def baseline_term(signum, frame):
             # Also keep RED teardown reachable with the old unsupervised code.
@@ -980,12 +983,38 @@ def supervision_case(mode):
         thread.start()
         real_run = subprocess.run
         runner = getattr(ci, "_run_build", None)
-        if mode == "inspection-error":
+        if inspection_error:
 
             def unreadable_group(pgid):
                 raise OSError("fixture proc read failure")
 
             ci._group_running = unreadable_group
+        if mode == "inspection-error-delayed":
+            # Model asynchronous signal completion, not successful cleanup:
+            # the leader exits first; the owned writer's requested KILL is
+            # delivered only after the immediate state sample. The subreaper
+            # owns this child and does not reap it until finally, pinning its
+            # identity. All production exception handling remains intact.
+            class DelayedKillOS:
+                def __getattr__(self, name):
+                    return getattr(os, name)
+
+                def killpg(self, pgid, sig):
+                    if sig != signal.SIGKILL:
+                        return os.killpg(pgid, sig)
+                    pid = peer[0][1]
+
+                    def deliver():
+                        if not sampled.wait(5):
+                            thread_errors.append("state sample not reached")
+                        os.kill(pid, signal.SIGKILL)
+
+                    delivery = threading.Thread(target=deliver, daemon=True)
+                    delivery_threads.append(delivery)
+                    delivery.start()
+                    os.kill(pgid, sig)
+
+            ci.os = DelayedKillOS()
         argv = [sys.executable, "-c", RECIPE, str(root), mode, WRITER]
 
         def run_recipe(unused_argv, **kwargs):
@@ -1017,6 +1046,10 @@ def supervision_case(mode):
                 except BaseException as exc:
                     result["exception"] = type(exc).__name__
                     result["message"] = str(exc)
+                    result["cleanup_failed"] = getattr(
+                        exc, "_build_cleanup_failed", False
+                    )
+                    result["exception_notes"] = getattr(exc, "__notes__", [])
             thread.join(timeout=5)
             result["ready"] = ready.is_set()
             result["thread_errors"] = thread_errors
@@ -1039,6 +1072,25 @@ def supervision_case(mode):
                 state = "absent"
             result["descendant_state"] = state
             result["running_descendant"] = state not in ("absent", "Z", "X")
+            sampled.set()
+            if inspection_error:
+                # Cleanup explicitly failed verification. Observe this owned
+                # child's actual exit independently, without killing/reaping it
+                # or relabelling the production result as cleanup success.
+                deadline = time.monotonic() + 2
+                while True:
+                    exited = os.waitid(
+                        os.P_PID, pid, os.WEXITED | os.WNOHANG | os.WNOWAIT
+                    )
+                    if exited or time.monotonic() >= deadline:
+                        break
+                    time.sleep(0.01)
+                result["descendant_exit_observed"] = exited is not None
+                result["descendant_killed"] = bool(
+                    exited
+                    and exited.si_code == os.CLD_KILLED
+                    and exited.si_status == signal.SIGKILL
+                )
             before = (receipts / "1-clean.log").read_bytes()
             try:
                 conn.sendall(b"w")
@@ -1049,6 +1101,9 @@ def supervision_case(mode):
             result["log_stable"] = before == (receipts / "1-clean.log").read_bytes()
             result["commands"] = json.loads((receipts / "1-commands.json").read_text())
         finally:
+            sampled.set()
+            for delivery in delivery_threads:
+                delivery.join(timeout=6)
             # Retain only this invocation's leader/group. Reap our adopted
             # descendants even on RED; production does not claim to reap them.
             if (root / "leader").exists():
@@ -1092,7 +1147,11 @@ class BuildProcessSupervisionTests(unittest.TestCase):
         self.assertEqual(result["thread_errors"], [], result)
         self.assertTrue(result["fixture_reaped"], result)
         self.assertTrue(result["leader_reaped"], result)
-        self.assertFalse(result["running_descendant"], result)
+        if mode.startswith("inspection-error"):
+            self.assertTrue(result["descendant_exit_observed"], result)
+            self.assertTrue(result["descendant_killed"], result)
+        else:
+            self.assertFalse(result["running_descendant"], result)
         self.assertFalse(result["late_write_ack"], result)
         self.assertTrue(result["log_stable"], result)
         self.assertTrue(result["handlers_restored"], result)
@@ -1102,6 +1161,16 @@ class BuildProcessSupervisionTests(unittest.TestCase):
     def test_proc_inspection_error_still_kills_and_reaps_direct_child(self):
         result = self.check_case("inspection-error")
         self.assertEqual(result["exception"], "TimeoutExpired")
+        self.assertTrue(result["cleanup_failed"], result)
+        self.assertIn("fixture proc read failure", " ".join(result["exception_notes"]))
+        self.assertIsNone(result["commands"][0]["exit_code"])
+
+    def test_proc_inspection_error_does_not_claim_synchronous_descendant_exit(self):
+        result = self.check_case("inspection-error-delayed")
+        self.assertTrue(result["running_descendant"], result)
+        self.assertTrue(result["cleanup_failed"], result)
+        self.assertEqual(result["exception"], "TimeoutExpired")
+        self.assertIn("fixture proc read failure", " ".join(result["exception_notes"]))
         self.assertIsNone(result["commands"][0]["exit_code"])
 
     def test_normal_exit_stops_remaining_writer_before_next_command(self):
