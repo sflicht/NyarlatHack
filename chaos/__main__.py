@@ -104,6 +104,62 @@ def _curio_command(args):
     return {"operation": op, "verified": True}
 
 
+def _history_parser(sub):
+    p = sub.add_parser("history", help="opt-in mixed-history pilot; separate from play")
+    p.add_argument("--run-dir", type=Path, required=True)
+    p.add_argument("--backend", choices=("random", "oauth", "replay"), required=True)
+    p.add_argument("--seed", type=int, default=0)
+    p.add_argument("--ordinary-food", action="store_true")
+    p.add_argument("--model-ledger", type=Path)
+    p.add_argument("--journal", type=Path)
+    p.add_argument("--evidence", type=Path)
+    p.add_argument("--max-runtime", type=float, default=300.0)
+    p.add_argument("--poll", type=float, default=0.25)
+    p.add_argument("--max-bytes", type=int, default=DEFAULT_BYTES)
+    p.add_argument("--max-events", type=int, default=DEFAULT_EVENTS)
+    p.add_argument("--install-only", action="store_true")
+
+
+def _history_command(args):
+    from .history_choice import OAuthHistoryBackend, RandomHistoryBackend
+    from .history_director import load_history_replay, run_history
+
+    if args.backend == "oauth":
+        if (
+            args.model_ledger is None
+            or args.journal is not None
+            or args.evidence is not None
+        ):
+            raise ValueError("OAuth requires only an existing model ledger")
+        from .oauth import OAuthBackend
+
+        transport = OAuthBackend(args.model_ledger, require_existing=True)
+        transport.preflight()  # Read-only; before provider factory or mailbox creation.
+        backend = OAuthHistoryBackend(transport)
+    elif args.backend == "replay":
+        if (
+            args.model_ledger is not None
+            or args.journal is None
+            or args.evidence is None
+        ):
+            raise ValueError("replay requires original journal and evidence")
+        backend = ScheduleBackend(load_history_replay(args.journal, args.evidence))
+    else:
+        if any(v is not None for v in (args.model_ledger, args.journal, args.evidence)):
+            raise ValueError("random takes no model ledger or replay inputs")
+        backend = RandomHistoryBackend(args.seed)
+    return run_history(
+        args.run_dir,
+        backend,
+        ordinary_food=args.ordinary_food,
+        max_runtime=args.max_runtime,
+        poll=args.poll,
+        max_bytes=args.max_bytes,
+        max_events=args.max_events,
+        install_only=args.install_only,
+    )
+
+
 def main(argv=None):
     parser = _Parser(
         description="The Crawling Chaos — bounded engine-protocol v1 director"
@@ -113,6 +169,7 @@ def main(argv=None):
 
     add_parser(sub)
     _curio_parser(sub)
+    _history_parser(sub)
     installer = sub.add_parser(
         "haunt", help="install one Lua candidate; game validates it"
     )
@@ -180,6 +237,9 @@ def main(argv=None):
             )
     args = parser.parse_args(argv)
     try:
+        if args.command == "history":
+            print(json.dumps(_history_command(args), sort_keys=True, ensure_ascii=True))
+            return 0
         if args.command == "curio":
             print(json.dumps(_curio_command(args), sort_keys=True, ensure_ascii=True))
             return 0
