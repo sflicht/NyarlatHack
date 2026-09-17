@@ -6,6 +6,55 @@ stayed inline. A final read-only reviewer checks the completed
 diff separately. Game-model experiments use plain inference through the
 explicitly authorized ChatGPT subscription route, not coding-agent delegation.
 
+## Shared sandbox adapter checklist
+
+The private implementation in `src/chaos_lua.c` is shared by haunting movement
+and curio load/inspect/apply. It is not a plugin platform or runtime capability
+catalogue. A future reviewed adapter must:
+
+- Define its own copied-input and typed-output schema, exact keys, integer/text
+  bounds, return arities and numeric failure meanings. Add a closed operation to
+  `sandbox_request`/`sandbox_setup`, not another VM lifecycle or a registration
+  callback. Keep native engine pointers, userdata and C functions out of all
+  candidate-visible values; validate returned intent before native consumption.
+- Reuse `sandbox_source_valid` and the sole lifecycle owner `sandbox_run`, whose
+  zero-upvalue `sandbox_setup` bootstrap protects compilation, root execution,
+  context construction, handler execution and extraction. Reuse the checked
+  readers `sandbox_keys3`, `sandbox_integer` and `sandbox_text` where the schema
+  matches. Publish outputs only on success; preserve zeroed failures and caller
+  input bytes. A fresh state is created and closed for every public call.
+- Retain the fixed policy: 1..4096 source bytes with no embedded NUL, text-only
+  loading, 256 KiB allocator accounting, and 20000 hook-counted instructions
+  shared by root and handler (100-instruction hook interval). These are not
+  configurable per-adapter limits. The library/host capability whitelist is
+  empty: no base library, catch/module/debug/metatable helpers, RNG or engine
+  bindings. `_ENV` is a disposable table; `_G` is not installed.
+- Preserve family differences. Haunt copies `mx,my,state,history` (0..8 copied
+  coordinate pairs); input/output state is 0..1000000, coordinates remain native
+  integers without added bounds, and output `dx,dy` is -1..1. Extra root/handler
+  returns are discarded. Status 1 is preflight, 2 execution/nonfunction/
+  nontable failure, and 3 malformed result-table contents. Curio requires exactly
+  one root and hook result, copies `sanity,insight,charges,state` with respective
+  bounds 0..100, 0..1000000, 0..3, 0..255, and retains its name/inspect/apply
+  schemas (48/160-byte printable nonblank ASCII text; delta -2..2). Curio maps
+  preflight to 1 and protected execution/schema errors to 2; load does not call
+  hooks. All protected Lua/OOM errors remain 2, including extraction diagnostics.
+- Add exact-status boundary/malformed-schema tests, nil guards that return valid
+  typed results, actual copied-argument type inspection, same-process cross-family
+  isolation after mutation and failure, genuine dumped-bytecode rejection, and
+  independent allocator/fuel exhaustion plus recovery. Raw checked readers do
+  not coerce or allocate diagnostic strings; measured diagnostic-construction
+  OOM is not evidence of ordinary-reader allocation. Fixed caps do not imply
+  byte-identical allocation traces or unchanged near-cap success thresholds.
+- Keep Python installation/authoring as transport validation, not a second Lua
+  validator. Source remains opaque non-NUL bytes, not ASCII-only; ASCII applies
+  to returned text. Curio JSON authoring separately retains valid UTF-8 and its
+  8192-byte envelope. Preserve exact source, packs, save layouts and evidence.
+- Obtain separate authorization for any new native effect. Runtime Luna cannot
+  add C bindings. Pure Lua harness tests establish sandbox/unit contracts, not
+  native physics, replay or save/restore acceptance; those require the separate
+  native gates and existing engine paths.
+
 ## Play it with no model call
 
 Install the additional build dependency, then build from the repository root:
