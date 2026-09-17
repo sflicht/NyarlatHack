@@ -269,6 +269,7 @@ out:
 void chaos_curio_safe(int dir)
 {
     struct chaos_curio_state next;
+    struct chaos_state charged;
     struct chaos_curio_lua_context c;
     struct chaos_curio_lua_intent intent;
     char text[161];
@@ -289,7 +290,8 @@ void chaos_curio_safe(int dir)
         || u.uz.dnum != 0 || u.uz.dlevel < 1 || u.uz.dlevel > 2
         || program_state.gameover || multi < 0 || u.usleep
         || (Upolyd ? u.mh : u.uhp) <= 0
-        || chaos_budget(&u.chaos, u.usanity) < 1) return;
+        || !chaos_state_valid(&u.chaos)
+        || chaos_budget(&u.chaos, u.usanity) < CHAOS_COST_CURIO) return;
     busy = 1;
     fd = openat(dir, "curio.lua", O_RDONLY | O_NOFOLLOW | O_NONBLOCK | O_CLOEXEC);
     if (fd < 0 && errno == ENOENT) { busy = 0; return; }
@@ -319,9 +321,13 @@ void chaos_curio_safe(int dir)
     next.source_len = (unsigned)used; next.charges = 3;
     if (!curio_evidence(dir, next.source, used)
         || !chaos_event_checked("curio", "result", "pre_admitted")) goto rejected;
+    charged = u.chaos;
+    if (chaos_spend_non_effect(&charged, u.usanity, CHAOS_SPEND_CURIO)
+        != CHAOS_OK) goto rejected;
     pline("An uncanny curio may appear on a later floor.");
     u.curio = next;
-    ++u.chaos.spent;
+    /* Publish only accounting: warning hooks may advance event sequence. */
+    u.chaos.spent = charged.spent;
     /* A failed final receipt cannot reopen admission or refund the cost. */
     chaos_event("curio", "result", "admitted");
     busy = 0;

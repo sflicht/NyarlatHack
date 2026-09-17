@@ -135,6 +135,20 @@ int chaos_budget(const struct chaos_state *s, int sanity) {
     n = CHAOS_BUDGET_BASE + (CHAOS_BUDGET_SANITY_MAX - sanity) / CHAOS_BUDGET_STEP - s->spent;
     return n > 0 ? n : 0;
 }
+int chaos_spend_non_effect(struct chaos_state *s, int sanity, int spender) {
+    int cost;
+    if(!s || !chaos_state_valid(s)) return CHAOS_SCHEMA;
+    switch(spender) {
+    case CHAOS_SPEND_CURIO: cost = CHAOS_COST_CURIO; break;
+    case CHAOS_SPEND_HAUNT: cost = CHAOS_COST_HAUNT; break;
+    default: return CHAOS_SCHEMA;
+    }
+    if(cost <= 0 || cost > CHAOS_BUDGET_CEILING) return CHAOS_SCHEMA;
+    if(cost > chaos_budget(s, sanity) || cost > CHAOS_BUDGET_CEILING - s->spent)
+        return CHAOS_BUDGET;
+    s->spent += cost;
+    return CHAOS_OK;
+}
 void chaos_expire(struct chaos_state *s, long turn) {
     int i;
     for(i = 1; i < CHAOS_KINDS; ++i) {

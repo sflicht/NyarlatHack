@@ -21,6 +21,10 @@
     "step": 10,
     "ceiling": 12
   },
+  "non_effect_spenders": [
+    {"name": "curio", "id": 1, "cost": 1},
+    {"name": "haunt", "id": 2, "cost": 2}
+  ],
   "request_fields": [
     {
       "wire": "v",

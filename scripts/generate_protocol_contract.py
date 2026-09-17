@@ -30,7 +30,7 @@ def validate(d):
     require(
         set(d)
         == set(
-            "format versions limits budget request_fields mutations telegraphs ambient_messages results events phases ack_statuses journal_status event_numbers vitals ack_numbers ack_number_bounds reader_policy wire_order".split()
+            "format versions limits budget non_effect_spenders request_fields mutations telegraphs ambient_messages results events phases ack_statuses journal_status event_numbers vitals ack_numbers ack_number_bounds reader_policy wire_order".split()
         ),
         "contract keys",
     )
@@ -89,6 +89,20 @@ def validate(d):
         + (budget["sanity_max"] - budget["sanity_min"]) // budget["step"],
         "budget ceiling",
     )
+
+    rows = d["non_effect_spenders"]
+    require(type(rows) is list and len(rows) == 2, "non-effect spenders")
+    for i, (row, name) in enumerate(zip(rows, ("curio", "haunt")), 1):
+        require(
+            type(row) is dict
+            and set(row) == {"name", "id", "cost"}
+            and row["name"] == name
+            and type(row["id"]) is int
+            and row["id"] == i
+            and type(row["cost"]) is int
+            and 0 < row["cost"] <= budget["ceiling"],
+            "non-effect identity/cost",
+        )
 
     def bounds(value):
         require(
@@ -264,6 +278,9 @@ def render(d):
         "TURN_HEADROOM": d["limits"]["admission_turn_headroom"],
     }
     constants.update({"BUDGET_" + k.upper(): v for k, v in d["budget"].items()})
+    for row in d["non_effect_spenders"]:
+        constants["SPEND_" + row["name"].upper()] = row["id"]
+        constants["COST_" + row["name"].upper()] = row["cost"]
     h += [f"#define CHAOS_{k} {v}" for k, v in constants.items()]
     h += [
         "enum chaos_kind { "
@@ -421,6 +438,9 @@ def render(d):
             for r in d["mutations"]
         },
         MUTATIONS={r["name"]: r for r in d["mutations"]},
+        NON_EFFECT_SPENDERS={
+            r["name"]: (r["id"], r["cost"]) for r in d["non_effect_spenders"]
+        },
         EVENTS=tuple(d["events"]),
         REASONS=tuple(r["name"] for r in d["results"] if r["ack"]),
         VITALS=tuple(r["wire"] for r in d["vitals"]),
