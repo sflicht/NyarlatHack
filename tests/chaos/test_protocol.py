@@ -13,6 +13,10 @@ REQUEST = dict(v=1, id=1, mutation="ambient", value=1, duration=0, telegraph=1, 
 class ProtocolTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
+        assert (
+            "int chaos_spend_non_effect("
+            in (ROOT / "include/chaos_protocol.h").read_text()
+        ), "chaos_spend_non_effect API missing"
         cls.tmp = tempfile.TemporaryDirectory(prefix="chaos-protocol-")
         cls.exe = pathlib.Path(cls.tmp.name) / "protocol"
         cls.sources = [
@@ -142,6 +146,9 @@ class ProtocolTests(unittest.TestCase):
 
     def test_state_budget_dedup_expiry_persistence(self):
         self.assertEqual(self.run_c(b"", "state"), "state ok")
+
+    def test_non_effect_spending(self):
+        self.assertEqual(self.run_c(b"", "non-effect"), "non-effect ok")
 
     def test_event_escaping(self):
         raw = b'quote" slash\\ newline\n tab\t ctrl\x01 utf8\xc3\xa9'

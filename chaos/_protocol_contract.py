@@ -40,6 +40,7 @@ MUTATIONS = {'ambient': {'symbol': 'CHAOS_AMBIENT',
                  'ordinary_food': True,
                  'persistent': True,
                  'rule': 'double'}}
+NON_EFFECT_SPENDERS = {'curio': (1, 1), 'haunt': (2, 2)}
 EVENTS = frozenset(('eat',
  'read',
  'zap',

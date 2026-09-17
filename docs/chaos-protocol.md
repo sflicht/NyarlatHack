@@ -143,6 +143,15 @@ Available budget = max(0, capacity - **lifetime spent**). No periodic refill;
 Sanity healing/loss cycles do not refund spending. `reserved` is the sum of
 unexpired active costs, informational and always <= spent. Expiry releases
 reserved cost, **not spent**. Ambient also costs one, preventing free spam.
+Three admission paths share that lifetime allowance: whispers (the registry
+prices), curio admission (1), and a successfully spawned haunt (2). Curio
+placement and its three uses do not charge again; failed later placement does
+not refund admission. Failed curio validation/evidence or failed haunt spawning
+spends nothing. Final receipt failure does not refund an already committed
+admission. Existing `pre_admitted` and `admitted`/`accepted` events show the
+pre- and post-charge budget; no extra spend rows or whisper IDs are introduced.
+Expiry refunds none of these spenders.
+
 At most two active effects, at most one of each rule type; no stacking or refresh.
 An effect installed on turn T lasts for `[T, T+duration)`; rule queries check
 expiry even between safe points. No mutation deals immediate damage or changes

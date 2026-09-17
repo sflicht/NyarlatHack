@@ -17,6 +17,10 @@
 #define CHAOS_BUDGET_BASE 2
 #define CHAOS_BUDGET_STEP 10
 #define CHAOS_BUDGET_CEILING 12
+#define CHAOS_SPEND_CURIO 1
+#define CHAOS_COST_CURIO 1
+#define CHAOS_SPEND_HAUNT 2
+#define CHAOS_COST_HAUNT 2
 enum chaos_kind { CHAOS_AMBIENT = 0, CHAOS_WARD = 1, CHAOS_HUNGER = 2, CHAOS_KINDS = 3 };
 enum chaos_result { CHAOS_OK = 0, CHAOS_SCHEMA = 1, CHAOS_OVERSIZE = 2, CHAOS_DUPLICATE = 3, CHAOS_SCHEDULE = 4, CHAOS_BUDGET = 5, CHAOS_ACTIVE = 6, CHAOS_INELIGIBLE = 7, CHAOS_LOG_FAILURE = 8, CHAOS_FUTURE = 9 };
 enum chaos_contract_rule { CHAOS_RULE_NONE, CHAOS_RULE_HALVE, CHAOS_RULE_DOUBLE };
@@ -133,6 +137,8 @@ int chaos_quote(char *, size_t, const char *, size_t);
 void chaos_state_init(struct chaos_state *);
 int chaos_state_valid(const struct chaos_state *);
 int chaos_budget(const struct chaos_state *, int);
+/* Fixed-price lifetime debit: only spent changes; failures leave state intact. */
+int chaos_spend_non_effect(struct chaos_state *, int, int);
 void chaos_expire(struct chaos_state *, long);
 /* eligibility: 0 unconscious/dead, 1 ordinary food, 2 conscious non-food. */
 int chaos_admit(struct chaos_state *, const struct chaos_request *, long, int, int);

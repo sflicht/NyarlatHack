@@ -26,9 +26,11 @@ static void generation(unsigned fl, int ordinary, int bones) {
     if (chaos_curio_begin) chaos_curio_begin();
     if (ordinary && chaos_curio_ordinary) chaos_curio_ordinary();
     if (chaos_curio_finish) chaos_curio_finish(!bones);
+    assert(u.chaos.spent==1);
 }
 static void fixture(void) {
     int x,y;
+    chaos_state_init(&u.chaos);u.chaos.spent=1;
     memset(&u.curio,0,sizeof u.curio);
     u.curio.version=1; u.curio.phase=CHAOS_CURIO_ADMITTED;
     strcpy(u.curio.source,"return {name='Counter',inspect=function(c) return 'Quiet.' end,apply=function(c) return {text='Quiet.',state=0,sanity_delta=0} end}");
@@ -114,7 +116,7 @@ int main(int argc, char **argv) {
     rooms[0].rtype=OROOM; u.uz.dlevel=3; generation(0,1,0); assert(creates==1);
     fixture(); rooms[0].rtype=rooms[1].rtype=SHOPBASE;
     generation(0,1,0); u.uz.dlevel=3; generation(0,1,0); chaos_curio_safe(-1);
-    assert(!creates && u.curio.phase==CHAOS_CURIO_EXPIRED);
+    assert(!creates && u.curio.phase==CHAOS_CURIO_EXPIRED && u.chaos.spent==1);
     fixture(); fail_create=1; generation(0,1,0); assert(creates==1);
     assert(u.curio.phase==CHAOS_CURIO_EXPIRED && chaos_curio_valid(&u.curio));
     fail_create=0; u.uz.dlevel=3; generation(0,1,0); assert(creates==1);

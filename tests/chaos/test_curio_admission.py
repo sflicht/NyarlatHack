@@ -9,6 +9,7 @@ import unittest
 from chaos.protocol import parse_event
 from chaos.director import State
 from test_director import event
+from native_rng import controlled_rng_objects
 from gameplay_support import Game, ROOT
 
 SOURCE = b"""-- exact observed bytes\nreturn {name="Exact counter",inspect=function(c)
@@ -59,6 +60,7 @@ class CurioAdmissionTests(unittest.TestCase):
             + sorted((ROOT / "win/tty").glob("*.o"))
             + sorted((ROOT / "win/curses").glob("*.o"))
         )
+        objects = controlled_rng_objects(objects, cls.artifacts)
         cls.exe = cls.artifacts / "curio-admission"
         command = [
             "cc",
@@ -69,7 +71,14 @@ class CurioAdmissionTests(unittest.TestCase):
             *map(str, objects),
             *[
                 f"-Wl,--wrap={s}"
-                for s in ("write", "fsync", "openat", "close", "pline")
+                for s in (
+                    "write",
+                    "fsync",
+                    "openat",
+                    "close",
+                    "pline",
+                    "chaos_spend_non_effect",
+                )
             ],
             "-lncursesw",
             "-ltinfo",
@@ -175,8 +184,41 @@ class CurioAdmissionTests(unittest.TestCase):
         ]
         self.assertEqual([(e["id"], e["safe"]) for e in journal], [(1, 1)])
 
+    def test_tight_budget_and_invalid_state(self):
+        request = dict(
+            v=1, id=1, mutation="ambient", value=1, duration=0, telegraph=1, at=1
+        )
+        run = self.run_case(
+            "tight",
+            0,
+            setup=lambda r: (r / "whisper.json").write_text(json.dumps(request)),
+        )
+        self.assertFalse((run / "curio-used.lua").exists())
+        self.run_case("invalidstate", 0, None)
+
+    def test_rng_negative_controls(self):
+        for mode, assertion in (
+            ("--rng-negative-control", "reseed_count == 0"),
+            ("--raw-rng-negative-control", "rn2(100000) == expected"),
+        ):
+            p = subprocess.run(
+                [str(self.exe), mode], capture_output=True, text=True, timeout=10
+            )
+            (self.artifacts / (mode[2:] + ".txt")).write_text(p.stdout + p.stderr)
+            self.assertEqual(p.returncode, -6)
+            self.assertIn(assertion, p.stderr)
+
     def test_valid_exact_bytes_first_safe(self):
-        self.run_case()
+        run = self.run_case()
+        # Frozen from the pre-refactor linked engine, including wire order/LF.
+        rows = (run / "events.jsonl").read_bytes().splitlines(keepends=True)
+        self.assertEqual(
+            rows[3:5],
+            [
+                b'{"v":1,"seq":4,"turn":10,"safe":1,"event":"curio","phase":"result","detail":"pre_admitted","sanity":100,"insight":0,"budget":2,"spent":0,"reserved":0,"last_id":0,"vitals":{"hp":7,"hp_max":20,"power":2,"power_max":10}}\n',
+                b'{"v":1,"seq":5,"turn":10,"safe":1,"event":"curio","phase":"result","detail":"admitted","sanity":100,"insight":0,"budget":1,"spent":1,"reserved":0,"last_id":0,"vitals":{"hp":7,"hp_max":20,"power":2,"power_max":10}}\n',
+            ],
+        )
 
     def test_unicode_comment_preserves_exact_source(self):
         self.run_case(source=b"-- caf\xc3\xa9\n" + SOURCE)

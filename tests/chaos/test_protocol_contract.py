@@ -208,6 +208,12 @@ class CompatibilityTests(unittest.TestCase):
                     with self.assertRaises(ValueError):
                         protocol.parse_request(payload)
 
+    def test_non_effect_prices_are_separate(self):
+        from chaos._protocol_contract import NON_EFFECT_SPENDERS
+
+        self.assertEqual(NON_EFFECT_SPENDERS, {"curio": (1, 1), "haunt": (2, 2)})
+        self.assertTrue(set(NON_EFFECT_SPENDERS).isdisjoint(protocol.REGISTRY))
+
     def test_frozen_registry_and_admission(self):
         self.assertEqual(protocol.REGISTRY, {r[0]: (r[6], r[7], r[5]) for r in ROWS})
         self.assertEqual(protocol.EVENTS, frozenset(EVENTS))
@@ -363,6 +369,12 @@ class GenerationTests(unittest.TestCase):
                 (("versions", "extra"), 1),
                 (("limits", "extra"), 1),
                 (("budget", "extra"), 1),
+                (("non_effect_spenders", 0, "cost"), True),
+                (("non_effect_spenders", 0, "cost"), 0),
+                (("non_effect_spenders", 0, "cost"), -1),
+                (("non_effect_spenders", 1, "cost"), 13),
+                (("non_effect_spenders", 0, "id"), 0),
+                (("non_effect_spenders", 1, "name"), "curio"),
                 (("mutations", 0, "cost"), True),
                 (("mutations", 0, "value"), [3, 1]),
                 (("mutations", 0, "telegraph"), 99),

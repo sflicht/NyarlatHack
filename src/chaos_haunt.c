@@ -150,7 +150,7 @@ void chaos_haunt_tick(int dir) {
   if(back){h->backtracks=1;chaos_event("backtrack","result","");}
  }
  recollect();
- if(dir<0 || h->checked || !h->backtracks || h->count<4 || chaos_budget(&u.chaos,u.usanity)<2 || multi<0)return;
+ if(dir<0 || h->checked || !h->backtracks || h->count<4 || !chaos_state_valid(&u.chaos) || chaos_budget(&u.chaos,u.usanity)<CHAOS_COST_HAUNT || multi<0)return;
  for(y=u.uy-5;y<=u.uy+5&&!found;++y)for(x=u.ux-5;x<=u.ux+5;++x)
   if(simple_floor(x,y) && cansee(x,y) && !m_at(x,y) && distmin(x,y,u.ux,u.uy)>=3 &&
      goodpos(x,y,NULL,0)){where.x=x;where.y=y;found=1;break;}
@@ -173,11 +173,15 @@ void chaos_haunt_tick(int dir) {
  n=strlen(receipt);if(write(fd,receipt,n)!=n || fsync(fd)){close(fd);return;}close(fd);
  if(report.steps || report.died || report.script_errors)h->echo_pending=report.died?3:report.script_errors?2:1;
  if(report.ok) {
-  struct monst *m;
+  struct monst *m;struct chaos_state charged;
   if(!chaos_event_checked("haunting","result","pre_admitted"))return;
+  charged=u.chaos;
+  if(chaos_spend_non_effect(&charged,u.usanity,CHAOS_SPEND_HAUNT)!=CHAOS_OK)return;
   pline("Something has learned the rhythm of your footsteps.");
   m=spawn_hound(where.x,where.y);
-  if(m){h->target=m->m_id;h->active=1;h->until=moves+60;u.chaos.spent+=2;chaos_event("haunting","result","accepted");}
+  /* Native spawn may emit events; never restore the whole staged state.
+   * A failed spawn discards its debit, without refunding or retrying. */
+  if(m){h->target=m->m_id;h->active=1;h->until=moves+60;u.chaos.spent=charged.spent;chaos_event("haunting","result","accepted");}
   else chaos_event("haunting","result","spawn_failed");
  } else chaos_event("haunting","result","rejected");
  recollect();
