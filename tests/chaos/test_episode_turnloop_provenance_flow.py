@@ -154,8 +154,31 @@ class DriverFlowTests(unittest.TestCase):
         event_fixtures.action(rows, fact="sound_high")
         event_fixtures.action(rows, fact="sound_strange")
         event_fixtures.action(rows, operation="fountain_drink", fact=None)
+        self.historical_v2 = event_fixtures.wire(*rows)
+        self.historical_legacy = event_fixtures.wire(event_fixtures.session())
+        # Current source-driver stand-ins, not recordings or native journeys.
+        for row in rows:
+            row["v"] = 4 if row["event"] == "observation" else 3
+            row["cosmetic"] = {"seen": 0, "last_turn": 0}
         self.v2 = event_fixtures.wire(*rows)
-        self.legacy = event_fixtures.wire(event_fixtures.session())
+        self.legacy = event_fixtures.wire(
+            dict(event_fixtures.session(), v=3, cosmetic={"seen": 0, "last_turn": 0})
+        )
+
+    def test_historical_standins_remain_explicit_archive_coverage(self):
+        from test_episode_turnloop_oracle import (
+            legacy_projection,
+            compare_current_events,
+        )
+        from chaos.episodes import project_episodes
+
+        self.assertEqual(
+            legacy_projection(self.historical_legacy),
+            legacy_projection(self.historical_v2),
+        )
+        self.assertTrue(project_episodes(self.historical_v2)["episodes"])
+        with self.assertRaisesRegex(AssertionError, "wire policy"):
+            compare_current_events(self.historical_legacy, self.historical_v2, [])
 
     def restore_process_state(self, path, mask):
         for sig, handler in self.handlers.items():

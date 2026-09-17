@@ -129,6 +129,60 @@ class HungerOracleTests(unittest.TestCase):
             {"before": 1, "during": 2, "after": 2},
         )
 
+    def current_fixture(self):
+        rows, request, ack, expiry = self.fixture()
+        ack.update(v=3, cosmetic_cost=0, cosmetic={"seen": 0, "last_turn": 0})
+        expiry.update(v=3, cosmetic={"seen": 0, "last_turn": 0})
+        return rows, request, ack, expiry
+
+    def test_current_envelope_keeps_request_v1_and_exact_physics(self):
+        self.assertEqual(
+            subject.check_hunger(*self.current_fixture()),
+            subject.check_hunger(*self.fixture()),
+        )
+        for name in (
+            "request_v",
+            "mixed_expiry",
+            "ack_v",
+            "tariff",
+            "bool_tariff",
+            "missing_snapshot",
+            "nonzero_snapshot",
+            "changed_snapshot",
+            "bool_snapshot",
+            "loss",
+            "expiry",
+            "refund",
+        ):
+            with self.subTest(name=name):
+                rows, request, ack, expiry = self.current_fixture()
+                if name == "request_v":
+                    request["v"] = 3
+                if name == "mixed_expiry":
+                    expiry["v"] = 1
+                if name == "ack_v":
+                    ack["v"] = 4
+                if name == "tariff":
+                    ack["cosmetic_cost"] = 1
+                if name == "bool_tariff":
+                    ack["cosmetic_cost"] = False
+                if name == "missing_snapshot":
+                    del ack["cosmetic"]
+                if name == "nonzero_snapshot":
+                    ack["cosmetic"]["seen"] = expiry["cosmetic"]["seen"] = 1
+                if name == "changed_snapshot":
+                    expiry["cosmetic"]["last_turn"] = 1
+                if name == "bool_snapshot":
+                    ack["cosmetic"]["seen"] = False
+                if name == "loss":
+                    rows[1]["after"] -= 1
+                if name == "expiry":
+                    expiry["turn"] = 19
+                if name == "refund":
+                    expiry["spent"] = 0
+                with self.assertRaises(ValueError):
+                    subject.check_hunger(rows, request, ack, expiry)
+
     def test_nonzero_native_sources(self):
         rows, req, ack, expiry = self.fixture()
         first = rows[1]

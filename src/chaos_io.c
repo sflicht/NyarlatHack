@@ -59,13 +59,13 @@ static int event(struct chaos_io *io, struct chaos_state *s, const struct chaos_
     n=snprintf(line,sizeof line,
         CHAOS_EVENT_FORMAT,
         version,s->seq+1,c->turn,s->safe,a,b,d,c->sanity,c->insight,chaos_budget(s,c->sanity),s->spent,s->reserved,s->last_id,
-        c->hp,c->hp_max,c->power,c->power_max,extra);
+        c->hp,c->hp_max,c->power,c->power_max,s->cosmetic_seen,s->cosmetic_last_turn,extra);
     if(n < 0 || (size_t)n >= sizeof line || !append(io,io->events,line)) return 0;
     ++s->seq; return 1;
 }
 int chaos_io_event(struct chaos_io *io, struct chaos_state *s, const struct chaos_context *c,
                    const char *name, const char *phase, const char *detail) {
-    return event(io,s,c,1,name,phase,detail,"");
+    return event(io,s,c,CHAOS_EVENT_VERSION,name,phase,detail,"");
 }
 int chaos_io_observation(struct chaos_io *io, struct chaos_state *s,
                          const struct chaos_context *c, int operation, int stage,
@@ -78,18 +78,18 @@ int chaos_io_observation(struct chaos_io *io, struct chaos_state *s,
     n=snprintf(extra,sizeof extra,",\"observation\":{\"operation\":\"%s\",\"stage\":\"%s\","
         "\"root_seq\":%ld,\"fact\":\"%s\"}",chaos_obs_operation_name(operation),chaos_obs_stage(stage)->name,root_seq,chaos_obs_fact_name(fact));
     if(n < 0 || (size_t)n >= sizeof extra) return 0;
-    return event(io,s,c,2,"observation",chaos_obs_stage(stage)->phase,"",extra);
+    return event(io,s,c,CHAOS_OBSERVATION_VERSION,"observation",chaos_obs_stage(stage)->phase,"",extra);
 }
 static void fields(char *buf, size_t cap, const struct chaos_request *r, const char *status, long expires) {
     snprintf(buf,cap,CHAOS_ACK_FORMAT,
-        r->id,status,chaos_name(r->kind),r->value,r->duration,r->telegraph,r->at,chaos_cost(r->kind),expires);
+        r->id,status,chaos_name(r->kind),r->value,r->duration,r->telegraph,r->at,chaos_cost(r->kind),chaos_cosmetic_cost(r->kind),expires);
 }
 static void ack(struct chaos_io *io, struct chaos_state *s, const struct chaos_context *c,
                 const struct chaos_request *r, int result) {
     char extra[512];
     fields(extra,sizeof extra,r,result == CHAOS_OK ? CHAOS_STATUS_ACCEPTED : CHAOS_STATUS_REJECTED,
         result == CHAOS_OK && r->duration ? c->turn+r->duration : 0);
-    (void)event(io,s,c,1,"ack","result",chaos_reason(result),extra);
+    (void)event(io,s,c,CHAOS_EVENT_VERSION,"ack","result",chaos_reason(result),extra);
 }
 void chaos_io_expire(struct chaos_io *io, struct chaos_state *s, const struct chaos_context *c) {
     int i, mask=0;
@@ -107,6 +107,7 @@ void chaos_io_safe(struct chaos_io *io, struct chaos_state *s, const struct chao
     char data[CHAOS_MAX_REQUEST+1], extra[512], log[1024];
     struct chaos_request r;
     struct chaos_state next;
+    if(!s || !chaos_state_valid(s)) return;
     if(io->busy || io->dir < 0 || io->failed || s->safe >= CHAOS_MAX_COUNTER) return;
     io->busy=1;
     chaos_io_expire(io,s,c);

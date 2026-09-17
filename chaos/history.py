@@ -9,7 +9,7 @@ import json
 
 from .director import DEFAULT_BYTES, DEFAULT_EVENTS, State, eligible
 from .episodes import _snapshot_projection, parse_episode_event, project_episodes
-from .protocol import MAX_INT, REGISTRY, VITALS, encode_request
+from .protocol import MAX_INT, REGISTRY, LEGACY_REGISTRY, VITALS, encode_request
 
 PUBLIC_CONTEXT_BYTES = 6144  # Leave room in the 8192-byte model input for its menu.
 PRIOR_LIMIT = 3
@@ -59,7 +59,7 @@ class HistoryState:
         for line in raw.split(b"\n")[:-1]:
             row = parse_episode_event(line)
             self.latest = row
-            if row["v"] == 2:
+            if row["v"] in (2, 4):
                 payload = row["observation"]
                 stage = payload["stage"]
                 if stage == "enabled":
@@ -83,7 +83,8 @@ class HistoryState:
                     row["phase"] != "result"
                     or row["last_id"] != row["id"]
                     or row["at"] != row["safe"]
-                    or row["cost"] != REGISTRY[name][0]
+                    or row["cost"]
+                    != (LEGACY_REGISTRY if row["v"] == 1 else REGISTRY)[name][0]
                     or row["expires"] != expires
                 ):
                     raise ValueError("inconsistent accepted acknowledgement")
@@ -151,6 +152,10 @@ class HistoryState:
     @property
     def accepted(self):
         return self._legacy.accepted
+
+    @property
+    def accepted_receipts(self):
+        return self._legacy.accepted_receipts
 
     @property
     def active(self):

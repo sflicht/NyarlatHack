@@ -87,11 +87,19 @@ class FountainOracleTests(unittest.TestCase):
         negative[-1]["seq"] = 6
         for records, presented in ((positive, True), (negative, False)):
             driver.validate_detection_history(
-                records, CONTEXT, enabled=True, presented=presented
+                records,
+                CONTEXT,
+                enabled=True,
+                presented=presented,
+                policy=driver.HISTORICAL,
             )
             with self.assertRaises(AssertionError):
                 driver.validate_detection_history(
-                    records, CONTEXT, enabled=True, presented=not presented
+                    records,
+                    CONTEXT,
+                    enabled=True,
+                    presented=not presented,
+                    policy=driver.HISTORICAL,
                 )
             raw = b"".join(json.dumps(r).encode() + b"\n" for r in records)
             public = project_episodes(raw)
@@ -120,35 +128,47 @@ class FountainOracleTests(unittest.TestCase):
                 bad[-1]["observation"]["stage"] = stage
                 with self.assertRaises(AssertionError):
                     driver.validate_detection_history(
-                        bad, CONTEXT, enabled=True, presented=presented
+                        bad,
+                        CONTEXT,
+                        enabled=True,
+                        presented=presented,
+                        policy=driver.HISTORICAL,
                     )
             for key in ("monster_x", "display_callback", "message_flags", "input"):
                 bad = copy.deepcopy(records)
                 bad[-1]["observation"][key] = 1
                 with self.assertRaises(AssertionError):
                     driver.validate_detection_history(
-                        bad, CONTEXT, enabled=True, presented=presented
+                        bad,
+                        CONTEXT,
+                        enabled=True,
+                        presented=presented,
+                        policy=driver.HISTORICAL,
                     )
 
     def test_detection_presented_and_cancelled_are_distinct(self):
         records = synthetic(True, True)
         records[5]["observation"]["fact"] = "detection_presented"
         driver.validate_detection_history(
-            records, CONTEXT, enabled=True, presented=True
+            records, CONTEXT, enabled=True, presented=True, policy=driver.HISTORICAL
         )
         missing = copy.deepcopy(records)
         missing.pop(5)
         missing[-1]["seq"] = 6
         with self.assertRaises(AssertionError):
             driver.validate_detection_history(
-                missing, CONTEXT, enabled=True, presented=True
+                missing, CONTEXT, enabled=True, presented=True, policy=driver.HISTORICAL
             )
         driver.validate_detection_history(
-            missing, CONTEXT, enabled=True, presented=False
+            missing, CONTEXT, enabled=True, presented=False, policy=driver.HISTORICAL
         )
         with self.assertRaises(AssertionError):
             driver.validate_detection_history(
-                records, CONTEXT, enabled=True, presented=False
+                records,
+                CONTEXT,
+                enabled=True,
+                presented=False,
+                policy=driver.HISTORICAL,
             )
         for original, presented in ((records, True), (missing, False)):
             for key, value in (
@@ -160,21 +180,35 @@ class FountainOracleTests(unittest.TestCase):
                 bad[-1]["observation"][key] = value
                 with self.assertRaises(AssertionError):
                     driver.validate_detection_history(
-                        bad, CONTEXT, enabled=True, presented=presented
+                        bad,
+                        CONTEXT,
+                        enabled=True,
+                        presented=presented,
+                        policy=driver.HISTORICAL,
                     )
             with self.assertRaises(AssertionError):
                 driver.validate_detection_history(
-                    original[:-1], CONTEXT, enabled=True, presented=presented
+                    original[:-1],
+                    CONTEXT,
+                    enabled=True,
+                    presented=presented,
+                    policy=driver.HISTORICAL,
                 )
         for presented in (False, True):
             driver.validate_detection_history(
-                synthetic(False, False), CONTEXT, enabled=False, presented=presented
+                synthetic(False, False),
+                CONTEXT,
+                enabled=False,
+                presented=presented,
+                policy=driver.HISTORICAL,
             )
 
     def test_reach_exact_history_and_blocked_projection(self):
         for noshow in (False, True):
             records = synthetic_reach(noshow)
-            driver.validate_reach_history(records, CONTEXT, enabled=True, noshow=noshow)
+            driver.validate_reach_history(
+                records, CONTEXT, enabled=True, noshow=noshow, policy=driver.HISTORICAL
+            )
             raw = b"".join(json.dumps(r).encode() + b"\n" for r in records)
             driver.validate_reach_projection(project_episodes(raw), blocked=True)
             with self.assertRaises(AssertionError):
@@ -183,6 +217,7 @@ class FountainOracleTests(unittest.TestCase):
                     CONTEXT,
                     enabled=True,
                     noshow=noshow,
+                    policy=driver.HISTORICAL,
                 )
             driver.validate_reach_history(
                 synthetic_reach(noshow, prehook=True),
@@ -190,12 +225,14 @@ class FountainOracleTests(unittest.TestCase):
                 enabled=True,
                 noshow=noshow,
                 prehook=True,
+                policy=driver.HISTORICAL,
             )
             driver.validate_reach_history(
                 synthetic(False, False),
                 CONTEXT,
                 enabled=False,
                 noshow=noshow,
+                policy=driver.HISTORICAL,
             )
 
     def test_reach_rejects_malformed_linkage_and_hidden_data(self):
@@ -226,7 +263,11 @@ class FountainOracleTests(unittest.TestCase):
             for row in mutations:
                 with self.assertRaises(AssertionError):
                     driver.validate_reach_history(
-                        row, CONTEXT, enabled=True, noshow=noshow
+                        row,
+                        CONTEXT,
+                        enabled=True,
+                        noshow=noshow,
+                        policy=driver.HISTORICAL,
                     )
             public = project_episodes(
                 b"".join(json.dumps(r).encode() + b"\n" for r in original)
@@ -245,7 +286,13 @@ class FountainOracleTests(unittest.TestCase):
     def test_levitating_selection_has_only_startup_history(self):
         for enabled in (False, True):
             records = synthetic(enabled, False)
-            driver.validate_history(records, CONTEXT, enabled=enabled, future=False)
+            driver.validate_history(
+                records,
+                CONTEXT,
+                enabled=enabled,
+                future=False,
+                policy=driver.HISTORICAL,
+            )
             driver.validate_reach_projection(
                 project_episodes(
                     b"".join(json.dumps(r).encode() + b"\n" for r in records)
@@ -277,19 +324,34 @@ class FountainOracleTests(unittest.TestCase):
         records = synthetic(True, True)
         records[5]["observation"]["fact"] = "water_foul"
         driver.validate_history(
-            records, CONTEXT, enabled=True, future=True, fact="water_foul"
+            records,
+            CONTEXT,
+            enabled=True,
+            future=True,
+            fact="water_foul",
+            policy=driver.HISTORICAL,
         )
         records[5]["observation"]["form"] = "clockwork automaton"
         with self.assertRaises(AssertionError):
             driver.validate_history(
-                records, CONTEXT, enabled=True, future=True, fact="water_foul"
+                records,
+                CONTEXT,
+                enabled=True,
+                future=True,
+                fact="water_foul",
+                policy=driver.HISTORICAL,
             )
 
     def test_foul_complete_and_missing_notice_contract(self):
         records = synthetic(True, True)
         records[5]["observation"]["fact"] = "water_foul"
         driver.validate_history(
-            records, CONTEXT, enabled=True, future=True, fact="water_foul"
+            records,
+            CONTEXT,
+            enabled=True,
+            future=True,
+            fact="water_foul",
+            policy=driver.HISTORICAL,
         )
         raw = b"".join(json.dumps(r).encode() + b"\n" for r in records)
         self.assertEqual(
@@ -305,6 +367,7 @@ class FountainOracleTests(unittest.TestCase):
             future=True,
             fact="water_foul",
             missing_notice=True,
+            policy=driver.HISTORICAL,
         )
         raw = b"".join(json.dumps(r).encode() + b"\n" for r in records)
         projection = project_episodes(raw)
@@ -316,7 +379,12 @@ class FountainOracleTests(unittest.TestCase):
         self.assertLessEqual(len(json.dumps(projection).encode()), 4096)
         with self.assertRaises(AssertionError):
             driver.validate_history(
-                records, CONTEXT, enabled=True, future=True, fact="water_foul"
+                records,
+                CONTEXT,
+                enabled=True,
+                future=True,
+                fact="water_foul",
+                policy=driver.HISTORICAL,
             )
         records.pop()
         raw = b"".join(json.dumps(r).encode() + b"\n" for r in records)
@@ -334,10 +402,13 @@ class FountainOracleTests(unittest.TestCase):
                 future=True,
                 fact="water_foul",
                 missing_notice=True,
+                policy=driver.HISTORICAL,
             )
 
     def validate(self, records, enabled=True, future=True):
-        driver.validate_history(records, CONTEXT, enabled=enabled, future=future)
+        driver.validate_history(
+            records, CONTEXT, enabled=enabled, future=future, policy=driver.HISTORICAL
+        )
 
     def test_legitimate_synthetic_contract(self):
         for enabled in (False, True):
@@ -414,10 +485,10 @@ class FountainOracleTests(unittest.TestCase):
 
     def test_complete_legacy_pair_only_seq_offset(self):
         off, on = synthetic(False, False), synthetic(True, True)
-        driver.validate_legacy_pair(off, on)
+        driver.validate_legacy_pair(off, on, policy=driver.HISTORICAL)
         on[2]["vitals"]["hp_max"] += 1
         with self.assertRaises(AssertionError):
-            driver.validate_legacy_pair(off, on)
+            driver.validate_legacy_pair(off, on, policy=driver.HISTORICAL)
 
     def test_negative_control_evidence_is_fail_closed(self):
         # SYNTHETIC validator inputs, not native abort receipts.

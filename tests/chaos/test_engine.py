@@ -81,7 +81,8 @@ class EngineTests(unittest.TestCase):
         )
         self.assertEqual(s["ward"], 1)
         s = self.execute(REQUEST, "nonfood")
-        self.assertEqual(s["spent"], 1)
+        self.assertEqual(s["spent"], 0)
+        self.assertEqual(self.events[-1]["cosmetic"], dict(seen=1, last_turn=10))
 
     def test_empty_mailbox_no_effect(self):
         s = self.execute()
@@ -109,14 +110,22 @@ class EngineTests(unittest.TestCase):
         )
 
     def test_frozen_journal_and_ack_bytes(self):
+        from chaos.protocol import parse_event
+
+        historical_journal = b'{"v":1,"turn":10,"safe":1,"id":1,"status":"admitted","mutation":"ambient","value":1,"duration":0,"telegraph":1,"at":1,"cost":1,"expires":0}\n'
+        historical_ack = b'{"v":1,"seq":3,"turn":10,"safe":1,"event":"ack","phase":"result","detail":"ok","sanity":0,"insight":0,"budget":11,"spent":1,"reserved":0,"last_id":1,"vitals":{"hp":0,"hp_max":0,"power":0,"power_max":0},"id":1,"status":"accepted","mutation":"ambient","value":1,"duration":0,"telegraph":1,"at":1,"cost":1,"expires":0}'
+        self.assertEqual(json.loads(historical_journal)["cost"], 1)
+        self.assertEqual(parse_event(historical_ack)["spent"], 1)
+
+    def test_current_journal_and_ack_bytes(self):
         self.execute(REQUEST)
         self.assertEqual(
             (self.path / "whispers.jsonl").read_bytes(),
-            b'{"v":1,"turn":10,"safe":1,"id":1,"status":"admitted","mutation":"ambient","value":1,"duration":0,"telegraph":1,"at":1,"cost":1,"expires":0}\n',
+            b'{"v":1,"policy":2,"turn":10,"safe":1,"id":1,"status":"admitted","mutation":"ambient","value":1,"duration":0,"telegraph":1,"at":1,"cost":0,"cosmetic_cost":1,"expires":0}\n',
         )
         self.assertEqual(
             (self.path / "events.jsonl").read_bytes().splitlines()[2],
-            b'{"v":1,"seq":3,"turn":10,"safe":1,"event":"ack","phase":"result","detail":"ok","sanity":0,"insight":0,"budget":11,"spent":1,"reserved":0,"last_id":1,"vitals":{"hp":0,"hp_max":0,"power":0,"power_max":0},"id":1,"status":"accepted","mutation":"ambient","value":1,"duration":0,"telegraph":1,"at":1,"cost":1,"expires":0}',
+            b'{"v":3,"seq":3,"turn":10,"safe":1,"event":"ack","phase":"result","detail":"ok","sanity":0,"insight":0,"budget":12,"spent":0,"reserved":0,"last_id":1,"vitals":{"hp":0,"hp_max":0,"power":0,"power_max":0},"cosmetic":{"seen":1,"last_turn":10},"id":1,"status":"accepted","mutation":"ambient","value":1,"duration":0,"telegraph":1,"at":1,"cost":0,"cosmetic_cost":1,"expires":0}',
         )
 
     def test_hunger_rule_and_expiry(self):
@@ -134,7 +143,7 @@ class EngineTests(unittest.TestCase):
 
     def test_future_is_pending_then_applies_once(self):
         s = self.execute(dict(REQUEST, at=2))
-        self.assertEqual((s["spent"], s["telegraphs"], s["last_id"]), (1, 1, 1))
+        self.assertEqual((s["spent"], s["telegraphs"], s["last_id"]), (0, 1, 1))
         self.assertEqual(self.events[-1]["status"], "accepted")
 
     def test_missed_index_rejects_without_retiming(self):
@@ -181,7 +190,7 @@ class EngineTests(unittest.TestCase):
 
     def test_reentrant_poll_is_ignored(self):
         s = self.execute(REQUEST, "reentrant")
-        self.assertEqual((s["safe"], s["spent"], s["telegraphs"]), (2, 1, 1))
+        self.assertEqual((s["safe"], s["spent"], s["telegraphs"]), (2, 0, 1))
 
     def test_telegraph_failure_is_fail_closed(self):
         s = self.execute(dict(REQUEST, at=2), "fail_ui")

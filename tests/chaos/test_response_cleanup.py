@@ -13,7 +13,7 @@ from chaos.director import State, run
 from chaos.model import ModelBackend
 from chaos.oauth import MODEL, OAuthBackend
 from chaos.protocol import parse_request
-from test_director import REQ, append, event
+from test_director import REQ, append, current_event as event
 
 
 REQUEST = dict(REQ, at=2)
@@ -173,7 +173,16 @@ class CleanupContract:
 
     def test_ineligible_state_never_calls(self):
         backend = self.backend()
-        self.state.ingest(event(2, budget=0))
+        self.state = State()
+        self.state.ingest(
+            event(
+                2,
+                event="session",
+                detail="restore",
+                budget=0,
+                cosmetic=dict(seen=7, last_turn=10),
+            )
+        )
         self.assertIsNone(backend.choose(self.state, 1, 2))
         self.assertEqual(self.calls, [])
         self.assertEqual(self.created, 0)

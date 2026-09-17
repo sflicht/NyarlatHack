@@ -9,7 +9,7 @@ import threading
 import time
 import tempfile
 import unittest
-from test_director import REQ, event, append
+from test_director import REQ, event, current_event, append
 from chaos.director import State, run
 
 
@@ -97,7 +97,7 @@ class ModelTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             run(tmp, self.backend(), max_runtime=0.06, poll=0.01)
             self.assertEqual(len(self.server.requests), 0)
-            append(Path(tmp) / "events.jsonl", event())
+            append(Path(tmp) / "events.jsonl", current_event())
             run(tmp, self.backend(), max_runtime=0.06, poll=0.01)
             self.assertEqual(len(self.server.requests), 1)
 
@@ -112,7 +112,7 @@ class ModelTests(unittest.TestCase):
     def test_run_deadline_limits_inflight_model_request(self):
         self.server.delay = 0.15
         with tempfile.TemporaryDirectory() as tmp:
-            append(Path(tmp) / "events.jsonl", event())
+            append(Path(tmp) / "events.jsonl", current_event())
             with self.assertRaises((ValueError, OSError)):
                 run(tmp, self.backend(timeout=1), max_runtime=0.025, poll=0.01)
             self.assertFalse((Path(tmp) / "whisper.json").exists())

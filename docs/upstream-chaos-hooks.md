@@ -80,3 +80,20 @@ upstream rows.
    historical pins or native gates with token checks.
 
 There is deliberately no automatic accept/update CLI and no CI rewrite mode.
+
+## Issue #2 restore safety extension
+
+The additional `src/restore.c` seams preserve a rejected CHAOS save rather than
+using the stock `restgamestate` false-return deletion/new-game path. A private
+helper closes the file, restores UNIX readability, clears level locks and exits
+without traversing partially restored pointers. Structural chaos/haunt/curio
+validation and a clock check **after reading moves** use that helper. There is
+no sticky rejection flag; CHAOS-off behavior is unchanged. The clock check does
+not impose the cosmetic counter maximum on mechanical turns.
+
+`test_restore_safety.py` executes extracted production branches with the real
+protocol validator and stubbed platform cleanup; it is not whole-restore proof.
+The linked save-entry fault cases in `test_curio_state.py` require the reviewed
+native build and preserve both original fixture bytes and an isolated rejection
+copy. Arbitrary short-read corruption still follows stock `mread` behavior;
+neither this inventory nor the branch probe claims otherwise.

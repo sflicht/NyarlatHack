@@ -408,6 +408,28 @@ register struct obj *otmp;
 	else otmp->spe = fruitadd(oldf->fname);
 }
 
+#ifdef CHAOS
+/* A rejected CHAOS block may be an older layout that passed the packed
+ * fingerprint.  Do not delete it, retry, or enter newgame with partially
+ * restored pointers.  No persistent failure flag can leak between attempts. */
+STATIC_OVL boolean
+chaos_restore_reject(int fd)
+{
+	(void) close(fd);
+#ifdef UNIX
+	/* unixmain made the save unreadable while restoration was in progress. */
+	(void) chmod(fqname(SAVEF, SAVEPREFIX, 1), FCMASK);
+#endif
+	restoring = FALSE;
+	clearlocks();
+	exit_nhwindows("Incompatible CHAOS save state; save file preserved.");
+	/* terminate must not traverse partially restored object/player pointers. */
+	program_state.panicking = 1;
+	terminate(EXIT_FAILURE);
+	return FALSE; /* terminate does not return */
+}
+#endif
+
 STATIC_OVL
 boolean
 restgamestate(int fd, unsigned int *stuckid, unsigned int *steedid, unsigned int *riderid)
@@ -448,7 +470,7 @@ restgamestate(int fd, unsigned int *stuckid, unsigned int *steedid, unsigned int
 	mread(fd, (genericptr_t) &u, sizeof(struct you));
 #ifdef CHAOS
 	if (!chaos_state_valid(&u.chaos) || !chaos_haunt_valid(&u.haunt)
-            || !chaos_curio_valid(&u.curio)) return FALSE;
+            || !chaos_curio_valid(&u.curio)) return chaos_restore_reject(fd);
 #endif
 	mread(fd, (genericptr_t) &youmonst, sizeof(struct monst));
 	if (youmonst.light)
@@ -553,6 +575,12 @@ restgamestate(int fd, unsigned int *stuckid, unsigned int *steedid, unsigned int
 	restore_dungeon(fd);
 	restlevchn(fd);
 	mread(fd, (genericptr_t) &moves, sizeof moves);
+#ifdef CHAOS
+	/* Only now is the restored clock available.  Do not cap mechanical time
+	 * at CHAOS_MAX_COUNTER: the cosmetic timestamp has its own domain. */
+	if (moves < 0L || u.chaos.cosmetic_last_turn > moves)
+	    return chaos_restore_reject(fd);
+#endif
 	mread(fd, (genericptr_t) &monstermoves, sizeof monstermoves);
 	mread(fd, (genericptr_t) &quest_status, sizeof(struct q_score));
 	mread(fd, (genericptr_t) spl_book,

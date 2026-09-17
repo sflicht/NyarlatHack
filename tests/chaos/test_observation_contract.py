@@ -256,6 +256,8 @@ class RegistrationTests(unittest.TestCase):
             ),
         )
         source = json.loads((ROOT / "chaos/protocol_contract.json").read_text())
+        self.assertEqual(expected["wire_version"], 2)  # Historical registration pin.
+        expected = dict(expected, wire_version=4)
         self.assertEqual(source["observations"], expected)
         self.assertEqual(contract.OBSERVATIONS, expected)
 
@@ -271,7 +273,8 @@ class WireTests(unittest.TestCase):
         self.assertEqual(states[0][0], 1)
         # SOURCE: a1daf52e833ebf79b0625f8f342c852743e972fc, real
         # episode_io.c + chaos_io.c + chaos_protocol.c, enabled input 0 0 0 0 0.
-        self.assertEqual(raw, V2_GOLDEN)
+        self.assertEqual(parse_episode_event(V2_GOLDEN)["v"], 2)
+        self.assertEqual(raw, V4_GOLDEN)
 
     def test_exhaustive_shared_integer_domain(self):
         # Independent frozen vocabulary and grammar, never registry-derived.
@@ -313,7 +316,7 @@ class WireTests(unittest.TestCase):
             with self.subTest(case=case):
                 self.assertEqual(state[0], int(legal))
                 # Candidate invalid rows are schema probes, NOT claimed C output.
-                row = json.loads(V2_GOLDEN)
+                row = json.loads(V4_GOLDEN)
                 row.update(seq=11, phase="attempt" if stage == 1 else "result")
                 row["observation"] = dict(
                     operation=ops[op],
@@ -335,7 +338,7 @@ class WireTests(unittest.TestCase):
         print(f"shared-domain cases={len(cases)} accepted={accepted}")
         # Python's strict JSON types are outside C's native integer domain.
         for key, value in [("seq", True), ("seq", 11.0), ("seq", "11")]:
-            row = json.loads(V2_GOLDEN)
+            row = json.loads(V4_GOLDEN)
             row[key] = value
             with self.assertRaises(ValueError):
                 parse_episode_event(json.dumps(row))
@@ -347,6 +350,16 @@ V2_GOLDEN = (
     b'"spent":0,"reserved":0,"last_id":0,"vitals":{"hp":7,"hp_max":20,'
     b'"power":-2,"power_max":10},"observation":{"operation":"none",'
     b'"stage":"enabled","root_seq":0,"fact":"none"}}\n'
+)
+
+
+# Independent current full-wire literal, not generated from the old golden.
+V4_GOLDEN = (
+    b'{"v":4,"seq":1,"turn":10,"safe":0,"event":"observation",'
+    b'"phase":"result","detail":"","sanity":0,"insight":0,"budget":12,'
+    b'"spent":0,"reserved":0,"last_id":0,"vitals":{"hp":7,"hp_max":20,'
+    b'"power":-2,"power_max":10},"cosmetic":{"seen":0,"last_turn":0},'
+    b'"observation":{"operation":"none","stage":"enabled","root_seq":0,"fact":"none"}}\n'
 )
 
 
@@ -925,7 +938,7 @@ else:
     def assert_rejected(self):
         _, rows, output = self.run_scope("start begin 3 arm 3 10 take deliver end")
         self.assertEqual(
-            [r["observation"]["stage"] for r in rows if r["v"] == 2], ["enabled"]
+            [r["observation"]["stage"] for r in rows if r["v"] == 4], ["enabled"]
         )
         self.assertIn("begin 0 ", output)
 

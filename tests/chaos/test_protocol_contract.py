@@ -20,6 +20,11 @@ ROWS = (
     ("ward_efficacy", 50, 50, 1, 50, 2, 4, 80),
     ("hunger_rate", 2, 2, 1, 50, 3, 3, 90),
 )
+CURRENT_ROWS = (
+    ("ambient", 1, 3, 0, 0, 1, 0, 100),
+    ("ward_efficacy", 50, 50, 1, 50, 2, 4, 80),
+    ("hunger_rate", 2, 2, 1, 50, 3, 3, 90),
+)
 EVENTS = "eat read zap apply pray kill level_enter level_leave sanity insight death sleep session safe_point ack telegraph expiry haunting haunt_step backtrack curio".split()
 REASONS = (
     "ok schema oversize duplicate schedule budget active ineligible log_failure".split()
@@ -41,6 +46,8 @@ def state_type(count=3):
             ("seq", C.c_long),
             ("safe", C.c_long),
             ("effects", Effect * count),
+            ("cosmetic_seen", C.c_int),
+            ("cosmetic_last_turn", C.c_long),
         ]
 
     return NativeState
@@ -214,14 +221,21 @@ class CompatibilityTests(unittest.TestCase):
         self.assertEqual(NON_EFFECT_SPENDERS, {"curio": (1, 1), "haunt": (2, 2)})
         self.assertTrue(set(NON_EFFECT_SPENDERS).isdisjoint(protocol.REGISTRY))
 
-    def test_frozen_registry_and_admission(self):
-        self.assertEqual(protocol.REGISTRY, {r[0]: (r[6], r[7], r[5]) for r in ROWS})
+    def test_current_registry_and_admission(self):
+        self.assertEqual(
+            protocol.REGISTRY, {r[0]: (r[6], r[7], r[5]) for r in CURRENT_ROWS}
+        )
         self.assertEqual(protocol.EVENTS, frozenset(EVENTS))
-        self.assertEqual(protocol.REASONS, frozenset(REASONS))
+        self.assertEqual(
+            protocol.REASONS,
+            frozenset(
+                REASONS + ["cosmetic_repeat", "cosmetic_cooldown", "cosmetic_budget"]
+            ),
+        )
         self.assertEqual(protocol.FIELDS, tuple(FIELDS))
         self.assertEqual(protocol.MAX_INT, 2147483647)
         self.assertEqual(C.sizeof(C.c_int), 4)
-        for i, row in enumerate(ROWS):
+        for i, row in enumerate(CURRENT_ROWS):
             name, lo, _, dlo, _, signal, cost, limit = row
             self.assertEqual(self.lib.chaos_name(i), name.encode())
             self.assertEqual(self.lib.chaos_cost(i), cost)
@@ -251,11 +265,14 @@ class CompatibilityTests(unittest.TestCase):
                     self.assertEqual(
                         self.lib.chaos_rule(C.byref(s), i, 10, 3), 1 if i == 1 else 6
                     )
-        for i, reason in enumerate(REASONS + ["future"]):
+        for i, reason in enumerate(
+            REASONS
+            + ["future", "cosmetic_budget", "cosmetic_cooldown", "cosmetic_repeat"]
+        ):
             self.assertEqual(self.lib.chaos_reason(i), reason.encode())
         self.assertEqual(self.lib.chaos_name(3), b"")
         self.assertEqual(self.lib.chaos_cost(3), 0)
-        self.assertEqual(self.lib.chaos_reason(10), b"schema")
+        self.assertEqual(self.lib.chaos_reason(13), b"schema")
 
     def test_legacy_bytes_and_random(self):
         self.assertEqual(
@@ -265,17 +282,25 @@ class CompatibilityTests(unittest.TestCase):
         expected = json.loads(
             (ROOT / "tests/chaos/protocol_legacy_baseline.json").read_text()
         )
+        # Frozen historical random choices remain valid request-reader evidence.
+        for encoded in expected["random"]:
+            self.assertEqual(
+                protocol.encode_request(protocol.parse_request(encoded)),
+                encoded.encode(),
+            )
+
+    def test_current_random_prefers_mechanics(self):
+        from test_director import current_event
+
         s = State()
-        s.latest = dict(sanity=0, budget=12)
+        s.ingest(current_event(sanity=0, budget=12))
         backend = RandomBackend(7, ordinary_food=True)
-        self.assertEqual(
-            [
-                protocol.encode_request(backend.choose(s, i, i)).decode()
-                for i in range(1, 13)
-            ],
-            expected["random"],
+        choices = [backend.choose(s, i, i) for i in range(1, 13)]
+        self.assertTrue(
+            all(r["mutation"] in ("ward_efficacy", "hunger_rate") for r in choices)
         )
         self.assertEqual(eligible(s), ["ambient", "ward_efficacy"])
+        self.assertEqual(C.sizeof(state_type()), 96)
 
     def test_legacy_event_openness(self):
         e = dict(
@@ -443,8 +468,12 @@ class GenerationTests(unittest.TestCase):
 
     def test_fresh_generated_files_do_not_mask_consumer_bypass(self):
         mutations = [
-            ("mutations[k].name :", '"bypass" :', "test_frozen_registry_and_admission"),
-            ("mutations[k].cost :", "0 :", "test_frozen_registry_and_admission"),
+            (
+                "mutations[k].name :",
+                '"bypass" :',
+                "test_current_registry_and_admission",
+            ),
+            ("mutations[k].cost :", "0 :", "test_current_registry_and_admission"),
             (
                 "r->value <= m->high",
                 "r->value <= m->high + 1",
@@ -458,9 +487,9 @@ class GenerationTests(unittest.TestCase):
             (
                 "sanity > mutations[r->kind].sanity_max",
                 "sanity >= mutations[r->kind].sanity_max",
-                "test_frozen_registry_and_admission",
+                "test_current_registry_and_admission",
             ),
-            ("eligible != 1", "eligible == 0", "test_frozen_registry_and_admission"),
+            ("eligible != 1", "eligible == 0", "test_current_registry_and_admission"),
             (
                 "r->telegraph == m->telegraph",
                 "r->telegraph == m->telegraph + 1",
@@ -527,6 +556,8 @@ class GenerationTests(unittest.TestCase):
                 id=3,
                 name="test_only",
                 value=[1, 1],
+                cost=1,
+                cosmetic_cost=0,
             )
             data["mutations"].append(fourth)
             source.write_text(json.dumps(data))

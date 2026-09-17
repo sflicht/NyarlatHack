@@ -27,6 +27,45 @@ from native_fixture_config import (
 )
 
 
+import native_observation_contract as wire_policy
+
+assert (
+    Path(wire_policy.__file__).resolve()
+    == Path(__file__).with_name("native_observation_contract.py").resolve()
+), "foreign observation helper"
+
+
+def validate_action_observations(events):
+    from chaos.episodes import parse_episode_event, project_episodes
+
+    rows = [json.loads(line) for line in events.splitlines()]
+    wire_policy.validate_rows(rows, wire_policy.CURRENT)
+    wire_policy.ordinary_projection(rows, wire_policy.CURRENT)
+    obs = [r for r in rows if r["v"] == 4]
+    assert [r["observation"]["stage"] for r in obs] == [
+        "enabled",
+        "started",
+        "notice",
+        "completed",
+        "started",
+        "notice",
+        "completed",
+    ], "selected stages"
+    assert [parse_episode_event(line) for line in events.splitlines()] == rows
+    projection = project_episodes(events)
+    assert sum(group["count"] for group in projection["episodes"]) == 2, (
+        "delivered episodes"
+    )
+    for first, notice, end in (obs[1:4], obs[4:7]):
+        assert (
+            notice["observation"]["root_seq"]
+            == end["observation"]["root_seq"]
+            == first["seq"]
+        ), "selected roots"
+        assert first["observation"]["root_seq"] == 0, "selected root start"
+    return obs
+
+
 def compare_native(healthy, candidate):
     assert candidate == healthy, "native terminal/input/state/RNG parity"
 
@@ -207,6 +246,7 @@ def main(argv=None):
             source,
             Path(__file__).resolve(),
             support,
+            Path(__file__).with_name("native_observation_contract.py"),
             trusted / "native_rng.h",
             trusted / "native_rng.py",
         )
@@ -387,6 +427,11 @@ def main(argv=None):
             events = (g.run / "events.jsonl").read_bytes()
             assert len(events) < 65536 and (not events or events.endswith(b"\n"))
             rows = [json.loads(line) for line in events.splitlines()]
+            wire_policy.validate_rows(rows, wire_policy.CURRENT)
+            if not enabled:
+                assert not any(
+                    r["event"] == "observation" or "observation" in r for r in rows
+                )
             assert [r["seq"] for r in rows] == list(range(1, len(rows) + 1))
             meta = json.loads((g.game / "transport.json").read_text())
             return native, events, meta, work, g.game
@@ -397,7 +442,7 @@ def main(argv=None):
             compare_native(off, healthy)
             assert off_meta["triggered"] == healthy_meta["triggered"] == 0
             rows = [json.loads(line) for line in events.splitlines()]
-            obs = [r for r in rows if r.get("v") == 2]
+            obs = validate_action_observations(events)
             assert [r["observation"]["stage"] for r in obs] == [
                 "enabled",
                 "started",

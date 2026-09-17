@@ -2,9 +2,18 @@
 
 import copy
 import unittest
+from pathlib import Path
+import native_observation_contract as wire
+
+# External helper is sibling-bound and copied/hashed in source manifests.
+assert Path(wire.__file__).resolve() == Path(__file__).resolve().with_name(
+    "native_observation_contract.py"
+)
+CURRENT, HISTORICAL = wire.CURRENT, wire.HISTORICAL
 
 
-def validate_fatal(records, native, terminal, xlog, public, *, enabled):
+def validate_fatal(records, native, terminal, xlog, public, *, enabled, policy):
+    wire.ordinary_projection(records, policy, renumber_seq=False)
     assert native["gameover"] == 1 and native["hp"] <= 0
     assert native["rng_count"] == 3
     assert native["entered"] == 1 and native["returned"] == 0
@@ -34,8 +43,9 @@ def validate_fatal(records, native, terminal, xlog, public, *, enabled):
         )
 
 
-def reject_mutated_death_evidence(records, native, terminal, xlog, public):
+def reject_mutated_death_evidence(records, native, terminal, xlog, public, *, policy):
     """Sensitivity only: mutate copies of actual native outputs, never journals."""
+    validate_fatal(records, native, terminal, xlog, public, enabled=True, policy=policy)
     completed = copy.deepcopy(records[-2])
     completed["observation"].update(stage="completed", root_seq=completed["seq"])
     completed.update(phase="result", seq=records[-1]["seq"] + 1)
@@ -54,7 +64,7 @@ def reject_mutated_death_evidence(records, native, terminal, xlog, public):
     rejected = []
     for name, values in variants.items():
         try:
-            validate_fatal(*values, enabled=True)
+            validate_fatal(*values, enabled=True, policy=policy)
         except AssertionError:
             rejected.append(name)
         else:
@@ -62,12 +72,12 @@ def reject_mutated_death_evidence(records, native, terminal, xlog, public):
     return rejected
 
 
-def compare_pair(off, on):
+def compare_pair(off, on, *, policy):
     for key in ("terminal", "inputs", "xlog", "dump", "native", "before"):
         assert off[key] == on[key], key + " OFF/ON mismatch"
-    legacy = [r for r in on["records"] if r["v"] == 1]
-    assert len(legacy) == len(off["records"])
-    assert [dict(r, seq=i + 1) for i, r in enumerate(legacy)] == off["records"]
+    assert wire.ordinary_projection(off["records"], policy) == wire.ordinary_projection(
+        on["records"], policy
+    )
 
 
 class FatalOracleTests(unittest.TestCase):
@@ -80,6 +90,7 @@ class FatalOracleTests(unittest.TestCase):
                 b"",
                 {},
                 enabled=True,
+                policy=CURRENT,
             )
 
     def test_pair_rejects_each_artifact_change(self):
@@ -90,14 +101,24 @@ class FatalOracleTests(unittest.TestCase):
             dump=b"c",
             native={"hp": -1},
             before={"hp": 1},
-            records=[],
+            # Independent SYNTHETIC nonempty ordinary stream, not native evidence.
+            records=[
+                dict(
+                    v=3,
+                    seq=1,
+                    event="session",
+                    phase="result",
+                    detail="new",
+                    cosmetic=dict(seen=0, last_turn=0),
+                )
+            ],
         )
-        compare_pair(row, copy.deepcopy(row))
+        compare_pair(row, copy.deepcopy(row), policy=CURRENT)
         for key in ("terminal", "inputs", "xlog", "dump", "native", "before"):
             altered = copy.deepcopy(row)
             altered[key] = None
             with self.subTest(key=key), self.assertRaises(AssertionError):
-                compare_pair(row, altered)
+                compare_pair(row, altered, policy=CURRENT)
 
 
 if __name__ == "__main__":

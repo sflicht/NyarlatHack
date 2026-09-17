@@ -9,8 +9,13 @@ import unittest
 from unittest.mock import patch
 
 import test_history as fixtures
-from test_director import ack, event
-from test_episodes import action, wire
+from test_director import (
+    ack as historical_ack,
+    current_ack as ack,
+    current_event as event,
+)
+from test_episodes import wire
+from current_history_fixtures import current_action as action, current_history_rows
 from chaos.history import HistoryState, candidate_requests
 from chaos.director import ScheduleBackend
 
@@ -21,7 +26,7 @@ class HistoryDirectorTests(unittest.TestCase):
         self.addCleanup(self.tmp.cleanup)
         self.path = Path(self.tmp.name)
         self.events = self.path / "events.jsonl"
-        self.rows = fixtures.HistoryTests().rows()
+        self.rows = current_history_rows()
         self.save()
 
     def save(self):
@@ -112,7 +117,7 @@ class HistoryDirectorTests(unittest.TestCase):
             self.run_case(choose=choose)
 
     def test_quiet_to_positive_same_safe(self):
-        self.rows = fixtures.HistoryTests().rows("water_foul")
+        self.rows = current_history_rows("water_foul")
         self.save()
 
         def tick():
@@ -130,7 +135,7 @@ class HistoryDirectorTests(unittest.TestCase):
             with tempfile.TemporaryDirectory() as directory:
                 self.path = Path(directory)
                 self.events = self.path / "events.jsonl"
-                self.rows = fixtures.HistoryTests().rows()
+                self.rows = current_history_rows()
                 self.save()
 
                 def tick():
@@ -143,9 +148,11 @@ class HistoryDirectorTests(unittest.TestCase):
                             sanity=70,
                             cost=3,
                             spent=3 if status == "accepted" else 0,
+                            budget=3 if status == "accepted" else 6,
                             reserved=3 if status == "accepted" else 0,
                             expires=20 if status == "accepted" else 0,
                             status=status,
+                            detail="ok" if status == "accepted" else "log_failure",
                         )
                     )
                     self.save()
@@ -169,6 +176,7 @@ class HistoryDirectorTests(unittest.TestCase):
                     sanity=70,
                     cost=3,
                     spent=3,
+                    budget=3,
                     reserved=3,
                     expires=20,
                 )
@@ -256,7 +264,7 @@ class HistoryDirectorTests(unittest.TestCase):
             self.run_case(tick=tick)
 
     def test_checkpoint_rewrite_cannot_be_adopted_on_quiet_poll(self):
-        self.rows = fixtures.HistoryTests().rows("water_foul")
+        self.rows = current_history_rows("water_foul")
         self.save()
 
         def tick():
@@ -284,7 +292,7 @@ class HistoryDirectorTests(unittest.TestCase):
     def test_poll_rewrite_between_old_check_and_full_read(self):
         api = self.api()
         original = api.snapshot_history
-        self.rows = fixtures.HistoryTests().rows("water_foul")
+        self.rows = current_history_rows("water_foul")
         self.save()
 
         def snapshot(*args, **kwargs):
@@ -304,7 +312,9 @@ class HistoryDirectorTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 self.run_case(**kwargs)
 
-    def test_replay_requires_original_exact_acceptance(self):
+    def test_historical_replay_is_not_current_publication_authority(self):
+        self.rows = fixtures.HistoryTests().rows()
+        self.save()
         api = self.api()
         request = candidate_requests(HistoryState(wire(*self.rows)), True)[0]
         journal = self.path / "admissions.jsonl"
@@ -313,13 +323,18 @@ class HistoryDirectorTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             api.load_history_replay(journal, self.events)
         self.rows.append(
-            ack(6, request, safe=2, sanity=70, cost=3, spent=3, reserved=3, expires=20)
+            historical_ack(
+                6, request, safe=2, sanity=70, cost=3, spent=3, reserved=3, expires=20
+            )
         )
         self.save()
-        self.assertEqual(api.load_history_replay(journal, self.events), [request])
+        with self.assertRaisesRegex(ValueError, "matching old build"):
+            api.load_history_replay(journal, self.events)
+        self.assertEqual(
+            HistoryState(wire(*self.rows)).accepted, {request["id"]: request}
+        )
         self.rows = fixtures.HistoryTests().rows("water_foul")
         self.save()
-        result = api.run_history(
-            self.path, ScheduleBackend([request]), install_only=True
-        )
-        self.assertEqual(result["submitted"], 1)
+        with self.assertRaisesRegex(ValueError, "historical"):
+            api.run_history(self.path, ScheduleBackend([request]), install_only=True)
+        self.assertFalse((self.path / "whisper.json").exists())

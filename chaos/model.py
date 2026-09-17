@@ -8,7 +8,7 @@ import re
 import time
 from urllib.parse import urlsplit
 
-from .director import eligible
+from .director import preferred_menu
 from .protocol import parse_request, strict_json
 from .response import normalize_whisper_response
 
@@ -67,13 +67,14 @@ class ModelBackend:
         self.prompt = (Path(__file__).parent / "prompts/director.txt").read_text()
 
     def choose(self, state, ident, at):
-        options = eligible(state, self.ordinary_food)
+        options = preferred_menu(state, self.ordinary_food)
         if not options or self.calls >= self.max_calls:
             return None
         data = {
             "assigned_id": ident,
             "assigned_at": at,
-            "eligible": options,
+            "eligible": list(options),
+            "allowed_values": options,
             "summary": json.loads(state.summary()),
         }
         messages = [
@@ -156,6 +157,7 @@ class ModelBackend:
                 request["id"] != ident
                 or request["at"] != at
                 or request["mutation"] not in options
+                or request["value"] not in options.get(request["mutation"], ())
             ):
                 raise ValueError(
                     "model proposal is ineligible or changes assigned schedule"

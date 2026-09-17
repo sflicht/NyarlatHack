@@ -63,7 +63,9 @@ def literals():
     }
 
 
-def decode_save(test, data, schema, source, charges, state, sanity):
+def decode_save(
+    test, data, schema, source, charges, state, sanity, *, policy, cosmetic=None
+):
     """Bounded source-anchored player record, not a physical-object snapshot."""
 
     def integer(blob, field, signed=False):
@@ -120,7 +122,31 @@ def decode_save(test, data, schema, source, charges, state, sanity):
         True,
     )
     test.assertEqual(fields["sanity"], sanity)
-    test.assertEqual(fields["spent"], 2)  # actual ambient point + curio point
+    if policy == "historical":
+        test.assertEqual(fields["spent"], 2)  # archived ambient1 + curio1
+    elif policy == "current":
+        test.assertEqual(fields["spent"], 1)  # current ambient0 + curio1
+        test.assertEqual(schema["chaos_state_version"], 2)
+        test.assertEqual(schema["chaos_size"], schema["you"]["chaos"]["size"])
+        base = schema["you"]["chaos"]["offset"]
+        test.assertLessEqual(base + schema["chaos_size"], len(player))
+        native = {}
+        for name in ("version", "cosmetic_seen", "cosmetic_last_turn"):
+            field = schema["chaos_fields"][name]
+            test.assertGreaterEqual(field["offset"], 0)
+            test.assertGreater(field["size"], 0)
+            test.assertLessEqual(field["offset"] + field["size"], schema["chaos_size"])
+            native[name] = integer(
+                player, dict(offset=base + field["offset"], size=field["size"]), True
+            )
+        test.assertEqual(native["version"], 2)
+        fields["cosmetic"] = dict(
+            seen=native["cosmetic_seen"], last_turn=native["cosmetic_last_turn"]
+        )
+        test.assertIsNotNone(cosmetic)
+        test.assertEqual(fields["cosmetic"], cosmetic)
+    else:
+        raise ValueError("explicit historical/current save policy required")
     fields.update(save_sha256=sha(data), record_sha256=sha(record), record_offset=start)
     return record, fields
 
@@ -131,6 +157,8 @@ def decode_save(test, data, schema, source, charges, state, sanity):
 class CurioLauncherGameplayTests(unittest.TestCase):
     def test_fresh_bundle_save_and_explicit_matching_launcher_restore(self):
         selection = prepare(ROOT)
+        policy = {"archived": "historical", "source-build": "current"}[selection.mode]
+        ambient_spent = 1 if policy == "historical" else 0
         self.assertEqual((ROOT / ".chaos-build").read_text().strip(), "1")
         self.assertEqual(
             sha((ROOT / "tests/chaos/gameplay_support.py").read_bytes()),
@@ -433,7 +461,15 @@ class CurioLauncherGameplayTests(unittest.TestCase):
                 shutil.copy2(g.root / name, dest / name)
             shutil.copytree(g.run, dest / "run")
             record, fields = decode_save(
-                self, data, schema, source, charges, state, sanity
+                self,
+                data,
+                schema,
+                source,
+                charges,
+                state,
+                sanity,
+                policy=policy,
+                cosmetic=g.events()[-1].get("cosmetic"),
             )
             if records:
                 self.assertEqual(fields["owner"], records[0][1]["owner"])
@@ -465,7 +501,14 @@ class CurioLauncherGameplayTests(unittest.TestCase):
         curio = [e for e in g.events() if e["event"] == "curio"]
         self.assertEqual([e["detail"] for e in curio], ["pre_admitted", "admitted"])
         self.assertEqual([e["sanity"] for e in curio], [100, 100])
-        self.assertEqual([e["spent"] for e in curio], [1, 2])
+        self.assertEqual(
+            [e["spent"] for e in curio], [ambient_spent, ambient_spent + 1]
+        )
+        if policy == "current":
+            self.assertTrue(all(e["v"] == 3 for e in curio))
+            self.assertTrue(
+                all(e["cosmetic"] == {"seen": 1, "last_turn": 1} for e in curio)
+            )
         for key in route:
             g.send(key)
         self.assertIn(b"Dlvl:2", response("stairs", ">"))
@@ -532,13 +575,26 @@ class CurioLauncherGameplayTests(unittest.TestCase):
         accepted = [e for e in acks if e["status"] == "accepted"]
         self.assertEqual(len(accepted), 1)
         self.assertEqual(accepted[0]["mutation"], "ambient")
-        self.assertEqual(accepted[0]["spent"], 1)
+        self.assertEqual(accepted[0]["spent"], ambient_spent)
+        if policy == "current":
+            self.assertEqual(
+                (accepted[0]["cost"], accepted[0]["cosmetic_cost"]), (0, 1)
+            )
+            self.assertEqual(accepted[0]["cosmetic"], {"seen": 1, "last_turn": 1})
+            self.assertTrue(
+                all(
+                    e["cosmetic"] == accepted[0]["cosmetic"]
+                    for e in events
+                    if e["event"] == "session" and e["detail"] == "restore"
+                )
+            )
         # chaos_io_safe reads (does not remove) whisper.json at later safe
         # points. chaos_admit rejects its already consumed ID without spending.
         for e in acks:
             if e["status"] != "accepted":
                 self.assertEqual(
-                    (e["status"], e["detail"], e["spent"]), ("rejected", "duplicate", 2)
+                    (e["status"], e["detail"], e["spent"]),
+                    ("rejected", "duplicate", ambient_spent + 1),
                 )
         whispers = [
             json.loads(line)

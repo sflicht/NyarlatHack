@@ -43,11 +43,28 @@ WRITE_NOTICE = (
 )
 
 
+# Separate current byte golden; preserve historical WRITE_NOTICE above unchanged.
+CURRENT_WRITE_NOTICE = (
+    b'{"v":4,"seq":6,"turn":10,"safe":1,"event":"observation","phase":"result",'
+    b'"detail":"","sanity":60,"insight":4,"budget":6,"spent":0,"reserved":0,'
+    b'"last_id":0,"vitals":{"hp":7,"hp_max":20,"power":2,"power_max":10},'
+    b'"cosmetic":{"seen":0,"last_turn":0},'
+    b'"observation":{"operation":"whistling","stage":"notice","root_seq":5,'
+    b'"fact":"sound_high"}}\n'
+)
+
+
 def digest(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
 def main():
+    import native_observation_contract as wire_policy
+
+    assert (
+        Path(wire_policy.__file__).resolve()
+        == Path(__file__).with_name("native_observation_contract.py").resolve()
+    ), "foreign observation helper"
     parser = argparse.ArgumentParser(description=__doc__)
     for name in ("root", "receipt", "revision", "artifacts"):
         parser.add_argument("--" + name, required=True)
@@ -207,11 +224,18 @@ def main():
     shutil.copyfile(source, out / source.name)
     shutil.copyfile(Path(__file__).resolve(), out / Path(__file__).name)
     shutil.copyfile(trusted / "native_rng.h", out / "native_rng.h")
+    contract = Path(__file__).with_name("native_observation_contract.py")
+    shutil.copyfile(contract, out / contract.name)
     save(
         "fixture-hashes.json",
         {
             p.name: digest(p)
-            for p in (source, Path(__file__).resolve(), trusted / "native_rng.h")
+            for p in (
+                source,
+                Path(__file__).resolve(),
+                trusted / "native_rng.h",
+                contract,
+            )
         },
     )
     # Sequential compiler invocations (one job, never full make/rebuild).
@@ -409,7 +433,7 @@ def main():
             # or repair the whole file; all other scenarios retain strict JSON.
             prefix = (work / "events-before-write.jsonl").read_bytes()
             physical = (run_dir / "events.jsonl").read_bytes()
-            assert physical == prefix + WRITE_NOTICE[:7]
+            assert physical == prefix + CURRENT_WRITE_NOTICE[:7]
             rows = [json.loads(line) for line in prefix.splitlines()]
             assert len(rows) == 5 and [row["seq"] for row in rows] == [1, 2, 3, 4, 5]
         else:
@@ -417,6 +441,21 @@ def main():
                 json.loads(line)
                 for line in (run_dir / "events.jsonl").read_text().splitlines()
             ]
+        wire_policy.validate_rows(rows, wire_policy.CURRENT)
+        if enabled and scenario == "render":
+            # Healthy byte positive precedes every fault-oracle comparison.
+            notices = [
+                line
+                for line in (run_dir / "events.jsonl")
+                .read_bytes()
+                .splitlines(keepends=True)
+                if json.loads(line).get("observation", {}).get("stage") == "notice"
+            ]
+            assert notices == [CURRENT_WRITE_NOTICE], "current healthy notice bytes"
+        if not enabled:
+            assert not any(
+                r.get("event") == "observation" or "observation" in r for r in rows
+            )
         state = json.loads((work / "stderr.txt").read_text())
         return bytes(terminal), rows, state, (work / "native-history.txt").read_bytes()
 
@@ -859,10 +898,10 @@ def main():
             assert injection["injected_errors"] == int(enabled and bool(error))
             assert injection["injected_return"] == (-1 if enabled and error else 0)
             assert injection["requested_length"] == (
-                len(WRITE_NOTICE) if enabled else 0
+                len(CURRENT_WRITE_NOTICE) if enabled else 0
             )
             assert bytes.fromhex(injection["requested_hex"]) == (
-                WRITE_NOTICE if enabled else b""
+                CURRENT_WRITE_NOTICE if enabled else b""
             )
             assert injection["seq_before"] == (5 if enabled else 3)
             assert (
@@ -886,7 +925,7 @@ def main():
             stages = ["enabled", "started"] + ([] if hard else ["notice", "completed"])
             assert [row["stage"] for row in obs] == (stages if enabled else [])
             if enabled and not hard:
-                assert physical.startswith(prefix + WRITE_NOTICE)
+                assert physical.startswith(prefix + CURRENT_WRITE_NOTICE)
                 assert [row["seq"] for row in rows] == [1, 2, 3, 4, 5, 6, 7]
                 assert obs[-1] == dict(
                     operation="whistling", stage="completed", root_seq=5, fact="none"
@@ -894,7 +933,7 @@ def main():
                 assert rows[-1]["turn"] == 10
                 assert injection["event_bytes"] == len(physical) - len(prefix)
             else:
-                tail = WRITE_NOTICE[:tail_size] if enabled else b""
+                tail = CURRENT_WRITE_NOTICE[:tail_size] if enabled else b""
                 assert physical == prefix + tail
                 assert injection["event_bytes"] == len(tail)
             runs.append((terminal, state, history))
@@ -907,7 +946,7 @@ def main():
                 physical_notice_records=0 if hard else 1,
                 durable_notice_claim=not hard,
                 failure_bytes_uncommitted=tail_size,
-                failure_tail_hex=WRITE_NOTICE[:tail_size].hex(),
+                failure_tail_hex=CURRENT_WRITE_NOTICE[:tail_size].hex(),
             )
         )
     final_hashes = {name: digest(Path(name)) for name in originals}

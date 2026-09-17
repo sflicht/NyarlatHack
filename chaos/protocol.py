@@ -24,7 +24,71 @@ from ._protocol_contract import (
     ACK_BOUNDS,
     REQUEST_VERSION,
     EVENT_VERSION,
+    LEGACY,
+    COSMETIC,
 )
+
+LEGACY_EVENT_BOUNDS = {r["wire"]: r["bounds"] for r in LEGACY["event_numbers"]}
+LEGACY_REASONS = frozenset(r["name"] for r in LEGACY["results"] if r["ack"])
+LEGACY_REGISTRY = {
+    r["name"]: (r["cost"], r["director_sanity_max"], r["telegraph"])
+    for r in LEGACY["mutations"]
+}
+
+
+def event_request(event):
+    """Envelope versions never identify request grammar/accounting policy."""
+    return {k: REQUEST_VERSION if k == "v" else event[k] for k in FIELDS}
+
+
+def validate_cosmetic(event):
+    cosmetic = event.get("cosmetic")
+    if type(cosmetic) is not dict or set(cosmetic) != {"seen", "last_turn"}:
+        raise ValueError("invalid cosmetic fields")
+    seen = integer(cosmetic["seen"], 0, COSMETIC["mask"])
+    last = integer(cosmetic["last_turn"])
+    if last > event["turn"] or (not seen and last):
+        raise ValueError("invalid cosmetic clock")
+
+
+def validate_transition(previous, event, *, restore=False):
+    """Validate policy and cosmetic continuity, not proof of UI delivery.
+
+    The full-history caller stages enabled markers until their session matches.
+    Restore snapshots reconcile state only: they never synthesize receipts.
+    """
+    if previous is None:
+        return
+    current = event["v"] in (3, 4)
+    if current != (previous["v"] in (3, 4)):
+        raise ValueError("mixed accounting policies")
+    if not current:
+        return
+    old, new = previous["cosmetic"], event["cosmetic"]
+    if old["seen"] & new["seen"] != old["seen"]:
+        raise ValueError("cosmetic bit rollback")
+    if old["seen"] == new["seen"] and old != new:
+        raise ValueError("cosmetic timestamp reset")
+    if new["last_turn"] < old["last_turn"]:
+        raise ValueError("cosmetic clock rollback")
+    ambient = (
+        event["event"] == "ack"
+        and event["status"] == "accepted"
+        and event["mutation"] == "ambient"
+    )
+    if ambient:
+        bit = 1 << (event["value"] - 1)
+        if (
+            old["seen"] & bit
+            or new["seen"] != old["seen"] | bit
+            or new["last_turn"] != event["turn"]
+            or (old["seen"] and event["turn"] - old["last_turn"] < COSMETIC["spacing"])
+            or event["spent"] != previous["spent"]
+            or event["reserved"] != previous["reserved"]
+        ):
+            raise ValueError("invalid ambient commit")
+    elif old != new and not restore:
+        raise ValueError("unexplained cosmetic spending")
 
 
 def _pairs(pairs):
@@ -92,10 +156,13 @@ def encode_request(r):
 
 def parse_event(raw):
     e = strict_json(raw, EVENT_CAP)
+    legacy = type(e.get("v")) is int and e["v"] == 1
+    bounds = LEGACY_EVENT_BOUNDS if legacy else EVENT_BOUNDS
     for key in NUMBERS:
-        integer(e.get(key), *EVENT_BOUNDS[key])
+        integer(e.get(key), *bounds[key])
     if (
-        e["v"] != EVENT_VERSION
+        e["v"] not in (1, EVENT_VERSION)
+        or type(e.get("event")) is not str
         or e["event"] not in EVENTS
         or e.get("phase") not in PHASES
     ):
@@ -104,6 +171,8 @@ def parse_event(raw):
         raise ValueError("invalid event detail")
     if e["reserved"] > e["spent"]:
         raise ValueError("invalid reservation")
+    if not legacy:
+        validate_cosmetic(e)
     if "vitals" in e:
         vitals = e["vitals"]
         if type(vitals) is not dict or set(vitals) != set(VITALS):
@@ -111,14 +180,41 @@ def parse_event(raw):
         for key in VITALS:
             integer(vitals[key], *VITAL_BOUNDS[key])
     if e["event"] == "ack":
-        for k in ACK_NUMBERS:
+        for k in LEGACY["ack_numbers"] if legacy else ACK_NUMBERS:
             integer(e.get(k), *ACK_BOUNDS)
-        if e.get("status") not in ACK_STATUSES or e["detail"] not in REASONS:
+        if e.get("status") not in ACK_STATUSES or e["detail"] not in (
+            LEGACY_REASONS if legacy else REASONS
+        ):
             raise ValueError("invalid acknowledgement")
         if type(e.get("mutation")) is not str or e["mutation"] not in ("", *REGISTRY):
             raise ValueError("invalid acknowledgement mutation")
         if e["id"]:
-            parse_request(encode_request({k: e[k] for k in FIELDS}))
+            parse_request(encode_request(event_request(e)))
         if e["status"] == "accepted" and (not e["id"] or e["detail"] != "ok"):
             raise ValueError("invalid accepted acknowledgement")
+        if not legacy:
+            row = MUTATIONS.get(e["mutation"]) if e["id"] else None
+            if (e["cost"], e["cosmetic_cost"]) != (
+                (row["cost"], row["cosmetic_cost"]) if row else (0, 0)
+            ):
+                raise ValueError("incorrect registered acknowledgement tariffs")
+            if e["phase"] != "result":
+                raise ValueError("invalid acknowledgement phase")
+            if not e["id"] and (
+                e["mutation"] != ""
+                or any(
+                    e[k] for k in ("value", "duration", "telegraph", "at", "expires")
+                )
+            ):
+                raise ValueError("invalid malformed-request sentinel")
+            if e["status"] == "accepted":
+                expires = e["turn"] + e["duration"] if e["duration"] else 0
+                if (
+                    e["last_id"] != e["id"]
+                    or e["at"] != e["safe"]
+                    or e["expires"] != expires
+                ):
+                    raise ValueError("inconsistent accepted acknowledgement")
+            elif e["detail"] == "ok" or e["expires"]:
+                raise ValueError("inconsistent rejected acknowledgement")
     return e

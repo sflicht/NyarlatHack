@@ -51,7 +51,7 @@ def validate_observations(o):
         o,
         "format wire_version operation_none fact_none stages channels families facts projection",
     )
-    for key, value in (("format", 1), ("wire_version", 2)):
+    for key, value in (("format", 1), ("wire_version", 4)):
         require(type(o[key]) is int and o[key] == value, key)
     for key, prefix in (
         ("operation_none", "CHAOS_OBS_OP_"),
@@ -175,9 +175,32 @@ def validate(d):
     require(
         set(d)
         == set(
-            "format observations versions limits budget non_effect_spenders request_fields mutations telegraphs ambient_messages results events phases ack_statuses journal_status event_numbers vitals ack_numbers ack_number_bounds reader_policy wire_order".split()
+            "format legacy cosmetic observations versions limits budget non_effect_spenders request_fields mutations telegraphs ambient_messages results events phases ack_statuses journal_status event_numbers vitals ack_numbers ack_number_bounds reader_policy wire_order".split()
         ),
         "contract keys",
+    )
+    # SHA256 of canonical sorted compact JSON projected from the original
+    # c00029de0ef54bf89dc0d283b8e4f0fc365beb11:chaos/protocol_contract.json.
+    # Freeze the COMPLETE introduced subtree, and shared parser metadata which
+    # legacy readers still consume. A future change needs explicit versioning,
+    # not a blind digest refresh. Tests compare with the actual Git baseline.
+    import hashlib
+
+    def fingerprint(value):
+        return hashlib.sha256(
+            json.dumps(value, sort_keys=True, separators=(",", ":")).encode()
+        ).hexdigest()
+
+    require(
+        fingerprint(d["legacy"])
+        == "159623c852ee31a45e89ee64d44a88381f46b08c882a46a543eb8b9fa1b57a39",
+        "frozen legacy metadata",
+    )
+    shared = "limits ack_number_bounds request_fields vitals events phases ack_statuses telegraphs ambient_messages budget non_effect_spenders journal_status".split()
+    require(
+        fingerprint({k: d[k] for k in shared})
+        == "b05ec2a3bccc89c735a2847e1bae007f4291661f96e35c3049c14e639903d493",
+        "frozen shared legacy metadata",
     )
     require(type(d["format"]) is int and d["format"] == 1, "unknown contract format")
     for section, keys in {
@@ -193,9 +216,9 @@ def validate(d):
     require(
         d["wire_order"]
         == {
-            "event": "v seq turn safe event phase detail sanity insight budget spent reserved last_id vitals".split(),
-            "ack_extra": "id status mutation value duration telegraph at cost expires".split(),
-            "journal_prefix": "v turn safe".split(),
+            "event": "v seq turn safe event phase detail sanity insight budget spent reserved last_id vitals cosmetic".split(),
+            "ack_extra": "id status mutation value duration telegraph at cost cosmetic_cost expires".split(),
+            "journal_prefix": "v policy turn safe".split(),
         },
         "fixed serializer roles/order",
     )
@@ -209,7 +232,8 @@ def validate(d):
         "event number roles",
     )
     require(
-        d["ack_numbers"] == "id value duration telegraph at cost expires".split(),
+        set(d["ack_numbers"])
+        == set("id value duration telegraph at cost cosmetic_cost expires".split()),
         "ack number roles",
     )
     require(
@@ -220,6 +244,12 @@ def validate(d):
             all(type(v) is int and v >= 0 for v in d[section].values()),
             f"integer {section}",
         )
+    require(
+        d["cosmetic"] == dict(limit=3, spacing=50, mask=7, policy=2)
+        and all(type(v) is int for v in d["cosmetic"].values()),
+        "cosmetic policy",
+    )
+    require(d["versions"] == dict(request=1, event=3, state=2), "current versions")
     validate_observations(d["observations"])
     limits = d["limits"]
     require(
@@ -297,11 +327,11 @@ def validate(d):
         require(
             set(row)
             == set(
-                "symbol id name cost value duration telegraph engine_sanity_max director_sanity_max ordinary_food persistent rule".split()
+                "symbol id name cost cosmetic_cost value duration telegraph engine_sanity_max director_sanity_max ordinary_food persistent rule".split()
             ),
             "mutation keys",
         )
-        for key in ("cost", "telegraph", "director_sanity_max"):
+        for key in ("cost", "cosmetic_cost", "telegraph", "director_sanity_max"):
             require(type(row[key]) is int and 0 <= row[key] <= limits["max_int"], key)
         require(
             row["engine_sanity_max"] is None
@@ -313,7 +343,23 @@ def validate(d):
             type(row["ordinary_food"]) is bool and type(row["persistent"]) is bool,
             "predicate type",
         )
-        require(0 < row["cost"] <= budget["ceiling"], "cost")
+        require(
+            (
+                row["name"] == "ambient"
+                and row["symbol"] == "CHAOS_AMBIENT"
+                and row["id"] == 0
+                and row["cost"] == 0
+                and row["cosmetic_cost"] == 1
+                and row["value"] == [1, 3]
+                and len(d["ambient_messages"]) == 3
+            )
+            or (
+                row["name"] != "ambient"
+                and 0 < row["cost"] <= budget["ceiling"]
+                and row["cosmetic_cost"] == 0
+            ),
+            "cost",
+        )
         require(1 <= row["telegraph"] <= len(d["telegraphs"]), "telegraph reference")
         require(
             len(row["name"]) < limits["request_string_buffer"], "request name length"
@@ -416,6 +462,7 @@ def render(d):
     constants = {
         "MAX_REQUEST": d["limits"]["request_bytes"],
         "STATE_VERSION": d["versions"]["state"],
+        "OBSERVATION_VERSION": d["observations"]["wire_version"],
         "REQUEST_VERSION": d["versions"]["request"],
         "EVENT_VERSION": d["versions"]["event"],
         "MAX_INT": d["limits"]["max_int"],
@@ -423,6 +470,7 @@ def render(d):
         "REQUEST_STRING_BUFFER": d["limits"]["request_string_buffer"],
         "TURN_HEADROOM": d["limits"]["admission_turn_headroom"],
     }
+    constants.update({"COSMETIC_" + k.upper(): v for k, v in d["cosmetic"].items()})
     constants.update({"BUDGET_" + k.upper(): v for k, v in d["budget"].items()})
     for row in d["non_effect_spenders"]:
         constants["SPEND_" + row["name"].upper()] = row["id"]
@@ -452,6 +500,7 @@ def render(d):
                             r["symbol"],
                             q(r["name"]),
                             r["cost"],
+                            r["cosmetic_cost"],
                             *r["value"],
                             *r["duration"],
                             r["telegraph"],
@@ -547,6 +596,7 @@ def render(d):
         telegraph="%d",
         at="%d",
         cost="%d",
+        cosmetic_cost="%d",
         expires="%ld",
     )
 
@@ -557,7 +607,11 @@ def render(d):
     event = (
         "{"
         + ",".join(
-            '"vitals":' + vitals if k == "vitals" else field(k)
+            '"vitals":' + vitals
+            if k == "vitals"
+            else '"cosmetic":{"seen":%d,"last_turn":%ld}'
+            if k == "cosmetic"
+            else field(k)
             for k in d["wire_order"]["event"]
         )
         + "%s}\n"
@@ -566,7 +620,11 @@ def render(d):
     journal = (
         "{"
         + ",".join(
-            '"v":' + str(d["versions"]["request"]) if k == "v" else field(k)
+            '"v":' + str(d["versions"]["request"])
+            if k == "v"
+            else '"policy":' + str(d["cosmetic"]["policy"])
+            if k == "policy"
+            else field(k)
             for k in d["wire_order"]["journal_prefix"]
         )
         + "%s}\n"
@@ -623,6 +681,10 @@ def render(d):
     ]
     h += [END]
     values = dict(
+        LEGACY=d["legacy"],
+        COSMETIC=d["cosmetic"],
+        STATE_VERSION=d["versions"]["state"],
+        OBSERVATION_VERSION=o["wire_version"],
         OBSERVATIONS=o,
         MAX_INT=d["limits"]["max_int"],
         FIELDS=tuple(r["wire"] for r in fields),

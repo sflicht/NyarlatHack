@@ -117,7 +117,7 @@ class EpisodeIOTests(unittest.TestCase):
             record = parse_episode_event(line)
             self.assertEqual(record["seq"], seq)
             self.assertEqual(state, (1, seq, 0, seq, seq))
-            if record["v"] == 2:
+            if record["v"] == 4:
                 _, op, stage, root, fact = rows[seq - 1]
                 self.assertEqual(
                     record["observation"],
@@ -304,7 +304,35 @@ class EpisodeIOTests(unittest.TestCase):
         ]
         keys = "seq turn safe event phase detail budget spent reserved last_id extra".split()
         expected = "".join(envelope.format(**dict(zip(keys, row))) for row in records)
-        self.assertEqual(raw, expected.encode())
+        # Old literal remains a parser oracle, not an assertion about today's writer.
+        for line in expected.splitlines():
+            self.assertEqual(parse_event(line)["v"], 1)
+        current_envelope = (
+            '{{"v":3,"seq":{seq},"turn":{turn},"safe":{safe},"event":"{event}",'
+            '"phase":"{phase}","detail":{detail},"sanity":0,"insight":0,'
+            '"budget":{budget},"spent":{spent},"reserved":{reserved},"last_id":{last_id},'
+            '"vitals":{{"hp":7,"hp_max":20,"power":-2,"power_max":10}},'
+            '"cosmetic":{{"seen":0,"last_turn":0}}{extra}}}\n'
+        )
+        current_records = list(records)
+        current_records[3] = (
+            4,
+            10,
+            1,
+            "ack",
+            "result",
+            '"ok"',
+            8,
+            4,
+            4,
+            1,
+            ',"id":1,"status":"accepted","mutation":"ward_efficacy","value":50,'
+            '"duration":1,"telegraph":2,"at":1,"cost":4,"cosmetic_cost":0,"expires":11',
+        )
+        current_expected = "".join(
+            current_envelope.format(**dict(zip(keys, row))) for row in current_records
+        )
+        self.assertEqual(raw, current_expected.encode())
 
 
 if __name__ == "__main__":

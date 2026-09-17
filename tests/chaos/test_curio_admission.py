@@ -18,7 +18,33 @@ return "Quiet." end,apply=function(c)
 return {text="Still quiet.",state=255,sanity_delta=-2} end}\n"""
 
 
+# Frozen pre-refactor linked-engine capture, including wire order/LF.
+# Historical reader evidence only, never a current native acceptance oracle.
+HISTORICAL_CURIO_ROWS = [
+    b'{"v":1,"seq":4,"turn":10,"safe":1,"event":"curio","phase":"result","detail":"pre_admitted","sanity":100,"insight":0,"budget":2,"spent":0,"reserved":0,"last_id":0,"vitals":{"hp":7,"hp_max":20,"power":2,"power_max":10}}\n',
+    b'{"v":1,"seq":5,"turn":10,"safe":1,"event":"curio","phase":"result","detail":"admitted","sanity":100,"insight":0,"budget":1,"spent":1,"reserved":0,"last_id":0,"vitals":{"hp":7,"hp_max":20,"power":2,"power_max":10}}\n',
+]
+# Independently declared current full-wire expectations, not rewritten captures.
+CURRENT_CURIO_ROWS = [
+    b'{"v":3,"seq":4,"turn":10,"safe":1,"event":"curio","phase":"result","detail":"pre_admitted","sanity":100,"insight":0,"budget":2,"spent":0,"reserved":0,"last_id":0,"vitals":{"hp":7,"hp_max":20,"power":2,"power_max":10},"cosmetic":{"seen":0,"last_turn":0}}\n',
+    b'{"v":3,"seq":5,"turn":10,"safe":1,"event":"curio","phase":"result","detail":"admitted","sanity":100,"insight":0,"budget":1,"spent":1,"reserved":0,"last_id":0,"vitals":{"hp":7,"hp_max":20,"power":2,"power_max":10},"cosmetic":{"seen":0,"last_turn":0}}\n',
+]
+
+
 class CurioProtocolTests(unittest.TestCase):
+    def test_historical_and_current_wire_readable(self):
+        for version, wire in ((1, HISTORICAL_CURIO_ROWS), (3, CURRENT_CURIO_ROWS)):
+            rows = [parse_event(row) for row in wire]
+            self.assertEqual([row["v"] for row in rows], [version, version])
+            self.assertEqual([row["spent"] for row in rows], [0, 1])
+            self.assertEqual(
+                [row["detail"] for row in rows], ["pre_admitted", "admitted"]
+            )
+            if version == 3:
+                self.assertTrue(
+                    all(row["cosmetic"] == dict(seen=0, last_turn=0) for row in rows)
+                )
+
     def test_generic_curio_events_no_model_detail(self):
         for detail in ("pre_admitted", "admitted", "rejected", "expired"):
             e = parse_event(json.dumps(event(event="curio", detail=detail)).encode())
@@ -188,11 +214,28 @@ class CurioAdmissionTests(unittest.TestCase):
         request = dict(
             v=1, id=1, mutation="ambient", value=1, duration=0, telegraph=1, at=1
         )
-        run = self.run_case(
-            "tight",
-            0,
-            setup=lambda r: (r / "whisper.json").write_text(json.dumps(request)),
-        )
+
+        def setup(r):
+            return (r / "whisper.json").write_text(json.dumps(request))
+
+        # Sanity100/spent1 has room for curio even after free ambient.
+        control = self.run_case("tight-control")
+        prefix = self.run_case("tight", setup=setup)
+
+        def mechanical(run):
+            return [
+                (row["detail"], row["spent"], row["reserved"], row["budget"])
+                for row in map(
+                    json.loads, (run / "events.jsonl").read_bytes().splitlines()
+                )
+                if row["event"] == "curio"
+            ]
+
+        self.assertEqual(mechanical(prefix), mechanical(control))
+        # Genuine exhaustion is spent2, independently of the cosmetic prefix.
+        control = self.run_case("budget", 0)
+        run = self.run_case("exhausted", 0, setup=setup)
+        self.assertEqual(mechanical(run), mechanical(control))
         self.assertFalse((run / "curio-used.lua").exists())
         self.run_case("invalidstate", 0, None)
 
@@ -210,15 +253,8 @@ class CurioAdmissionTests(unittest.TestCase):
 
     def test_valid_exact_bytes_first_safe(self):
         run = self.run_case()
-        # Frozen from the pre-refactor linked engine, including wire order/LF.
         rows = (run / "events.jsonl").read_bytes().splitlines(keepends=True)
-        self.assertEqual(
-            rows[3:5],
-            [
-                b'{"v":1,"seq":4,"turn":10,"safe":1,"event":"curio","phase":"result","detail":"pre_admitted","sanity":100,"insight":0,"budget":2,"spent":0,"reserved":0,"last_id":0,"vitals":{"hp":7,"hp_max":20,"power":2,"power_max":10}}\n',
-                b'{"v":1,"seq":5,"turn":10,"safe":1,"event":"curio","phase":"result","detail":"admitted","sanity":100,"insight":0,"budget":1,"spent":1,"reserved":0,"last_id":0,"vitals":{"hp":7,"hp_max":20,"power":2,"power_max":10}}\n',
-            ],
-        )
+        self.assertEqual(rows[3:5], CURRENT_CURIO_ROWS)
 
     def test_unicode_comment_preserves_exact_source(self):
         self.run_case(source=b"-- caf\xc3\xa9\n" + SOURCE)

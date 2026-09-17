@@ -169,8 +169,16 @@ def _string(value):
     return match[1]
 
 
-def _dwarf(lines, root):
+def _dwarf(lines, root, *, cosmetic=False):
     """Stream CUs; retain only type trees, not functions or giant debug dumps."""
+    members = {**MEMBERS}
+    if cosmetic:
+        members["chaos_state"] = [
+            "spent",
+            "version",
+            "cosmetic_seen",
+            "cosmetic_last_turn",
+        ]
     layouts, enums, bases, producers, directories = {}, {}, {}, set(), set()
     nodes, stack, current = {}, {}, None
     versions, pointers, units = [], [], 0
@@ -241,7 +249,7 @@ def _dwarf(lines, root):
                 agree(bases, name, width(address))
             elif tag == "pointer_type":
                 _require(width(address) == 8, "unsupported DWARF pointer width")
-            elif tag == "structure_type" and name in MEMBERS:
+            elif tag == "structure_type" and name in members:
                 if "declaration" in attrs and "byte_size" not in attrs:
                     continue  # Forward declaration is not a layout observation.
                 fields = {}
@@ -249,7 +257,7 @@ def _dwarf(lines, root):
                 for child in children:
                     ct, ca, _ = nodes[child]
                     member = _string(ca["name"]) if "name" in ca else None
-                    if ct != "member" or member not in MEMBERS[name]:
+                    if ct != "member" or member not in members[name]:
                         continue
                     _require(member not in fields, "duplicate required DWARF member")
                     ref = re.match(r"\(ref4\) <0x([0-9a-f]+)>", ca.get("type", ""))
@@ -267,7 +275,7 @@ def _dwarf(lines, root):
                     )
                     fields[member] = field
                 _require(
-                    set(fields) == set(MEMBERS[name]), f"missing DWARF members: {name}"
+                    set(fields) == set(members[name]), f"missing DWARF members: {name}"
                 )
                 agree(layouts, name, {"size": size, "fields": fields})
             elif tag == "enumeration_type" and name in ENUMS:
@@ -323,7 +331,7 @@ def _dwarf(lines, root):
         producers == {PRODUCER} and directories == {root},
         "unsupported DWARF producer/directory profile",
     )
-    _require(set(layouts) == set(MEMBERS), "missing required DWARF layouts")
+    _require(set(layouts) == set(members), "missing required DWARF layouts")
     _require(
         bases == {"int": 4, "unsigned int": 4, "long unsigned int": 8, "char": 1},
         "unsupported primitive widths",
@@ -524,6 +532,52 @@ def _sequence(ops, patterns, label):
     return ops[matches[0] : matches[0] + len(patterns)]
 
 
+def _cosmetic_init(ops, layout, header_version):
+    """Exact GCC13 initializer body; version is read from the linked instruction.
+
+    This adds a policy/schema observation, not a new compiler/ABI allowlist.
+    No execution of the inspected ELF, and no reporter/save-derived values.
+    """
+    _require(
+        layout["fields"]["version"] == {"offset": 0, "size": 4},
+        "unsupported chaos version member",
+    )
+    _require(len(ops) == 15, "unsupported chaos initializer body")
+    value = re.fullmatch(r"movl \$0x([0-9a-f]+),\(%rax\)", ops[11])
+    _require(value is not None, "unsupported chaos initializer version store")
+    version = int(value[1], 16)
+    patterns = (
+        [
+            re.escape(op)
+            for op in [
+                "endbr64",
+                "push %rbp",
+                "mov %rsp,%rbp",
+                "sub $0x10,%rsp",
+                "mov %rdi,-0x8(%rbp)",
+                "mov -0x8(%rbp),%rax",
+                f"mov $0x{layout['size']:x},%edx",
+                "mov $0x0,%esi",
+                "mov %rax,%rdi",
+            ]
+        ]
+        + [r"call [0-9a-f]+ <memset@plt>"]
+        + [
+            re.escape(op)
+            for op in [
+                "mov -0x8(%rbp),%rax",
+                f"movl $0x{version:x},(%rax)",
+                "nop",
+                "leave",
+                "ret",
+            ]
+        ]
+    )
+    _sequence(ops, patterns, "chaos initializer")
+    _require(version == header_version == 2, "unsupported chaos initializer policy")
+    return version
+
+
 def _measure(inputs):
     root, path = inputs.build_root, inputs.tuple_dir / "dnethack"
     data = _read(path)
@@ -547,6 +601,9 @@ def _measure(inputs):
     )
     curio_header = _read(root / "include/chaos_curio.h", 65536).decode("ascii")
     curio_version = _macro(curio_header, "CHAOS_CURIO_VERSION")
+    policy_header = _read(root / "include/chaos_protocol.h", 65536).decode("ascii")
+    policy_version = _macro(policy_header, "CHAOS_STATE_VERSION")
+    _require(policy_version in (1, 2), "unsupported chaos state policy")
     source_limit = _macro(curio_header, "CHAOS_CURIO_SOURCE")
     _require(
         curio_version == 1 and source_limit == 4096,
@@ -558,7 +615,7 @@ def _measure(inputs):
         limit=512 * 1024 * 1024,
     )
     try:
-        dwarf = _dwarf(lines, str(root))
+        dwarf = _dwarf(lines, str(root), cosmetic=policy_version == 2)
     finally:
         close = getattr(lines, "close", None)
         if close:
@@ -723,7 +780,18 @@ def _measure(inputs):
         "save_header": header["fields"],
         "save_header_values": version,
     }
+    policy_evidence = {"schema": "legacy-state1"}
+    if policy_version == 2:
+        chaos = layouts["chaos_state"]
+        init_ops = _disassemble(path, image, "chaos_state_init")[1]
+        measured.update(
+            chaos_state_version=_cosmetic_init(init_ops, chaos, policy_version),
+            chaos_size=chaos["size"],
+            chaos_fields={k: v for k, v in chaos["fields"].items() if k != "spent"},
+        )
+        policy_evidence = {"schema": "cosmetic-state2", "initializer": init_ops}
     evidence = {
+        "policy": policy_evidence,
         "dwarf": dwarf,
         "compression": compression,
         "version": {

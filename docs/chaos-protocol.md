@@ -1,4 +1,4 @@
-# Crawling Chaos protocol: v1 baseline and opt-in v2 observations
+# Crawling Chaos protocol: current policy 2 and historical readers
 
 Status: implemented Tier 2 contract and bounded observation foundation;
 [local native acceptance under the approved dump contract](haunting-observations-evidence.md)
@@ -6,6 +6,67 @@ is distinct from publication; literal strict cross-build comparison remains fail
 This mailbox does not accept executable code; the separate First Haunting
 Lua admission path is documented in `milestone2.md`.
 All new engine code is under the NetHack General Public License (`dat/license`).
+
+## Cosmetic pacing prototype and migration
+
+Current native state/save version is **2**, ordinary events **3**, opt-in
+observation events **4**, request grammar **1**, and admission-journal policy
+**2** (journal `v` remains request version 1). These are separate version axes.
+Historical ordinary v1/observation v2 readers retain their old prices and
+validation semantics; historical readability does **not** authorize current
+publication or replay. Never mix old and current policy within one run.
+
+Ambient has mechanical `cost:0` and `cosmetic_cost:1`. There are exactly **three
+lifetime cosmetic deliveries**, each existing value 1/2/3 at most once, with
+**50 native moves** between successful deliveries. The first is eligible even
+at turn zero. Repeated safe points are not elapsed turns. The saved engine-owned
+`cosmetic_seen` mask and `cosmetic_last_turn` timestamp cannot be reset by a
+backend switch, sidecar restart, cleared client history, expiry or waiting.
+Every current event carries exact `cosmetic:{"seen":MASK,"last_turn":TURN}`.
+Only a real new game in a separate run directory starts with fresh allowance.
+Three/50/once is a conservative prototype, **not tuned balance or a claim of
+ongoing full-run presence**. It uses the three existing messages, not new prose.
+
+Mechanical lifetime ceiling remains **12**, with the same Sanity capacity and
+prices: curio 1, haunt 2, hunger 3, ward 4. Cosmetics neither debit nor reserve
+mechanical capacity. This does not reserve capacity for signatures: earlier
+mechanics can still deny later curio/haunt or incidental requests.
+
+Random and generic model selection prefer the eligible ward/hunger subset;
+only when that subset is empty may they choose an unused, currently eligible
+ambient **value**. The model's menu and returned-value validation enforce the
+same subset. Hand packs/replay need not obey preference, but native bounds apply.
+
+Both `load_replay` and `load_history_replay` preflight current-policy evidence,
+including empty/all-mechanical schedules. Each policy-2 admitted journal row
+must match an accepted current ACK's canonical request, turn, safe/at, mechanical
+and cosmetic tariffs, expiry and roles. Registered prices are authoritative.
+A journal or telegraph alone is not a delivery receipt; missing final ACKs need
+manual reconciliation. Restore may reconcile a monotonic committed snapshot
+after a lost receipt, but cannot reconstruct acceptance. With observations,
+the enabled marker and following restore session must agree before publication.
+
+**Old saves are incompatible; there is no automatic migration. Answer NO to
+“Delete the old file?”** Retain the old save with its matching old binary and
+`nhdat`; finish that game there. Start a separate new game/run on the new build.
+The new CHAOS structural and restored-clock rejection paths preserve the save;
+this is not blanket corruption protection: stock short-read corruption handling
+can still delete a damaged save. Keep independent backups.
+
+Current-policy full native save/replay acceptance is pending the reviewed fresh
+build. The bounded synthetic comparison used seeds 0/7/19, turns
+0/1/25/50/75/100/125/150 and Sanity 100/100/90/80/60/60/0/0, ordinary food.
+Across 24 opportunities it selected/admitted 9 ambient, 3 ward and 6 hunger,
+with 6 empty menus; the frozen old-policy result was 22 ambient, 2 ward, 0 hunger.
+Independent native-core gate probes found ward eligible 3/24 and hunger 9/24;
+budget denied 10 ward and 5 hunger probes (not submitted director requests).
+Both isolated mechanical controls admitted with/without ambient; the sequential
+hunger-then-ward control still denied ward for mechanical budget. Mixed Sanity-0
+signature-first/incidental-first fixtures, each with/without ambient, made 16/16
+mechanical admissions with identical decisions/spent/reserved per matched pair;
+each finished spent10/reserved7, then spent10/reserved0 after expiry. These are
+synthetic state/core-helper results, **not ordinary journeys, spawn/curio-apply
+witnesses, UI effects or frequency estimates**. Historical records remain frozen.
 
 ## Contract ownership and regeneration
 
@@ -51,9 +112,8 @@ requests and present vitals are closed. ACK id-zero rows retain their permissive
 legacy cross-field semantics. Event string caps count Python characters when
 passed a string, bytes when passed bytes; requests first encode to bytes. The C
 writer is not an event vocabulary validator. V2 observations remain separately
-handwritten and outside this extraction. No schemas, production rows, messages,
-wire bytes, struct layouts, enum IDs, costs or RNG draw order are intentionally
-changed by the extraction.
+handwritten historically. That extraction's byte freeze is historical; the
+explicit policy-2 changes above intentionally version accounting and layout.
 
 ## Transport and activation
 
@@ -112,7 +172,7 @@ a fixed pack before game startup, but it does not change an assigned index.
 
 | mutation | value | duration (game turns) | telegraph | cost | dynamic eligibility |
 |---|---|---|---|---|---|
-| `ambient` | 1, 2, or 3 | 0 | 1 | 1 | conscious/living session |
+| `ambient` | 1, 2, or 3 | 0 | 1 | 0 mechanical / 1 cosmetic | conscious/living; unused value; 50-move spacing; lifetime cap 3 |
 | `ward_efficacy` | 50 | 1..50 | 2 | 4 | Sanity <=80; no active ward effect |
 | `hunger_rate` | 2 | 1..50 | 3 | 3 | Sanity <=90; ordinary food metabolism; no active hunger effect |
 
@@ -142,7 +202,7 @@ Capacity = `2 + floor((100-clamp(Sanity,0,100))/10)` (2..12).
 Available budget = max(0, capacity - **lifetime spent**). No periodic refill;
 Sanity healing/loss cycles do not refund spending. `reserved` is the sum of
 unexpired active costs, informational and always <= spent. Expiry releases
-reserved cost, **not spent**. Ambient also costs one, preventing free spam.
+reserved cost, **not spent**. Ambient uses only the separate cosmetic allowance.
 Three admission paths share that lifetime allowance: whispers (the registry
 prices), curio admission (1), and a successfully spawned haunt (2). Curio
 placement and its three uses do not charge again; failed later placement does
@@ -158,7 +218,7 @@ expiry even between safe points. No mutation deals immediate damage or changes
 raw player stats. No effect is admitted during death or negative-multi sleep.
 
 Save/restore includes spent/reserved, last ID, sequence and safe counters, active
-values and absolute expiry turns. No state goes into bones. CHAOS-on and -off
+values and absolute expiry turns, cosmetic mask and last delivery turn. No state goes into bones. CHAOS-on and -off
 save layouts have distinct version checks and are rejected across that boundary.
 The mailbox is external; replaying an already-consumed ID after restore cannot
 apply twice. A future request at the time of save remains pending until its
@@ -167,8 +227,8 @@ CHAOS-on builds (use CHAOS=0 to load stock saves).
 
 ## Events and acknowledgements
 
-By default, each event is one v1 JSON object plus newline. Envelope fields are:
-`v` (1), `seq` (persistent increasing integer), `turn` (engine moves), `safe`
+By default, each event is one v3 JSON object plus newline. Envelope fields are:
+`v` (3), mandatory `cosmetic`, `seq` (persistent increasing integer), `turn` (engine moves), `safe`
 (persistent safe counter, initially 0), `event`, `phase`, `detail` (escaped
 strings), `sanity`, `insight`, `budget`, `spent`, `reserved`, `last_id` (integers).
 No inventory IDs, hidden dungeon state, RNG seed or draws are present.
@@ -210,27 +270,30 @@ All safe points expire effects before admission. `safe` increases even with no
 mailbox; the snapshot is emitted immediately before polling.
 
 `ack`/`result` uses `detail` = reason and adds `id`, `status` (`accepted` or
-`rejected`), `mutation`, `value`, `duration`, `telegraph`, `at`, `cost`, `expires`.
+`rejected`), `mutation`, `value`, `duration`, `telegraph`, `at`, `cost`, `cosmetic_cost`, `expires`.
 Malformed acknowledgements use empty mutation and zero request fields.
 Reasons: `ok`, `schema`, `oversize`, `duplicate`, `schedule`, `budget`, `active`,
-`ineligible`, `log_failure`. The admission journal uses the same request fields
-plus `v`, `turn`, `safe`; it records status `admitted`. `telegraph`/`result`
+`ineligible`, `log_failure`, `cosmetic_budget`, `cosmetic_cooldown`,
+`cosmetic_repeat`. Valid rejected requests quote both registered tariffs without
+debit; malformed id-zero/unknown-mutation sentinels quote zero for both.
+The admission journal uses the same request fields
+plus `v:1`, `policy:2`, both tariffs, expiry, `turn`, `safe`; it records status `admitted`. `telegraph`/`result`
 precedes `ack` accepted; `expiry`/`result` records effect name.
 
-## Opt-in selected-action observations (v2)
+## Opt-in selected-action observations (current v4, historical v2)
 
 Set `NYARLATHACK_OBSERVATIONS=1` **on the game process**, together with the
 normal private `NYARLATHACK_RUN_DIR`, in a `CHAOS=1` build. The flag is read once
 at `chaos_start`; absent or any other value means off. Healthy event transport
-is required. Off retains the default v1 bytes and sequence schedule. On adds
-v2 records to the same `events.jsonl` and authoritative sequence, not a second
-stream: an `enabled` marker immediately precedes each process's v1 `session`.
-Legacy `parse_event`, `State`, `EventReader`, replay and authoring readers reject
-v2; do not feed opt-in logs to them. The separately approved, explicit
+is required. Off emits ordinary v3. On adds
+v4 records to the same `events.jsonl` and authoritative sequence, not a second
+stream: an `enabled` marker immediately precedes each process's v3 `session`.
+Ordinary `parse_event`, `State`, `EventReader`, replay and authoring readers reject
+observation rows (v2 or v4); do not feed opt-in logs to them. The separately approved, explicit
 `chaos history` pilot consumes mixed history; it is not the default director and
 registration does not extend its hunger policy or model choices.
 
-V2 has exactly these envelope keys:
+Historical v2 has exactly these envelope keys:
 `v,seq,turn,safe,event,phase,detail,sanity,insight,budget,spent,reserved,last_id,vitals,observation`.
 `v` is 2, `event` is `observation`, and `detail` is empty. `vitals` is mandatory,
 with the four status fields defined above. Numeric fields retain the 32-bit
@@ -238,6 +301,8 @@ integer bounds (no booleans); `seq` is positive, Sanity is at most 100,
 `budget/spent/reserved` at most 12, and reserved cannot exceed spent.
 `observation` has exactly `operation,stage,root_seq,fact`. Duplicate/extra keys,
 nonfinite numbers and illegal enum combinations reject. Requests remain v1.
+Current v4 has the same exact observation fields plus mandatory `cosmetic`,
+with `v:4`; its ordinary partner is v3, never v1.
 
 | stage | operation | root_seq | fact | phase |
 |---|---|---|---|---|
@@ -300,7 +365,7 @@ Implementation anchors: [scope and snapshots](../src/chaos_engine.c),
 
 ## Offline episode projection and limits
 
-The separate `chaos.episodes` API accepts mixed v1/v2 histories:
+The separate `chaos.episodes` API accepts historical v1/v2 or current v3/v4 histories:
 
 - `parse_episode_event(raw) -> dict` validates one row, not chronology, native
   delivery or authenticity. V2 has a 4096-byte row cap; v1 retains its existing

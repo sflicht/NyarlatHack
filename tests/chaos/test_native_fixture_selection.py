@@ -595,6 +595,42 @@ class FixtureASTTests(unittest.TestCase):
         )
 
     def test_all_native_assertions_preserved_without_importing_fixture(self):
+        self.check_historical_assertions((ROOT / FIXTURE).read_text())
+
+    def test_historical_guard_rejects_wrong_ambient_binding(self):
+        source = (ROOT / FIXTURE).read_text()
+        mutant = source.replace(
+            '1 if policy == "historical" else 0', '99 if policy == "historical" else 0'
+        )
+        self.assertNotEqual(source, mutant)
+        with self.assertRaises(AssertionError):
+            self.check_historical_assertions(mutant)
+
+    def test_historical_guard_rejects_wrong_policy_mapping(self):
+        source = (ROOT / FIXTURE).read_text()
+        mutant = source.replace('"archived": "historical"', '"archived": "current"')
+        self.assertNotEqual(source, mutant)
+        with self.assertRaises(AssertionError):
+            self.check_historical_assertions(mutant)
+
+    def test_historical_guard_rejects_wrong_branch_accounting(self):
+        source = (ROOT / FIXTURE).read_text()
+        mutant = source.replace(
+            'test.assertEqual(fields["spent"], 2)',
+            'test.assertEqual(fields["spent"], 99)',
+        )
+        self.assertNotEqual(source, mutant)
+        with self.assertRaises(AssertionError):
+            self.check_historical_assertions(mutant)
+
+    def test_historical_guard_rejects_removed_historical_assertion(self):
+        source = (ROOT / FIXTURE).read_text()
+        mutant = source.replace('test.assertEqual(fields["spent"], 2)', "pass")
+        self.assertNotEqual(source, mutant)
+        with self.assertRaises(AssertionError):
+            self.check_historical_assertions(mutant)
+
+    def check_historical_assertions(self, source):
         def assertions(tree):
             return Counter(
                 ast.dump(n)
@@ -607,7 +643,7 @@ class FixtureASTTests(unittest.TestCase):
             )
 
         old_tree = ast.parse(baseline())
-        new_tree = ast.parse((ROOT / FIXTURE).read_text())
+        new_tree = ast.parse(source)
         old_pin = ast.parse(
             'self.assertEqual(sha((ROOT / "tests/chaos/gameplay_support.py").read_bytes()), '
             '"9d341b28a4ab3f4453b09e4f49a2e8701a7c78345184f487e2f0b32d70db7270")',
@@ -618,7 +654,81 @@ class FixtureASTTests(unittest.TestCase):
             "expected_driver_hash(selection.mode))",
             mode="eval",
         ).body
-        old_assertions, new_assertions = assertions(old_tree), assertions(new_tree)
+        # Pin both policy bindings BEFORE any projection can erase their use.
+        for name, statement in (
+            (
+                "policy",
+                'policy = {"archived": "historical", "source-build": "current"}[selection.mode]',
+            ),
+            ("ambient_spent", 'ambient_spent = 1 if policy == "historical" else 0'),
+        ):
+            bindings = [
+                n
+                for n in ast.walk(new_tree)
+                if isinstance(n, ast.Assign)
+                and any(isinstance(t, ast.Name) and t.id == name for t in n.targets)
+            ]
+            self.assertEqual(
+                [ast.dump(n) for n in bindings],
+                [ast.dump(ast.parse(statement).body[0])],
+            )
+            stores = [
+                n
+                for n in ast.walk(new_tree)
+                if isinstance(n, ast.Name)
+                and n.id == name
+                and isinstance(n.ctx, ast.Store)
+            ]
+            self.assertEqual(len(stores), 1)
+
+        # Only these three complete assertion calls changed their expected
+        # accounting expressions. No general name substitution/constant folding.
+        rewrites = (
+            (
+                'self.assertEqual([e["spent"] for e in curio], [ambient_spent, ambient_spent + 1])',
+                'self.assertEqual([e["spent"] for e in curio], [1, 2])',
+            ),
+            (
+                'self.assertEqual(accepted[0]["spent"], ambient_spent)',
+                'self.assertEqual(accepted[0]["spent"], 1)',
+            ),
+            (
+                'self.assertEqual((e["status"], e["detail"], e["spent"]), ("rejected", "duplicate", ambient_spent + 1))',
+                'self.assertEqual((e["status"], e["detail"], e["spent"]), ("rejected", "duplicate", 2))',
+            ),
+        )
+        replacements = {
+            ast.dump(ast.parse(before, mode="eval").body): after
+            for before, after in rewrites
+        }
+        transformed = Counter()
+        branches = Counter()
+
+        class HistoricalPolicyView(ast.NodeTransformer):
+            def visit_If(self, node):
+                condition = ast.unparse(node.test)
+                if condition == "policy == 'historical'":
+                    branches["historical"] += 1
+                    return [self.visit(n) for n in node.body]
+                if condition == "policy == 'current'":
+                    branches["current"] += 1
+                    return [self.visit(n) for n in node.orelse]
+                return self.generic_visit(node)
+
+            def visit_Call(self, node):
+                key = ast.dump(node)
+                if key in replacements:
+                    transformed[key] += 1
+                    return ast.parse(replacements[key], mode="eval").body
+                return self.generic_visit(node)
+
+        historical_tree = HistoricalPolicyView().visit(ast.parse(source))
+        self.assertEqual(branches, {"historical": 1, "current": 2})
+        self.assertEqual(transformed, {key: 1 for key in replacements})
+        old_assertions, new_assertions = (
+            assertions(old_tree),
+            assertions(historical_tree),
+        )
         self.assertEqual(old_assertions[ast.dump(old_pin)], 1)
         self.assertEqual(new_assertions[ast.dump(new_pin)], 1)
         # Exactly one approved expected-value transformation, not a subset check

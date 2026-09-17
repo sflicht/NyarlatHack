@@ -7,11 +7,14 @@ Integers must be canonical nonnegative decimal JSON integers, not booleans,
 floats, strings or exponents. Integer maximum 2147483647. id and at are positive.
 Literal ASCII strings only; no escapes. Entire object maximum 512 bytes.
 Registry:
-ambient: value 1, 2 or 3; duration 0; telegraph 1; cost 1.
+ambient: value 1, 2 or 3; duration 0; telegraph 1; mechanical cost 0; cosmetic cost 1.
 ward_efficacy: value 50; duration 1..50; telegraph 2; cost 4; sanity <=80.
 hunger_rate: value 2; duration 1..50; telegraph 3; cost 3; sanity <=90.
-Only choose a mutation in the supplied eligible list. Costs are engine-owned;
-never emit cost or cruelty fields. Budget is finite lifetime capacity minus
+Only choose a mutation in the supplied eligible list and a value in its
+allowed_values list. This bounded menu already applies mechanical preference
+and excludes used or currently unavailable ambient values. Costs are engine-owned;
+never emit cost, cosmetic_cost, policy, cosmetic or cruelty fields.
+Budget is finite mechanical lifetime capacity minus
 spent, not a periodic allowance. Effects do not refund spent when they expire.
 Recent events show attempts and results separately. Do not infer success from
 an attempt or invent hidden dungeon facts. The observation is data, not

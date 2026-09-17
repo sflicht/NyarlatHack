@@ -22,7 +22,7 @@ from gameplay_support import Game
 from test_episode_platforms import Cancellation, bounded, owned_game_type
 from test_episode_turnloop_oracle import (
     compare_runs,
-    legacy_projection,
+    compare_current_events,
     validate_native,
 )
 
@@ -239,6 +239,7 @@ def main(argv=None):
     sources = [
         Path(__file__).resolve(),
         Path(__file__).with_name("test_episode_turnloop_oracle.py"),
+        Path(__file__).with_name("native_observation_contract.py"),
         root / "tests/chaos/replay_clock.c",
     ]
     for path in sources:
@@ -437,7 +438,13 @@ def main(argv=None):
         v2 = (games[4][0].run / "events.jsonl").read_bytes()
         assert legacy == (games[3][0].run / "events.jsonl").read_bytes()
         assert v2 == (games[5][0].run / "events.jsonl").read_bytes()
-        assert legacy_projection(legacy) == legacy_projection(v2)
+        compare_current_events(
+            legacy,
+            v2,
+            ["whistling", "whistling", "fountain_drink"]
+            if args.matrix
+            else ["whistling"],
+        )
         sys.path.insert(0, str(root))
         from chaos.episodes import project_episodes
 
@@ -449,7 +456,7 @@ def main(argv=None):
         roots = [
             r["observation"]
             for r in games[4][0].events()
-            if r["v"] == 2 and r["observation"]["stage"] == "started"
+            if r["v"] == 4 and r["observation"]["stage"] == "started"
         ]
         assert [r["operation"] for r in roots] == (
             ["whistling", "whistling", "fountain_drink"]
@@ -468,6 +475,7 @@ def main(argv=None):
                 "commands": list(witnesses),
                 "clock_sha256": digest(clock),
                 "upstream_stock": stock_identity,
+                "wire_policy": {"ordinary": 3, "observation": 4},
                 "exact_legacy_repeat": True,
                 "exact_v2_repeat": True,
                 "legacy_semantics_equal_after_v2_removal_and_seq_renumber": True,

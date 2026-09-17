@@ -51,7 +51,7 @@ if mode == 'director_dies':
     os.close(lock)
     pathlib.Path(os.environ['GAME_MARKER'] + '.survived').touch()
 if mode in ('random_event', 'death_event', 'partial_event'):
-    event = dict(v=1, seq=1, turn=1, safe=1, event='safe_point', phase='result',
+    event = dict(v=3, cosmetic=dict(seen=0, last_turn=0), seq=1, turn=1, safe=1, event='safe_point', phase='result',
                  detail='pray', sanity=80, insight=0, budget=4, spent=0, reserved=0, last_id=0)
     if mode == 'death_event': event['event'] = 'death'
     target = run / 'events.jsonl'

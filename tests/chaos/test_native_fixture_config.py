@@ -284,6 +284,28 @@ class RunnerTests(unittest.TestCase):
             self.assertEqual(env["NYARLATHACK_NATIVE_EXPECTED_REVISION"], REVISION)
             self.assertEqual(env["NYARLATHACK_NATIVE_FIXTURE_MODE"], "source-build")
 
+    def test_poisoned_playground_directories_never_reach_native_subprocess(self):
+        runner = self.api()
+        with tempfile.TemporaryDirectory() as tmp:
+            path, data = DescriptorTests().fixture(Path(tmp))
+            with mock.patch.dict(
+                os.environ, {"NETHACKDIR": "/poison/nethack", "HACKDIR": "/poison/hack"}
+            ):
+                env = runner.suite_environment(path, data)
+                self.assertNotIn("NETHACKDIR", env)
+                self.assertNotIn("HACKDIR", env)
+                with mock.patch.object(
+                    runner.subprocess, "run", return_value=mock.Mock(returncode=0)
+                ) as run:
+                    self.assertEqual(
+                        runner.run_unittest(ROOT, env, Path(tmp) / "isolation.log"), 0
+                    )
+                run.assert_called_once()
+                self.assertIs(run.call_args.kwargs["env"], env)
+                self.assertNotIn("NETHACKDIR", run.call_args.kwargs["env"])
+                self.assertNotIn("HACKDIR", run.call_args.kwargs["env"])
+                self.assertEqual(run.call_args.kwargs["cwd"], ROOT)
+
     def test_ci_and_docs_share_official_entry_point(self):
         for name in (".github/workflows/quality.yml", "docs/quality-control.md"):
             text = (ROOT / name).read_text()
