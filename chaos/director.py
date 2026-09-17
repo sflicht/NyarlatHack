@@ -21,6 +21,8 @@ from .protocol import (
     strict_json,
 )
 
+from ._protocol_contract import MUTATIONS, EVENT_CAP, REQUEST_CAP, REQUEST_VERSION
+
 DEFAULT_BYTES = 16 * 1024 * 1024
 DEFAULT_EVENTS = 50000
 
@@ -89,7 +91,7 @@ class EventReader:
                 h.update(chunk)
                 parts = (tail + chunk).split(b"\n")
                 tail = parts.pop()
-                if len(tail) > 4096:
+                if len(tail) > EVENT_CAP:
                     raise ValueError("event line exceeds byte cap")
                 for line in parts:
                     records.append(parse_event(line))
@@ -151,7 +153,7 @@ class State:
                 }
             if e["status"] == "accepted":
                 self.accepted[e["id"]] = r
-                if r["mutation"] != "ambient":
+                if MUTATIONS[r["mutation"]]["persistent"]:
                     self.active[r["mutation"]] = e["expires"]
         if e["event"] == "death" and e["phase"] == "result":
             self.ended = True
@@ -224,7 +226,7 @@ class Mailbox:
         except FileNotFoundError:
             return None
         with os.fdopen(fd, "rb") as f:
-            return parse_request(f.read(513))
+            return parse_request(f.read(REQUEST_CAP + 1))
 
     def pending(self, state, *, known=None):
         """Resolve ACK evidence, with a narrow live-only pre-ACK wait.
@@ -304,7 +306,7 @@ def eligible(state, ordinary_food=False):
         if cost <= e["budget"]
         and e["sanity"] <= sanity
         and name not in state.active
-        and (name != "hunger_rate" or ordinary_food)
+        and (not MUTATIONS[name]["ordinary_food"] or ordinary_food)
     ]
 
 
@@ -318,15 +320,18 @@ class RandomBackend:
         if not options:
             return None
         name = self.rng.choice(options)
+        row = MUTATIONS[name]
         return dict(
-            v=1,
+            v=REQUEST_VERSION,
             id=ident,
             at=at,
             mutation=name,
-            value=self.rng.randint(1, 3)
-            if name == "ambient"
-            else (50 if name == "ward_efficacy" else 2),
-            duration=0 if name == "ambient" else self.rng.randint(1, 50),
+            value=self.rng.randint(*row["value"])
+            if row["value"][0] != row["value"][1]
+            else row["value"][0],
+            duration=self.rng.randint(*row["duration"])
+            if row["duration"][0] != row["duration"][1]
+            else row["duration"][0],
             telegraph=REGISTRY[name][2],
         )
 

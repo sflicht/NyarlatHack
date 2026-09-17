@@ -42,14 +42,12 @@ static struct chaos_context context(void) {
     return c;
 }
 static int show(void *unused, int telegraph, int ambient) {
-    static const char *const signals[] = { "",
-        "A distant whisper brushes against your thoughts.",
-        "The lines of your wards seem thin and uncertain.",
-        "An unnatural hunger coils in your stomach." };
-    static const char *const messages[] = { "", "The shadows lean closer.",
-        "Something beyond the walls listens.", "For a moment, silence has teeth." };
+#define MESSAGE(id, text) text,
+    static const char *const signals[] = { "", CHAOS_SIGNAL_ROWS(MESSAGE) };
+    static const char *const messages[] = { "", CHAOS_AMBIENT_MESSAGE_ROWS(MESSAGE) };
+#undef MESSAGE
     (void)unused;
-    if (telegraph < 1 || telegraph > 3 || ambient < 0 || ambient > 3) return 0;
+    if (telegraph < 1 || telegraph > CHAOS_SIGNAL_COUNT || ambient < 0 || ambient > CHAOS_AMBIENT_MESSAGE_COUNT) return 0;
     pline("%s", signals[telegraph]);
     if (ambient) pline("%s", messages[ambient]);
     return 1;

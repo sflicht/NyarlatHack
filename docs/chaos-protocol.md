@@ -7,6 +7,54 @@ This mailbox does not accept executable code; the separate First Haunting
 Lua admission path is documented in `milestone2.md`.
 All new engine code is under the NetHack General Public License (`dat/license`).
 
+## Contract ownership and regeneration
+
+`chaos/protocol_contract.json` is the reviewed source for the v1 mutation rows,
+versions, integer/cap limits, budget constants, request roles/bounds, event and
+ACK vocabulary, numeric bounds, telegraphs, ambient messages and wire order.
+Each mutation records its stable C symbol/id, wire name, cost, inclusive value
+and duration ranges, telegraph, separate engine/director sanity caps, ordinary
+food requirement, persistence and supported rule tag (`none`, `halve`, `double`).
+The reader-policy section records compatibility constraints, not selectable modes.
+
+```sh
+python3 scripts/generate_protocol_contract.py
+python3 scripts/generate_protocol_contract.py --check
+```
+
+The standard-library generator owns only the marked block in the existing
+`include/chaos_protocol.h` and the complete `chaos/_protocol_contract.py` module.
+Both outputs are checked in; game builds need neither Python nor runtime JSON.
+Do not edit generated output. `--check` is read-only, reports missing/stale
+outputs and rejects malformed sources or header markers. `--root` selects an
+isolated repository-shaped fixture. Header bytes outside the block are preserved;
+they are **not** certified by this check. Fixed serializer roles/order cannot be
+rearranged without reviewing the corresponding handwritten C argument lists.
+
+Before adding a mutation, review its stable enum identity and save layout, native
+handler and call site, telegraph, bounds/cost/eligibility, director behavior,
+prompts/packs, replay bytes and RNG draw order. Regenerate, run the contract and
+native tests, and obtain independent review. The disposable fourth-row test
+proves unchanged core C/Python consumers can use another existing-rule row; it
+does not authorize a production fourth mutation or synthesize new game physics.
+
+The frozen production oracle and pre-refactor seeded random bytes are independent
+of the source. Do not regenerate them to bless a maintenance behavior change.
+Consumer-bypass tests deliberately leave generated outputs fresh: generation
+agreement alone cannot establish correct parser, admission, UI or IO behavior.
+Existing native physics, restore, CHAOS-off and replay acceptance remain required.
+
+Intentional legacy differences remain: internal C `future` is not a wire ACK
+reason; future requests consume no ID and emit no ACK. Ambient has no C sanity
+cap, while the director uses 100. V1 events preserve unknown top-level fields;
+requests and present vitals are closed. ACK id-zero rows retain their permissive
+legacy cross-field semantics. Event string caps count Python characters when
+passed a string, bytes when passed bytes; requests first encode to bytes. The C
+writer is not an event vocabulary validator. V2 observations remain separately
+handwritten and outside this extraction. No schemas, production rows, messages,
+wire bytes, struct layouts, enum IDs, costs or RNG draw order are intentionally
+changed by the extraction.
+
 ## Transport and activation
 
 Build with `make -j4 install CHAOS=1` (default); `CHAOS=0` compiles no-op

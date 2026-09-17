@@ -57,9 +57,7 @@ static int event(struct chaos_io *io, struct chaos_state *s, const struct chaos_
     if(!chaos_quote(a,sizeof a,name,strlen(name)) || !chaos_quote(b,sizeof b,phase,strlen(phase)) ||
        !chaos_quote(d,sizeof d,detail,strlen(detail))) return 0;
     n=snprintf(line,sizeof line,
-        "{\"v\":%d,\"seq\":%ld,\"turn\":%ld,\"safe\":%ld,\"event\":%s,\"phase\":%s,\"detail\":%s,"
-        "\"sanity\":%d,\"insight\":%d,\"budget\":%d,\"spent\":%d,\"reserved\":%d,\"last_id\":%d,"
-        "\"vitals\":{\"hp\":%d,\"hp_max\":%d,\"power\":%d,\"power_max\":%d}%s}\n",
+        CHAOS_EVENT_FORMAT,
         version,s->seq+1,c->turn,s->safe,a,b,d,c->sanity,c->insight,chaos_budget(s,c->sanity),s->spent,s->reserved,s->last_id,
         c->hp,c->hp_max,c->power,c->power_max,extra);
     if(n < 0 || (size_t)n >= sizeof line || !append(io,io->events,line)) return 0;
@@ -110,14 +108,13 @@ int chaos_io_observation(struct chaos_io *io, struct chaos_state *s,
     return event(io,s,c,2,"observation",stage == CHAOS_OBS_STAGE_STARTED ? "attempt" : "result","",extra);
 }
 static void fields(char *buf, size_t cap, const struct chaos_request *r, const char *status, long expires) {
-    snprintf(buf,cap,",\"id\":%d,\"status\":\"%s\",\"mutation\":\"%s\",\"value\":%d,\"duration\":%d,"
-        "\"telegraph\":%d,\"at\":%d,\"cost\":%d,\"expires\":%ld",
+    snprintf(buf,cap,CHAOS_ACK_FORMAT,
         r->id,status,chaos_name(r->kind),r->value,r->duration,r->telegraph,r->at,chaos_cost(r->kind),expires);
 }
 static void ack(struct chaos_io *io, struct chaos_state *s, const struct chaos_context *c,
                 const struct chaos_request *r, int result) {
     char extra[512];
-    fields(extra,sizeof extra,r,result == CHAOS_OK ? "accepted" : "rejected",
+    fields(extra,sizeof extra,r,result == CHAOS_OK ? CHAOS_STATUS_ACCEPTED : CHAOS_STATUS_REJECTED,
         result == CHAOS_OK && r->duration ? c->turn+r->duration : 0);
     (void)event(io,s,c,1,"ack","result",chaos_reason(result),extra);
 }
@@ -163,8 +160,8 @@ void chaos_io_safe(struct chaos_io *io, struct chaos_state *s, const struct chao
     if(result != CHAOS_OK) { s->last_id=next.last_id; ack(io,s,c,&r,result); goto out; }
     /* Targeted valid requests consume their ID even if logging/UI fails. */
     s->last_id=next.last_id;
-    fields(extra,sizeof extra,&r,"admitted",r.duration ? c->turn+r.duration : 0);
-    snprintf(log,sizeof log,"{\"v\":1,\"turn\":%ld,\"safe\":%ld%s}\n",c->turn,s->safe,extra);
+    fields(extra,sizeof extra,&r,CHAOS_STATUS_ADMITTED,r.duration ? c->turn+r.duration : 0);
+    snprintf(log,sizeof log,CHAOS_JOURNAL_FORMAT,c->turn,s->safe,extra);
     if(!append(io,io->journal,log) ||
        !chaos_io_event(io,s,c,"telegraph","result",chaos_name(r.kind))) goto out;
     if(!show || !show(arg,r.telegraph,r.kind == CHAOS_AMBIENT ? r.value : 0)) {

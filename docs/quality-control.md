@@ -7,6 +7,12 @@ or inference allowance.
 
 ## Checks
 
+- **Protocol generation:** `python3 scripts/generate_protocol_contract.py --check`
+  runs in the lint job, comparing the reviewed JSON against both checked-in
+  generated targets without writing. Contract tests compile the real C core,
+  check independent legacy expectations, deliberately bypass consumers, and
+  exercise a disposable fourth row. Engine-unit message and transport byte tests
+  are not linked-game physics or native acceptance; all native gates below remain.
 - **Python lint and format:** pinned Ruff checks `chaos`, `tests/chaos`, and
   `scripts` using Python 3.11.
 - **Native builds and offline tests:** Ubuntu 24.04 checks out full history at
