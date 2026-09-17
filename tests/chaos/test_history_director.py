@@ -154,6 +154,35 @@ class HistoryDirectorTests(unittest.TestCase):
                 self.assertEqual(result["reason"], status)
                 self.assertEqual(result["accepted"], int(status == "accepted"))
 
+    def test_inherited_pending_acceptance_is_not_a_new_submission(self):
+        request = candidate_requests(HistoryState(wire(*self.rows)), True)[0]
+        mailbox = self.path / "whisper.json"
+        mailbox.write_text(json.dumps(request))
+        mailbox.chmod(0o600)
+
+        def tick():
+            self.rows.append(
+                ack(
+                    6,
+                    request,
+                    safe=2,
+                    sanity=70,
+                    cost=3,
+                    spent=3,
+                    reserved=3,
+                    expires=20,
+                )
+            )
+            self.save()
+
+        result, backend = self.run_case(tick=tick)
+        self.assertEqual(result["reason"], "accepted")
+        self.assertEqual(result["accepted"], 1)
+        self.assertEqual(result["submitted"], 0)
+        self.assertIsNone(result["decision"])
+        self.assertEqual(backend.calls, 0)
+        self.assertEqual(json.loads(mailbox.read_bytes()), request)
+
     def test_pending_timeout(self):
         result, _ = self.run_case()
         self.assertEqual(result["reason"], "runtime_cap")

@@ -39,8 +39,15 @@ class HistoryCLITests(unittest.TestCase):
     def test_missing_ledger_no_files_or_provider(self):
         with tempfile.TemporaryDirectory() as directory:
             factory = Mock(side_effect=AssertionError("no provider"))
+            transports = []
+
+            def construct(*args, **kwargs):
+                transport = OAuthBackend(*args, client_factory=factory, **kwargs)
+                transports.append(transport)
+                return transport
+
             with (
-                patch("chaos.oauth.native_client", factory),
+                patch("chaos.oauth.OAuthBackend", side_effect=construct),
                 contextlib.redirect_stderr(io.StringIO()),
             ):
                 try:
@@ -58,6 +65,8 @@ class HistoryCLITests(unittest.TestCase):
                 except SystemExit:
                     code = -1
             self.assertEqual(code, 2)
+            self.assertEqual(len(transports), 1)
+            self.assertIs(transports[0].factory, factory)
             factory.assert_not_called()
             self.assertEqual(list(Path(directory).iterdir()), [])
 
