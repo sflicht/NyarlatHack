@@ -57,10 +57,15 @@ class CurioLuaTests(unittest.TestCase):
                 str(cls.exe),
             ],
             check=True,
+            timeout=30,
         )
 
     def run_script(
-        self, source=FIXTURE, operation="apply", mode="normal", context=None
+        self,
+        source: str | bytes = FIXTURE,
+        operation="apply",
+        mode="normal",
+        context=None,
     ):
         args = [str(self.exe), operation, mode]
         if context is not None:
@@ -112,6 +117,24 @@ class CurioLuaTests(unittest.TestCase):
         r = self.run_script(context=(49, 10, 3, 8))
         self.assertEqual((r["status"], r["state"]), (0, 9))
 
+    def test_exact_statuses_and_opaque_source_compatibility(self):
+        source = curio().encode()
+        for candidate, status in (
+            (b"", 1),
+            (b"x", 2),
+            (b" ", 2),
+            (source + b"\0", 1),
+            (source + b" " * (4097 - len(source)), 1),
+            (b"\xef\xbb\xbf" + source, 2),
+            (b"--\xff\xfe\n" + source, 0),
+            (source + b", 9", 2),
+        ):
+            for operation in ("load", "inspect", "apply"):
+                with self.subTest(candidate=repr(candidate)[:60], operation=operation):
+                    self.assertEqual(
+                        self.run_script(candidate, operation)["status"], status
+                    )
+
     def test_source_limits_and_text_only(self):
         source = curio()
         for length in (len(source), 4096):
@@ -140,7 +163,9 @@ class CurioLuaTests(unittest.TestCase):
         self.assertEqual(binary.returncode, 0, binary.stderr)
         self.assertTrue(binary.stdout.startswith(b"\x1bLua"))
         self.assertLessEqual(len(binary.stdout), 4096)
-        self.reject(binary.stdout)
+        self.assertIn(b"\0", binary.stdout)
+        for operation in ("load", "inspect", "apply"):
+            self.assertEqual(self.run_script(binary.stdout, operation)["status"], 1)
 
     def test_null_pointers(self):
         for mode in ("null-source", "null-output"):
@@ -156,14 +181,16 @@ class CurioLuaTests(unittest.TestCase):
                 for operation in ("inspect", "apply"):
                     with self.subTest(field=field, value=value, operation=operation):
                         r = self.run_script(curio(), operation, context=c)
-                        self.assertEqual(r["status"] == 0, 0 <= value <= high)
+                        self.assertEqual(r["status"], 0 if 0 <= value <= high else 1)
 
     def test_only_copied_context_fields_and_no_caller_mutation(self):
         # Explicit nil checks rule out movement fields or native engine pointers;
         # writes to this disposable Lua table must not affect the caller's struct.
         check = """
             if c.sanity ~= 50 or c.insight ~= 10 or c.charges ~= 0 or c.state ~= 7
-               or c.mx ~= nil or c.history ~= nil or c.player ~= nil
+               or c.mx ~= nil or c.my ~= nil or c.history ~= nil or c.player ~= nil
+               or c.host ~= nil or c.native ~= nil or c.game ~= nil or c.u ~= nil
+               or c.pointer ~= nil or c.pointers ~= nil
                or c.source ~= nil then return nil end
             c.sanity=0; c.insight=0; c.charges=99; c.state=12; c.extra={}
         """
@@ -341,6 +368,22 @@ class CurioLuaTests(unittest.TestCase):
             "random",
             "host",
             "engine",
+            "rn2",
+            "native",
+            "game",
+            "player",
+            "u",
+            "pointer",
+            "pointers",
+            "ipairs",
+            "rawequal",
+            "rawlen",
+            "type",
+            "assert",
+            "error",
+            "select",
+            "warn",
+            "_VERSION",
         )
         guard = (
             "if "
@@ -365,6 +408,27 @@ class CurioLuaTests(unittest.TestCase):
                 curio(inspect="return " + expression, apply="return " + expression),
                 ("inspect", "apply"),
             )
+
+    def test_nested_catches_and_module_rng_misuse_exact_status(self):
+        for expression in (
+            "pcall(function() return xpcall(function() while true do end end,function() end) end)",
+            "require('x')",
+            "load('while true do end')()",
+            "debug.getregistry()",
+            "coroutine.create(function() while true do end end)",
+            "math.random()",
+            "rn2(2)",
+        ):
+            for operation in ("load", "inspect", "apply"):
+                self.assertEqual(
+                    self.run_script(expression + ";" + curio(), operation)["status"], 2
+                )
+            for operation in ("inspect", "apply"):
+                source = curio(
+                    inspect=expression + ";return 'X'",
+                    apply=expression + ";return {text='X',state=0,sanity_delta=0}",
+                )
+                self.assertEqual(self.run_script(source, operation)["status"], 2)
 
     def test_instruction_exhaustion_in_source_and_hooks(self):
         self.reject("while true do end")

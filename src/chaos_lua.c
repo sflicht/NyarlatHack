@@ -25,131 +25,127 @@ static void instruction_hook(lua_State *L,lua_Debug *ar) {
 static void number(lua_State *L,const char *key,int value) {
     lua_pushinteger(L,value);lua_setfield(L,-2,key);
 }
-/* All allocating setup runs protected too, including creation of copied input. */
-static int invoke(lua_State *L) {
-    const struct chaos_lua_context *c=lua_touserdata(L,lua_upvalueindex(1));
-    const char *source=lua_touserdata(L,lua_upvalueindex(2));
-    size_t n=(size_t)lua_tointeger(L,lua_upvalueindex(3));
-    int i;
-    if(luaL_loadbufferx(L,source,n,"haunting","t")!=LUA_OK) return lua_error(L);
-    lua_call(L,0,1);
-    if(!lua_isfunction(L,-1)) return luaL_error(L,"function required");
-    lua_createtable(L,0,4);number(L,"mx",c->mx);number(L,"my",c->my);number(L,"state",c->state);
-    lua_createtable(L,c->count,0);
-    for(i=0;i<c->count;++i) {
-        lua_createtable(L,0,2);number(L,"x",c->history[i].x);number(L,"y",c->history[i].y);
-        lua_rawseti(L,-2,i+1);
-    }
-    lua_setfield(L,-2,"history");lua_call(L,1,1);
-    return 1;
-}
-int chaos_lua_step(const char *source,size_t n,const struct chaos_lua_context *c,struct chaos_lua_intent *result) {
-    struct limits limits={0,0};struct chaos_lua_intent out={0,0,0};
-    lua_State *L;int status,fields=0;
-    memset(result,0,sizeof *result);
-    if(!source || !n || n>CHAOS_LUA_SOURCE || memchr(source,0,n) ||
-       c->count<0 || c->count>CHAOS_TRAIL || c->state<0 || c->state>1000000) return 1;
-    L=lua_newstate(limited_alloc,&limits);if(!L) return 2;
-    /* Deliberately do NOT luaL_openlibs. Even pcall/debug/load are unavailable. */
-    lua_sethook(L,instruction_hook,LUA_MASKCOUNT,100);
-    lua_pushlightuserdata(L,(void*)c);lua_pushlightuserdata(L,(void*)source);lua_pushinteger(L,(lua_Integer)n);
-    lua_pushcclosure(L,invoke,3);
-    status=lua_pcall(L,0,1,0);
-    if(status!=LUA_OK || !lua_istable(L,-1)) { lua_close(L);return 2; }
-    lua_pushnil(L);
-    while(lua_next(L,-2)) {
-        int bit=0;const char *key;
-        if(lua_type(L,-2)!=LUA_TSTRING || !lua_isinteger(L,-1)) {status=3;break;}
-        { size_t length; key=lua_tolstring(L,-2,&length);
-          if(memchr(key,0,length)){status=3;break;} }
-        lua_Integer value=lua_tointeger(L,-1);
-        if(!strcmp(key,"dx")) {bit=1;if(value < -1 || value>1){status=3;break;}out.dx=(int)value;}
-        else if(!strcmp(key,"dy")) {bit=2;if(value < -1 || value>1){status=3;break;}out.dy=(int)value;}
-        else if(!strcmp(key,"state")) {bit=4;if(value<0 || value>1000000){status=3;break;}out.state=(int)value;}
-        else {status=3;break;}
-        if(fields&bit){status=3;break;}fields|=bit;lua_pop(L,1);
-    }
-    if(fields!=7)status=3;
-    if(!status)*result=out;
-    lua_close(L);return status;
-}
 
-/* Curios share the movement VM's limits, but have a separate pure contract. */
-enum curio_operation { CURIO_LOAD, CURIO_INSPECT, CURIO_APPLY };
-struct curio_request {
+/* Closed private dispatch, not an adapter registration or capability API. */
+enum sandbox_operation { HAUNT_STEP, CURIO_LOAD, CURIO_INSPECT, CURIO_APPLY };
+struct sandbox_request {
     const char *source;
     size_t length;
-    enum curio_operation operation;
+    enum sandbox_operation operation;
+    int validation_status;
+    struct chaos_lua_context movement;
+    struct chaos_lua_intent movement_intent;
     struct chaos_curio_lua_context context;
     char name[49];
     struct chaos_curio_lua_intent intent;
 };
 
-/* Check raw keys before field lookup: no extras, coercions or NUL aliases. */
-static void curio_table(lua_State *L, int index, const char *const keys[3])
+static int sandbox_source_valid(const char *source, size_t length)
+{
+    return source && length && length <= CHAOS_LUA_SOURCE &&
+           !memchr(source, 0, length);
+}
+
+/* Raw exact keys: no coercions, metamethod enumeration or NUL aliases.
+ * Checked readers return explicit schema failure; Lua/OOM errors instead unwind
+ * to the outer pcall and always map to status 2, even during extraction. */
+static int sandbox_keys3(lua_State *L, int index, const char *const keys[3])
 {
     unsigned fields = 0;
     index = lua_absindex(L, index);
-    if (lua_type(L, index) != LUA_TTABLE) luaL_error(L, "table required");
+    if (lua_type(L, index) != LUA_TTABLE) return 0;
     lua_pushnil(L);
     while (lua_next(L, index)) {
         size_t length;
         const char *key;
         int i;
-        if (lua_type(L, -2) != LUA_TSTRING) luaL_error(L, "string key required");
+        if (lua_type(L, -2) != LUA_TSTRING) { lua_pop(L, 2); return 0; }
         key = lua_tolstring(L, -2, &length);
         for (i = 0; i < 3; ++i)
             if (length == strlen(keys[i]) && !memcmp(key, keys[i], length)) break;
-        if (i == 3 || (fields & (1U << i))) luaL_error(L, "unexpected field");
+        if (i == 3 || (fields & (1U << i))) { lua_pop(L, 2); return 0; }
         fields |= 1U << i;
         lua_pop(L, 1);
     }
-    if (fields != 7) luaL_error(L, "missing field");
+    return fields == 7;
 }
 
-static void curio_text(lua_State *L, int index, char *out, size_t maximum)
+static int sandbox_text(lua_State *L, int index, char *out, size_t maximum)
 {
     size_t length, i;
     const unsigned char *text;
     int nonblank = 0;
-    if (lua_type(L, index) != LUA_TSTRING) luaL_error(L, "string required");
+    if (lua_type(L, index) != LUA_TSTRING) return 0;
     text = (const unsigned char *)lua_tolstring(L, index, &length);
-    if (!length || length > maximum) luaL_error(L, "text length");
+    if (!length || length > maximum) return 0;
     for (i = 0; i < length; ++i) {
-        if (text[i] < 32 || text[i] > 126) luaL_error(L, "printable ASCII required");
+        if (text[i] < 32 || text[i] > 126) return 0;
         if (text[i] != ' ') nonblank = 1;
     }
-    if (!nonblank) luaL_error(L, "blank text");
+    if (!nonblank) return 0;
     memcpy(out, text, length);
     out[length] = '\0';
+    return 1;
 }
 
-static int curio_integer(lua_State *L, int index, int low, int high)
+static int sandbox_integer(lua_State *L, int index, int low, int high, int *out)
 {
     lua_Integer value;
-    if (!lua_isinteger(L, index)) luaL_error(L, "integer required");
+    if (!lua_isinteger(L, index)) return 0;
     value = lua_tointeger(L, index);
-    if (value < low || value > high) luaL_error(L, "integer bounds");
-    return (int)value;
+    if (value < low || value > high) return 0;
+    *out = (int)value;
+    return 1;
 }
 
-/* Source, copied input, calls, validation and extraction all remain protected.
- * Only this privileged C closure sees the request userdata, never candidate Lua.
- */
-static int curio_invoke(lua_State *L)
+static int haunt_invoke(lua_State *L, struct sandbox_request *r)
+{
+    static const char *const keys[3] = {"dx", "dy", "state"};
+    const struct chaos_lua_context *c = &r->movement;
+    int i, valid;
+    if (luaL_loadbufferx(L, r->source, r->length, "haunting", "t") != LUA_OK)
+        return lua_error(L);
+    /* Movement deliberately discards extra root AND handler results. */
+    lua_call(L, 0, 1);
+    if (!lua_isfunction(L, -1)) return luaL_error(L, "function required");
+    lua_createtable(L, 0, 4);
+    number(L, "mx", c->mx); number(L, "my", c->my); number(L, "state", c->state);
+    lua_createtable(L, c->count, 0);
+    for (i = 0; i < c->count; ++i) {
+        lua_createtable(L, 0, 2);
+        number(L, "x", c->history[i].x); number(L, "y", c->history[i].y);
+        lua_rawseti(L, -2, i + 1);
+    }
+    lua_setfield(L, -2, "history");
+    lua_call(L, 1, 1);
+    if (!lua_istable(L, -1)) return luaL_error(L, "table required");
+    if (!sandbox_keys3(L, 1, keys)) { r->validation_status = 3; return 0; }
+    lua_getfield(L, 1, "dx");
+    valid = sandbox_integer(L, -1, -1, 1, &r->movement_intent.dx);
+    lua_pop(L, 1);
+    lua_getfield(L, 1, "dy");
+    valid = sandbox_integer(L, -1, -1, 1, &r->movement_intent.dy) && valid;
+    lua_pop(L, 1);
+    lua_getfield(L, 1, "state");
+    valid = sandbox_integer(L, -1, 0, 1000000, &r->movement_intent.state) && valid;
+    if (!valid) r->validation_status = 3;
+    return 0;
+}
+
+/* Curios retain their own schema, exact arities and narrower state bounds. */
+static int curio_invoke(lua_State *L, struct sandbox_request *r)
 {
     static const char *const root_keys[3] = {"name", "inspect", "apply"};
     static const char *const intent_keys[3] = {"text", "state", "sanity_delta"};
-    struct curio_request *r = lua_touserdata(L, lua_upvalueindex(1));
     const struct chaos_curio_lua_context *c = &r->context;
     int i;
     if (luaL_loadbufferx(L, r->source, r->length, "curio", "t") != LUA_OK)
         return lua_error(L);
     lua_call(L, 0, LUA_MULTRET);
     if (lua_gettop(L) != 1) return luaL_error(L, "one root required");
-    curio_table(L, 1, root_keys);
+    if (!sandbox_keys3(L, 1, root_keys)) return luaL_error(L, "root fields");
     lua_getfield(L, 1, "name");
-    curio_text(L, -1, r->name, 48);
+    if (!sandbox_text(L, -1, r->name, 48)) return luaL_error(L, "name required");
     lua_pop(L, 1);
     for (i = 1; i < 3; ++i) {
         lua_getfield(L, 1, root_keys[i]);
@@ -166,44 +162,77 @@ static int curio_invoke(lua_State *L)
     lua_call(L, 1, LUA_MULTRET);
     if (lua_gettop(L) != 2) return luaL_error(L, "one hook result required");
     if (r->operation == CURIO_INSPECT) {
-        curio_text(L, 2, r->intent.text, 160);
+        if (!sandbox_text(L, 2, r->intent.text, 160)) return luaL_error(L, "text required");
     } else {
-        curio_table(L, 2, intent_keys);
+        if (!sandbox_keys3(L, 2, intent_keys)) return luaL_error(L, "intent fields");
         lua_getfield(L, 2, "text");
-        curio_text(L, -1, r->intent.text, 160);
+        if (!sandbox_text(L, -1, r->intent.text, 160)) return luaL_error(L, "text required");
         lua_pop(L, 1);
         lua_getfield(L, 2, "state");
-        r->intent.state = curio_integer(L, -1, 0, 255);
+        if (!sandbox_integer(L, -1, 0, 255, &r->intent.state))
+            return luaL_error(L, "state bounds");
         lua_pop(L, 1);
         lua_getfield(L, 2, "sanity_delta");
-        r->intent.sanity_delta = curio_integer(L, -1, -2, 2);
+        if (!sandbox_integer(L, -1, -2, 2, &r->intent.sanity_delta))
+            return luaL_error(L, "sanity bounds");
     }
     return 0;
 }
 
-/* A zero-upvalue C function needs no allocation before pcall. The extraspace
- * pointer bootstraps the hidden closure INSIDE that protection, so even closure
- * allocation failure cannot panic. Extraspace is not visible to candidate Lua.
- */
-static int curio_setup(lua_State *L)
+/* Zero upvalues means no closure allocation before protection. The private
+ * request lives only in extraspace/C, never in a candidate-visible Lua value.
+ * Parser, copied context, calls, extraction and diagnostics all run protected. */
+static int sandbox_setup(lua_State *L)
 {
-    struct curio_request *r;
+    struct sandbox_request *r;
     memcpy(&r, lua_getextraspace(L), sizeof r);
-    lua_pushlightuserdata(L, r);
-    lua_pushcclosure(L, curio_invoke, 1);
-    lua_call(L, 0, 0);
-    return 0;
+    switch (r->operation) {
+    case HAUNT_STEP: return haunt_invoke(L, r);
+    case CURIO_LOAD:
+    case CURIO_INSPECT:
+    case CURIO_APPLY: return curio_invoke(L, r);
+    }
+    return luaL_error(L, "invalid operation");
 }
 
-static int curio_run(const char *source, size_t length,
-                     const struct chaos_curio_lua_context *c,
-                     enum curio_operation operation, struct curio_request *r)
+static int sandbox_run(struct sandbox_request *r)
 {
     struct limits limits = {0, 0};
     lua_State *L;
     int status;
-    if (!source || !length || length > CHAOS_LUA_SOURCE || memchr(source, 0, length))
+    if (!sandbox_source_valid(r->source, r->length)) return 1;
+    L = lua_newstate(limited_alloc, &limits);
+    if (!L) return 2;
+    /* No libraries, host functions or engine pointers are installed. No fuel
+     * reset between root and handler: only a fresh public call starts over. */
+    memcpy(lua_getextraspace(L), &r, sizeof r);
+    lua_sethook(L, instruction_hook, LUA_MASKCOUNT, 100);
+    lua_pushcfunction(L, sandbox_setup);
+    status = lua_pcall(L, 0, 0, 0);
+    lua_close(L);
+    return status == LUA_OK ? r->validation_status : 2;
+}
+
+int chaos_lua_step(const char *source, size_t length,
+                   const struct chaos_lua_context *c, struct chaos_lua_intent *result)
+{
+    struct sandbox_request r = {0};
+    int status;
+    /* The movement API retains its native caller's non-NULL c/result contract. */
+    memset(result, 0, sizeof *result);
+    if (c->count < 0 || c->count > CHAOS_TRAIL || c->state < 0 || c->state > 1000000)
         return 1;
+    r.source = source; r.length = length; r.operation = HAUNT_STEP; r.movement = *c;
+    status = sandbox_run(&r);
+    if (!status) *result = r.movement_intent;
+    return status;
+}
+
+/* Family preflight only; the common runner owns the entire VM lifecycle. */
+static int curio_run(const char *source, size_t length,
+                     const struct chaos_curio_lua_context *c,
+                     enum sandbox_operation operation, struct sandbox_request *r)
+{
     if (operation != CURIO_LOAD) {
         if (!c || c->sanity < 0 || c->sanity > 100 ||
             c->insight < 0 || c->insight > 1000000 ||
@@ -211,23 +240,13 @@ static int curio_run(const char *source, size_t length,
             return 1;
         r->context = *c;
     }
-    r->source = source;
-    r->length = length;
-    r->operation = operation;
-    L = lua_newstate(limited_alloc, &limits);
-    if (!L) return 2;
-    /* No libraries, host functions or engine pointers are installed. */
-    memcpy(lua_getextraspace(L), &r, sizeof r);
-    lua_sethook(L, instruction_hook, LUA_MASKCOUNT, 100);
-    lua_pushcfunction(L, curio_setup);
-    status = lua_pcall(L, 0, 0, 0);
-    lua_close(L);
-    return status == LUA_OK ? 0 : 2;
+    r->source = source; r->length = length; r->operation = operation;
+    return sandbox_run(r);
 }
 
 int chaos_lua_curio_load(const char *source, size_t length, char name[49])
 {
-    struct curio_request r = {0};
+    struct sandbox_request r = {0};
     int status;
     if (!name) return 1;
     memset(name, 0, 49);
@@ -239,7 +258,7 @@ int chaos_lua_curio_load(const char *source, size_t length, char name[49])
 int chaos_lua_curio_inspect(const char *source, size_t length,
                           const struct chaos_curio_lua_context *c, char text[161])
 {
-    struct curio_request r = {0};
+    struct sandbox_request r = {0};
     int status;
     if (!text) return 1;
     memset(text, 0, 161);
@@ -252,7 +271,7 @@ int chaos_lua_curio_apply(const char *source, size_t length,
                         const struct chaos_curio_lua_context *c,
                         struct chaos_curio_lua_intent *intent)
 {
-    struct curio_request r = {0};
+    struct sandbox_request r = {0};
     int status;
     if (!intent) return 1;
     memset(intent, 0, sizeof *intent);
