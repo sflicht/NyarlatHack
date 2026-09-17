@@ -7,6 +7,12 @@ or inference allowance.
 
 ## Checks
 
+- **Upstream hook inventory:** [reviewed seams and extension procedure](upstream-chaos-hooks.md).
+  `/usr/bin/python3 -B scripts/check_upstream_hooks.py --root .` independently
+  scans tracked native files; missing/extra and malformed inventory regressions
+  run through existing `test_*.py` discovery in the full-history game job.
+  This is lexical merge assistance, not physics or stock-equivalence evidence.
+
 - **Protocol generation:** `python3 scripts/generate_protocol_contract.py --check`
   runs in the lint job, comparing the reviewed JSON against both checked-in
   generated targets without writing. Contract tests compile the real C core,
