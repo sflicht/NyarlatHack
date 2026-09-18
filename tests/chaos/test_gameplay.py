@@ -10,7 +10,7 @@ import shutil
 import subprocess
 import tempfile
 import unittest
-from gameplay_support import Game, ROOT
+from gameplay_support import ANSI, Game, ROOT
 from native_rng import controlled_rng_objects
 
 
@@ -386,3 +386,23 @@ class GameplayTests(unittest.TestCase):
                     )
                 )
                 self.assertEqual(g.quit(), 0)
+
+    def test_ordinary_bard_reaches_dungeon_without_wizard_mode(self):
+        g = Game(
+            self.current,
+            self.clock,
+            observe=True,
+            wizard=False,
+            ordinary=True,
+            root=self.artifacts / "ordinary-bard",
+        )
+        self.addCleanup(g.close)
+        text = g.start()
+        visible = ANSI.sub(b"", text)
+        self.assertTrue(g.sessions[-1]["ordinary"])
+        self.assertFalse(g.sessions[-1]["wizard"])
+        self.assertTrue(
+            b"Dlvl" in visible or b"Rhymer" in visible or b"HP:" in visible,
+            visible,
+        )
+        self.assertEqual(g.quit(), 0)

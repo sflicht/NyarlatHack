@@ -107,6 +107,11 @@ def add_parser(sub):
     p.add_argument("--max-bytes", type=int, default=DEFAULT_BYTES)
     p.add_argument("--max-submissions", type=int, default=12)
     p.add_argument(
+        "--ordinary",
+        action="store_true",
+        help="start a human Bard with no wizard mode; sets NETHACKOPTIONS if unset",
+    )
+    p.add_argument(
         "game_args",
         nargs=argparse.REMAINDER,
         help="put game arguments after --; forwarded literally",
@@ -147,6 +152,11 @@ def _configuration(args):
         or not os.access(game, os.X_OK)
     ):
         raise ValueError("game must be executable inside game root")
+    if args.ordinary:
+        from .ordinary_start import reject_wizard_args
+
+        extra = args.game_args[1:] if args.game_args[:1] == ["--"] else args.game_args
+        reject_wizard_args(extra)
     return backend, root, game
 
 
@@ -390,10 +400,16 @@ def play(args):
                 game_args = args.game_args
                 if game_args[:1] == ["--"]:
                     game_args = game_args[1:]
+                env = dict(os.environ, NYARLATHACK_RUN_DIR=str(directory))
+                if args.ordinary:
+                    from .ordinary_start import OPTIONS, reject_wizard_args
+
+                    reject_wizard_args(game_args)
+                    env.setdefault("NETHACKOPTIONS", OPTIONS)
                 game = subprocess.Popen(
                     [str(executable), *game_args],
                     cwd=root,
-                    env=dict(os.environ, NYARLATHACK_RUN_DIR=str(directory)),
+                    env=env,
                 )
                 # A signal can arrive inside Popen before assignment to game.
                 if received:

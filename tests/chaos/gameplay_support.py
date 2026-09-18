@@ -28,6 +28,7 @@ class Game:
         preload,
         observe=True,
         wizard=False,
+        ordinary=False,
         root=None,
         echoes=True,
         launcher_options=None,
@@ -58,6 +59,9 @@ class Game:
         self.preload = str(preload)
         self.observe = observe
         self.wizard = wizard
+        self.ordinary = ordinary
+        if wizard and ordinary:
+            raise ValueError("ordinary Bard start is not wizard mode")
         self.echoes = echoes
         self.launcher_options = launcher_options
         self.launcher_fresh = launcher_fresh
@@ -214,6 +218,7 @@ class Game:
         self.sessions.append(
             {
                 "wizard": self.wizard,
+                "ordinary": self.ordinary,
                 "observe": self.observe,
                 "echoes": self.echoes,
                 "haunting_source_sha256": hashlib.sha256(
@@ -230,20 +235,32 @@ class Game:
                 "clock_sha256": hashlib.sha256(
                     Path(self.preload).read_bytes()
                 ).hexdigest(),
-                "options": "Wizard,human,male,neutral,tty,!news,!legacy,time",
+                "options": (
+                    "Bard,human,male,neutral,dog,tty,!news,!legacy,time"
+                    if self.ordinary
+                    else "Wizard,human,male,neutral,tty,!news,!legacy,time"
+                ),
                 "timezone": "UTC",
             }
         )
         pid, fd = pty.fork()
         if pid == 0:
             os.chdir(self.game)
+            if str(ROOT) not in sys.path:
+                sys.path.insert(0, str(ROOT))
+            from chaos.ordinary_start import OPTIONS as ordinary_options
+
             env = dict(
                 os.environ,
                 TERM="xterm",
                 TZ="UTC",
                 HOME=str(self.root),
                 LD_PRELOAD=self.preload,
-                NETHACKOPTIONS="name:ChaosReview,role:Wizard,race:human,gender:male,align:neutral,windowtype:tty,!news,!legacy,time",
+                NETHACKOPTIONS=(
+                    ordinary_options
+                    if self.ordinary
+                    else "name:ChaosReview,role:Wizard,race:human,gender:male,align:neutral,windowtype:tty,!news,!legacy,time"
+                ),
             )
             env.pop("NYARLATHACK_RUN_DIR", None)
             env["NYARLATHACK_ECHOES"] = "1" if self.echoes else "0"
