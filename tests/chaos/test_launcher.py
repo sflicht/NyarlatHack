@@ -30,7 +30,8 @@ os.close(lock)
 siblings = pathlib.Path('/proc/%s/task/%s/children' % (os.getppid(), os.getppid())).read_text().split()
 info = dict(args=sys.argv[1:], cwd=os.getcwd(), run=str(run), locked=locked,
             tty=os.isatty(0), pid=os.getpid(), director=[int(x) for x in siblings if int(x) != os.getpid()],
-            mailbox=(run / 'whisper.json').exists())
+            mailbox=(run / 'whisper.json').exists(),
+            nethackoptions=os.environ.get('NETHACKOPTIONS'))
 pathlib.Path(os.environ['GAME_MARKER']).write_text(json.dumps(info))
 mode = os.environ.get('GAME_MODE', '')
 if mode == 'ignore_term':
@@ -586,6 +587,21 @@ class LauncherTests(unittest.TestCase):
         self.assertEqual(p.returncode, 0, p.stderr)
         self.assertTrue(self.info()["tty"])
         self.assert_reaped(self.info())
+
+    def test_ordinary_sets_bard_options_without_wizard_args(self):
+        from chaos.ordinary_start import OPTIONS
+
+        p = self.run_cli("--ordinary", GAME_STATUS="0")
+        self.assertEqual(p.returncode, 0, p.stderr)
+        info = self.info()
+        self.assertEqual(info["nethackoptions"], OPTIONS)
+        self.assertEqual(info["args"], [])
+        self.assert_reaped(info)
+
+    def test_ordinary_refuses_wizard_mode_before_game(self):
+        p = self.run_cli("--ordinary", "--", "-D", "-u", "wizard")
+        self.assertEqual(p.returncode, 2, p.stderr)
+        self.assertFalse(self.marker.exists())
 
 
 if __name__ == "__main__":

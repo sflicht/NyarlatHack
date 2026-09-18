@@ -58,7 +58,13 @@ After building, from the repository root:
 ```sh
 python3 -m chaos play
 python3 -m chaos play --backend random --seed 7
+python3 -m chaos play --ordinary
 ```
+
+`--ordinary` starts a human Bard with a dog, no wizard mode, and sets
+`NETHACKOPTIONS` only if it is unset. It is a frozen test identity, not a
+ban on other roles. Combine it with `--` game arguments only if they are not
+wizard-mode tokens (`-D`, `-u wizard`).
 
 The default publishes the ambient pack before starting the game. The supervisor
 prints a fresh private run directory and keeps it for save/restore and evidence.

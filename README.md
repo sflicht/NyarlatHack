@@ -106,7 +106,11 @@ From the repository root:
 
 ```sh
 python3 -m chaos play
+python3 -m chaos play --ordinary
 ```
+
+`--ordinary` starts a human Bard (frozen test identity, no wizard mode). Other
+roles still work without that flag.
 
 The initial level-entry safe point admits the ambient request and displays its
 warning and message. The launcher prints and preserves a private run directory,
