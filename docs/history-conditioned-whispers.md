@@ -26,7 +26,9 @@ An empty candidate set causes **no model call and no request**.
 No native mechanic, cost, warning, save layout, default event stream, Lua binding,
 or `play` launcher behavior changes. The legacy director continues rejecting
 version-2 observations; only the new `history` command consumes mixed versions.
-The long-term work in issues #21, #22, #26 and #27 is not completed by this pilot.
+The long-term work in issues #21, #26 and #27 is not completed by this hunger
+pilot. Next-use whistle/fountain history policy is specified separately in
+`docs/next-use-history.md`.
 
 ## Run it explicitly in two terminals
 
