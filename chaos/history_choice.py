@@ -11,7 +11,7 @@ from pathlib import Path
 import random
 import time
 
-from .next_use_compose import freeze_menu
+from .next_use_compose import freeze_menu, match_frozen_row
 from .protocol import encode_request, parse_request, strict_json
 from .response import normalize_whisper_response
 
@@ -175,8 +175,8 @@ class OAuthHistoryBackend(_BoundedChoice):
         self.last_response = content
         self.last_receipt = copy.deepcopy(receipt)
         decoded = strict_json(text, 512)
+        if type(decoded) is not dict:
+            raise ValueError("history choice is outside the frozen candidate menu")
         if set(decoded) == {"abstain"} and decoded["abstain"] is True:
             return None
-        if decoded not in menu:
-            raise ValueError("history choice is outside the frozen candidate menu")
-        return decoded
+        return match_frozen_row(decoded, menu)

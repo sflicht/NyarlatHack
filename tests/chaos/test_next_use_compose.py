@@ -1,5 +1,6 @@
 """Synthetic next-use composition tests. No native admission or model spend."""
 
+import copy
 import json
 import tempfile
 import unittest
@@ -7,7 +8,12 @@ from pathlib import Path
 
 from chaos.history import public_context
 from chaos.history_choice import OAuthHistoryBackend, RandomHistoryBackend
-from chaos.next_use_compose import composition_candidates, compose, lua_source
+from chaos.next_use_compose import (
+    composition_candidates,
+    compose,
+    freeze_menu,
+    lua_source,
+)
 from chaos.next_use_install import install
 from test_next_use_history import state
 
@@ -89,3 +95,72 @@ class NextUseComposeTests(unittest.TestCase):
                 target.read_bytes().decode("ascii"), lua_source("fountain_refresh")
             )
             self.assertEqual(target.stat().st_mode & 0o777, 0o600)
+
+    def test_float_origin_seq_is_rejected_without_retry(self):
+        both = state(("whistling", "sound_high"), ("fountain_drink", "water_refreshed"))
+        menu = composition_candidates(both)
+        context = public_context(both)
+        forged = copy.deepcopy(menu[0])
+        forged["origin"]["root_seq"] = float(forged["origin"]["root_seq"])
+        transport = FakeTransport(json.dumps(forged))
+        backend = OAuthHistoryBackend(transport)
+        with self.assertRaises(ValueError):
+            backend.choose_next_use(context, menu)
+        self.assertEqual(len(transport.calls), 1)
+        self.assertEqual(backend.attempts, 1)
+        self.assertIsNone(backend.choose_next_use(context, menu))
+        self.assertEqual(len(transport.calls), 1)
+
+    def test_boolean_origin_seq_is_rejected_without_retry(self):
+        row = {
+            "family": "W",
+            "op": "quiet",
+            "origin": {
+                "root_seq": 1,
+                "notice_seq": 2,
+                "end_seq": 3,
+                "fact": "sound_high",
+            },
+        }
+        menu = [row]
+        context = dict(CONTEXT, next_use={"families": ["W"], "menu": menu})
+        forged = copy.deepcopy(row)
+        forged["origin"]["root_seq"] = True
+        transport = FakeTransport(json.dumps(forged))
+        backend = OAuthHistoryBackend(transport)
+        with self.assertRaises(ValueError):
+            backend.choose_next_use(context, menu)
+        self.assertEqual(len(transport.calls), 1)
+        self.assertEqual(backend.attempts, 1)
+
+    def test_choice_returns_trusted_host_row_not_model_alias(self):
+        both = state(("whistling", "sound_high"), ("fountain_drink", "water_refreshed"))
+        menu = composition_candidates(both)
+        frozen = freeze_menu(menu)
+        context = public_context(both)
+        transport = FakeTransport(json.dumps(menu[0], separators=(",", ":")))
+        chosen = OAuthHistoryBackend(transport).choose_next_use(context, menu)
+        self.assertEqual(chosen, frozen[0])
+        chosen["origin"]["root_seq"] = 0
+        chosen["extra"] = True
+        self.assertEqual(menu[0]["origin"]["root_seq"], frozen[0]["origin"]["root_seq"])
+        self.assertNotIn("extra", menu[0])
+        self.assertNotIn("extra", frozen[0])
+
+    def test_freeze_menu_rejects_float_and_bool_origin_fields(self):
+        row = composition_candidates(state(("whistling", "sound_high")))[0]
+        floated = copy.deepcopy(row)
+        floated["origin"]["notice_seq"] = float(floated["origin"]["notice_seq"])
+        booled = copy.deepcopy(row)
+        booled["origin"]["end_seq"] = True
+        with self.assertRaises(ValueError):
+            freeze_menu([floated])
+        with self.assertRaises(ValueError):
+            freeze_menu([booled])
+
+    def test_empty_next_use_menu_makes_zero_calls(self):
+        transport = FakeTransport('{"abstain":true}')
+        backend = OAuthHistoryBackend(transport)
+        self.assertIsNone(backend.choose_next_use(CONTEXT, []))
+        self.assertEqual(transport.calls, [])
+        self.assertEqual(backend.attempts, 0)
