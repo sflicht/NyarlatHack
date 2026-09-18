@@ -412,6 +412,9 @@ dodrink()
 	register struct obj *otmp;
 	const char *potion_descr;
 	boolean booze_only = FALSE;
+	struct chaos_fountain_token token = { 0 };
+	long completed_root = 0;
+	boolean confirmed = FALSE;
 
 	if(nomouth(youracedata->mtyp)) {
 		pline("You have no mouth to drink with!");
@@ -450,8 +453,15 @@ dodrink()
 	/* Is there a fountain to drink from here? */
 	if (IS_FOUNTAIN(levl[u.ux][u.uy].typ) && !Levitation && !booze_only) {
 		if(yn("Drink from the fountain?") == 'y') {
-			long root = chaos_observation_begin(CHAOS_OBS_OP_FOUNTAIN_DRINK);
+			long root;
+#ifdef CHAOS
+			completed_root = chaos_next_use_fountain_completed_root();
+#endif
+			confirmed = chaos_next_use_fountain_contact(completed_root, &token);
+			root = chaos_observation_begin(CHAOS_OBS_OP_FOUNTAIN_DRINK);
+			chaos_bind_drinkfountain_token(confirmed ? &token : (struct chaos_fountain_token *)0);
 			drinkfountain();
+			chaos_bind_drinkfountain_token((struct chaos_fountain_token *)0);
 			chaos_observation_end(root);
 			(void)root; /* CHAOS-off end does not evaluate its argument. */
 			return MOVE_QUAFFED;

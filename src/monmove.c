@@ -2581,6 +2581,7 @@ register int after;
 	long flag;
 	int  omx = mtmp->mx, omy = mtmp->my;
 	struct obj *mw_tmp;
+	struct chaos_whistle_witness witness = { 0 };
 
 	if (stationary_mon(mtmp) || sessile(mtmp->data)) return(0);
 	if(mtmp->mtrapped) {
@@ -2621,14 +2622,23 @@ register int after;
 	if(mtmp->wormno) goto not_special;
 	/* my dog gets special treatment */
 	if(mtmp->mtame) {
-	    mmoved = dog_move(mtmp, after);
+#ifdef CHAOS
+	    witness.production = TRUE;
+	    mmoved = dog_move(mtmp, after, & witness);
+#else
+	    mmoved = dog_move(mtmp, after, NULL);
+#endif
+#define CHAOS_MANIFEST_RETURN(value) do { \
+	    chaos_whistle_witness_finalize(mtmp, &witness); \
+	    return (value); \
+	} while (0)
 	    goto postmov;
 	}
 
 	/* likewise for shopkeeper */
 	if(mtmp->isshk) {
 	    mmoved = shk_move(mtmp);
-	    if(mmoved == -2) return(2);
+	    if(mmoved == -2) CHAOS_MANIFEST_RETURN(2);
 	    if(mmoved >= 0) goto postmov;
 	    mmoved = 0;		/* follow player outside shop */
 	}
@@ -2636,7 +2646,7 @@ register int after;
 	/* and for the guard */
 	if(mtmp->isgd) {
 	    mmoved = gd_move(mtmp);
-	    if(mmoved == -2) return(2);
+	    if(mmoved == -2) CHAOS_MANIFEST_RETURN(2);
 	    if(mmoved >= 0) goto postmov;
 	    mmoved = 0;
 	}
@@ -2653,7 +2663,7 @@ register int after;
 	    if((dist2(mtmp->mx, mtmp->my, tx, ty) < 2) &&
 	       intruder && (intruder != mtmp)) {
 			notonhead = (intruder->mx != tx || intruder->my != ty);
-			if(mattackm(mtmp, intruder)&(MM_AGR_DIED)) return(2);
+			if(mattackm(mtmp, intruder)&(MM_AGR_DIED)) CHAOS_MANIFEST_RETURN(2);
 			mmoved = 1;
 			goto postmov;
 		} else if(mtmp->mtyp != PM_DEMOGORGON 
@@ -2669,7 +2679,7 @@ register int after;
 	/* and for the priest */
 	if(mtmp->ispriest) {
 	    mmoved = pri_move(mtmp);
-	    if(mmoved == -2) return(2);
+	    if(mmoved == -2) CHAOS_MANIFEST_RETURN(2);
 	    if(mmoved >= 0) goto postmov;
 	    mmoved = 0;
 	}
@@ -2677,7 +2687,7 @@ register int after;
 	/* and for smiths */
 	if(HAS_ESMT(mtmp)) {
 	    mmoved = smith_move(mtmp);
-	    if(mmoved == -2) return(2);
+	    if(mmoved == -2) CHAOS_MANIFEST_RETURN(2);
 	    if(mmoved >= 0) goto postmov;
 	    mmoved = 0;
 	}
@@ -2687,7 +2697,7 @@ register int after;
 	    if(flags.soundok && canseemon(mtmp))
 		verbalize("I'm late!");
 	    mongone(mtmp);
-	    return(2);
+	    CHAOS_MANIFEST_RETURN(2);
 	}
 #endif
 
@@ -2707,7 +2717,7 @@ register int after;
 	    goto postmov;
 	}
 not_special:
-	if(u.uswallow && !mtmp->mflee && u.ustuck != mtmp) return(1);
+	if(u.uswallow && !mtmp->mflee && u.ustuck != mtmp) CHAOS_MANIFEST_RETURN(1);
 	omx = mtmp->mx;
 	omy = mtmp->my;
 	gx = mtmp->mux;
@@ -2946,7 +2956,7 @@ not_special:
         {
             int choice = chaos_haunt_pick(mtmp, poss, cnt);
             if (choice != -2) {
-                if (choice < 0) return 0;
+                if (choice < 0) CHAOS_MANIFEST_RETURN(0);
                 nix=poss[choice].x; niy=poss[choice].y; chi=choice; mmoved=1;
                 goto chaos_selected;
             }
@@ -3117,7 +3127,7 @@ chaos_selected:
 	    register int j;
 
 	    if (mmoved==1 && (u.ux != nix || u.uy != niy) && itsstuck(mtmp))
-		return(3);
+		CHAOS_MANIFEST_RETURN(3);
 
 	    if (((IS_ROCK(levl[nix][niy].typ) && may_dig(nix,niy)) ||
 		 closed_door(nix, niy)) &&
@@ -3134,9 +3144,9 @@ chaos_selected:
 		}
 		if (mtmp->weapon_check >= NEED_PICK_AXE) {
 			if (mon_wield_item(mtmp))
-				return(3);	/* did not move, spent turn wielding item */
+				CHAOS_MANIFEST_RETURN(3);	/* did not move, spent turn wielding item */
 			else
-				return(0);	/* can't move into that position, but didn't take time wielding item */
+				CHAOS_MANIFEST_RETURN(0);	/* can't move into that position, but didn't take time wielding item */
 		}
 	    }
 	    /* If ALLOW_U is set, either it's trying to attack you, or it
@@ -3158,7 +3168,7 @@ chaos_selected:
 	    if (nix == u.ux && niy == u.uy) {
 		mtmp->mux = u.ux;
 		mtmp->muy = u.uy;
-		return(0);
+		CHAOS_MANIFEST_RETURN(0);
 	    }
 	    /* The monster may attack another based on 1 of 2 conditions:
 	     * 1 - It may be confused.
@@ -3181,7 +3191,7 @@ chaos_selected:
 		mstatus = mattackm(mtmp, mtmp2);
 		
 		if (mstatus & MM_AGR_DIED)		/* aggressor died */
-		    return 2;
+		    CHAOS_MANIFEST_RETURN(2);
 
 		if ((mstatus & MM_HIT) && !(mstatus & MM_DEF_DIED)  &&
 		    rn2(4) && mtmp2->movement >= NORMAL_SPEED
@@ -3190,13 +3200,13 @@ chaos_selected:
 		    notonhead = 0;
 		    mstatus = mattackm(mtmp2, mtmp);	/* return attack */
 		    if (mstatus & MM_DEF_DIED)
-			return 2;
+			CHAOS_MANIFEST_RETURN(2);
 		}
-		return 3;
+		CHAOS_MANIFEST_RETURN(3);
 	    }
 
 	    if (!m_in_out_region(mtmp,nix,niy))
-	        return 3;
+	        CHAOS_MANIFEST_RETURN(3);
 	    remove_monster(omx, omy);
 	    place_monster(mtmp, nix, niy);
         chaos_haunt_commit(mtmp);
@@ -3231,7 +3241,7 @@ chaos_selected:
 	    if(is_unicorn(ptr) && rn2(2) && !tele_restrict(mtmp) && !noactions(mtmp))
 		{
 			if(rloc(mtmp, TRUE))
-				return(1);
+				CHAOS_MANIFEST_RETURN(1);
 	    }
 	    if(mtmp->wormno) worm_nomove(mtmp);
 	}
@@ -3243,7 +3253,7 @@ postmov:
 		newsym(omx,omy);		/* update the old position */
 		if (mintrap(mtmp) >= 2) {
 		    if(mtmp->mx) newsym(mtmp->mx,mtmp->my);
-		    return(2);	/* it died */
+		    CHAOS_MANIFEST_RETURN(2);	/* it died */
 		}
 		ptr = mtmp->data;
 
@@ -3266,7 +3276,7 @@ postmov:
 			    here->doormask = D_NODOOR;
 			    newsym(mtmp->mx, mtmp->my);
 			    unblock_point(mtmp->mx,mtmp->my); /* vision */
-			    if(mb_trapped(mtmp)) return(2);
+			    if(mb_trapped(mtmp)) CHAOS_MANIFEST_RETURN(2);
 			} else {
 			    if (flags.verbose) {
 				if (canseeit)
@@ -3283,7 +3293,7 @@ postmov:
 			    here->doormask = D_NODOOR;
 			    newsym(mtmp->mx, mtmp->my);
 			    unblock_point(mtmp->mx,mtmp->my); /* vision */
-			    if(mb_trapped(mtmp)) return(2);
+			    if(mb_trapped(mtmp)) CHAOS_MANIFEST_RETURN(2);
 			} else {
 			    if (flags.verbose) {
 				if (canseeit)
@@ -3301,7 +3311,7 @@ postmov:
 			    here->doormask = D_NODOOR;
 			    newsym(mtmp->mx, mtmp->my);
 			    unblock_point(mtmp->mx,mtmp->my); /* vision */
-			    if(mb_trapped(mtmp)) return(2);
+			    if(mb_trapped(mtmp)) CHAOS_MANIFEST_RETURN(2);
 			} else {
 			    if (flags.verbose) {
 				if (canseeit)
@@ -3341,7 +3351,7 @@ postmov:
 		}
 		/* possibly dig */
 		if (can_tunnel && mdig_tunnel(mtmp))
-			return(2);  /* mon died (position already updated) */
+			CHAOS_MANIFEST_RETURN(2);  /* mon died (position already updated) */
 
 		/* set also in domove(), hack.c */
 		if (u.uswallow && mtmp == u.ustuck &&
@@ -3380,15 +3390,15 @@ postmov:
 
 		/* Maybe a cube ate just about anything */
 		if (ptr->mtyp == PM_GELATINOUS_CUBE || ptr->mtyp == PM_ANCIENT_OF_CORRUPTION) {
-		    if (meatobj(mtmp) == 2) return 2;	/* it died */
+		    if (meatobj(mtmp) == 2) CHAOS_MANIFEST_RETURN(2);	/* it died */
 		}
 		/* Maybe a rock mole just ate some metal object */
 		else if (metallivorous(ptr)) {
-		    if (meatmetal(mtmp) == 2) return 2;	/* it died */
+		    if (meatmetal(mtmp) == 2) CHAOS_MANIFEST_RETURN(2);	/* it died */
 		}
 		/* Maybe a gluttonous monster just ate some food */
 		else if (mtmp->mgluttony || mtmp->mcannibal) {
-		    if (meatgluttony(mtmp) == 2) return 2;	/* it died */
+		    if (meatgluttony(mtmp) == 2) CHAOS_MANIFEST_RETURN(2);	/* it died */
 		}
 
 		if(g_at(mtmp->mx,mtmp->my) && likegold) mpickgold(mtmp);
@@ -3426,7 +3436,8 @@ postmov:
 		after_shk_move(mtmp);
 	    }
 	}
-	return(mmoved);
+	CHAOS_MANIFEST_RETURN(mmoved);
+#undef CHAOS_MANIFEST_RETURN
 }
 
 #endif /* OVL0 */

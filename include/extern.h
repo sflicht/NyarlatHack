@@ -5,6 +5,9 @@
 #ifndef EXTERN_H
 #define EXTERN_H
 
+struct chaos_fountain_token;
+struct chaos_whistle_witness;
+
 #define E extern
 
 /* ### alloc.c ### */
@@ -28,6 +31,11 @@ E void NDECL(moveloop);
 E void NDECL(stop_occupation);
 E void NDECL(display_gamewindows);
 E void NDECL(newgame);
+E unsigned NDECL(next_ident);
+#ifdef CHAOS
+E unsigned NDECL(chaos_next_use_armed_reserved_identity);
+E long NDECL(chaos_next_use_fountain_completed_root);
+#endif
 E void FDECL(welcome, (BOOLEAN_P));
 #if defined(RECORD_REALTIME) || defined(REALTIME_ON_BOTL)
 E time_t NDECL(get_realtime);
@@ -538,6 +546,7 @@ E void NDECL(clear_glyph_buffer);
 E void FDECL(row_refresh, (int,int,int));
 E void NDECL(cls);
 E void FDECL(flush_screen, (int));
+E boolean NDECL(chaos_flush_screen_ready);
 #ifdef DUMP_LOG
 E void FDECL(dump_screen, (int));
 #endif
@@ -768,7 +777,8 @@ E int FDECL(dog_nutrition, (struct monst *,struct obj *));
 E int FDECL(dog_eat, (struct monst *,struct obj *,int,int,BOOLEAN_P));
 E void FDECL(give_mon_corpse_intrinsic, (struct monst *,int));
 E int FDECL(monster_eat, (struct monst *,struct obj *,int,int,BOOLEAN_P));
-E int FDECL(dog_move, (struct monst *,int));
+int dog_move(struct monst *mtmp, int after,
+             struct chaos_whistle_witness *witness);
 #ifdef USE_TRAMPOLI
 E void FDECL(wantdoor, (int,int,genericptr_t));
 #endif

@@ -515,8 +515,8 @@ long num;
 	otmp->oextra_p = (union oextra *)0;
 	otmp->mp = (struct mask_properties *)0;	/* not sure if correct -- these are very unfinished */
 
-	otmp->o_id = flags.ident++;
-	if (!otmp->o_id) otmp->o_id = flags.ident++;	/* ident overflowed */
+	otmp->o_id = next_ident();
+	if (!otmp->o_id) otmp->o_id = next_ident();	/* ident overflowed */
 	otmp->lamplit = 0;	/* not lit, yet */
 	otmp->owornmask = 0L;	/* new object isn't worn */
 	obj->quan -= num;
@@ -580,8 +580,8 @@ duplicate_obj(struct obj *obj, boolean same_chain)
 		}
 		
 	}
-	otmp->o_id = flags.ident++;
-	if (!otmp->o_id) otmp->o_id = flags.ident++;	/* ident overflowed */
+	otmp->o_id = next_ident();
+	if (!otmp->o_id) otmp->o_id = next_ident();	/* ident overflowed */
 	otmp->lamplit = 0;	/* not lit, yet */
 	otmp->owornmask = 0L;	/* new object isn't worn */
 	if(same_chain){
@@ -695,8 +695,8 @@ register struct obj *otmp;
 	dummy->timed = NULL;
 	dummy->mp = NULL;
 	dummy->where = OBJ_FREE;
-	dummy->o_id = flags.ident++;
-	if (!dummy->o_id) dummy->o_id = flags.ident++;	/* ident overflowed */
+	dummy->o_id = next_ident();
+	if (!dummy->o_id) dummy->o_id = next_ident();	/* ident overflowed */
 	register int ox_id;
 	for (ox_id=0; ox_id<NUM_OX; ox_id++)
 		cpy_ox(otmp, dummy, ox_id);
@@ -726,8 +726,8 @@ int mkflags;
 	otmp = newobj(0);
 	*otmp = zeroobj;
 	otmp->age = monstermoves;
-	otmp->o_id = flags.ident++;
-	if (!otmp->o_id) otmp->o_id = flags.ident++;	/* ident overflowed */
+	otmp->o_id = next_ident();
+	if (!otmp->o_id) otmp->o_id = next_ident();	/* ident overflowed */
 	otmp->quan = 1L;
 	otmp->oclass = let;
 	otmp->otyp = otyp;

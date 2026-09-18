@@ -4,6 +4,7 @@
 
 #include "hack.h"
 #include "xhity.h"
+#include "chaos.h"
 
 #include "mfndpos.h"
 
@@ -1171,9 +1172,8 @@ register struct monst *mtmp;
 
 /* return 0 (no move), 1 (move) or 2 (dead) */
 int
-dog_move(mtmp, after)
-register struct monst *mtmp;
-register int after;	/* this is extra fast monster movement */
+dog_move(struct monst *mtmp, int after,
+         struct chaos_whistle_witness *witness)
 {
 	int omx, omy;		/* original mtmp position */
 	int appr = 0, whappr, udist;
@@ -1187,6 +1187,9 @@ register int after;	/* this is extra fast monster movement */
 	int chi = -1, nidist, ndist;
 	coord poss[9];
 	long info[9], allowflags;
+	int extra_attention = 0, pre_glyph = NO_GLYPH;
+	boolean manifestation_classifier = FALSE, pre_public = FALSE;
+	long manifestation_root = 0, decision_end_seq = 0;
 #define GDIST(x,y) (dist2(x,y,gx,gy))
 
 	/*
@@ -1232,8 +1235,57 @@ register int after;	/* this is extra fast monster movement */
 	} else
 	    whappr = 0;
 
+#if defined(CHAOS) && defined(TTY_GRAPHICS)
+	pre_public = witness && witness->production
+	    && canseemon(mtmp) && !Hallucination && !u.uswallow
+	    && ((pre_glyph = glyph_at(omx, omy)), TRUE)
+	    && glyph_is_monster(pre_glyph)
+	    && glyph_to_mon(pre_glyph) == PM_LITTLE_DOG
+	    && tty_snapshot_projectable(omx, omy, pre_glyph);
+#endif
+	if (witness && witness->production
+	    && chaos_next_use_whistle_decision_ready(mtmp->m_id)) {
+	    if (chaos_observation_begin_exclusive(
+	            CHAOS_OBS_OP_WHISTLE_ATTENTION, &manifestation_root)) {
+		witness->root = manifestation_root;
+		witness->active = TRUE;
+		witness->oldx = omx;
+		witness->oldy = omy;
+		witness->pre_glyph = pre_glyph;
+	    } else {
+		chaos_next_use_whistle_no_root(mtmp->m_id);
+	    }
+	}
+	extra_attention = witness && witness->active
+	    ? chaos_next_use_whistle_attention(mtmp->m_id, manifestation_root) : 0;
 	appr = dog_goal(mtmp, has_edog ? EDOG(mtmp) : (struct edog *)0,
-							after, udist, whappr);
+							after, udist, whappr || extra_attention);
+#if defined(CHAOS) && defined(TTY_GRAPHICS)
+	manifestation_classifier = whappr == 0 && extra_attention != 0
+	    && appr != -2 && gtyp == UNDEF && gx == u.ux && gy == u.uy
+	    && pre_public;
+#else
+	manifestation_classifier = FALSE;
+#endif
+	if (witness && witness->active) {
+	    if (manifestation_classifier) {
+		witness->classifier_ok = TRUE;
+		witness->pre_public = pre_public;
+		if (chaos_next_use_manifestation_begin(mtmp->m_id,
+		                                      manifestation_root))
+		    (void) chaos_whistle_attention_message(witness);
+	    } else {
+		if (chaos_observation_finish(manifestation_root,
+		        CHAOS_OBS_STAGE_BLOCKED, &decision_end_seq))
+		    chaos_next_use_manifestation_end(manifestation_root, 0,
+		                                      decision_end_seq, FALSE);
+		else
+		    chaos_next_use_manifestation_end(manifestation_root, 0, 0,
+		                                      FALSE);
+		witness->active = FALSE;
+		witness->finalized = TRUE;
+	    }
+	}
 	if (appr == -2) return(0);
 
 #ifdef BARD

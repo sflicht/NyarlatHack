@@ -3019,7 +3019,7 @@ register struct monst *shkp;
 		if(bp->bquan > obj->quan){
 			otmp = newobj(0);
 			*otmp = *obj;
-			bp->bo_id = otmp->o_id = flags.ident++;
+			bp->bo_id = otmp->o_id = next_ident();
 			otmp->where = OBJ_FREE;
 			otmp->quan = (bp->bquan -= obj->quan);
 			otmp->owt = 0;	/* superfluous */

@@ -4018,31 +4018,6 @@
       "chaos0": "Enum remains declared; this use is an erased observation-macro argument and is not evaluated."
     },
     {
-      "id": "hook-0042",
-      "file": "src/apply.c",
-      "symbol": "doapply",
-      "kind": "call-or-declaration",
-      "purpose": "doapply: close selected-action observation root",
-      "signature": [
-        "use_whistle",
-        "(",
-        "obj",
-        ")",
-        ";",
-        "chaos_observation_end",
-        "(",
-        "root",
-        ")",
-        ";",
-        "("
-      ],
-      "guards": [
-        "ifdef OVLB"
-      ],
-      "count": 1,
-      "chaos0": "No-op macro; arguments are not evaluated."
-    },
-    {
       "id": "hook-0043",
       "file": "src/bones.c",
       "symbol": "<file>",
@@ -4969,121 +4944,6 @@
       "guards": [],
       "count": 1,
       "chaos0": "Enum remains declared; this use is an erased observation-macro argument and is not evaluated."
-    },
-    {
-      "id": "hook-0084",
-      "file": "src/fountain.c",
-      "symbol": "drinkfountain",
-      "kind": "call-or-declaration",
-      "purpose": "drinkfountain: clear pending public fact",
-      "signature": [
-        "floating_above",
-        "(",
-        "\"fountain\"",
-        ")",
-        ";",
-        "chaos_observation_disarm",
-        "(",
-        ")",
-        ";",
-        "return",
-        ";"
-      ],
-      "guards": [],
-      "count": 1,
-      "chaos0": "No-op macro; arguments are not evaluated."
-    },
-    {
-      "id": "hook-0085",
-      "file": "src/fountain.c",
-      "symbol": "drinkfountain",
-      "kind": "call-or-declaration",
-      "purpose": "drinkfountain: arm public fact delivery",
-      "signature": [
-        "fate",
-        "<",
-        "10",
-        ")",
-        "{",
-        "chaos_observation_arm",
-        "(",
-        "CHAOS_OBS_OP_FOUNTAIN_DRINK",
-        ",",
-        "CHAOS_OBS_FACT_WATER_REFRESHED",
-        ")"
-      ],
-      "guards": [],
-      "count": 1,
-      "chaos0": "No-op macro; arguments are not evaluated."
-    },
-    {
-      "id": "hook-0086",
-      "file": "src/fountain.c",
-      "symbol": "drinkfountain",
-      "kind": "identifier",
-      "purpose": "drinkfountain: select exact observation operation/fact enum CHAOS_OBS_OP_FOUNTAIN_DRINK",
-      "signature": [
-        "10",
-        ")",
-        "{",
-        "chaos_observation_arm",
-        "(",
-        "CHAOS_OBS_OP_FOUNTAIN_DRINK",
-        ",",
-        "CHAOS_OBS_FACT_WATER_REFRESHED",
-        ")",
-        ";",
-        "pline_The"
-      ],
-      "guards": [],
-      "count": 1,
-      "chaos0": "Enum remains declared; this use is an erased observation-macro argument and is not evaluated."
-    },
-    {
-      "id": "hook-0087",
-      "file": "src/fountain.c",
-      "symbol": "drinkfountain",
-      "kind": "identifier",
-      "purpose": "drinkfountain: select exact observation operation/fact enum CHAOS_OBS_FACT_WATER_REFRESHED",
-      "signature": [
-        "{",
-        "chaos_observation_arm",
-        "(",
-        "CHAOS_OBS_OP_FOUNTAIN_DRINK",
-        ",",
-        "CHAOS_OBS_FACT_WATER_REFRESHED",
-        ")",
-        ";",
-        "pline_The",
-        "(",
-        "\"cool draught refreshes you.\""
-      ],
-      "guards": [],
-      "count": 1,
-      "chaos0": "Enum remains declared; this use is an erased observation-macro argument and is not evaluated."
-    },
-    {
-      "id": "hook-0088",
-      "file": "src/fountain.c",
-      "symbol": "drinkfountain",
-      "kind": "call-or-declaration",
-      "purpose": "drinkfountain: clear pending public fact",
-      "signature": [
-        "pline_The",
-        "(",
-        "\"cool draught refreshes you.\"",
-        ")",
-        ";",
-        "chaos_observation_disarm",
-        "(",
-        ")",
-        ";",
-        "if",
-        "("
-      ],
-      "guards": [],
-      "count": 1,
-      "chaos0": "No-op macro; arguments are not evaluated."
     },
     {
       "id": "hook-0089",
@@ -7589,81 +7449,6 @@
       "chaos0": "Include remains; header supplies off-mode types/stubs."
     },
     {
-      "id": "hook-0196",
-      "file": "src/potion.c",
-      "symbol": "dodrink",
-      "kind": "call-or-declaration",
-      "purpose": "dodrink: open selected-action observation root",
-      "signature": [
-        ")",
-        "{",
-        "long",
-        "root",
-        "=",
-        "chaos_observation_begin",
-        "(",
-        "CHAOS_OBS_OP_FOUNTAIN_DRINK",
-        ")",
-        ";",
-        "drinkfountain"
-      ],
-      "guards": [
-        "ifdef OVLB"
-      ],
-      "count": 1,
-      "chaos0": "Constant 0L macro; operation argument is not evaluated."
-    },
-    {
-      "id": "hook-0197",
-      "file": "src/potion.c",
-      "symbol": "dodrink",
-      "kind": "identifier",
-      "purpose": "dodrink: select exact observation operation/fact enum CHAOS_OBS_OP_FOUNTAIN_DRINK",
-      "signature": [
-        "long",
-        "root",
-        "=",
-        "chaos_observation_begin",
-        "(",
-        "CHAOS_OBS_OP_FOUNTAIN_DRINK",
-        ")",
-        ";",
-        "drinkfountain",
-        "(",
-        ")"
-      ],
-      "guards": [
-        "ifdef OVLB"
-      ],
-      "count": 1,
-      "chaos0": "Enum remains declared; this use is an erased observation-macro argument and is not evaluated."
-    },
-    {
-      "id": "hook-0198",
-      "file": "src/potion.c",
-      "symbol": "dodrink",
-      "kind": "call-or-declaration",
-      "purpose": "dodrink: close selected-action observation root",
-      "signature": [
-        ";",
-        "drinkfountain",
-        "(",
-        ")",
-        ";",
-        "chaos_observation_end",
-        "(",
-        "root",
-        ")",
-        ";",
-        "("
-      ],
-      "guards": [
-        "ifdef OVLB"
-      ],
-      "count": 1,
-      "chaos0": "No-op macro; arguments are not evaluated."
-    },
-    {
       "id": "hook-0199",
       "file": "src/pray.c",
       "symbol": "<file>",
@@ -10133,23 +9918,6 @@
       "chaos0": "Shared TTY helper/declaration/call remains compiled; observation-only CHAOS branches are omitted."
     },
     {
-      "id": "hook-0301",
-      "file": "win/tty/wintty.c",
-      "symbol": "<file>",
-      "kind": "directive",
-      "purpose": "<file>: conditional compilation boundary ifdef CHAOS",
-      "signature": [
-        "#",
-        "ifdef",
-        "CHAOS"
-      ],
-      "guards": [
-        "ifdef TTY_GRAPHICS"
-      ],
-      "count": 1,
-      "chaos0": "CHAOS is undefined: this conditional excludes its CHAOS-enabled branch; any alternate branch remains subject to its other guards."
-    },
-    {
       "id": "hook-0302",
       "file": "win/tty/wintty.c",
       "symbol": "tty_display_map_presented",
@@ -10356,7 +10124,7 @@
       "chaos0": "Shared TTY helper/declaration/call remains compiled; observation-only CHAOS branches are omitted."
     },
     {
-      "id": "hook-0310",
+      "id": "hook-0301",
       "file": "win/tty/wintty.c",
       "symbol": "<file>",
       "kind": "directive",
@@ -10369,7 +10137,7 @@
       "guards": [
         "ifdef TTY_GRAPHICS"
       ],
-      "count": 1,
+      "count": 2,
       "chaos0": "CHAOS is undefined: this conditional excludes its CHAOS-enabled branch; any alternate branch remains subject to its other guards."
     },
     {
@@ -10517,6 +10285,2217 @@
       ],
       "count": 1,
       "chaos0": "Omitted when CHAOS is undefined; stock restore rejection remains unchanged."
+    },
+    {
+      "id": "hook-0313",
+      "file": "include/extern.h",
+      "symbol": "<file>",
+      "kind": "identifier",
+      "purpose": "<file>: identifier",
+      "signature": [
+        "EXTERN_H",
+        "#",
+        "define",
+        "EXTERN_H",
+        "struct",
+        "chaos_fountain_token",
+        ";",
+        "struct",
+        "chaos_whistle_witness",
+        ";",
+        "#"
+      ],
+      "guards": [
+        "ifndef EXTERN_H"
+      ],
+      "count": 1,
+      "chaos0": "Present in CHAOS-off; no-op or type-only."
+    },
+    {
+      "id": "hook-0314",
+      "file": "include/extern.h",
+      "symbol": "<file>",
+      "kind": "identifier",
+      "purpose": "<file>: identifier",
+      "signature": [
+        "EXTERN_H",
+        "struct",
+        "chaos_fountain_token",
+        ";",
+        "struct",
+        "chaos_whistle_witness",
+        ";",
+        "#",
+        "define",
+        "E",
+        "extern"
+      ],
+      "guards": [
+        "ifndef EXTERN_H"
+      ],
+      "count": 1,
+      "chaos0": "Present in CHAOS-off; no-op or type-only."
+    },
+    {
+      "id": "hook-0315",
+      "file": "include/extern.h",
+      "symbol": "<file>",
+      "kind": "directive",
+      "purpose": "<file>: directive",
+      "signature": [
+        "#",
+        "ifdef",
+        "CHAOS"
+      ],
+      "guards": [
+        "ifndef EXTERN_H",
+        "if ! defined ( MAKEDEFS_C ) & & ! defined ( LEV_LEX_C )"
+      ],
+      "count": 1,
+      "chaos0": "Present in CHAOS-off; no-op or type-only."
+    },
+    {
+      "id": "hook-0316",
+      "file": "include/extern.h",
+      "symbol": "<file>",
+      "kind": "identifier",
+      "purpose": "<file>: identifier",
+      "signature": [
+        "CHAOS",
+        "E",
+        "unsigned",
+        "NDECL",
+        "(",
+        "chaos_next_use_armed_reserved_identity",
+        ")",
+        ";",
+        "E",
+        "long",
+        "NDECL"
+      ],
+      "guards": [
+        "ifndef EXTERN_H",
+        "if ! defined ( MAKEDEFS_C ) & & ! defined ( LEV_LEX_C )",
+        "ifdef CHAOS"
+      ],
+      "count": 1,
+      "chaos0": "Omitted when CHAOS is undefined; no off-mode effect."
+    },
+    {
+      "id": "hook-0317",
+      "file": "include/extern.h",
+      "symbol": "<file>",
+      "kind": "identifier",
+      "purpose": "<file>: identifier",
+      "signature": [
+        ";",
+        "E",
+        "long",
+        "NDECL",
+        "(",
+        "chaos_next_use_fountain_completed_root",
+        ")",
+        ";",
+        "#",
+        "endif",
+        "E"
+      ],
+      "guards": [
+        "ifndef EXTERN_H",
+        "if ! defined ( MAKEDEFS_C ) & & ! defined ( LEV_LEX_C )",
+        "ifdef CHAOS"
+      ],
+      "count": 1,
+      "chaos0": "Omitted when CHAOS is undefined; no off-mode effect."
+    },
+    {
+      "id": "hook-0318",
+      "file": "include/extern.h",
+      "symbol": "<file>",
+      "kind": "identifier",
+      "purpose": "<file>: identifier",
+      "signature": [
+        ";",
+        "E",
+        "boolean",
+        "NDECL",
+        "(",
+        "chaos_flush_screen_ready",
+        ")",
+        ";",
+        "#",
+        "ifdef",
+        "DUMP_LOG"
+      ],
+      "guards": [
+        "ifndef EXTERN_H",
+        "if ! defined ( MAKEDEFS_C ) & & ! defined ( LEV_LEX_C )"
+      ],
+      "count": 1,
+      "chaos0": "Present in CHAOS-off; no-op or type-only."
+    },
+    {
+      "id": "hook-0319",
+      "file": "include/extern.h",
+      "symbol": "<file>",
+      "kind": "identifier",
+      "purpose": "<file>: identifier",
+      "signature": [
+        ",",
+        "int",
+        "after",
+        ",",
+        "struct",
+        "chaos_whistle_witness",
+        "*",
+        "witness",
+        ")",
+        ";",
+        "#"
+      ],
+      "guards": [
+        "ifndef EXTERN_H",
+        "if ! defined ( MAKEDEFS_C ) & & ! defined ( LEV_LEX_C )"
+      ],
+      "count": 1,
+      "chaos0": "Present in CHAOS-off; no-op or type-only."
+    },
+    {
+      "id": "hook-0320",
+      "file": "include/wintty.h",
+      "symbol": "<file>",
+      "kind": "call-or-declaration",
+      "purpose": "<file>: call-or-declaration",
+      "signature": [
+        "int",
+        "glyph",
+        ")",
+        ";",
+        "boolean",
+        "chaos_tty_publication_certificate",
+        "(",
+        "xchar",
+        "x",
+        ",",
+        "xchar",
+        "y",
+        ",",
+        "int",
+        "expected_glyph",
+        ")"
+      ],
+      "guards": [
+        "ifndef WINTTY_H"
+      ],
+      "count": 1,
+      "chaos0": "Present in CHAOS-off; no-op or type-only."
+    },
+    {
+      "id": "hook-0321",
+      "file": "src/allmain.c",
+      "symbol": "<file>",
+      "kind": "directive",
+      "purpose": "<file>: directive",
+      "signature": [
+        "#",
+        "ifdef",
+        "CHAOS"
+      ],
+      "guards": [
+        "ifdef OVLB"
+      ],
+      "count": 1,
+      "chaos0": "Present in CHAOS-off; no-op or type-only."
+    },
+    {
+      "id": "hook-0322",
+      "file": "src/allmain.c",
+      "symbol": "<file>",
+      "kind": "call-or-declaration",
+      "purpose": "<file>: call-or-declaration",
+      "signature": [
+        ",",
+        "reserved",
+        ";",
+        "reserved_identity",
+        "=",
+        "chaos_next_use_armed_reserved_identity",
+        "(",
+        ")",
+        ";",
+        "armed",
+        "="
+      ],
+      "guards": [
+        "ifdef OVLB",
+        "ifdef CHAOS"
+      ],
+      "count": 1,
+      "chaos0": "Omitted when CHAOS is undefined; no off-mode effect."
+    },
+    {
+      "id": "hook-0323",
+      "file": "src/allmain.c",
+      "symbol": "<file>",
+      "kind": "call-or-declaration",
+      "purpose": "<file>: call-or-declaration",
+      "signature": [
+        "|",
+        "|",
+        "reserved",
+        ")",
+        "{",
+        "chaos_next_use_mark_identity_unsafe",
+        "(",
+        ")",
+        ";",
+        "if",
+        "("
+      ],
+      "guards": [
+        "ifdef OVLB",
+        "ifdef CHAOS"
+      ],
+      "count": 1,
+      "chaos0": "Omitted when CHAOS is undefined; no off-mode effect."
+    },
+    {
+      "id": "hook-0324",
+      "file": "src/apply.c",
+      "symbol": "doapply",
+      "kind": "call-or-declaration",
+      "purpose": "doapply: call-or-declaration",
+      "signature": [
+        "use_whistle",
+        "(",
+        "obj",
+        ")",
+        ";",
+        "chaos_observation_end",
+        "(",
+        "root",
+        ")",
+        ";",
+        "chaos_next_use_whistle_completed"
+      ],
+      "guards": [
+        "ifdef OVLB"
+      ],
+      "count": 1,
+      "chaos0": "Present in CHAOS-off; no-op or type-only."
+    },
+    {
+      "id": "hook-0325",
+      "file": "src/apply.c",
+      "symbol": "doapply",
+      "kind": "call-or-declaration",
+      "purpose": "doapply: call-or-declaration",
+      "signature": [
+        "chaos_observation_end",
+        "(",
+        "root",
+        ")",
+        ";",
+        "chaos_next_use_whistle_completed",
+        "(",
+        "obj",
+        ",",
+        "root",
+        ")"
+      ],
+      "guards": [
+        "ifdef OVLB"
+      ],
+      "count": 1,
+      "chaos0": "Present in CHAOS-off; no-op or type-only."
+    },
+    {
+      "id": "hook-0326",
+      "file": "src/display.c",
+      "symbol": "<file>",
+      "kind": "call-or-declaration",
+      "purpose": "<file>: call-or-declaration",
+      "signature": [
+        "delay_flushing",
+        "=",
+        "0",
+        ";",
+        "boolean",
+        "chaos_flush_screen_ready",
+        "(",
+        ")",
+        "{",
+        "return",
+        "!"
+      ],
+      "guards": [],
+      "count": 1,
+      "chaos0": "Present in CHAOS-off; no-op or type-only."
+    },
+    {
+      "id": "hook-0327",
+      "file": "src/dogmove.c",
+      "symbol": "<file>",
+      "kind": "directive",
+      "purpose": "<file>: directive",
+      "signature": [
+        "#",
+        "include",
+        "\"chaos.h\""
+      ],
+      "guards": [],
+      "count": 1,
+      "chaos0": "Present in CHAOS-off; no-op or type-only."
+    },
+    {
+      "id": "hook-0328",
+      "file": "src/dogmove.c",
+      "symbol": "<file>",
+      "kind": "identifier",
+      "purpose": "<file>: identifier",
+      "signature": [
+        ",",
+        "int",
+        "after",
+        ",",
+        "struct",
+        "chaos_whistle_witness",
+        "*",
+        "witness",
+        ")",
+        "{",
+        "int"
+      ],
+      "guards": [
+        "ifdef OVL0"
+      ],
+      "count": 1,
+      "chaos0": "Present in CHAOS-off; no-op or type-only."
+    },
+    {
+      "id": "hook-0329",
+      "file": "src/dogmove.c",
+      "symbol": "<file>",
+      "kind": "directive",
+      "purpose": "<file>: directive",
+      "signature": [
+        "#",
+        "if",
+        "defined",
+        "(",
+        "CHAOS",
+        ")",
+        "&",
+        "&",
+        "defined",
+        "(",
+        "TTY_GRAPHICS",
+        ")"
+      ],
+      "guards": [
+        "ifdef OVL0"
+      ],
+      "count": 2,
+      "chaos0": "Present in CHAOS-off; no-op or type-only."
+    },
+    {
+      "id": "hook-0330",
+      "file": "src/dogmove.c",
+      "symbol": "<file>",
+      "kind": "call-or-declaration",
+      "purpose": "<file>: call-or-declaration",
+      "signature": [
+        "-",
+        ">",
+        "production",
+        "&",
+        "&",
+        "chaos_next_use_whistle_decision_ready",
+        "(",
+        "mtmp",
+        "-",
+        ">",
+        "m_id",
+        ")"
+      ],
+      "guards": [
+        "ifdef OVL0"
+      ],
+      "count": 1,
+      "chaos0": "Present in CHAOS-off; no-op or type-only."
+    },
+    {
+      "id": "hook-0331",
+      "file": "src/dogmove.c",
+      "symbol": "<file>",
+      "kind": "call-or-declaration",
+      "purpose": "<file>: call-or-declaration",
+      "signature": [
+        ")",
+        ")",
+        "{",
+        "if",
+        "(",
+        "chaos_observation_begin_exclusive",
+        "(",
+        "CHAOS_OBS_OP_WHISTLE_ATTENTION",
+        ",",
+        "&",
+        "manifestation_root",
+        ")"
+      ],
+      "guards": [
+        "ifdef OVL0"
+      ],
+      "count": 1,
+      "chaos0": "Present in CHAOS-off; no-op or type-only."
+    },
+    {
+      "id": "hook-0332",
+      "file": "src/dogmove.c",
+      "symbol": "<file>",
+      "kind": "identifier",
+      "purpose": "<file>: identifier",
+      "signature": [
+        "{",
+        "if",
+        "(",
+        "chaos_observation_begin_exclusive",
+        "(",
+        "CHAOS_OBS_OP_WHISTLE_ATTENTION",
+        ",",
+        "&",
+        "manifestation_root",
+        ")",
+        ")"
+      ],
+      "guards": [
+        "ifdef OVL0"
+      ],
+      "count": 1,
+      "chaos0": "Present in CHAOS-off; no-op or type-only."
+    },
+    {
+      "id": "hook-0333",
+      "file": "src/dogmove.c",
+      "symbol": "<file>",
+      "kind": "call-or-declaration",
+      "purpose": "<file>: call-or-declaration",
+      "signature": [
+        "pre_glyph",
+        ";",
+        "}",
+        "else",
+        "{",
+        "chaos_next_use_whistle_no_root",
+        "(",
+        "mtmp",
+        "-",
+        ">",
+        "m_id",
+        ")"
+      ],
+      "guards": [
+        "ifdef OVL0"
+      ],
+      "count": 1,
+      "chaos0": "Present in CHAOS-off; no-op or type-only."
+    },
+    {
+      "id": "hook-0334",
+      "file": "src/dogmove.c",
+      "symbol": "<file>",
+      "kind": "call-or-declaration",
+      "purpose": "<file>: call-or-declaration",
+      "signature": [
+        "witness",
+        "-",
+        ">",
+        "active",
+        "?",
+        "chaos_next_use_whistle_attention",
+        "(",
+        "mtmp",
+        "-",
+        ">",
+        "m_id",
+        ",",
+        "manifestation_root",
+        ")"
+      ],
+      "guards": [
+        "ifdef OVL0"
+      ],
+      "count": 1,
+      "chaos0": "Present in CHAOS-off; no-op or type-only."
+    },
+    {
+      "id": "hook-0335",
+      "file": "src/dogmove.c",
+      "symbol": "<file>",
+      "kind": "call-or-declaration",
+      "purpose": "<file>: call-or-declaration",
+      "signature": [
+        "=",
+        "pre_public",
+        ";",
+        "if",
+        "(",
+        "chaos_next_use_manifestation_begin",
+        "(",
+        "mtmp",
+        "-",
+        ">",
+        "m_id",
+        ",",
+        "manifestation_root",
+        ")"
+      ],
+      "guards": [
+        "ifdef OVL0"
+      ],
+      "count": 1,
+      "chaos0": "Present in CHAOS-off; no-op or type-only."
+    },
+    {
+      "id": "hook-0336",
+      "file": "src/dogmove.c",
+      "symbol": "<file>",
+      "kind": "call-or-declaration",
+      "purpose": "<file>: call-or-declaration",
+      "signature": [
+        ")",
+        ")",
+        "(",
+        "void",
+        ")",
+        "chaos_whistle_attention_message",
+        "(",
+        "witness",
+        ")",
+        ";",
+        "}"
+      ],
+      "guards": [
+        "ifdef OVL0"
+      ],
+      "count": 1,
+      "chaos0": "Present in CHAOS-off; no-op or type-only."
+    },
+    {
+      "id": "hook-0337",
+      "file": "src/dogmove.c",
+      "symbol": "<file>",
+      "kind": "call-or-declaration",
+      "purpose": "<file>: call-or-declaration",
+      "signature": [
+        "}",
+        "else",
+        "{",
+        "if",
+        "(",
+        "chaos_observation_finish",
+        "(",
+        "manifestation_root",
+        ",",
+        "CHAOS_OBS_STAGE_BLOCKED",
+        ",",
+        "&",
+        "decision_end_seq",
+        ")"
+      ],
+      "guards": [
+        "ifdef OVL0"
+      ],
+      "count": 1,
+      "chaos0": "Present in CHAOS-off; no-op or type-only."
+    },
+    {
+      "id": "hook-0338",
+      "file": "src/dogmove.c",
+      "symbol": "<file>",
+      "kind": "identifier",
+      "purpose": "<file>: identifier",
+      "signature": [
+        "(",
+        "chaos_observation_finish",
+        "(",
+        "manifestation_root",
+        ",",
+        "CHAOS_OBS_STAGE_BLOCKED",
+        ",",
+        "&",
+        "decision_end_seq",
+        ")",
+        ")"
+      ],
+      "guards": [
+        "ifdef OVL0"
+      ],
+      "count": 1,
+      "chaos0": "Present in CHAOS-off; no-op or type-only."
+    },
+    {
+      "id": "hook-0339",
+      "file": "src/dogmove.c",
+      "symbol": "<file>",
+      "kind": "call-or-declaration",
+      "purpose": "<file>: call-or-declaration",
+      "signature": [
+        ",",
+        "&",
+        "decision_end_seq",
+        ")",
+        ")",
+        "chaos_next_use_manifestation_end",
+        "(",
+        "manifestation_root",
+        ",",
+        "0",
+        ",",
+        "decision_end_seq",
+        ",",
+        "FALSE",
+        ")"
+      ],
+      "guards": [
+        "ifdef OVL0"
+      ],
+      "count": 1,
+      "chaos0": "Present in CHAOS-off; no-op or type-only."
+    },
+    {
+      "id": "hook-0340",
+      "file": "src/dogmove.c",
+      "symbol": "<file>",
+      "kind": "call-or-declaration",
+      "purpose": "<file>: call-or-declaration",
+      "signature": [
+        ",",
+        "FALSE",
+        ")",
+        ";",
+        "else",
+        "chaos_next_use_manifestation_end",
+        "(",
+        "manifestation_root",
+        ",",
+        "0",
+        ",",
+        "0",
+        ",",
+        "FALSE",
+        ")"
+      ],
+      "guards": [
+        "ifdef OVL0"
+      ],
+      "count": 1,
+      "chaos0": "Present in CHAOS-off; no-op or type-only."
+    },
+    {
+      "id": "hook-0341",
+      "file": "src/fountain.c",
+      "symbol": "<file>",
+      "kind": "directive",
+      "purpose": "<file>: directive",
+      "signature": [
+        "#",
+        "ifdef",
+        "CHAOS"
+      ],
+      "guards": [],
+      "count": 2,
+      "chaos0": "Present in CHAOS-off; no-op or type-only."
+    },
+    {
+      "id": "hook-0342",
+      "file": "src/fountain.c",
+      "symbol": "<file>",
+      "kind": "directive",
+      "purpose": "<file>: directive",
+      "signature": [
+        "#",
+        "include",
+        "\"chaos_next_use_runtime.h\""
+      ],
+      "guards": [
+        "ifdef CHAOS"
+      ],
+      "count": 1,
+      "chaos0": "Omitted when CHAOS is undefined; no off-mode effect."
+    },
+    {
+      "id": "hook-0343",
+      "file": "src/fountain.c",
+      "symbol": "<file>",
+      "kind": "identifier",
+      "purpose": "<file>: identifier",
+      "signature": [
+        ";",
+        "}",
+        "}",
+        "static",
+        "struct",
+        "chaos_fountain_token",
+        "*",
+        "bound_drinkfountain_token",
+        ";",
+        "void",
+        "chaos_bind_drinkfountain_token"
+      ],
+      "guards": [],
+      "count": 1,
+      "chaos0": "Present in CHAOS-off; no-op or type-only."
+    },
+    {
+      "id": "hook-0344",
+      "file": "src/fountain.c",
+      "symbol": "<file>",
+      "kind": "call-or-declaration",
+      "purpose": "<file>: call-or-declaration",
+      "signature": [
+        "chaos_fountain_token",
+        "*",
+        "bound_drinkfountain_token",
+        ";",
+        "void",
+        "chaos_bind_drinkfountain_token",
+        "(",
+        "token",
+        ")",
+        "struct",
+        "chaos_fountain_token"
+      ],
+      "guards": [],
+      "count": 1,
+      "chaos0": "Present in CHAOS-off; no-op or type-only."
+    },
+    {
+      "id": "hook-0345",
+      "file": "src/fountain.c",
+      "symbol": "<file>",
+      "kind": "identifier",
+      "purpose": "<file>: identifier",
+      "signature": [
+        "chaos_bind_drinkfountain_token",
+        "(",
+        "token",
+        ")",
+        "struct",
+        "chaos_fountain_token",
+        "*",
+        "token",
+        ";",
+        "{",
+        "bound_drinkfountain_token"
+      ],
+      "guards": [],
+      "count": 1,
+      "chaos0": "Present in CHAOS-off; no-op or type-only."
+    },
+    {
+      "id": "hook-0346",
+      "file": "src/fountain.c",
+      "symbol": "<file>",
+      "kind": "identifier",
+      "purpose": "<file>: identifier",
+      "signature": [
+        ",",
+        "outcome",
+        ")",
+        "const",
+        "struct",
+        "chaos_fountain_token",
+        "*",
+        "token",
+        ";",
+        "int",
+        "outcome"
+      ],
+      "guards": [],
+      "count": 1,
+      "chaos0": "Present in CHAOS-off; no-op or type-only."
+    },
+    {
+      "id": "hook-0347",
+      "file": "src/fountain.c",
+      "symbol": "<file>",
+      "kind": "call-or-declaration",
+      "purpose": "<file>: call-or-declaration",
+      "signature": [
+        ";",
+        "{",
+        "#",
+        "ifdef",
+        "CHAOS",
+        "chaos_next_use_fountain_result",
+        "(",
+        "token",
+        ",",
+        "outcome",
+        ")"
+      ],
+      "guards": [
+        "ifdef CHAOS"
+      ],
+      "count": 1,
+      "chaos0": "Omitted when CHAOS is undefined; no off-mode effect."
+    },
+    {
+      "id": "hook-0348",
+      "file": "src/fountain.c",
+      "symbol": "<file>",
+      "kind": "call-or-declaration",
+      "purpose": "<file>: call-or-declaration",
+      "signature": [
+        "void",
+        "fountain_refresh",
+        "(",
+        ")",
+        "{",
+        "chaos_observation_arm",
+        "(",
+        "CHAOS_OBS_OP_FOUNTAIN_DRINK",
+        ",",
+        "CHAOS_OBS_FACT_WATER_REFRESHED",
+        ")"
+      ],
+      "guards": [],
+      "count": 1,
+      "chaos0": "Present in CHAOS-off; no-op or type-only."
+    },
+    {
+      "id": "hook-0349",
+      "file": "src/fountain.c",
+      "symbol": "<file>",
+      "kind": "identifier",
+      "purpose": "<file>: identifier",
+      "signature": [
+        "(",
+        ")",
+        "{",
+        "chaos_observation_arm",
+        "(",
+        "CHAOS_OBS_OP_FOUNTAIN_DRINK",
+        ",",
+        "CHAOS_OBS_FACT_WATER_REFRESHED",
+        ")",
+        ";",
+        "pline_The"
+      ],
+      "guards": [],
+      "count": 1,
+      "chaos0": "Present in CHAOS-off; no-op or type-only."
+    },
+    {
+      "id": "hook-0350",
+      "file": "src/fountain.c",
+      "symbol": "<file>",
+      "kind": "identifier",
+      "purpose": "<file>: identifier",
+      "signature": [
+        "{",
+        "chaos_observation_arm",
+        "(",
+        "CHAOS_OBS_OP_FOUNTAIN_DRINK",
+        ",",
+        "CHAOS_OBS_FACT_WATER_REFRESHED",
+        ")",
+        ";",
+        "pline_The",
+        "(",
+        "\"cool draught refreshes you.\""
+      ],
+      "guards": [],
+      "count": 1,
+      "chaos0": "Present in CHAOS-off; no-op or type-only."
+    },
+    {
+      "id": "hook-0351",
+      "file": "src/fountain.c",
+      "symbol": "<file>",
+      "kind": "call-or-declaration",
+      "purpose": "<file>: call-or-declaration",
+      "signature": [
+        "pline_The",
+        "(",
+        "\"cool draught refreshes you.\"",
+        ")",
+        ";",
+        "chaos_observation_disarm",
+        "(",
+        ")",
+        ";",
+        "if",
+        "("
+      ],
+      "guards": [],
+      "count": 1,
+      "chaos0": "Present in CHAOS-off; no-op or type-only."
+    },
+    {
+      "id": "hook-0352",
+      "file": "src/fountain.c",
+      "symbol": "drinkfountain",
+      "kind": "identifier",
+      "purpose": "drinkfountain: identifier",
+      "signature": [
+        "drinkfountain",
+        "(",
+        ")",
+        "{",
+        "struct",
+        "chaos_fountain_token",
+        "*",
+        "token",
+        "=",
+        "bound_drinkfountain_token",
+        ";"
+      ],
+      "guards": [],
+      "count": 1,
+      "chaos0": "Present in CHAOS-off; no-op or type-only."
+    },
+    {
+      "id": "hook-0353",
+      "file": "src/fountain.c",
+      "symbol": "drinkfountain",
+      "kind": "identifier",
+      "purpose": "drinkfountain: identifier",
+      "signature": [
+        ")",
+        ";",
+        "int",
+        "runtime_outcome",
+        "=",
+        "CHAOS_FOUNTAIN_GUARD_SUPPRESSED",
+        ";",
+        "if",
+        "(",
+        "Levitation",
+        ")"
+      ],
+      "guards": [],
+      "count": 1,
+      "chaos0": "Present in CHAOS-off; no-op or type-only."
+    },
+    {
+      "id": "hook-0354",
+      "file": "src/fountain.c",
+      "symbol": "drinkfountain",
+      "kind": "call-or-declaration",
+      "purpose": "drinkfountain: call-or-declaration",
+      "signature": [
+        "floating_above",
+        "(",
+        "\"fountain\"",
+        ")",
+        ";",
+        "chaos_observation_disarm",
+        "(",
+        ")",
+        ";",
+        "fountain_runtime_result",
+        "("
+      ],
+      "guards": [],
+      "count": 1,
+      "chaos0": "Present in CHAOS-off; no-op or type-only."
+    },
+    {
+      "id": "hook-0355",
+      "file": "src/fountain.c",
+      "symbol": "drinkfountain",
+      "kind": "call-or-declaration",
+      "purpose": "drinkfountain: call-or-declaration",
+      "signature": [
+        "token",
+        ",",
+        "runtime_outcome",
+        ")",
+        ";",
+        "chaos_next_use_fountain_clear",
+        "(",
+        "token",
+        ")",
+        ";",
+        "return"
+      ],
+      "guards": [],
+      "count": 3,
+      "chaos0": "Present in CHAOS-off; no-op or type-only."
+    },
+    {
+      "id": "hook-0356",
+      "file": "src/fountain.c",
+      "symbol": "drinkfountain",
+      "kind": "identifier",
+      "purpose": "drinkfountain: identifier",
+      "signature": [
+        "=",
+        "0",
+        ";",
+        "runtime_outcome",
+        "=",
+        "CHAOS_FOUNTAIN_EARLY_RETURN",
+        ";",
+        "fountain_runtime_result",
+        "(",
+        "token",
+        ","
+      ],
+      "guards": [],
+      "count": 1,
+      "chaos0": "Present in CHAOS-off; no-op or type-only."
+    },
+    {
+      "id": "hook-0357",
+      "file": "src/fountain.c",
+      "symbol": "drinkfountain",
+      "kind": "identifier",
+      "purpose": "drinkfountain: identifier",
+      "signature": [
+        "10",
+        ")",
+        "{",
+        "runtime_outcome",
+        "=",
+        "CHAOS_FOUNTAIN_NATURAL",
+        ";",
+        "fountain_refresh",
+        "(",
+        ")",
+        ";"
+      ],
+      "guards": [],
+      "count": 1,
+      "chaos0": "Present in CHAOS-off; no-op or type-only."
+    },
+    {
+      "id": "hook-0358",
+      "file": "src/fountain.c",
+      "symbol": "drinkfountain",
+      "kind": "identifier",
+      "purpose": "drinkfountain: identifier",
+      "signature": [
+        "=",
+        "19",
+        ")",
+        "runtime_outcome",
+        "=",
+        "CHAOS_FOUNTAIN_NATIVE_19_30",
+        ";",
+        "switch",
+        "(",
+        "fate",
+        ")"
+      ],
+      "guards": [],
+      "count": 1,
+      "chaos0": "Present in CHAOS-off; no-op or type-only."
+    },
+    {
+      "id": "hook-0359",
+      "file": "src/fountain.c",
+      "symbol": "drinkfountain",
+      "kind": "identifier",
+      "purpose": "drinkfountain: identifier",
+      "signature": [
+        "=",
+        "TRUE",
+        ";",
+        "runtime_outcome",
+        "=",
+        "CHAOS_FOUNTAIN_REMAPPED",
+        ";",
+        "fountain_refresh",
+        "(",
+        ")",
+        ";"
+      ],
+      "guards": [],
+      "count": 1,
+      "chaos0": "Present in CHAOS-off; no-op or type-only."
+    },
+    {
+      "id": "hook-0360",
+      "file": "src/fountain.c",
+      "symbol": "drinkfountain",
+      "kind": "identifier",
+      "purpose": "drinkfountain: identifier",
+      "signature": [
+        "}",
+        "else",
+        "{",
+        "runtime_outcome",
+        "=",
+        "CHAOS_FOUNTAIN_DEFAULT_WITHOUT_INTENT",
+        ";",
+        "pline",
+        "(",
+        "\"This tepid water is tasteless.\"",
+        ")"
+      ],
+      "guards": [],
+      "count": 1,
+      "chaos0": "Present in CHAOS-off; no-op or type-only."
+    },
+    {
+      "id": "hook-0361",
+      "file": "src/fountain.c",
+      "symbol": "drinkfountain",
+      "kind": "call-or-declaration",
+      "purpose": "drinkfountain: call-or-declaration",
+      "signature": [
+        "token",
+        ",",
+        "runtime_outcome",
+        ")",
+        ";",
+        "chaos_next_use_fountain_clear",
+        "(",
+        "token",
+        ")",
+        ";",
+        "}"
+      ],
+      "guards": [],
+      "count": 1,
+      "chaos0": "Present in CHAOS-off; no-op or type-only."
+    },
+    {
+      "id": "hook-0362",
+      "file": "src/monmove.c",
+      "symbol": "m_move",
+      "kind": "identifier",
+      "purpose": "m_move: identifier",
+      "signature": [
+        "obj",
+        "*",
+        "mw_tmp",
+        ";",
+        "struct",
+        "chaos_whistle_witness",
+        "witness",
+        "=",
+        "{",
+        "0",
+        "}"
+      ],
+      "guards": [
+        "ifdef OVL0"
+      ],
+      "count": 1,
+      "chaos0": "Present in CHAOS-off; no-op or type-only."
+    },
+    {
+      "id": "hook-0363",
+      "file": "src/monmove.c",
+      "symbol": "m_move",
+      "kind": "directive",
+      "purpose": "m_move: directive",
+      "signature": [
+        "#",
+        "ifdef",
+        "CHAOS"
+      ],
+      "guards": [
+        "ifdef OVL0"
+      ],
+      "count": 1,
+      "chaos0": "Present in CHAOS-off; no-op or type-only."
+    },
+    {
+      "id": "hook-0364",
+      "file": "src/monmove.c",
+      "symbol": "m_move",
+      "kind": "directive",
+      "purpose": "m_move: directive",
+      "signature": [
+        "#",
+        "define",
+        "CHAOS_MANIFEST_RETURN",
+        "(",
+        "value",
+        ")",
+        "do",
+        "{",
+        "chaos_whistle_witness_finalize",
+        "(",
+        "mtmp",
+        ",",
+        "&",
+        "witness",
+        ")",
+        ";",
+        "return",
+        "(",
+        "value",
+        ")",
+        ";",
+        "}",
+        "while",
+        "(",
+        "0",
+        ")"
+      ],
+      "guards": [
+        "ifdef OVL0"
+      ],
+      "count": 1,
+      "chaos0": "Present in CHAOS-off; no-op or type-only."
+    },
+    {
+      "id": "hook-0365",
+      "file": "src/monmove.c",
+      "symbol": "m_move",
+      "kind": "call-or-declaration",
+      "purpose": "m_move: call-or-declaration",
+      "signature": [
+        ";",
+        "#",
+        "endif",
+        "#",
+        "define",
+        "CHAOS_MANIFEST_RETURN",
+        "(",
+        "value",
+        ")",
+        "do",
+        "{"
+      ],
+      "guards": [
+        "ifdef OVL0"
+      ],
+      "count": 1,
+      "chaos0": "Present in CHAOS-off; no-op or type-only."
+    },
+    {
+      "id": "hook-0366",
+      "file": "src/monmove.c",
+      "symbol": "m_move",
+      "kind": "call-or-declaration",
+      "purpose": "m_move: call-or-declaration",
+      "signature": [
+        "(",
+        "value",
+        ")",
+        "do",
+        "{",
+        "chaos_whistle_witness_finalize",
+        "(",
+        "mtmp",
+        ",",
+        "&",
+        "witness",
+        ")"
+      ],
+      "guards": [
+        "ifdef OVL0"
+      ],
+      "count": 1,
+      "chaos0": "Present in CHAOS-off; no-op or type-only."
+    },
+    {
+      "id": "hook-0367",
+      "file": "src/monmove.c",
+      "symbol": "m_move",
+      "kind": "call-or-declaration",
+      "purpose": "m_move: call-or-declaration",
+      "signature": [
+        "=",
+        "=",
+        "-",
+        "2",
+        ")",
+        "CHAOS_MANIFEST_RETURN",
+        "(",
+        "2",
+        ")",
+        ";",
+        "if"
+      ],
+      "guards": [
+        "ifdef OVL0"
+      ],
+      "count": 4,
+      "chaos0": "Present in CHAOS-off; no-op or type-only."
+    },
+    {
+      "id": "hook-0368",
+      "file": "src/monmove.c",
+      "symbol": "m_move",
+      "kind": "call-or-declaration",
+      "purpose": "m_move: call-or-declaration",
+      "signature": [
+        "&",
+        "(",
+        "MM_AGR_DIED",
+        ")",
+        ")",
+        "CHAOS_MANIFEST_RETURN",
+        "(",
+        "2",
+        ")",
+        ";",
+        "mmoved"
+      ],
+      "guards": [
+        "ifdef OVL0"
+      ],
+      "count": 1,
+      "chaos0": "Present in CHAOS-off; no-op or type-only."
+    },
+    {
+      "id": "hook-0369",
+      "file": "src/monmove.c",
+      "symbol": "m_move",
+      "kind": "call-or-declaration",
+      "purpose": "m_move: call-or-declaration",
+      "signature": [
+        "mongone",
+        "(",
+        "mtmp",
+        ")",
+        ";",
+        "CHAOS_MANIFEST_RETURN",
+        "(",
+        "2",
+        ")",
+        ";",
+        "}"
+      ],
+      "guards": [
+        "ifdef OVL0",
+        "ifdef MAIL"
+      ],
+      "count": 1,
+      "chaos0": "Present in CHAOS-off; no-op or type-only."
+    },
+    {
+      "id": "hook-0370",
+      "file": "src/monmove.c",
+      "symbol": "m_move",
+      "kind": "call-or-declaration",
+      "purpose": "m_move: call-or-declaration",
+      "signature": [
+        "ustuck",
+        "!",
+        "=",
+        "mtmp",
+        ")",
+        "CHAOS_MANIFEST_RETURN",
+        "(",
+        "1",
+        ")",
+        ";",
+        "omx"
+      ],
+      "guards": [
+        "ifdef OVL0"
+      ],
+      "count": 1,
+      "chaos0": "Present in CHAOS-off; no-op or type-only."
+    },
+    {
+      "id": "hook-0371",
+      "file": "src/monmove.c",
+      "symbol": "m_move",
+      "kind": "call-or-declaration",
+      "purpose": "m_move: call-or-declaration",
+      "signature": [
+        "(",
+        "choice",
+        "<",
+        "0",
+        ")",
+        "CHAOS_MANIFEST_RETURN",
+        "(",
+        "0",
+        ")",
+        ";",
+        "nix"
+      ],
+      "guards": [
+        "ifdef OVL0"
+      ],
+      "count": 1,
+      "chaos0": "Present in CHAOS-off; no-op or type-only."
+    },
+    {
+      "id": "hook-0372",
+      "file": "src/monmove.c",
+      "symbol": "m_move",
+      "kind": "call-or-declaration",
+      "purpose": "m_move: call-or-declaration",
+      "signature": [
+        "itsstuck",
+        "(",
+        "mtmp",
+        ")",
+        ")",
+        "CHAOS_MANIFEST_RETURN",
+        "(",
+        "3",
+        ")",
+        ";",
+        "if"
+      ],
+      "guards": [
+        "ifdef OVL0"
+      ],
+      "count": 1,
+      "chaos0": "Present in CHAOS-off; no-op or type-only."
+    },
+    {
+      "id": "hook-0373",
+      "file": "src/monmove.c",
+      "symbol": "m_move",
+      "kind": "call-or-declaration",
+      "purpose": "m_move: call-or-declaration",
+      "signature": [
+        "mon_wield_item",
+        "(",
+        "mtmp",
+        ")",
+        ")",
+        "CHAOS_MANIFEST_RETURN",
+        "(",
+        "3",
+        ")",
+        ";",
+        "else"
+      ],
+      "guards": [
+        "ifdef OVL0"
+      ],
+      "count": 1,
+      "chaos0": "Present in CHAOS-off; no-op or type-only."
+    },
+    {
+      "id": "hook-0374",
+      "file": "src/monmove.c",
+      "symbol": "m_move",
+      "kind": "call-or-declaration",
+      "purpose": "m_move: call-or-declaration",
+      "signature": [
+        "(",
+        "3",
+        ")",
+        ";",
+        "else",
+        "CHAOS_MANIFEST_RETURN",
+        "(",
+        "0",
+        ")",
+        ";",
+        "}"
+      ],
+      "guards": [
+        "ifdef OVL0"
+      ],
+      "count": 1,
+      "chaos0": "Present in CHAOS-off; no-op or type-only."
+    },
+    {
+      "id": "hook-0375",
+      "file": "src/monmove.c",
+      "symbol": "m_move",
+      "kind": "call-or-declaration",
+      "purpose": "m_move: call-or-declaration",
+      "signature": [
+        "=",
+        "u",
+        ".",
+        "uy",
+        ";",
+        "CHAOS_MANIFEST_RETURN",
+        "(",
+        "0",
+        ")",
+        ";",
+        "}"
+      ],
+      "guards": [
+        "ifdef OVL0"
+      ],
+      "count": 1,
+      "chaos0": "Present in CHAOS-off; no-op or type-only."
+    },
+    {
+      "id": "hook-0376",
+      "file": "src/monmove.c",
+      "symbol": "m_move",
+      "kind": "call-or-declaration",
+      "purpose": "m_move: call-or-declaration",
+      "signature": [
+        "(",
+        "mstatus",
+        "&",
+        "MM_AGR_DIED",
+        ")",
+        "CHAOS_MANIFEST_RETURN",
+        "(",
+        "2",
+        ")",
+        ";",
+        "if"
+      ],
+      "guards": [
+        "ifdef OVL0"
+      ],
+      "count": 1,
+      "chaos0": "Present in CHAOS-off; no-op or type-only."
+    },
+    {
+      "id": "hook-0377",
+      "file": "src/monmove.c",
+      "symbol": "m_move",
+      "kind": "call-or-declaration",
+      "purpose": "m_move: call-or-declaration",
+      "signature": [
+        "(",
+        "mstatus",
+        "&",
+        "MM_DEF_DIED",
+        ")",
+        "CHAOS_MANIFEST_RETURN",
+        "(",
+        "2",
+        ")",
+        ";",
+        "}"
+      ],
+      "guards": [
+        "ifdef OVL0"
+      ],
+      "count": 1,
+      "chaos0": "Present in CHAOS-off; no-op or type-only."
+    },
+    {
+      "id": "hook-0378",
+      "file": "src/monmove.c",
+      "symbol": "m_move",
+      "kind": "call-or-declaration",
+      "purpose": "m_move: call-or-declaration",
+      "signature": [
+        "(",
+        "2",
+        ")",
+        ";",
+        "}",
+        "CHAOS_MANIFEST_RETURN",
+        "(",
+        "3",
+        ")",
+        ";",
+        "}"
+      ],
+      "guards": [
+        "ifdef OVL0"
+      ],
+      "count": 1,
+      "chaos0": "Present in CHAOS-off; no-op or type-only."
+    },
+    {
+      "id": "hook-0379",
+      "file": "src/monmove.c",
+      "symbol": "m_move",
+      "kind": "call-or-declaration",
+      "purpose": "m_move: call-or-declaration",
+      "signature": [
+        "nix",
+        ",",
+        "niy",
+        ")",
+        ")",
+        "CHAOS_MANIFEST_RETURN",
+        "(",
+        "3",
+        ")",
+        ";",
+        "remove_monster"
+      ],
+      "guards": [
+        "ifdef OVL0"
+      ],
+      "count": 1,
+      "chaos0": "Present in CHAOS-off; no-op or type-only."
+    },
+    {
+      "id": "hook-0380",
+      "file": "src/monmove.c",
+      "symbol": "m_move",
+      "kind": "call-or-declaration",
+      "purpose": "m_move: call-or-declaration",
+      "signature": [
+        "mtmp",
+        ",",
+        "TRUE",
+        ")",
+        ")",
+        "CHAOS_MANIFEST_RETURN",
+        "(",
+        "1",
+        ")",
+        ";",
+        "}"
+      ],
+      "guards": [
+        "ifdef OVL0"
+      ],
+      "count": 1,
+      "chaos0": "Present in CHAOS-off; no-op or type-only."
+    },
+    {
+      "id": "hook-0381",
+      "file": "src/monmove.c",
+      "symbol": "m_move",
+      "kind": "call-or-declaration",
+      "purpose": "m_move: call-or-declaration",
+      "signature": [
+        "-",
+        ">",
+        "my",
+        ")",
+        ";",
+        "CHAOS_MANIFEST_RETURN",
+        "(",
+        "2",
+        ")",
+        ";",
+        "}"
+      ],
+      "guards": [
+        "ifdef OVL0"
+      ],
+      "count": 1,
+      "chaos0": "Present in CHAOS-off; no-op or type-only."
+    },
+    {
+      "id": "hook-0382",
+      "file": "src/monmove.c",
+      "symbol": "m_move",
+      "kind": "call-or-declaration",
+      "purpose": "m_move: call-or-declaration",
+      "signature": [
+        "mb_trapped",
+        "(",
+        "mtmp",
+        ")",
+        ")",
+        "CHAOS_MANIFEST_RETURN",
+        "(",
+        "2",
+        ")",
+        ";",
+        "}"
+      ],
+      "guards": [
+        "ifdef OVL0"
+      ],
+      "count": 3,
+      "chaos0": "Present in CHAOS-off; no-op or type-only."
+    },
+    {
+      "id": "hook-0383",
+      "file": "src/monmove.c",
+      "symbol": "m_move",
+      "kind": "call-or-declaration",
+      "purpose": "m_move: call-or-declaration",
+      "signature": [
+        "mdig_tunnel",
+        "(",
+        "mtmp",
+        ")",
+        ")",
+        "CHAOS_MANIFEST_RETURN",
+        "(",
+        "2",
+        ")",
+        ";",
+        "if"
+      ],
+      "guards": [
+        "ifdef OVL0"
+      ],
+      "count": 1,
+      "chaos0": "Present in CHAOS-off; no-op or type-only."
+    },
+    {
+      "id": "hook-0384",
+      "file": "src/monmove.c",
+      "symbol": "m_move",
+      "kind": "call-or-declaration",
+      "purpose": "m_move: call-or-declaration",
+      "signature": [
+        ")",
+        "=",
+        "=",
+        "2",
+        ")",
+        "CHAOS_MANIFEST_RETURN",
+        "(",
+        "2",
+        ")",
+        ";",
+        "}"
+      ],
+      "guards": [
+        "ifdef OVL0"
+      ],
+      "count": 3,
+      "chaos0": "Present in CHAOS-off; no-op or type-only."
+    },
+    {
+      "id": "hook-0385",
+      "file": "src/monmove.c",
+      "symbol": "m_move",
+      "kind": "call-or-declaration",
+      "purpose": "m_move: call-or-declaration",
+      "signature": [
+        "mtmp",
+        ")",
+        ";",
+        "}",
+        "}",
+        "CHAOS_MANIFEST_RETURN",
+        "(",
+        "mmoved",
+        ")",
+        ";",
+        "#"
+      ],
+      "guards": [
+        "ifdef OVL0"
+      ],
+      "count": 1,
+      "chaos0": "Present in CHAOS-off; no-op or type-only."
+    },
+    {
+      "id": "hook-0386",
+      "file": "src/monmove.c",
+      "symbol": "m_move",
+      "kind": "directive",
+      "purpose": "m_move: directive",
+      "signature": [
+        "#",
+        "undef",
+        "CHAOS_MANIFEST_RETURN"
+      ],
+      "guards": [
+        "ifdef OVL0"
+      ],
+      "count": 1,
+      "chaos0": "Present in CHAOS-off; no-op or type-only."
+    },
+    {
+      "id": "hook-0387",
+      "file": "src/potion.c",
+      "symbol": "dodrink",
+      "kind": "identifier",
+      "purpose": "dodrink: identifier",
+      "signature": [
+        "booze_only",
+        "=",
+        "FALSE",
+        ";",
+        "struct",
+        "chaos_fountain_token",
+        "token",
+        "=",
+        "{",
+        "0",
+        "}"
+      ],
+      "guards": [
+        "ifdef OVLB"
+      ],
+      "count": 1,
+      "chaos0": "Present in CHAOS-off; no-op or type-only."
+    },
+    {
+      "id": "hook-0388",
+      "file": "src/potion.c",
+      "symbol": "dodrink",
+      "kind": "directive",
+      "purpose": "dodrink: directive",
+      "signature": [
+        "#",
+        "ifdef",
+        "CHAOS"
+      ],
+      "guards": [
+        "ifdef OVLB"
+      ],
+      "count": 1,
+      "chaos0": "Present in CHAOS-off; no-op or type-only."
+    },
+    {
+      "id": "hook-0389",
+      "file": "src/potion.c",
+      "symbol": "dodrink",
+      "kind": "call-or-declaration",
+      "purpose": "dodrink: call-or-declaration",
+      "signature": [
+        "#",
+        "ifdef",
+        "CHAOS",
+        "completed_root",
+        "=",
+        "chaos_next_use_fountain_completed_root",
+        "(",
+        ")",
+        ";",
+        "#",
+        "endif"
+      ],
+      "guards": [
+        "ifdef OVLB",
+        "ifdef CHAOS"
+      ],
+      "count": 1,
+      "chaos0": "Omitted when CHAOS is undefined; no off-mode effect."
+    },
+    {
+      "id": "hook-0390",
+      "file": "src/potion.c",
+      "symbol": "dodrink",
+      "kind": "call-or-declaration",
+      "purpose": "dodrink: call-or-declaration",
+      "signature": [
+        ";",
+        "#",
+        "endif",
+        "confirmed",
+        "=",
+        "chaos_next_use_fountain_contact",
+        "(",
+        "completed_root",
+        ",",
+        "&",
+        "token",
+        ")"
+      ],
+      "guards": [
+        "ifdef OVLB"
+      ],
+      "count": 1,
+      "chaos0": "Present in CHAOS-off; no-op or type-only."
+    },
+    {
+      "id": "hook-0391",
+      "file": "src/potion.c",
+      "symbol": "dodrink",
+      "kind": "call-or-declaration",
+      "purpose": "dodrink: call-or-declaration",
+      "signature": [
+        "token",
+        ")",
+        ";",
+        "root",
+        "=",
+        "chaos_observation_begin",
+        "(",
+        "CHAOS_OBS_OP_FOUNTAIN_DRINK",
+        ")",
+        ";",
+        "chaos_bind_drinkfountain_token"
+      ],
+      "guards": [
+        "ifdef OVLB"
+      ],
+      "count": 1,
+      "chaos0": "Present in CHAOS-off; no-op or type-only."
+    },
+    {
+      "id": "hook-0392",
+      "file": "src/potion.c",
+      "symbol": "dodrink",
+      "kind": "identifier",
+      "purpose": "dodrink: identifier",
+      "signature": [
+        ";",
+        "root",
+        "=",
+        "chaos_observation_begin",
+        "(",
+        "CHAOS_OBS_OP_FOUNTAIN_DRINK",
+        ")",
+        ";",
+        "chaos_bind_drinkfountain_token",
+        "(",
+        "confirmed"
+      ],
+      "guards": [
+        "ifdef OVLB"
+      ],
+      "count": 1,
+      "chaos0": "Present in CHAOS-off; no-op or type-only."
+    },
+    {
+      "id": "hook-0393",
+      "file": "src/potion.c",
+      "symbol": "dodrink",
+      "kind": "call-or-declaration",
+      "purpose": "dodrink: call-or-declaration",
+      "signature": [
+        "chaos_observation_begin",
+        "(",
+        "CHAOS_OBS_OP_FOUNTAIN_DRINK",
+        ")",
+        ";",
+        "chaos_bind_drinkfountain_token",
+        "(",
+        "confirmed",
+        "?",
+        "&",
+        "token",
+        ":",
+        "(",
+        "struct",
+        "chaos_fountain_token",
+        "*",
+        ")",
+        "0",
+        ")"
+      ],
+      "guards": [
+        "ifdef OVLB"
+      ],
+      "count": 1,
+      "chaos0": "Present in CHAOS-off; no-op or type-only."
+    },
+    {
+      "id": "hook-0394",
+      "file": "src/potion.c",
+      "symbol": "dodrink",
+      "kind": "identifier",
+      "purpose": "dodrink: identifier",
+      "signature": [
+        "&",
+        "token",
+        ":",
+        "(",
+        "struct",
+        "chaos_fountain_token",
+        "*",
+        ")",
+        "0",
+        ")",
+        ";"
+      ],
+      "guards": [
+        "ifdef OVLB"
+      ],
+      "count": 1,
+      "chaos0": "Present in CHAOS-off; no-op or type-only."
+    },
+    {
+      "id": "hook-0395",
+      "file": "src/potion.c",
+      "symbol": "dodrink",
+      "kind": "call-or-declaration",
+      "purpose": "dodrink: call-or-declaration",
+      "signature": [
+        ";",
+        "drinkfountain",
+        "(",
+        ")",
+        ";",
+        "chaos_bind_drinkfountain_token",
+        "(",
+        "(",
+        "struct",
+        "chaos_fountain_token",
+        "*",
+        ")",
+        "0",
+        ")"
+      ],
+      "guards": [
+        "ifdef OVLB"
+      ],
+      "count": 1,
+      "chaos0": "Present in CHAOS-off; no-op or type-only."
+    },
+    {
+      "id": "hook-0396",
+      "file": "src/potion.c",
+      "symbol": "dodrink",
+      "kind": "identifier",
+      "purpose": "dodrink: identifier",
+      "signature": [
+        ";",
+        "chaos_bind_drinkfountain_token",
+        "(",
+        "(",
+        "struct",
+        "chaos_fountain_token",
+        "*",
+        ")",
+        "0",
+        ")",
+        ";"
+      ],
+      "guards": [
+        "ifdef OVLB"
+      ],
+      "count": 1,
+      "chaos0": "Present in CHAOS-off; no-op or type-only."
+    },
+    {
+      "id": "hook-0397",
+      "file": "src/potion.c",
+      "symbol": "dodrink",
+      "kind": "call-or-declaration",
+      "purpose": "dodrink: call-or-declaration",
+      "signature": [
+        "*",
+        ")",
+        "0",
+        ")",
+        ";",
+        "chaos_observation_end",
+        "(",
+        "root",
+        ")",
+        ";",
+        "("
+      ],
+      "guards": [
+        "ifdef OVLB"
+      ],
+      "count": 1,
+      "chaos0": "Present in CHAOS-off; no-op or type-only."
+    },
+    {
+      "id": "hook-0398",
+      "file": "win/tty/wintty.c",
+      "symbol": "<file>",
+      "kind": "identifier",
+      "purpose": "<file>: identifier",
+      "signature": [
+        "}",
+        "}",
+        "#",
+        "endif",
+        "struct",
+        "chaos_tty_certificate_observer",
+        "{",
+        "xchar",
+        "x",
+        ",",
+        "y"
+      ],
+      "guards": [
+        "ifdef TTY_GRAPHICS"
+      ],
+      "count": 1,
+      "chaos0": "Present in CHAOS-off; no-op or type-only."
+    },
+    {
+      "id": "hook-0399",
+      "file": "win/tty/wintty.c",
+      "symbol": "<file>",
+      "kind": "identifier",
+      "purpose": "<file>: identifier",
+      "signature": [
+        ";",
+        "}",
+        ";",
+        "static",
+        "struct",
+        "chaos_tty_certificate_observer",
+        "*",
+        "certificate_observer",
+        ";",
+        "boolean",
+        "chaos_tty_publication_certificate"
+      ],
+      "guards": [
+        "ifdef TTY_GRAPHICS"
+      ],
+      "count": 1,
+      "chaos0": "Present in CHAOS-off; no-op or type-only."
+    },
+    {
+      "id": "hook-0400",
+      "file": "win/tty/wintty.c",
+      "symbol": "<file>",
+      "kind": "call-or-declaration",
+      "purpose": "<file>: call-or-declaration",
+      "signature": [
+        "chaos_tty_certificate_observer",
+        "*",
+        "certificate_observer",
+        ";",
+        "boolean",
+        "chaos_tty_publication_certificate",
+        "(",
+        "x",
+        ",",
+        "y",
+        ",",
+        "expected_glyph",
+        ")"
+      ],
+      "guards": [
+        "ifdef TTY_GRAPHICS"
+      ],
+      "count": 1,
+      "chaos0": "Present in CHAOS-off; no-op or type-only."
+    },
+    {
+      "id": "hook-0401",
+      "file": "win/tty/wintty.c",
+      "symbol": "<file>",
+      "kind": "identifier",
+      "purpose": "<file>: identifier",
+      "signature": [
+        "int",
+        "expected_glyph",
+        ";",
+        "{",
+        "struct",
+        "chaos_tty_certificate_observer",
+        "certificate",
+        ";",
+        "if",
+        "(",
+        "!"
+      ],
+      "guards": [
+        "ifdef TTY_GRAPHICS"
+      ],
+      "count": 1,
+      "chaos0": "Present in CHAOS-off; no-op or type-only."
+    },
+    {
+      "id": "hook-0402",
+      "file": "win/tty/wintty.c",
+      "symbol": "<file>",
+      "kind": "call-or-declaration",
+      "purpose": "<file>: call-or-declaration",
+      "signature": [
+        "FALSE",
+        ";",
+        "if",
+        "(",
+        "!",
+        "chaos_flush_screen_ready",
+        "(",
+        ")",
+        ")",
+        "return",
+        "FALSE"
+      ],
+      "guards": [
+        "ifdef TTY_GRAPHICS"
+      ],
+      "count": 1,
+      "chaos0": "Present in CHAOS-off; no-op or type-only."
     }
   ],
   "build_blocks": [
@@ -10531,7 +12510,10 @@
     ],
     [
       "ifeq ($(CHAOS),1)",
-      "SRCOBJ += chaos_protocol.o chaos_io.o chaos_engine.o chaos_lua.o chaos_shadow.o chaos_haunt.o chaos_curio.o",
+      "SRCOBJ += chaos_protocol.o chaos_io.o chaos_engine.o chaos_lua.o chaos_next_use.o chaos_next_use_admission.o chaos_next_use_runtime.o chaos_shadow.o chaos_haunt.o chaos_curio.o",
+      "chaos_next_use.o: src/chaos_next_use.c include/chaos_next_use.h",
+      "chaos_next_use_admission.o: src/chaos_next_use_admission.c include/chaos_next_use_admission.h",
+      "chaos_next_use_runtime.o: src/chaos_next_use_runtime.c include/chaos_next_use_runtime.h",
       "endif"
     ]
   ]

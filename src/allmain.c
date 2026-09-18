@@ -4184,6 +4184,30 @@ display_gamewindows()
     display_nhwindow(WIN_MAP, FALSE);
 }
 
+unsigned
+next_ident()
+{
+    unsigned issued;
+    for (;;) {
+        issued = flags.ident++;
+#ifdef CHAOS
+        {
+            unsigned reserved_identity;
+            int armed, wrapped, reserved;
+            reserved_identity = chaos_next_use_armed_reserved_identity();
+            armed = reserved_identity != 0;
+            wrapped = flags.ident == 0;
+            reserved = issued == reserved_identity && armed;
+            if (wrapped || reserved) {
+                chaos_next_use_mark_identity_unsafe();
+                if (reserved) continue;
+            }
+        }
+#endif
+        return issued;
+    }
+}
+
 void
 newgame()
 {

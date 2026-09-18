@@ -232,7 +232,7 @@ boolean ghostly, frozen;
 			rest_timers(TIMER_OBJECT, otmp, otmp->timed, fd, ghostly, monstermoves - omoves);
 		}
 		if (ghostly) {
-		    unsigned nid = flags.ident++;
+		    unsigned nid = next_ident();
 		    add_id_mapping(otmp->o_id, nid);
 		    otmp->o_id = nid;
 		}
@@ -312,7 +312,7 @@ boolean ghostly;
 			rest_timers(TIMER_MONSTER, mtmp, mtmp->timed, fd, ghostly, monstermoves - omoves);
 		}
 		if (ghostly) {
-			unsigned nid = flags.ident++;
+			unsigned nid = next_ident();
 			add_id_mapping(mtmp->m_id, nid);
 			mtmp->m_id = nid;
 		}

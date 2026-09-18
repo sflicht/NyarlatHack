@@ -162,6 +162,9 @@ E void NDECL(more);
 E boolean NDECL(tty_more_presented);
 E void FDECL(update_topl, (const char *));
 E boolean FDECL(tty_update_topl_rendered, (const char *));
+boolean tty_snapshot_projectable(xchar x, xchar y, int glyph);
+boolean chaos_tty_publication_certificate(xchar x, xchar y,
+                                           int expected_glyph);
 E void FDECL(putsyms, (const char*));
 
 /* ### wintty.c ### */

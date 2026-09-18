@@ -279,3 +279,333 @@ int chaos_lua_curio_apply(const char *source, size_t length,
     if (!status) *intent = r.intent;
     return status;
 }
+
+/* The next-use boundary is deliberately separate from the older encounter
+ * sandbox. It exposes no C function or library to the candidate. */
+struct next_lua_memory { size_t used; };
+struct next_lua_request {
+    const char *source;
+    size_t length;
+    const struct chaos_next_use_context *context;
+    struct chaos_next_use_intent intent;
+    int call_handler;
+    int fuel;
+    int valid;
+    int failure_code;
+};
+
+static void *next_lua_alloc(void *, void *, size_t, size_t);
+static void *next_lua_alloc(void *opaque, void *pointer, size_t old_size,
+                            size_t new_size)
+{
+    struct next_lua_memory *memory = (struct next_lua_memory *)opaque;
+    void *replacement;
+    if (!pointer) old_size = 0;
+    if (!new_size) {
+        free(pointer);
+        memory->used = old_size <= memory->used ? memory->used - old_size : 0;
+        return NULL;
+    }
+    if (new_size > 262144 || old_size > memory->used ||
+        memory->used - old_size > 262144 - new_size) return NULL;
+    replacement = realloc(pointer, new_size);
+    if (replacement) memory->used = memory->used - old_size + new_size;
+    return replacement;
+}
+
+static void next_fuel_hook(lua_State *, lua_Debug *);
+static void next_fuel_hook(lua_State *L, lua_Debug *debug_record)
+{
+    static const char message[] = "instruction limit";
+    struct next_lua_request *request = NULL;
+    (void)debug_record;
+    memcpy(&request, lua_getextraspace(L), sizeof request);
+    if (!request) {
+        lua_pushlstring(L, message, sizeof message - 1);
+        (void)lua_error(L);
+        return;
+    }
+    request->fuel += 100;
+    if (request->fuel >= 20000) {
+        lua_pushlstring(L, message, sizeof message - 1);
+        (void)lua_error(L);
+        return;
+    }
+}
+
+static int next_lua_source_valid(const char *, size_t);
+static int next_lua_source_valid(const char *source, size_t length)
+{
+    size_t index;
+    if (!source || !length || length > 4096) return 0;
+    for (index = 0; index < length; ++index)
+        if (source[index] == 0) return 0;
+    return 1;
+}
+
+static int next_hex64(const char *text);
+static int next_hex64(const char *text)
+{
+    size_t index;
+    if (!text) return 0;
+    for (index = 0; index < 64; ++index)
+        if (!((text[index] >= '0' && text[index] <= '9') ||
+              (text[index] >= 'a' && text[index] <= 'f'))) return 0;
+    return text[64] == '\0';
+}
+
+static int next_root_exact(lua_State *);
+static int next_root_exact(lua_State *L)
+{
+    int fields = 0;
+    if (lua_gettop(L) != 1 || lua_type(L, 1) != LUA_TTABLE) return 0;
+    lua_pushnil(L);
+    while (lua_next(L, 1)) {
+        size_t length = 0;
+        const char *key;
+        if (lua_type(L, -2) != LUA_TSTRING) return 0;
+        key = lua_tolstring(L, -2, &length);
+        if (!key || length != 9 || memcmp(key, "on_action", 9) ||
+            lua_type(L, -1) != LUA_TFUNCTION || fields) return 0;
+        fields = 1;
+        lua_settop(L, -2);
+    }
+    return fields == 1;
+}
+
+static int next_lua_failure(lua_State *, int);
+static int next_lua_failure(lua_State *L, int status)
+{
+    const char *message;
+    size_t length = 0;
+    if (status == LUA_ERRMEM) return CHAOS_LUA_NEXT_USE_SANDBOX_MEMORY;
+    message = lua_tolstring(L, -1, &length);
+    if (message && length >= 17
+        && !memcmp(message, "instruction limit", 17))
+        return CHAOS_LUA_NEXT_USE_SANDBOX_INSTRUCTION;
+    return CHAOS_LUA_NEXT_USE_SANDBOX_RUNTIME;
+}
+
+static int next_root_load(lua_State *, const char *, size_t,
+                          struct next_lua_request *);
+static int next_root_load(lua_State *L, const char *source, size_t length,
+                          struct next_lua_request *request)
+{
+    int status = luaL_loadbufferx(L, source, length, "next-use", "t");
+    if (status != LUA_OK) {
+        request->failure_code = next_lua_failure(L, status);
+        return 0;
+    }
+    status = lua_pcall(L, 0, LUA_MULTRET, 0);
+    if (status != LUA_OK) {
+        request->failure_code = next_lua_failure(L, status);
+        return 0;
+    }
+    if (!next_root_exact(L)) {
+        request->failure_code = CHAOS_LUA_NEXT_USE_OUTPUT_COPY;
+        return 0;
+    }
+    return 1;
+}
+
+static void next_set_integer(lua_State *, const char *, int);
+static void next_set_integer(lua_State *L, const char *key, int value)
+{
+    lua_pushinteger(L, value);
+    lua_setfield(L, -2, key);
+}
+
+static void next_set_text(lua_State *, const char *, const char *);
+static void next_set_text(lua_State *L, const char *key, const char *value)
+{
+    lua_pushlstring(L, value, strlen(value));
+    lua_setfield(L, -2, key);
+}
+
+static void next_push_context(lua_State *, const struct chaos_next_use_context *);
+static void next_push_context(lua_State *L,
+                              const struct chaos_next_use_context *context)
+{
+    lua_createtable(L, 0, 9);
+    next_set_integer(L, "age", context->age);
+    next_set_integer(L, "fountain_count", context->fountain_count);
+    next_set_integer(L, "next_use_context_v", 2);
+    next_set_text(L, "own_witnessed", context->own_witnessed ? "W" : "none");
+    next_set_text(L, "source_sha256", context->source_sha256);
+    next_set_integer(L, "state", context->state);
+    next_set_text(L, "trigger",
+                  context->trigger == CHAOS_NEXT_USE_FAMILY_W ? "W" : "F");
+    next_set_integer(L, "variant", context->variant);
+    next_set_integer(L, "whistle_count", context->whistle_count);
+}
+
+static int next_result_keys(lua_State *, int);
+static int next_result_keys(lua_State *L, int index)
+{
+    int fields = 0;
+    index = index < 0 ? lua_gettop(L) + index + 1 : index;
+    if (lua_type(L, index) != LUA_TTABLE) return 0;
+    lua_pushnil(L);
+    while (lua_next(L, index)) {
+        size_t length = 0;
+        const char *key;
+        int bit = 0;
+        if (lua_type(L, -2) != LUA_TSTRING) return 0;
+        key = lua_tolstring(L, -2, &length);
+        if (key && length == 17 && !memcmp(key, "next_use_intent_v", 17)) bit = 1;
+        else if (key && length == 2 && !memcmp(key, "op", 2)) bit = 2;
+        else if (key && length == 5 && !memcmp(key, "state", 5)) bit = 4;
+        if (!bit || (fields & bit)) return 0;
+        fields |= bit;
+        lua_settop(L, -2);
+    }
+    return fields == 7;
+}
+
+static void next_raw_field(lua_State *, int, const char *);
+static void next_raw_field(lua_State *L, int index, const char *key)
+{
+    index = index < 0 ? lua_gettop(L) + index + 1 : index;
+    lua_pushlstring(L, key, strlen(key));
+    lua_rawget(L, index);
+}
+
+static int next_integer_field(lua_State *, int, const char *, int, int, int *);
+static int next_integer_field(lua_State *L, int index, const char *key,
+                              int low, int high, int *result)
+{
+    lua_Integer value;
+    int integer_status = 0;
+    next_raw_field(L, index, key);
+    if (!lua_isinteger(L, -1)) { lua_settop(L, -2); return 0; }
+    value = lua_tointegerx(L, -1, &integer_status);
+    lua_settop(L, -2);
+    if (!integer_status || value < low || value > high) return 0;
+    *result = (int)value; return 1;
+}
+
+static int next_intent_extract(lua_State *, int, struct chaos_next_use_intent *);
+static int next_intent_extract(lua_State *L, int index,
+                               struct chaos_next_use_intent *intent)
+{
+    size_t length = 0;
+    const char *op_text;
+    int version;
+    index = index < 0 ? lua_gettop(L) + index + 1 : index;
+    if (!next_result_keys(L, index) ||
+        !next_integer_field(L, index, "next_use_intent_v", 2, 2, &version) ||
+        !next_integer_field(L, index, "state", 0, 3, &intent->state)) return 0;
+    next_raw_field(L, index, "op");
+    if (lua_type(L, -1) != LUA_TSTRING) { lua_settop(L, -2); return 0; }
+    op_text = lua_tolstring(L, -1, &length);
+    if (length == 5 && !memcmp(op_text, "quiet", 5))
+        intent->op = CHAOS_NEXT_USE_INTENT_QUIET;
+    else if (length == 5 && !memcmp(op_text, "delay", 5))
+        intent->op = CHAOS_NEXT_USE_INTENT_DELAY;
+    else if (length == 17 && !memcmp(op_text, "whistle_attention", 17))
+        intent->op = CHAOS_NEXT_USE_INTENT_WHISTLE_ATTENTION;
+    else if (length == 16 && !memcmp(op_text, "fountain_refresh", 16))
+        intent->op = CHAOS_NEXT_USE_INTENT_FOUNTAIN_REFRESH;
+    else { lua_settop(L, -2); return 0; }
+    lua_settop(L, -2); return 1;
+}
+
+static int next_protected_call(lua_State *);
+static int next_protected_call(lua_State *L)
+{
+    struct next_lua_request *request = NULL;
+    int status;
+    memcpy(&request, lua_getextraspace(L), sizeof request);
+    if (!request || !next_root_load(L, request->source, request->length, request)) return 0;
+    if (!request->call_handler) {
+        request->valid = 1;
+        return 0;
+    }
+    lua_getfield(L, 1, "on_action");
+    next_push_context(L, request->context);
+    status = lua_pcall(L, 1, LUA_MULTRET, 0);
+    if (status != LUA_OK) {
+        request->failure_code = next_lua_failure(L, status);
+    } else if (lua_gettop(L) != 2
+               || !next_intent_extract(L, -1, &request->intent)) {
+        request->failure_code = CHAOS_LUA_NEXT_USE_OUTPUT_COPY;
+    } else {
+        request->valid = 1;
+    }
+    return 0;
+}
+
+int chaos_lua_next_use_load(const char *, size_t);
+int chaos_lua_next_use_load(const char *source, size_t length)
+{
+    struct next_lua_memory memory;
+    struct next_lua_request request;
+    struct next_lua_request *request_pointer = &request;
+    lua_State *L;
+    int status;
+    memset(&memory, 0, sizeof memory);
+    memset(&request, 0, sizeof request);
+    if (!next_lua_source_valid(source, length) || length > 4096) return 1;
+    request.source = source; request.length = length;
+    L = lua_newstate(next_lua_alloc, &memory);
+    if (!L) return CHAOS_LUA_NEXT_USE_SANDBOX_MEMORY;
+    memcpy(lua_getextraspace(L), &request_pointer, sizeof request_pointer);
+    lua_sethook(L, next_fuel_hook, LUA_MASKCOUNT, 100);
+    lua_pushcclosure(L, next_protected_call, 0);
+    status = lua_pcall(L, 0, 0, 0);
+    if (status != LUA_OK && !request.failure_code)
+        request.failure_code = next_lua_failure(L, status);
+    status = status == LUA_OK && request.valid ? 0
+        : (request.failure_code ? request.failure_code
+                               : CHAOS_LUA_NEXT_USE_OUTPUT_COPY);
+    lua_close(L);
+    return status;
+}
+
+int chaos_lua_next_use_on_action(const char *, size_t,
+                                 const struct chaos_next_use_context *,
+                                 struct chaos_next_use_intent *);
+int chaos_lua_next_use_on_action(const char *source, size_t length,
+                                 const struct chaos_next_use_context *context,
+                                 struct chaos_next_use_intent *intent)
+{
+    struct next_lua_memory memory;
+    struct next_lua_request request;
+    struct next_lua_request *request_pointer = &request;
+    lua_State *L;
+    int status;
+    if (!intent) return 1;
+    memset(intent, 0, sizeof *intent);
+    memset(&memory, 0, sizeof memory);
+    memset(&request, 0, sizeof request);
+    if (!context || !next_lua_source_valid(source, length) || length > 4096 ||
+        context->age < 0 || context->age > 99 ||
+        context->fountain_count < 0 || context->fountain_count > 3 ||
+        context->own_witnessed < 0 || context->own_witnessed > 1 ||
+        context->state < 0 || context->state > 3 ||
+        (context->trigger != CHAOS_NEXT_USE_FAMILY_W &&
+         context->trigger != CHAOS_NEXT_USE_FAMILY_F) ||
+        context->variant < 0 || context->variant > 2 ||
+        context->whistle_count < 0 || context->whistle_count > 3 ||
+        !next_hex64(context->source_sha256)) return 1;
+    request.source = source; request.length = length;
+    request.context = context; request.call_handler = 1;
+    L = lua_newstate(next_lua_alloc, &memory);
+    if (!L) return CHAOS_LUA_NEXT_USE_SANDBOX_MEMORY;
+    memcpy(lua_getextraspace(L), &request_pointer, sizeof request_pointer);
+    lua_sethook(L, next_fuel_hook, LUA_MASKCOUNT, 100);
+    lua_pushcclosure(L, next_protected_call, 0);
+    status = lua_pcall(L, 0, 0, 0);
+    if (status != LUA_OK && !request.failure_code)
+        request.failure_code = next_lua_failure(L, status);
+    if (status == LUA_OK && request.valid) {
+        *intent = request.intent;
+        lua_close(L);
+        return 0;
+    }
+    status = request.failure_code ? request.failure_code
+                                  : CHAOS_LUA_NEXT_USE_OUTPUT_COPY;
+    lua_close(L);
+    memset(intent, 0, sizeof *intent);
+    return status;
+}
