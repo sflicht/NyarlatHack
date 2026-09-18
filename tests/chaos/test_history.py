@@ -320,8 +320,10 @@ class HistoryTests(unittest.TestCase):
                     "episodes",
                     "prior_whispers",
                     "prior_coverage",
+                    "next_use",
                 },
             )
+            self.assertEqual(public["next_use"]["families"], ["F"])
             self.assertLessEqual(len(json.dumps(public).encode()), 6144)
             for secret in ("SECRET", "sha256", "identity", directory):
                 self.assertNotIn(secret, json.dumps(public))

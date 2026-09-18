@@ -15,7 +15,14 @@ from .protocol import encode_request, parse_request, strict_json
 from .response import normalize_whisper_response
 
 _CONTEXT_FIELDS = frozenset(
-    ("history_context_v", "summary", "episodes", "prior_whispers", "prior_coverage")
+    (
+        "history_context_v",
+        "summary",
+        "episodes",
+        "prior_whispers",
+        "prior_coverage",
+        "next_use",
+    )
 )
 
 

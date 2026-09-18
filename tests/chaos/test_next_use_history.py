@@ -3,7 +3,7 @@
 import json
 import unittest
 
-from chaos.history import HistoryState
+from chaos.history import HistoryState, public_context
 from chaos.next_use_history import eligible_families, next_use_menu
 from test_director import event
 from test_episodes import action, enabled, session, wire
@@ -74,3 +74,15 @@ class NextUseHistoryTests(unittest.TestCase):
         self.assertEqual(eligible_families(detection), ())
         self.assertEqual(next_use_menu(blocked), [])
         self.assertEqual(next_use_menu(detection), [])
+
+    def test_public_context_carries_next_use_without_host_proof(self):
+        whistle = state(("whistling", "sound_high"))
+        public = public_context(whistle)
+        self.assertEqual(public["next_use"]["families"], ["W"])
+        self.assertEqual(
+            [row["op"] for row in public["next_use"]["menu"]],
+            ["quiet", "whistle_attention"],
+        )
+        encoded = json.dumps(public, ensure_ascii=True, separators=(",", ":"))
+        self.assertLessEqual(len(encoded.encode("ascii")), 6144)
+        self.assertNotIn("sha256", encoded)

@@ -53,5 +53,6 @@ Empty menus and rejected intents leave stock behavior unchanged.
 - Importing or executing `chaos/ordinary_route.py` as a gameplay driver.
 
 Those remain follow-up work: player testing is issue 44; ordinary-play
-model-authored composition is issue 45. This policy is the host-owned menu
-used before any model sees public context.
+model-authored composition is issue 45. The public history context now
+includes `next_use` so a selector can see W/F eligibility. Allowed hunger
+requests remain the only choosable mailbox items in this slice.

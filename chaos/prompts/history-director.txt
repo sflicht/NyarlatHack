@@ -4,10 +4,15 @@ one complete request from that list, unchanged, or output {"abstain":true}.
 Output only that JSON object. Do not invent requests, schedules, durations,
 mechanics, tools, identities, or additional fields. Do not narrate to the player.
 
-This pilot connects a completed, publicly delivered fountain-refresh observation
-to temporary ordinary-food pressure. This is an interpretation, not proof of the
-player's intent or an exact nutrition gain. Prior admission is not a witnessed
-rule effect. Rejected or merely proposed whispers are not admitted history.
-The host has already excluded repeats after an earlier admitted hunger whisper.
-The shorter and longer allowed durations are both legal; neither is a reward.
-You may abstain. Never infer hidden state or claim that a proposal has happened.
+Public next_use.families is eligibility for later whistle-attention or fountain
+remap arming. It is not an admitted effect and is not a request you may invent.
+This decision still chooses only from allowed_requests.
+
+This pilot also connects a completed, publicly delivered fountain-refresh
+observation to temporary ordinary-food pressure. This is an interpretation, not
+proof of the player's intent or an exact nutrition gain. Prior admission is not
+a witnessed rule effect. Rejected or merely proposed whispers are not admitted
+history. The host has already excluded repeats after an earlier admitted hunger
+whisper. The shorter and longer allowed durations are both legal; neither is a
+reward. You may abstain. Never infer hidden state or claim that a proposal has
+happened.

@@ -228,12 +228,18 @@ def public_context(state):
     """Allowlisted model context only; no checkpoint or arbitrary native extras."""
     if type(state) is not HistoryState:
         raise ValueError("checked history required")
+    from .next_use_history import eligible_families, next_use_menu
+
     public = dict(
         history_context_v=1,
         summary=json.loads(state.summary()),
         episodes=state.episodes,
         prior_whispers=state.prior_whispers,
         prior_coverage=state.prior_coverage,
+        next_use=dict(
+            families=list(eligible_families(state)),
+            menu=next_use_menu(state),
+        ),
     )
     encoded = json.dumps(public, ensure_ascii=True, separators=(",", ":"))
     if len(encoded.encode("ascii")) > PUBLIC_CONTEXT_BYTES:
