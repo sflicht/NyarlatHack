@@ -124,19 +124,33 @@ static int hash_context(const struct chaos_next_use_context *context,
     return 1;
 }
 
+static const char chaos_next_use_intent_json[] =
+    "{\"next_use_intent_v\":2,\"op\":\"%s\",\"state\":%d}";
+
+static int format_intent(const struct chaos_next_use_intent *intent,
+                         char *canonical, size_t capacity)
+{
+    const char *name;
+    int length;
+    if (!intent || !canonical || capacity < 1) return 0;
+    name = runtime_intent_name(intent->op);
+    if (!name) return 0;
+    length = snprintf(canonical, capacity, chaos_next_use_intent_json,
+                      name, intent->state);
+    if (length < 1 || (size_t) length >= capacity) {
+        canonical[0] = '\0';
+        return 0;
+    }
+    return 1;
+}
+
 static int hash_intent(const struct chaos_next_use_intent *intent,
                        char digest[65])
 {
     char canonical[128];
-    const char *name = runtime_intent_name(intent->op);
-    int length;
-    if (!name) return 0;
-    length = snprintf(canonical, sizeof canonical,
-        "{\\\"next_use_intent_v\\\":2,\\\"op\\\":\\\"%s\\\",\\\"state\\\":%d}",
-        name, intent->state);
-    if (length < 1 || (size_t) length >= sizeof canonical) return 0;
+    if (!format_intent(intent, canonical, sizeof canonical)) return 0;
     chaos_next_use_sha256_hex((const unsigned char *) canonical,
-                              (size_t) length, digest);
+                              strlen(canonical), digest);
     return 1;
 }
 
@@ -1321,3 +1335,25 @@ int chaos_next_use_replay_record(
     replay_runtime = staged_runtime;
     return CHAOS_REPLAY_APPLIED;
 }
+
+#ifdef CHAOS_NEXT_USE_HASH_FIXTURE
+int chaos_next_use_test_hash_intent(const struct chaos_next_use_intent *intent,
+                                    char digest[65])
+{
+    if (!intent || !digest) return 0;
+    return hash_intent(intent, digest);
+}
+
+int chaos_next_use_test_hash_context(const struct chaos_next_use_context *context,
+                                     char digest[65])
+{
+    if (!context || !digest) return 0;
+    return hash_context(context, digest);
+}
+
+int chaos_next_use_test_format_intent(const struct chaos_next_use_intent *intent,
+                                      char *out, size_t capacity)
+{
+    return format_intent(intent, out, capacity);
+}
+#endif
