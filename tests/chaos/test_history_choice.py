@@ -17,6 +17,7 @@ CONTEXT = {
     "episodes": {"episodes": []},
     "prior_whispers": [],
     "prior_coverage": {"shown": 0, "omitted": 0},
+    "next_use": {"families": [], "menu": []},
 }
 REQUESTS = [
     dict(v=1, id=1, at=2, mutation="hunger_rate", value=2, duration=n, telegraph=3)

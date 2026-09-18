@@ -166,6 +166,7 @@ def run_history(
                     decision = dict(
                         checkpoint=checkpoint,
                         candidates=frozen,
+                        next_use=copy.deepcopy(public_context(state)["next_use"]),
                         selected=None,
                         outcome="pending",
                     )
