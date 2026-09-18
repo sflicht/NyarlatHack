@@ -56,6 +56,15 @@ recorded native move. Origin deadlines also compare against `monstermoves`.
 Do not treat a later observation sequence, the safe index, or `moves` as a
 substitute for that native admission move.
 
+### Intent hash compatibility
+
+Intent digests hash the exact UTF-8 object
+`{"next_use_intent_v":2,"op":"...","state":N}` with no extra quote-escaping
+layer and no trailing newline. The runtime state is unsaved; there is no
+on-disk intent hash to migrate. Records produced with the escaped formatter
+are invalid and fail closed. There is no accept-either-hash fallback, and
+historical captures are not rewritten.
+
 Empty menus and rejected intents leave stock behavior unchanged.
 
 ## What this slice does not include
