@@ -402,7 +402,7 @@ class GameplayTests(unittest.TestCase):
         self.assertTrue(g.sessions[-1]["ordinary"])
         self.assertFalse(g.sessions[-1]["wizard"])
         self.assertTrue(
-            b"Dlvl" in visible or b"Rhymer" in visible or b"HP:" in visible,
+            b"Exp:" in visible or b"AC:" in visible or b"Dlvl" in visible,
             visible,
         )
         self.assertEqual(g.quit(), 0)
