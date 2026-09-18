@@ -44,6 +44,18 @@ contact or the **next** qualifying fountain drink. After that use, the arming is
 consumed. Stale origins that fall out of the lookback window expire by absence,
 not by substitution.
 
+### Native clocks
+
+`envelope.at` is the safe-point scheduling index. It is not the program lifetime
+clock. Admission records the native move (`monstermoves` at the existing whistle
+capture seam in `src/chaos_engine.c`, and the same `at_move` argument on
+debit/admit) and sets `program_expiry = at_move + ttl` with the allowed TTL of
+100. Runtime install keeps `envelope.at` bound to `at_safe`, checks attempt and
+admission move records agree, and derives expiry and callback age from that
+recorded native move. Origin deadlines also compare against `monstermoves`.
+Do not treat a later observation sequence, the safe index, or `moves` as a
+substitute for that native admission move.
+
 Empty menus and rejected intents leave stock behavior unchanged.
 
 ## What this slice does not include
