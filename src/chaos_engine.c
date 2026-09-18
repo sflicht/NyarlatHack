@@ -4,6 +4,9 @@
 #include "chaos_io.h"
 #include "chaos_haunt.h"
 #include "chaos_curio.h"
+#ifdef TTY_GRAPHICS
+#include "wintty.h"
+#endif
 
 static struct chaos_io io = { -1, -1, -1, 0, 0 };
 static int started, oldsanity, oldinsight;
@@ -18,6 +21,9 @@ static void observation_clear(void) {
     observation_root = observation_turn = 0;
     observation_operation = CHAOS_OBS_OP_NONE;
     observation_pending = observation_used = observation_blocked = 0;
+}
+static void observation_abort(void) {
+    observation_clear();
 }
 static int observation_ready(void) {
     return observations && started && io.events >= 0 && !io.failed
@@ -123,6 +129,7 @@ int chaos_ward_count(int count) {
 }
 long chaos_observation_begin(int operation) {
     struct chaos_context c;
+    if (operation == CHAOS_OBS_OP_WHISTLE_ATTENTION) return 0;
     if (!chaos_obs_family(operation)) return 0;
     observation_clear();
     if (!observation_ready()) return 0;
@@ -134,8 +141,56 @@ long chaos_observation_begin(int operation) {
     observation_operation = operation;
     return observation_root;
 }
+
+boolean chaos_observation_begin_exclusive(int operation, long *root_out) {
+    struct chaos_context c;
+    long root;
+    if (!root_out) return FALSE;
+    if (observation_root != 0) { *root_out = 0; return FALSE; }
+    *root_out = 0;
+    if (operation != CHAOS_OBS_OP_WHISTLE_ATTENTION) return FALSE;
+    if (!observation_ready()) return FALSE;
+    c = context();
+    if (!chaos_io_observation(&io, &u.chaos, &c,
+            CHAOS_OBS_OP_WHISTLE_ATTENTION, CHAOS_OBS_STAGE_STARTED,
+            0, CHAOS_OBS_FACT_NONE)) return FALSE;
+    root = u.chaos.seq;
+    if (root <= 0) { observation_abort(); return FALSE; }
+    observation_root = root;
+    observation_turn = moves;
+    observation_operation = CHAOS_OBS_OP_WHISTLE_ATTENTION;
+    observation_pending = observation_used = observation_blocked = 0;
+    *root_out = root;
+    return TRUE;
+}
+
+boolean chaos_observation_finish(long root, int stage, long *end_seq_out) {
+    struct chaos_context c;
+    long end_seq;
+    if (!end_seq_out) return FALSE;
+    *end_seq_out = 0;
+    if (root <= 0) return FALSE;
+    if (root != observation_root) return FALSE;
+    if (stage != CHAOS_OBS_STAGE_COMPLETED &&
+        stage != CHAOS_OBS_STAGE_BLOCKED) return FALSE;
+    if (observation_operation != CHAOS_OBS_OP_WHISTLE_ATTENTION ||
+        observation_turn != moves) return FALSE;
+    c = context();
+    if (!chaos_io_observation(&io, &u.chaos, &c,
+            CHAOS_OBS_OP_WHISTLE_ATTENTION, stage, root,
+            CHAOS_OBS_FACT_NONE)) {
+        observation_abort();
+        return FALSE;
+    }
+    end_seq = u.chaos.seq;
+    if (end_seq <= root) { observation_abort(); return FALSE; }
+    *end_seq_out = end_seq;
+    observation_clear();
+    return TRUE;
+}
 void chaos_observation_end(long root) {
     struct chaos_context c;
+    if (observation_operation == CHAOS_OBS_OP_WHISTLE_ATTENTION) return;
     if (root <= 0 || root != observation_root) return;
     if (observation_current()) {
         c = context();
@@ -203,4 +258,172 @@ void chaos_observation_blocked(void) {
     if (!observation_current()) return;
     family = chaos_obs_family(observation_operation);
     if (family && family->allow_blocked) observation_blocked = 1;
+}
+
+boolean chaos_whistle_attention_message(struct chaos_whistle_witness *witness) {
+    long before_seq;
+    boolean tty_supported = FALSE;
+    if (!witness || !witness->active || witness->root <= 0
+        || witness->manifestation_delivered) return FALSE;
+    witness->message_token.root = witness->root;
+    witness->message_token.fact = CHAOS_OBS_FACT_ATTENTION;
+    if (witness->message_token.root != witness->root
+        || witness->message_token.fact != CHAOS_OBS_FACT_ATTENTION)
+        return FALSE;
+#if defined(CHAOS) && defined(TTY_GRAPHICS)
+    tty_supported = iflags.window_inited
+        && windowprocs.win_putstr == tty_putstr;
+#endif
+    if (!tty_supported) return FALSE;
+    before_seq = u.chaos.seq;
+    chaos_observation_arm(CHAOS_OBS_OP_WHISTLE_ATTENTION,
+                          CHAOS_OBS_FACT_ATTENTION);
+    pline("The whistle's echo sharpens your visible companion's attention.");
+    chaos_observation_disarm();
+    if (u.chaos.seq != before_seq + 1) return FALSE;
+    witness->notice_seq = u.chaos.seq;
+    chaos_next_use_manifestation_notice(witness->root, witness->notice_seq);
+    witness->manifestation_delivered = TRUE;
+    return TRUE;
+}
+
+void chaos_whistle_witness_finalize(struct monst *mtmp,
+                                    struct chaos_whistle_witness *witness) {
+    boolean published = FALSE;
+    int stage;
+    long end_seq = 0;
+    if (witness && witness->active && !witness->finalized) {
+        witness->finalized = TRUE;
+        if (!mtmp || DEADMONSTER(mtmp) || mtmp->mtyp != PM_LITTLE_DOG
+            || !mtmp->mtame || !get_mx(mtmp, MX_EDOG)
+            || mtmp == u.usteed || mtmp == u.urider
+            || mon_attacktype(mtmp, AT_EXPL) || !isok(mtmp->mx, mtmp->my)) {
+            witness->invalid = TRUE;
+        } else {
+            witness->newx = mtmp->mx;
+            witness->newy = mtmp->my;
+            witness->post_glyph = glyph_at(mtmp->mx, mtmp->my);
+            witness->displaced = witness->oldx != witness->newx
+                || witness->oldy != witness->newy;
+#if defined(CHAOS) && defined(TTY_GRAPHICS)
+            if (witness->manifestation_delivered && witness->displaced
+                && witness->pre_public && !Hallucination && !u.uswallow
+                && canseemon(mtmp) && glyph_is_monster(witness->post_glyph)
+                && glyph_to_mon(witness->post_glyph) == PM_LITTLE_DOG)
+                published = chaos_tty_publication_certificate(
+                    witness->newx, witness->newy, witness->post_glyph);
+#endif
+        }
+        stage = published ? CHAOS_OBS_STAGE_COMPLETED
+                          : CHAOS_OBS_STAGE_BLOCKED;
+        if (!chaos_observation_finish(witness->root, stage, &end_seq)) {
+            chaos_next_use_manifestation_end(witness->root,
+                witness->notice_seq, 0, FALSE);
+            witness->invalid = TRUE;
+            return;
+        }
+        chaos_next_use_manifestation_end(witness->root,
+            witness->notice_seq, end_seq, published);
+        if (published && witness->manifestation_delivered
+            && witness->displaced && witness->pre_public
+            && !witness->invalid
+            && witness->root < witness->notice_seq
+            && witness->notice_seq < end_seq)
+            chaos_next_use_on_manifestation(witness, end_seq);
+    }
+}
+
+void chaos_next_use_whistle_completed(struct obj *obj, long completed_root) {
+    struct obj *otmp;
+    struct monst *mtmp, *candidate, *resident, *id_owner;
+    boolean tool_member, valid_whistle, current_member, captured;
+    unsigned captured_id;
+    int glyph, candidates, id_count;
+
+    if (!obj || completed_root <= 0) return;
+    tool_member = FALSE;
+    for (otmp = invent; otmp; otmp = otmp->nobj)
+        if (otmp == obj) { tool_member = TRUE; break; }
+    valid_whistle = tool_member && invent
+        && obj->where == OBJ_INVENT && obj->otyp == WHISTLE
+        && obj->known && !obj->oartifact && obj->quan == 1L;
+    if (valid_whistle
+        && chaos_next_use_action_preflight(CHAOS_NEXT_USE_FAMILY_W,
+                                            completed_root)) {
+        candidate = (struct monst *) 0;
+        candidates = 0;
+#ifdef TTY_GRAPHICS
+        if (!Hallucination && !u.uswallow)
+            for (mtmp = fmon; mtmp; mtmp = mtmp->nmon) {
+                if (DEADMONSTER(mtmp) || !canseemon(mtmp)
+                    || !isok(mtmp->mx, mtmp->my)) continue;
+                glyph = glyph_at(mtmp->mx, mtmp->my);
+                if (!Hallucination && !u.uswallow
+                    && !DEADMONSTER(mtmp) && canseemon(mtmp)
+                    && isok(mtmp->mx, mtmp->my)
+                    && glyph_is_monster(glyph)
+                    && glyph_to_mon(glyph) == PM_LITTLE_DOG
+                    && tty_snapshot_projectable(mtmp->mx, mtmp->my, glyph)) {
+                    candidate = mtmp;
+                    ++candidates;
+                }
+            }
+#endif
+        if (candidates == 1
+            && chaos_next_use_on_action(CHAOS_NEXT_USE_FAMILY_W,
+                                        completed_root, 0)) {
+            current_member = FALSE;
+            for (resident = fmon; resident; resident = resident->nmon)
+                if (resident == candidate && !DEADMONSTER(resident)) {
+                    current_member = TRUE;
+                    break;
+                }
+            captured = FALSE;
+            if (current_member
+                && candidate->mtyp == PM_LITTLE_DOG
+                && candidate->mtame && get_mx(candidate, MX_EDOG)
+                && candidate != u.usteed && candidate != u.urider
+                && !candidate->mleashed && !get_mx(candidate, MX_ESUM)
+                && !mon_attacktype(candidate, AT_EXPL)
+                && !Conflict && !candidate->mberserk) {
+                captured_id = candidate->m_id;
+                id_count = 0;
+                id_owner = (struct monst *) 0;
+                if (captured_id)
+                    for (resident = fmon; resident; resident = resident->nmon)
+                        if (!DEADMONSTER(resident)
+                            && resident->m_id == captured_id) {
+                            ++id_count;
+                            id_owner = resident;
+                        }
+                if (captured_id && id_count == 1 && id_owner == candidate) {
+                    chaos_next_use_capture_whistle(completed_root,
+                                                   captured_id, monstermoves);
+                    captured = TRUE;
+                }
+            }
+            if (!captured)
+                chaos_next_use_whistle_unavailable(completed_root);
+        } else if (candidates != 1) {
+            chaos_next_use_whistle_unavailable(completed_root);
+        }
+    }
+}
+
+boolean chaos_next_use_fountain_contact(long completed_root,
+                                        struct chaos_fountain_token *token_out) {
+    if (!token_out) return FALSE;
+    if (completed_root <= 0) return FALSE;
+    token_out->root = 0;
+    token_out->active = 0;
+    token_out->remap = 0;
+    token_out->consumed = 0;
+    token_out->active = chaos_next_use_on_action(
+        CHAOS_NEXT_USE_FAMILY_F, completed_root, token_out) ? 1 : 0;
+    return token_out->active;
+}
+
+void chaos_next_use_fountain_clear(struct chaos_fountain_token *token) {
+    if (!token) return;
+    memset(token, 0, sizeof *token);
 }

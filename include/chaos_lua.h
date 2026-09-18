@@ -2,6 +2,7 @@
 #ifndef CHAOS_LUA_H
 #define CHAOS_LUA_H
 #include <stddef.h>
+#include "chaos_next_use.h"
 #define CHAOS_LUA_SOURCE 4096
 #define CHAOS_TRAIL 8
 struct chaos_point { int x,y; };
@@ -25,4 +26,19 @@ int chaos_lua_curio_inspect(const char *, size_t,
 int chaos_lua_curio_apply(const char *, size_t,
                         const struct chaos_curio_lua_context *,
                         struct chaos_curio_lua_intent *);
+
+enum chaos_lua_next_use_failure {
+    CHAOS_LUA_NEXT_USE_INVALID_OUTPUT = 1,
+    CHAOS_LUA_NEXT_USE_SANDBOX_INSTRUCTION = 2,
+    CHAOS_LUA_NEXT_USE_SANDBOX_MEMORY = 3,
+    CHAOS_LUA_NEXT_USE_SANDBOX_RUNTIME = 4,
+    CHAOS_LUA_NEXT_USE_OUTPUT_COPY = 5,
+    CHAOS_LUA_NEXT_USE_REENTRANCY = 6
+};
+
+/* Next-use Lua receives copied public context and returns a bounded intent. */
+int chaos_lua_next_use_load(const char *, size_t);
+int chaos_lua_next_use_on_action(const char *, size_t,
+                                 const struct chaos_next_use_context *,
+                                 struct chaos_next_use_intent *);
 #endif

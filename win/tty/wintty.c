@@ -2680,6 +2680,64 @@ int x, y;
 #endif /* CLIPPING */
 
 
+struct chaos_tty_certificate_observer {
+    xchar x, y;
+    int expected_glyph;
+    boolean seen;
+};
+static struct chaos_tty_certificate_observer *certificate_observer;
+
+boolean
+chaos_tty_publication_certificate(x, y, expected_glyph)
+xchar x, y;
+int expected_glyph;
+{
+    struct chaos_tty_certificate_observer certificate;
+
+    if (!iflags.window_inited || !ttyDisplay || WIN_MAP == WIN_ERR
+        || WIN_MAP < 0 || WIN_MAP >= MAXWIN || !wins[WIN_MAP]
+        || !wins[WIN_MAP]->active || wins[WIN_MAP]->type != NHW_MAP)
+        return FALSE;
+    if (windowprocs.win_print_glyph != tty_print_glyph) return FALSE;
+    if (!chaos_flush_screen_ready()) return FALSE;
+    if (certificate_observer) return FALSE;
+    if (!isok(x, y)) return FALSE;
+#ifdef CLIPPING
+    if (clipping && (x <= clipx || y < clipy
+        || x >= clipxmax || y >= clipymax)) return FALSE;
+#endif
+    if (expected_glyph != glyph_at(x, y)) return FALSE;
+    if (ferror(stdout)) return FALSE;
+    certificate.x = x;
+    certificate.y = y;
+    certificate.expected_glyph = expected_glyph;
+    certificate.seen = FALSE;
+    certificate_observer = &certificate;
+    flush_screen(0);
+    certificate_observer = NULL;
+    return certificate.seen;
+}
+
+boolean
+tty_snapshot_projectable(x, y, glyph)
+xchar x, y;
+int glyph;
+{
+    if (!iflags.window_inited || !ttyDisplay
+        || WIN_MAP == WIN_ERR || WIN_MAP < 0 || WIN_MAP >= MAXWIN
+        || !wins[WIN_MAP]
+        || !wins[WIN_MAP]->active
+        || wins[WIN_MAP]->type != NHW_MAP) return FALSE;
+    if (windowprocs.win_print_glyph != tty_print_glyph) return FALSE;
+    if (!isok(x, y)) return FALSE;
+#ifdef CLIPPING
+    if (clipping && (x <= clipx || y < clipy
+        || x >= clipxmax || y >= clipymax)) return FALSE;
+#endif
+    if (glyph != glyph_at(x, y)) return FALSE;
+    return TRUE;
+}
+
 /*
  *  tty_print_glyph
  *
@@ -2765,6 +2823,12 @@ tty_print_glyph(window, x, y, glyph)
 #else
 	g_putch(ch);		/* print the character */
 #endif
+
+    if (certificate_observer && window == WIN_MAP
+        && x == certificate_observer->x && y == certificate_observer->y
+        && glyph == certificate_observer->expected_glyph
+        && !ferror(stdout))
+        certificate_observer->seen = TRUE;
 
     if (reverse_on) {
     	term_end_attr(ATR_INVERSE);

@@ -111,14 +111,15 @@ enum chaos_contract_rule { CHAOS_RULE_NONE, CHAOS_RULE_HALVE, CHAOS_RULE_DOUBLE 
 #define CHAOS_EVENT_FORMAT "{\"v\":%d,\"seq\":%ld,\"turn\":%ld,\"safe\":%ld,\"event\":%s,\"phase\":%s,\"detail\":%s,\"sanity\":%d,\"insight\":%d,\"budget\":%d,\"spent\":%d,\"reserved\":%d,\"last_id\":%d,\"vitals\":{\"hp\":%d,\"hp_max\":%d,\"power\":%d,\"power_max\":%d},\"cosmetic\":{\"seen\":%d,\"last_turn\":%ld}%s}\n"
 #define CHAOS_ACK_FORMAT ",\"id\":%d,\"status\":\"%s\",\"mutation\":\"%s\",\"value\":%d,\"duration\":%d,\"telegraph\":%d,\"at\":%d,\"cost\":%d,\"cosmetic_cost\":%d,\"expires\":%ld"
 #define CHAOS_JOURNAL_FORMAT "{\"v\":1,\"policy\":2,\"turn\":%ld,\"safe\":%ld%s}\n"
-enum chaos_observation_operation { CHAOS_OBS_OP_NONE = 0, CHAOS_OBS_OP_WHISTLING = 1, CHAOS_OBS_OP_FOUNTAIN_DRINK = 2 };
+enum chaos_observation_operation { CHAOS_OBS_OP_NONE = 0, CHAOS_OBS_OP_WHISTLING = 1, CHAOS_OBS_OP_FOUNTAIN_DRINK = 2, CHAOS_OBS_OP_WHISTLE_ATTENTION = 3 };
 enum chaos_observation_stage { CHAOS_OBS_STAGE_ENABLED = 0, CHAOS_OBS_STAGE_STARTED = 1, CHAOS_OBS_STAGE_NOTICE = 2, CHAOS_OBS_STAGE_COMPLETED = 3, CHAOS_OBS_STAGE_BLOCKED = 4 };
-enum chaos_observation_fact { CHAOS_OBS_FACT_NONE = 0, CHAOS_OBS_FACT_SOUND_HIGH = 1, CHAOS_OBS_FACT_SOUND_SHRILL = 2, CHAOS_OBS_FACT_SOUND_NORMAL = 3, CHAOS_OBS_FACT_SOUND_STRANGE = 4, CHAOS_OBS_FACT_SOUND_HUMMING = 5, CHAOS_OBS_FACT_WATER_REFRESHED = 6, CHAOS_OBS_FACT_WATER_FOUL = 7, CHAOS_OBS_FACT_CANNOT_REACH = 8, CHAOS_OBS_FACT_DETECTION_PRESENTED = 9 };
+enum chaos_observation_fact { CHAOS_OBS_FACT_NONE = 0, CHAOS_OBS_FACT_SOUND_HIGH = 1, CHAOS_OBS_FACT_SOUND_SHRILL = 2, CHAOS_OBS_FACT_SOUND_NORMAL = 3, CHAOS_OBS_FACT_SOUND_STRANGE = 4, CHAOS_OBS_FACT_SOUND_HUMMING = 5, CHAOS_OBS_FACT_WATER_REFRESHED = 6, CHAOS_OBS_FACT_WATER_FOUL = 7, CHAOS_OBS_FACT_CANNOT_REACH = 8, CHAOS_OBS_FACT_DETECTION_PRESENTED = 9, CHAOS_OBS_FACT_ATTENTION = 10 };
 enum chaos_obs_channel { CHAOS_OBS_CHANNEL_MESSAGE = 1, CHAOS_OBS_CHANNEL_MAP = 2 };
 enum chaos_obs_role { CHAOS_OBS_ROLE_ENABLE, CHAOS_OBS_ROLE_START, CHAOS_OBS_ROLE_NOTICE, CHAOS_OBS_ROLE_COMPLETE, CHAOS_OBS_ROLE_BLOCK };
 #define CHAOS_OBS_FAMILY_ROWS(X) \
     X(CHAOS_OBS_OP_WHISTLING, 0, "whistling") \
-    X(CHAOS_OBS_OP_FOUNTAIN_DRINK, 1, "fountain_drink")
+    X(CHAOS_OBS_OP_FOUNTAIN_DRINK, 1, "fountain_drink") \
+    X(CHAOS_OBS_OP_WHISTLE_ATTENTION, 1, "whistle_attention")
 
 #define CHAOS_OBS_FACT_ROWS(X) \
     X(CHAOS_OBS_FACT_SOUND_HIGH, 1, CHAOS_OBS_CHANNEL_MESSAGE, 0, "sound_high") \
@@ -129,7 +130,8 @@ enum chaos_obs_role { CHAOS_OBS_ROLE_ENABLE, CHAOS_OBS_ROLE_START, CHAOS_OBS_ROL
     X(CHAOS_OBS_FACT_WATER_REFRESHED, 2, CHAOS_OBS_CHANNEL_MESSAGE, 0, "water_refreshed") \
     X(CHAOS_OBS_FACT_WATER_FOUL, 2, CHAOS_OBS_CHANNEL_MESSAGE, 0, "water_foul") \
     X(CHAOS_OBS_FACT_CANNOT_REACH, 2, CHAOS_OBS_CHANNEL_MESSAGE, 1, "cannot_reach") \
-    X(CHAOS_OBS_FACT_DETECTION_PRESENTED, 2, CHAOS_OBS_CHANNEL_MAP, 0, "detection_presented")
+    X(CHAOS_OBS_FACT_DETECTION_PRESENTED, 2, CHAOS_OBS_CHANNEL_MAP, 0, "detection_presented") \
+    X(CHAOS_OBS_FACT_ATTENTION, 3, CHAOS_OBS_CHANNEL_MESSAGE, 0, "attention")
 
 #define CHAOS_OBS_STAGE_ROWS(X) \
     X(CHAOS_OBS_STAGE_ENABLED, CHAOS_OBS_ROLE_ENABLE, "enabled", "result") \

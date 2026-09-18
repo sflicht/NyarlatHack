@@ -579,6 +579,35 @@
             "role": "map_take_deliver"
           }
         ]
+      },
+      {
+        "symbol": "CHAOS_OBS_OP_WHISTLE_ATTENTION",
+        "id": 3,
+        "name": "whistle_attention",
+        "allow_blocked": true,
+        "projection": "completed_notice_by_operation",
+        "hook_refs": [
+          {
+            "file": "src/dogmove.c",
+            "symbol": "dog_move",
+            "role": "scope"
+          },
+          {
+            "file": "src/chaos_engine.c",
+            "symbol": "chaos_observation_begin_exclusive",
+            "role": "arm"
+          },
+          {
+            "file": "src/pline.c",
+            "symbol": "chaos_whistle_attention_message",
+            "role": "message_take_deliver"
+          },
+          {
+            "file": "win/tty/wintty.c",
+            "symbol": "chaos_tty_publication_certificate",
+            "role": "map_take_deliver"
+          }
+        ]
       }
     ],
     "facts": [
@@ -652,6 +681,14 @@
         "name": "detection_presented",
         "operation": 2,
         "channel": "map",
+        "implies_blocked": false
+      },
+      {
+        "symbol": "CHAOS_OBS_FACT_ATTENTION",
+        "id": 10,
+        "name": "attention",
+        "operation": 3,
+        "channel": "message",
         "implies_blocked": false
       }
     ],

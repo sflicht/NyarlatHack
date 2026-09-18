@@ -349,7 +349,7 @@ int main(int argc, char **argv)
         assert(root == (getenv("NYARLATHACK_OBSERVATIONS")
                        && !strcmp(getenv("NYARLATHACK_OBSERVATIONS"), "1")
                        ? before.chaos.seq + 1 : 0));
-        drinkfountain(); /* actual void native call, exactly once */
+        drinkfountain((struct chaos_fountain_token *)0); /* actual void native call, exactly once */
         returned = 1;
         chaos_observation_end(root);
         result = 0; /* not a MOVE_* return from the void routine */

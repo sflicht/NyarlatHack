@@ -13698,8 +13698,8 @@ xchar x, y;	/* clone's preferred location or 0 (near mon) */
 	*m2 = *mon;			/* copy condition of old monster */
 	m2->nmon = fmon;
 	fmon = m2;
-	m2->m_id = flags.ident++;
-	if (!m2->m_id) m2->m_id = flags.ident++;	/* ident overflowed */
+	m2->m_id = next_ident();
+	if (!m2->m_id) m2->m_id = next_ident();	/* ident overflowed */
 	m2->mx = mm.x;
 	m2->my = mm.y;
 
@@ -14591,8 +14591,8 @@ int faction;
 	*mtmp = zeromonst;		/* clear all entries in structure */
 	mtmp->nmon = fmon;
 	fmon = mtmp;
-	mtmp->m_id = flags.ident++;
-	if (!mtmp->m_id) mtmp->m_id = flags.ident++;	/* ident overflowed */
+	mtmp->m_id = next_ident();
+	if (!mtmp->m_id) mtmp->m_id = next_ident();	/* ident overflowed */
 	mtmp->mcansee = mtmp->mcanhear = mtmp->mcanmove = mtmp->mnotlaugh = TRUE;
 	mtmp->mblinded = mtmp->mfrozen = mtmp->mlaughing = 0;
 	mtmp->mvar1 = mtmp->mvar2 = mtmp->mvar3 = 0;

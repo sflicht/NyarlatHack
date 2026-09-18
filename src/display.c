@@ -1572,6 +1572,15 @@ cls()
     clear_glyph_buffer();	/* this is sort of an extra effort, but OK */
 }
 
+static boolean flushing = 0;
+static boolean delay_flushing = 0;
+
+boolean
+chaos_flush_screen_ready()
+{
+    return !flushing && !delay_flushing;
+}
+
 /*
  * Synch the third screen with the display.
  */
@@ -1582,8 +1591,6 @@ flush_screen(cursor_on_u)
     /* Prevent infinite loops on errors:
      *	    flush_screen->print_glyph->impossible->pline->flush_screen
      */
-    static   boolean flushing = 0;
-    static   boolean delay_flushing = 0;
     register int x,y;
 
     if (cursor_on_u == -1) delay_flushing = !delay_flushing;

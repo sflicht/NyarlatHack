@@ -6,6 +6,7 @@
 
 #include "hack.h"
 #include "chaos.h"
+#include "chaos_next_use_runtime.h"
 #include "artifact.h"
 
 
@@ -2043,12 +2044,41 @@ lava:
 	}
 }
 
+static void
+fountain_runtime_result(token, outcome)
+const struct chaos_fountain_token *token;
+int outcome;
+{
+#ifdef CHAOS
+	chaos_next_use_fountain_result(token, outcome);
+#else
+	(void) token;
+	(void) outcome;
+#endif
+}
+
+static void
+fountain_refresh()
+{
+	chaos_observation_arm(CHAOS_OBS_OP_FOUNTAIN_DRINK,
+		CHAOS_OBS_FACT_WATER_REFRESHED);
+	pline_The("cool draught refreshes you.");
+	chaos_observation_disarm();
+	if (Race_if(PM_INCANTIFIER))
+		u.uen += rnd(10); /* don't choke on water */
+	else
+		u.uhunger += rnd(10); /* don't choke on water */
+	newuhs(FALSE);
+}
+
 void
-drinkfountain()
+drinkfountain(token)
+struct chaos_fountain_token *token;
 {
 	/* What happens when you drink from a fountain? */
 	register boolean mgkftn = (levl[u.ux][u.uy].blessedftn == 1);
 	register int fate = rnd(30);
+	int runtime_outcome = CHAOS_FOUNTAIN_GUARD_SUPPRESSED;
 
 	if (Levitation) {
 		chaos_observation_blocked();
@@ -2056,6 +2086,8 @@ drinkfountain()
 			CHAOS_OBS_FACT_CANNOT_REACH);
 		floating_above("fountain");
 		chaos_observation_disarm();
+		fountain_runtime_result(token, runtime_outcome);
+		chaos_next_use_fountain_clear(token);
 		return;
 	}
 
@@ -2080,20 +2112,23 @@ drinkfountain()
 		pline("A wisp of vapor escapes the fountain...");
 		exercise(A_WIS, TRUE);
 		levl[u.ux][u.uy].blessedftn = 0;
+		runtime_outcome = CHAOS_FOUNTAIN_EARLY_RETURN;
+		fountain_runtime_result(token, runtime_outcome);
+		chaos_next_use_fountain_clear(token);
 		return;
 	}
 
 	if (fate < 10) {
-		chaos_observation_arm(CHAOS_OBS_OP_FOUNTAIN_DRINK,
-			CHAOS_OBS_FACT_WATER_REFRESHED);
-		pline_The("cool draught refreshes you.");
-		chaos_observation_disarm();
-		if(Race_if(PM_INCANTIFIER)) u.uen += rnd(10); /* don't choke on water */
-		else u.uhunger += rnd(10); /* don't choke on water */
-		newuhs(FALSE);
-		if(mgkftn) return;
+		runtime_outcome = CHAOS_FOUNTAIN_NATURAL;
+		fountain_refresh();
+		if (mgkftn) {
+			fountain_runtime_result(token, runtime_outcome);
+			chaos_next_use_fountain_clear(token);
+			return;
+		}
 	} else {
-	    switch (fate) {
+		if (fate >= 19) runtime_outcome = CHAOS_FOUNTAIN_NATIVE_19_30;
+		switch (fate) {
 
 		case 19: /* Self-knowledge */
 
@@ -2214,11 +2249,21 @@ drinkfountain()
 
 		default:
 
-			pline("This tepid water is tasteless.");
+			if (token && token->active && token->root > 0
+			    && token->remap && !token->consumed) {
+				token->consumed = TRUE;
+				runtime_outcome = CHAOS_FOUNTAIN_REMAPPED;
+				fountain_refresh();
+			} else {
+				runtime_outcome = CHAOS_FOUNTAIN_DEFAULT_WITHOUT_INTENT;
+				pline("This tepid water is tasteless.");
+			}
 			break;
 	    }
 	}
 	dryup(u.ux, u.uy, TRUE);
+	fountain_runtime_result(token, runtime_outcome);
+	chaos_next_use_fountain_clear(token);
 }
 
 void

@@ -12268,6 +12268,7 @@ doapply()
 		long root = chaos_observation_begin(CHAOS_OBS_OP_WHISTLING);
 		use_whistle(obj);
 		chaos_observation_end(root);
+		chaos_next_use_whistle_completed(obj, root);
 		(void)root;
 		res = MOVE_PARTIAL;
 		break;
