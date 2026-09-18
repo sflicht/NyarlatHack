@@ -50,6 +50,8 @@ Empty menus and rejected intents leave stock behavior unchanged.
 
 - Human player testing of whether the causal link is recognizable in play.
 - A live, budgeted model-authored composition on an ordinary Bard start.
+  Host-built W/F composition now exists (`chaos/next_use_compose.py`); installing
+  `next_use.lua` is not native admission.
 - Importing or executing `chaos/ordinary_route.py` as a gameplay driver.
 
 Those remain follow-up work: player testing is issue 44; ordinary-play
