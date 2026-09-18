@@ -406,3 +406,20 @@ class GameplayTests(unittest.TestCase):
             visible,
         )
         self.assertEqual(g.quit(), 0)
+
+    def test_next_use_lua_is_consumed_not_admitted(self):
+        g = self.game("next-use-candidate", wizard=True)
+        source = (
+            b"return {\n"
+            b"  on_action = function(context)\n"
+            b'    return {next_use_intent_v=2, op="quiet", state=0}\n'
+            b"  end\n"
+            b"}\n"
+        )
+        path = g.run / "next_use.lua"
+        path.write_bytes(source)
+        path.chmod(0o600)
+        g.start()
+        g.wait_turns(2)
+        self.assertEqual((g.run / "next_use-used.lua").read_bytes(), source)
+        self.assertEqual(g.quit(), 0)
