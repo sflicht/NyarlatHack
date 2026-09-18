@@ -615,7 +615,7 @@ def native(args):
         "complete original production object receipt required",
     )
     require(
-        len(manifest["generated_headers"]) == 125
+        len(manifest["generated_headers"]) == 126
         and "include/date.h" in manifest["generated_headers"],
         "complete frozen header receipt required",
     )
