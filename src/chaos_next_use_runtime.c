@@ -407,8 +407,10 @@ static int validate_admission_envelope(
         || envelope.cost != record->data.admission.cost
         || envelope.variant != variant
         || envelope.at != record->data.admission.at_safe
-        || (long) envelope.at + envelope.ttl > INT_MAX
-        || (long) envelope.at + envelope.ttl
+        || envelope.ttl < 0
+        || record->at_move < 0
+        || record->at_move > INT_MAX - envelope.ttl
+        || record->at_move + envelope.ttl
            != admission->program.program_expiry
         || envelope.operation_count != record->data.admission.operation_count)
         return 0;
@@ -449,6 +451,8 @@ int chaos_next_use_runtime_install(
            != admission->carrier.records[0].program_id
         || admission->program.program_id
            != admission->carrier.records[1].program_id
+        || admission->carrier.records[0].at_move
+           != admission->carrier.records[1].at_move
         || admission->program.program_expiry
            != admission->carrier.records[1].data.admission.program_expiry
         || admission->program.program_expiry < 100
@@ -517,7 +521,7 @@ int chaos_next_use_runtime_install(
     runtime.program_id = admission->program.program_id;
     runtime.next_seq = admission->program.next_private_seq;
     runtime.program_expiry = admission->program.program_expiry;
-    runtime.admission_move = admission->program.program_expiry - 100;
+    runtime.admission_move = admission->carrier.records[1].at_move;
     runtime.variant = variant;
     runtime.whistle_count = whistle_count;
     runtime.fountain_count = fountain_count;
