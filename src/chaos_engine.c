@@ -4,6 +4,7 @@
 #include "chaos_io.h"
 #include "chaos_haunt.h"
 #include "chaos_curio.h"
+#include "chaos_next_use_io.h"
 #ifdef TTY_GRAPHICS
 #include "wintty.h"
 #endif
@@ -123,6 +124,7 @@ void chaos_observe(void) {
     oldsanity = u.usanity; oldinsight = u.uinsight;
     if (threshold) chaos_safe("sanity_threshold");
     chaos_haunt_tick(io.failed ? -1 : io.dir);
+    chaos_next_use_candidate_tick(io.failed ? -1 : io.dir);
 }
 int chaos_ward_count(int count) {
     return chaos_rule(&u.chaos, CHAOS_WARD, moves, count);
