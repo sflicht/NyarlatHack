@@ -11,6 +11,7 @@ from pathlib import Path
 import random
 import time
 
+from .next_use_compose import freeze_menu
 from .protocol import encode_request, parse_request, strict_json
 from .response import normalize_whisper_response
 
@@ -72,6 +73,34 @@ class _BoundedChoice:
             raise TimeoutError("history decision deadline exhausted")
         return menu, prompt
 
+    def _prepare_next_use(self, context, candidates):
+        self.last_receipt = self.last_response = None
+        menu = freeze_menu(candidates)
+        if not menu or self.attempts >= self.max_attempts:
+            return None
+        if (
+            type(context) is not dict
+            or set(context) != _CONTEXT_FIELDS
+            or type(context["history_context_v"]) is not int
+            or context["history_context_v"] != 1
+        ):
+            raise ValueError("public history context required, without host proof")
+        try:
+            prompt = json.dumps(
+                {"context": context, "allowed_requests": menu},
+                allow_nan=False,
+                ensure_ascii=True,
+                sort_keys=True,
+                separators=(",", ":"),
+            )
+        except (TypeError, ValueError, RecursionError) as exc:
+            raise ValueError("bounded JSON public context required") from exc
+        if len((self.instructions + prompt).encode("utf-8")) > 8192:
+            raise ValueError("history prompt exceeds transport byte cap")
+        if time.monotonic() >= self.deadline:
+            raise TimeoutError("history decision deadline exhausted")
+        return menu, prompt
+
 
 class RandomHistoryBackend(_BoundedChoice):
     """Reproducible offline choice, not model-authored evidence."""
@@ -84,6 +113,14 @@ class RandomHistoryBackend(_BoundedChoice):
 
     def choose(self, context, allowed_requests):
         prepared = self._prepare(context, allowed_requests)
+        if prepared is None:
+            return None
+        menu, _ = prepared
+        self.attempts += 1
+        return self.rng.choice(menu)
+
+    def choose_next_use(self, context, candidates):
+        prepared = self._prepare_next_use(context, candidates)
         if prepared is None:
             return None
         menu, _ = prepared
@@ -123,3 +160,23 @@ class OAuthHistoryBackend(_BoundedChoice):
         if request not in menu:
             raise ValueError("history choice is outside the frozen candidate menu")
         return request
+
+    def choose_next_use(self, context, candidates):
+        prepared = self._prepare_next_use(context, candidates)
+        if prepared is None:
+            return None
+        menu, prompt = prepared
+        self.transport.deadline = min(self.deadline, self.transport.deadline)
+        self.attempts += 1
+        content, receipt = self.transport.generate(
+            self.instructions, prompt, return_receipt=True
+        )
+        text = normalize_whisper_response(content, cap=8192)
+        self.last_response = content
+        self.last_receipt = copy.deepcopy(receipt)
+        decoded = strict_json(text, 512)
+        if set(decoded) == {"abstain"} and decoded["abstain"] is True:
+            return None
+        if decoded not in menu:
+            raise ValueError("history choice is outside the frozen candidate menu")
+        return decoded
