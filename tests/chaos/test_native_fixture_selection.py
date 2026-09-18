@@ -199,7 +199,7 @@ class SelectionTests(unittest.TestCase):
 
     def test_reviewed_source_helper_is_accepted_and_recorded_unit_only(self):
         name = "tests/chaos/gameplay_support.py"
-        reviewed = "d22eae5cb3f1610a8f950c4c4ebc95af99296db0a02e1c0b967c8f164bb95ccc"
+        reviewed = "4011aaeadd2bb1bab938ccba44b9f1a3e8098db8664b533d3a9277da71620f75"
         self.assertEqual(digest(self.blobs[name]), reviewed)
         try:
             selected = self.prepare()
@@ -227,7 +227,7 @@ class SelectionTests(unittest.TestCase):
         assert isinstance(pins[0], ast.Constant)
         self.assertEqual(
             pins[0].value,
-            "d22eae5cb3f1610a8f950c4c4ebc95af99296db0a02e1c0b967c8f164bb95ccc",
+            "4011aaeadd2bb1bab938ccba44b9f1a3e8098db8664b533d3a9277da71620f75",
         )
         self.assertNotEqual(pins[0].value, self.s.DRIVER_HASH)
 

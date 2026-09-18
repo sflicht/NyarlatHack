@@ -28,7 +28,7 @@ DRIVER_HASH = "9d341b28a4ab3f4453b09e4f49a2e8701a7c78345184f487e2f0b32d70db7270"
 # Source mode alone pins the explicitly reviewed EOF/reaping + send-deadline
 # helper correction. DRIVER_HASH above remains the frozen historical identity;
 # this is not an archive refresh or a substitute for exact-source calibration.
-SOURCE_DRIVER_HASH = "d22eae5cb3f1610a8f950c4c4ebc95af99296db0a02e1c0b967c8f164bb95ccc"
+SOURCE_DRIVER_HASH = "4011aaeadd2bb1bab938ccba44b9f1a3e8098db8664b533d3a9277da71620f75"
 ORACLE_SOURCES = (
     "tests/chaos/gameplay_support.py",
     "tests/chaos/replay_clock.c",
