@@ -6,7 +6,9 @@
 
 #include "hack.h"
 #include "chaos.h"
+#ifdef CHAOS
 #include "chaos_next_use_runtime.h"
+#endif
 #include "artifact.h"
 
 

@@ -98,5 +98,7 @@ boolean chaos_tty_publication_certificate(xchar x, xchar y,
 #define chaos_whistle_witness_finalize(mtmp,witness) ((void)0)
 #define chaos_next_use_on_manifestation(witness,end_seq) ((void)0)
 #define chaos_tty_publication_certificate(x,y,expected_glyph) (FALSE)
+#define tty_snapshot_projectable(x,y,glyph) (FALSE)
+#define chaos_next_use_fountain_result(token,outcome) ((void)0)
 #endif
 #endif
