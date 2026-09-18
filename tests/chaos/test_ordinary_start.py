@@ -7,7 +7,7 @@ from chaos.ordinary_start import OPTIONS, reject_wizard_args
 
 class OrdinaryStartTests(unittest.TestCase):
     def test_options_name_a_human_bard_with_dog(self):
-        self.assertIn("role:Bard", OPTIONS)
+        self.assertIn("role:Brd", OPTIONS)
         self.assertIn("race:human", OPTIONS)
         self.assertIn("pettype:dog", OPTIONS)
         self.assertNotIn("Wizard", OPTIONS)

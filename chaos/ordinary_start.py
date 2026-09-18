@@ -1,7 +1,7 @@
 """Ordinary Bard start identity. No wizard mode and no model call."""
 
 OPTIONS = (
-    "name:ChaosReview,role:Bard,race:human,gender:male,align:neutral,"
+    "name:ChaosReview,role:Brd,race:human,gender:male,align:neutral,"
     "pettype:dog,windowtype:tty,!news,!legacy,time,!splash_screen,"
     "!perm_invent,!autopickup"
 )

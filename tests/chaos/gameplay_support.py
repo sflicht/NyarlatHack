@@ -28,11 +28,11 @@ class Game:
         preload,
         observe=True,
         wizard=False,
-        ordinary=False,
         root=None,
         echoes=True,
         launcher_options=None,
         launcher_fresh=False,
+        ordinary=False,
     ):
         """Leave run absent for fresh launch; explicitly set launcher_fresh=False
         before a later reuse start. Never infer the mode from path existence.
@@ -246,9 +246,11 @@ class Game:
         pid, fd = pty.fork()
         if pid == 0:
             os.chdir(self.game)
-            if str(ROOT) not in sys.path:
-                sys.path.insert(0, str(ROOT))
-            from chaos.ordinary_start import OPTIONS as ordinary_options
+            ordinary_options = None
+            if self.ordinary:
+                if str(ROOT) not in sys.path:
+                    sys.path.insert(0, str(ROOT))
+                from chaos.ordinary_start import OPTIONS as ordinary_options
 
             env = dict(
                 os.environ,
