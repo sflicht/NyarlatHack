@@ -10,11 +10,12 @@ struct chaos_observation_token { long root; int fact; };
 struct chaos_whistle_witness {
     long root, notice_seq;
     struct chaos_observation_token message_token;
-    xchar oldx, oldy, newx, newy;
+    int oldx, oldy, newx, newy;
     int pre_glyph, post_glyph;
-    boolean production, active, classifier_ok, pre_public;
-    boolean manifestation_delivered, displaced, invalid, finalized;
+    int production, active, classifier_ok, pre_public;
+    int manifestation_delivered, displaced, invalid, finalized;
 };
+void chaos_bind_drinkfountain_token(struct chaos_fountain_token *);
 #ifdef CHAOS
 #include "chaos_shadow.h"
 void chaos_start(void);

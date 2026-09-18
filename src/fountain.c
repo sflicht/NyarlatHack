@@ -2046,6 +2046,15 @@ lava:
 	}
 }
 
+static struct chaos_fountain_token *bound_drinkfountain_token;
+
+void
+chaos_bind_drinkfountain_token(token)
+struct chaos_fountain_token *token;
+{
+	bound_drinkfountain_token = token;
+}
+
 static void
 fountain_runtime_result(token, outcome)
 const struct chaos_fountain_token *token;
@@ -2074,9 +2083,9 @@ fountain_refresh()
 }
 
 void
-drinkfountain(token)
-struct chaos_fountain_token *token;
+drinkfountain()
 {
+	struct chaos_fountain_token *token = bound_drinkfountain_token;
 	/* What happens when you drink from a fountain? */
 	register boolean mgkftn = (levl[u.ux][u.uy].blessedftn == 1);
 	register int fate = rnd(30);

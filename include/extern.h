@@ -1175,7 +1175,7 @@ E boolean FDECL(have_blood_smithing_x, (struct obj *, int));
 E boolean FDECL(get_blood_smithing_x, (int, struct obj **, int *));
 E boolean NDECL(check_undead_hunter_weapon_skills);
 E void NDECL(expert_undead_hunter_skill);
-E void FDECL(drinkfountain, (struct chaos_fountain_token *));
+E void NDECL(drinkfountain);
 E void FDECL(dipfountain, (struct obj *));
 E void FDECL(breakforge, (int, int));
 E void NDECL(drinkforge);

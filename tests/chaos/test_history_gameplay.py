@@ -610,7 +610,7 @@ def native(args):
         "compiled base identity mismatch",
     )
     require(
-        len(manifest["objects"]) == 156
+        len(manifest["objects"]) == 159
         and "sys/unix/unixmain.o" in manifest["objects"],
         "complete original production object receipt required",
     )

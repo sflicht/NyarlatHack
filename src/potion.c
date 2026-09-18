@@ -459,10 +459,9 @@ dodrink()
 #endif
 			confirmed = chaos_next_use_fountain_contact(completed_root, &token);
 			root = chaos_observation_begin(CHAOS_OBS_OP_FOUNTAIN_DRINK);
-			if (confirmed)
-				drinkfountain(& token);
-			else
-				drinkfountain(NULL);
+			chaos_bind_drinkfountain_token(confirmed ? &token : (struct chaos_fountain_token *)0);
+			drinkfountain();
+			chaos_bind_drinkfountain_token((struct chaos_fountain_token *)0);
 			chaos_observation_end(root);
 			(void)root; /* CHAOS-off end does not evaluate its argument. */
 			return MOVE_QUAFFED;
