@@ -21,4 +21,21 @@ src/attrib.c returns while u.veil; else add delta, clamp at 0, no upper cap.
 Init u.uinsight=0 and u.veil=TRUE (src/u_init.c). Lua cannot query veil or map.
 MEASURED none here. UNKNOWN veil-lift timing and typical Insight.
 
-Do not invent typical Sanity/Insight. W/F notes wait on #60/#61.
+Do not invent typical Sanity/Insight.
+
+W whistle attention
+LEGAL quiet or whistle_attention; state 0..3; one delay; cost 1; TTL 100;
+one W slot. Id next-use-v2-W is protocol, not player prose.
+SOURCE ordinary WHISTLE capture; extra attention only if
+A+5 <= monstermoves < A+10 and bound m_id matches. Quiet/wrong-family/no
+companion do not arm. Lua context has no hidden target or fate.
+MEASURED linked dog_move extra-attention vs no-candidate. UNKNOWN ordinary
+qualify rate.
+
+F fountain remap
+LEGAL quiet or fountain_refresh; cost 1; TTL 100; one F slot.
+SOURCE drinkfountain remaps fate 10-18 once; 9 natural; 19 native;
+levitation cannot-reach. Lua has no fate field.
+MEASURED remap vs tepid RNG. UNKNOWN ordinary drink rate.
+
+NOT exposed: veil, hidden map, fountain fate, private runtime records.
