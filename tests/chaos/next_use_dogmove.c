@@ -196,10 +196,30 @@ static int run_case(const char *name, const char *dirpath)
     witness.production = strcmp(name, "noprod") != 0;
     arm = 0;
     if (strcmp(name, "none") && strcmp(name, "bypass")
-        && strcmp(name, "safemiss") && strcmp(name, "safehit")) {
+        && strcmp(name, "safemiss") && strcmp(name, "safehit")
+        && strcmp(name, "obsorigin")) {
         arm = admit_and_act(dirpath, &pet, &telegraphs,
                             strcmp(name, "nonepet") != 0);
         if (arm < 0) return 2;
+    }
+    if (!strcmp(name, "obsorigin")) {
+        long root;
+
+        u.chaos.seq = 9;
+        root = chaos_observation_begin(CHAOS_OBS_OP_WHISTLING);
+        chaos_observation_arm(CHAOS_OBS_OP_WHISTLING, CHAOS_OBS_FACT_SOUND_HIGH);
+        You("produce a high whistling sound.");
+        chaos_observation_disarm();
+        chaos_observation_end(root);
+        setenv("NYARLATHACK_NEXT_USE_ADMIT", "1", 1);
+        u.chaos.safe = 6;
+        chaos_safe("level_enter");
+        if (u.chaos.spent == 1) {
+            int acted = chaos_next_use_on_action(CHAOS_NEXT_USE_FAMILY_W, 10, 0);
+            if (acted)
+                chaos_next_use_capture_whistle(10, pet.m_id, 40);
+            arm = acted ? 2 : 1;
+        }
     }
     if (!strcmp(name, "safemiss") || !strcmp(name, "safehit")) {
         char run[65];
