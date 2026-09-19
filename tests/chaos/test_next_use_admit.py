@@ -112,6 +112,12 @@ class NextUseAdmitTests(unittest.TestCase):
         self.assertEqual(row["install"], 1)
         self.assertFalse(row["ready"])
 
+    def test_consumed_slot_does_not_resurrect(self):
+        row = self.run_mode("no-resurrect")
+        self.assertEqual(row["install"], 1)
+        self.assertFalse(row["reinstall"])
+        self.assertFalse(row["ready"])
+
     def test_quiet_consumes_w_slot(self):
         row = self.run_mode("quiet-w")
         self.assertEqual(row["admit"], 0)

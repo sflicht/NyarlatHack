@@ -518,6 +518,8 @@ int chaos_next_use_runtime_install(
         || strcmp(admission->carrier.records[0].source_sha256,
                   source_sha256) != 0)
         return 0;
+    if (runtime.program_id != 0)
+        return 0;
     chaos_next_use_runtime_reset();
     if (!import_admission_carrier(admission)) {
         chaos_next_use_runtime_reset();
