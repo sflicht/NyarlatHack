@@ -62,6 +62,9 @@ void chaos_next_use_on_manifestation(const struct chaos_whistle_witness *witness
 boolean tty_snapshot_projectable(xchar x, xchar y, int glyph);
 boolean chaos_tty_publication_certificate(xchar x, xchar y,
                                            int expected_glyph);
+void chaos_next_use_save(int fd);
+int chaos_next_use_restore(int fd);
+void chaos_next_use_safe_mark_restored(void);
 #else
 #define chaos_shadow_active() (0)
 #define chaos_shadow_end(died) ((void)0)
@@ -101,5 +104,8 @@ boolean chaos_tty_publication_certificate(xchar x, xchar y,
 #define chaos_tty_publication_certificate(x,y,expected_glyph) (FALSE)
 #define tty_snapshot_projectable(x,y,glyph) (FALSE)
 #define chaos_next_use_fountain_result(token,outcome) ((void)0)
+#define chaos_next_use_save(fd) ((void)0)
+#define chaos_next_use_restore(fd) (1)
+#define chaos_next_use_safe_mark_restored() ((void)0)
 #endif
 #endif
