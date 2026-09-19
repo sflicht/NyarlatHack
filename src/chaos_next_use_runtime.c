@@ -1403,6 +1403,10 @@ int chaos_next_use_snapshot_validate(const struct chaos_next_use_snapshot *in)
     if ((in->slot_w == CHAOS_SLOT_W_PENDING && in->origin_w <= 0)
         || (in->slot_f == CHAOS_SLOT_F_PENDING && in->origin_f <= 0))
         return 0;
+    if ((in->slot_w == CHAOS_SLOT_W_PENDING
+         || in->slot_f == CHAOS_SLOT_F_PENDING)
+        && in->callback_ordinal > 0)
+        return 0;
     return 1;
 }
 

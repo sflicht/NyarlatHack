@@ -15,6 +15,9 @@ class NextUseSnapshotTests(unittest.TestCase):
         cls.build = tempfile.TemporaryDirectory(prefix="nyarl-next-use-snapshot-")
         cls.addClassCleanup(cls.build.cleanup)
         cls.binary = Path(cls.build.name) / "next-use-snapshot"
+        flags = subprocess.check_output(
+            ["pkg-config", "--cflags", "--libs", "lua5.4"], text=True
+        ).split()
         command = [
             "/usr/bin/gcc",
             "-DCHAOS",
@@ -31,7 +34,9 @@ class NextUseSnapshotTests(unittest.TestCase):
             str(ROOT / "src/chaos_next_use_admission.c"),
             str(ROOT / "src/chaos_next_use_runtime.c"),
             str(ROOT / "src/chaos_protocol.c"),
+            str(ROOT / "src/chaos_lua.c"),
             "-Wl,--gc-sections",
+            *flags,
             "-lm",
             "-o",
             str(cls.binary),
@@ -69,6 +74,16 @@ class NextUseSnapshotTests(unittest.TestCase):
         self.assertEqual(rows[-1]["validated"], 0)
         self.assertEqual(rows[-1]["imported"], 0)
         self.assertEqual(rows[-1]["live_program"], 1)
+
+    def test_consumed_invalid_roundtrip_cannot_revive(self):
+        rows = self.run_mode("consumed_invalid")
+        after = next(row for row in rows if row["tag"] == "after_invalid")
+        imported = next(row for row in rows if row["tag"] == "imported_invalid")
+        resurrect = next(row for row in rows if row["tag"] == "resurrect")
+        self.assertEqual(after["slot_w"], 5)
+        self.assertEqual(imported["slot_w"], 5)
+        self.assertEqual(imported["sha"], after["sha"])
+        self.assertEqual(resurrect["validated"], 0)
 
 
 if __name__ == "__main__":

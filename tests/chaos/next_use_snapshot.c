@@ -157,5 +157,27 @@ int main(int argc, char **argv)
         return installed && !validated && !imported && exported
                && live.program_id == 1 ? 0 : 1;
     }
+    if (!strcmp(mode, "consumed_invalid")) {
+        struct chaos_fountain_token token;
+        int acted;
+
+        monstermoves = 40;
+        memset(&token, 0, sizeof token);
+        acted = chaos_next_use_on_action(CHAOS_NEXT_USE_FAMILY_W, 10, &token);
+        exported = chaos_next_use_snapshot_export(&snap);
+        print_snap("after_invalid", exported, &snap);
+        chaos_next_use_runtime_reset();
+        imported = chaos_next_use_snapshot_import(&snap);
+        exported = chaos_next_use_snapshot_export(&live);
+        print_snap("imported_invalid", imported && exported, &live);
+        snap.slot_w = CHAOS_SLOT_W_PENDING;
+        validated = chaos_next_use_snapshot_validate(&snap);
+        printf("{\"tag\":\"resurrect\",\"validated\":%d,\"acted\":%d}\n",
+               validated, acted);
+        return installed && imported && exported
+               && live.slot_w == CHAOS_SLOT_W_CONSUMED_INVALID
+               && live.slot_w != CHAOS_SLOT_W_PENDING
+               && !validated ? 0 : 1;
+    }
     return 2;
 }
