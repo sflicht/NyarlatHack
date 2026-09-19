@@ -15,3 +15,8 @@ it does not admit, debit, evaluate Lua, or draw RNG.
 
 Transport `engine_run_hex` is process-local. Logical game identity is separate
 (#92). A changed snapshot version is rejected, never reinterpreted.
+
+Native save/restore (#64) writes magic `NUS1` after `struct you`. Missing magic
+or a failed snapshot is an incompatible CHAOS save; the original file is
+preserved. Restore marks admission settled so a leftover candidate cannot
+debit again.

@@ -322,6 +322,9 @@ register int fd, mode;
 	flags.end_around = has_loaded_bones;
 	bwrite(fd, (genericptr_t) &flags, sizeof(struct flag));
 	bwrite(fd, (genericptr_t) &u, sizeof(struct you));
+#ifdef CHAOS
+	chaos_next_use_save(fd);
+#endif
 	bwrite(fd, (genericptr_t) &youmonst, sizeof(struct monst));
 	if (youmonst.light)
 		save_lightsource(youmonst.light, fd, mode);

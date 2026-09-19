@@ -10253,7 +10253,7 @@
         "fd",
         ")",
         ";",
-        "#"
+        "if"
       ],
       "guards": [
         "ifdef CHAOS"
@@ -12496,6 +12496,121 @@
       ],
       "count": 1,
       "chaos0": "Present in CHAOS-off; no-op or type-only."
+    },
+    {
+      "id": "hook-0403",
+      "file": "src/restore.c",
+      "symbol": "restgamestate",
+      "kind": "call-or-declaration",
+      "purpose": "restgamestate: restore next-use snapshot or reject",
+      "signature": [
+        ")",
+        ";",
+        "if",
+        "(",
+        "!",
+        "chaos_next_use_restore",
+        "(",
+        "fd",
+        ")",
+        ")",
+        "return"
+      ],
+      "guards": [
+        "ifdef CHAOS"
+      ],
+      "count": 1,
+      "chaos0": "Compiled out by enclosing CHAOS condition (with any additional guards retained in guards)."
+    },
+    {
+      "id": "hook-0404",
+      "file": "src/restore.c",
+      "symbol": "restgamestate",
+      "kind": "call-or-declaration",
+      "purpose": "restgamestate: invalid next-use snapshot preserves save",
+      "signature": [
+        "(",
+        "fd",
+        ")",
+        ")",
+        "return",
+        "chaos_restore_reject",
+        "(",
+        "fd",
+        ")",
+        ";",
+        "chaos_next_use_safe_mark_restored"
+      ],
+      "guards": [
+        "ifdef CHAOS"
+      ],
+      "count": 1,
+      "chaos0": "Compiled out by enclosing CHAOS condition (with any additional guards retained in guards)."
+    },
+    {
+      "id": "hook-0405",
+      "file": "src/restore.c",
+      "symbol": "restgamestate",
+      "kind": "call-or-declaration",
+      "purpose": "restgamestate: restored program settles candidate latch",
+      "signature": [
+        "chaos_restore_reject",
+        "(",
+        "fd",
+        ")",
+        ";",
+        "chaos_next_use_safe_mark_restored",
+        "(",
+        ")",
+        ";",
+        "#",
+        "endif"
+      ],
+      "guards": [
+        "ifdef CHAOS"
+      ],
+      "count": 1,
+      "chaos0": "Compiled out by enclosing CHAOS condition (with any additional guards retained in guards)."
+    },
+    {
+      "id": "hook-0406",
+      "file": "src/save.c",
+      "symbol": "<file>",
+      "kind": "directive",
+      "purpose": "<file>: compile next-use save hook only with CHAOS",
+      "signature": [
+        "#",
+        "ifdef",
+        "CHAOS"
+      ],
+      "guards": [],
+      "count": 1,
+      "chaos0": "Omitted when CHAOS is undefined; stock save layout remains unchanged."
+    },
+    {
+      "id": "hook-0407",
+      "file": "src/save.c",
+      "symbol": "<file>",
+      "kind": "call-or-declaration",
+      "purpose": "<file>: write next-use snapshot after struct you",
+      "signature": [
+        ")",
+        ";",
+        "#",
+        "ifdef",
+        "CHAOS",
+        "chaos_next_use_save",
+        "(",
+        "fd",
+        ")",
+        ";",
+        "#"
+      ],
+      "guards": [
+        "ifdef CHAOS"
+      ],
+      "count": 1,
+      "chaos0": "Compiled out by enclosing CHAOS condition (with any additional guards retained in guards)."
     }
   ],
   "build_blocks": [

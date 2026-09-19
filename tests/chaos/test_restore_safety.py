@@ -55,6 +55,9 @@ static struct { struct chaos_state chaos; int haunt, curio; } u;
 static long moves;
 static int chaos_haunt_valid(int *v) { return !*v; }
 static int chaos_curio_valid(int *v) { return !*v; }
+static int next_use_restore_ok = 1;
+static int chaos_next_use_restore(int fd) { (void)fd; return next_use_restore_ok; }
+static void chaos_next_use_safe_mark_restored(void) {}
 static int close(int fd) { assert(fd == 42); closed++; return 0; }
 static const char *fqname(const char *s, int p, int n) { (void)p; (void)n; return s; }
 static int chmod(const char *s, int m) { (void)s; mode = m; return 0; }
@@ -98,6 +101,8 @@ int main(void) {
     chaos_state_init(&u.chaos); u.haunt = 1; probe(1);
     u.haunt = 0; u.curio = 1; probe(1);
     u.curio = 0; probe(0);
+    next_use_restore_ok = 0; probe(1);
+    next_use_restore_ok = 1; probe(0);
     return 0;
 }
 """

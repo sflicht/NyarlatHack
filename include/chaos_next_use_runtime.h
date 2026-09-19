@@ -235,6 +235,7 @@ struct chaos_next_use_snapshot {
     unsigned long replay_cursor;
     long origin_w, origin_f;
     long origin_w_deadline, origin_f_deadline;
+    long run_token, level_token;
     size_t source_length;
     char source_sha256[65];
     char source[CHAOS_NEXT_USE_SOURCE_MAX + 1];
@@ -245,5 +246,7 @@ int chaos_next_use_snapshot_validate(const struct chaos_next_use_snapshot *);
 int chaos_next_use_snapshot_import(const struct chaos_next_use_snapshot *);
 int chaos_next_use_snapshot_write(int fd, const struct chaos_next_use_snapshot *);
 int chaos_next_use_snapshot_read(int fd, struct chaos_next_use_snapshot *);
+void chaos_next_use_save(int fd);
+int chaos_next_use_restore(int fd);
 
 #endif
