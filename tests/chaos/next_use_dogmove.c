@@ -187,10 +187,15 @@ static int run_case(const char *name, const char *dirpath)
     memset(&witness, 0, sizeof witness);
     witness.production = strcmp(name, "noprod") != 0;
     arm = 0;
-    if (strcmp(name, "none") && strcmp(name, "bypass")) {
+    if (strcmp(name, "none") && strcmp(name, "bypass")
+        && strcmp(name, "safemiss")) {
         arm = admit_and_act(dirpath, &pet, &telegraphs,
                             strcmp(name, "nonepet") != 0);
         if (arm < 0) return 2;
+    }
+    if (!strcmp(name, "safemiss")) {
+        setenv("NYARLATHACK_NEXT_USE_ADMIT", "1", 1);
+        chaos_safe("level_enter");
     }
     monstermoves = 45;
     if (!strcmp(name, "late"))
@@ -232,7 +237,7 @@ static int run_case(const char *name, const char *dirpath)
             "\"displaced\":%d,\"delivered\":%d,\"pre_public\":%d,"
             "\"reseed\":%d,\"rng_next\":%d,\"snapshot\":%d,\"windowed\":%d,"
             "\"pre_glyph\":%d,\"post_glyph\":%d,\"invalid\":%d,\"classifier\":%d,"
-            "\"root\":%ld,\"notice\":%ld}\n",
+            "\"root\":%ld,\"notice\":%ld,\"spent\":%d}\n",
             name, ox, oy, pet.mx, pet.my, rc, arm, telegraphs, ready,
             chaos_next_use_whistle_decision_ready(pet.m_id),
             chaos_next_use_whistle_decision_ready(orig_id),
@@ -241,7 +246,7 @@ static int run_case(const char *name, const char *dirpath)
             witness.pre_public, reseed_count, rn2(100000),
             snapshot, windowed, pre_glyph, witness.post_glyph,
             witness.invalid, witness.classifier_ok,
-            witness.root, witness.notice_seq);
+            witness.root, witness.notice_seq, u.chaos.spent);
         fclose(out);
     }
     return 0;
