@@ -15,6 +15,14 @@ _ENGINE_FACTS = {"W": "ordinary_whistle", "F": "water_refreshed"}
 _TELEGRAPH = {"W": "next-use-v2-W", "F": "next-use-v2-F"}
 
 
+def engine_run_hex(directory):
+    """Same 64-hex run identity chaos_engine next_use_bind_owned emits."""
+    st = os.stat(directory, follow_symlinks=False)
+    dev = st.st_dev & 0xFFFFFFFFFFFFFFFF
+    ino = st.st_ino & 0xFFFFFFFFFFFFFFFF
+    return f"{dev:016x}{ino:016x}{dev:016x}{ino:016x}"
+
+
 def _hex64(value):
     return (
         type(value) is str
