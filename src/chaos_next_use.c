@@ -913,6 +913,16 @@ int chaos_next_use_sha256(const void *data,size_t length,unsigned char digest[32
     if((!data&&length)||!digest)return CHAOS_NEXT_USE_NULL_ARGUMENT;memset(&state,0,sizeof state);memcpy(state.h,initial,sizeof initial);sha256_update(&state,(const unsigned char*)data,length);sha256_final(&state,digest);memset(&state,0,sizeof state);return CHAOS_NEXT_USE_OK;
 }
 
+int chaos_next_use_format_logical_id(unsigned long long birthday,
+                                    char out[CHAOS_NEXT_USE_LOGICAL_HEX + 1])
+{
+    if (!out) return 0;
+    if (snprintf(out, CHAOS_NEXT_USE_LOGICAL_HEX + 1, "%016llx", birthday)
+        != CHAOS_NEXT_USE_LOGICAL_HEX)
+        return 0;
+    return 1;
+}
+
 const char *chaos_next_use_player_warning(const char *identifier)
 {
     if (!identifier) return 0;

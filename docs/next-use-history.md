@@ -188,6 +188,19 @@ This slice does not claim save/restore or replay.
 
 Empty menus and rejected intents leave stock behavior unchanged.
 
+## Identity
+
+Four identities stay distinct:
+
+- **Logical game:** `u.ubirthday` formatted as 16 lowercase hex
+  (`chaos_next_use_format_logical_id`). This is the existing engine birth time,
+  not a new RNG-derived token.
+- **Candidate/program:** envelope `id`, source SHA-256, and Lua source bytes.
+- **Native target/level:** `u.uz` and companion `m_id` where W requires one.
+- **Transport directory:** `engine_run_hex()` from `st_dev`+`st_ino`. That
+  binding is local to the current mailbox directory. It is not the saved-game
+  identity. Persistence must not freeze inode/device as the logical game.
+
 ## What this slice does not include
 
 - Human player testing of whether the causal link is recognizable in play.

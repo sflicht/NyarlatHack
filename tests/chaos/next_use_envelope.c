@@ -22,6 +22,18 @@ int main(int argc, char **argv)
         return 0;
     }
     if (argc != 2 && argc != 3) return 2;
+    if (argc == 3 && !strcmp(argv[2], "logical")) {
+        char id[CHAOS_NEXT_USE_LOGICAL_HEX + 1];
+        unsigned long long birthday;
+        char extra = 0;
+
+        if (sscanf(argv[1], "%llu%c", &birthday, &extra) != 1)
+            return 2;
+        if (!chaos_next_use_format_logical_id(birthday, id))
+            return 2;
+        printf("%s\n", id);
+        return 0;
+    }
     dir = open(argv[1], O_RDONLY | O_DIRECTORY);
     if (dir < 0) return 2;
     if (argc == 3 && !strcmp(argv[2], "runhex")) {
