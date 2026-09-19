@@ -66,6 +66,11 @@ class NextUseAdmitTests(unittest.TestCase):
         self.assertEqual(row["spent"], 1)
         self.assertEqual(row["install"], 0)
         self.assertEqual(row["phase"], 4)  # TERMINATED
+        # Admission enums, not runtime CHAOS_SLOT_W_* (TRANSPORT there is 9):
+        # CHAOS_SLOT_TERMINATED_TRANSPORT = 11, CHAOS_W_TRANSPORT_TERMINATED = 7.
+        self.assertEqual(row["slot_w"], 11)
+        self.assertEqual(row["slot_f"], 0)
+        self.assertEqual(row["w_runtime"], 7)
 
     def test_second_call_does_not_charge_again(self):
         row = self.run_mode("second-call")

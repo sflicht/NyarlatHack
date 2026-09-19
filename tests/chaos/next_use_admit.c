@@ -280,9 +280,11 @@ int main(int argc, char **argv)
         admit_rc = admit_program(7, 40, 123, 100, &first, canonical,
                                  &canonical_length, receipt_fail);
         installed = install_program(&first, 123);
-        printf("{\"admit\":%d,\"spent\":%d,\"phase\":%d,\"install\":%d}\n",
+        printf("{\"admit\":%d,\"spent\":%d,\"phase\":%d,\"install\":%d,"
+               "\"slot_w\":%d,\"slot_f\":%d,\"w_runtime\":%d}\n",
                admit_rc, first.budget_state.spent, first.program.phase,
-               installed);
+               installed, first.program.slot_w, first.program.slot_f,
+               first.program.w_runtime);
         return 0;
     }
     if (argc >= 2 && !strcmp(argv[1], "second-call")) {
