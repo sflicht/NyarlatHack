@@ -85,6 +85,16 @@ class NextUseSnapshotTests(unittest.TestCase):
         self.assertEqual(imported["sha"], after["sha"])
         self.assertEqual(resurrect["validated"], 0)
 
+    def test_roundtrip_pending_f(self):
+        rows = self.run_mode("roundtrip_f")
+        after = next(row for row in rows if row["tag"] == "after_install_f")
+        imported = next(row for row in rows if row["tag"] == "after_import_f")
+        self.assertEqual(after["slot_w"], 0)
+        self.assertEqual(after["slot_f"], 1)
+        self.assertEqual(imported["slot_f"], 1)
+        self.assertEqual(imported["slot_w"], 0)
+        self.assertEqual(imported["sha"], after["sha"])
+
 
 if __name__ == "__main__":
     unittest.main()
