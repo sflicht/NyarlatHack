@@ -1,5 +1,6 @@
 """ENGINE-UNIT: next-use replay rejects skipped/tampered records."""
 
+import hashlib
 import json
 from pathlib import Path
 import subprocess
@@ -76,6 +77,40 @@ class NextUseReplayTests(unittest.TestCase):
         self.assertEqual(row["restored"], 1)
         self.assertEqual(row["status"], 1)
         self.assertEqual(row["slot_w"], 1)
+
+    def test_replay_applies_w_quiet_once(self):
+        row = self.run_mode("apply_w")[0]
+        self.assertEqual(row["status"], 0)
+        self.assertEqual(row["second"], 1)
+        declared = b'{"next_use_intent_v":2,"op":"quiet","state":0}'
+        self.assertEqual(row["intent_sha"], hashlib.sha256(declared).hexdigest())
+
+    def test_replay_applies_f_once(self):
+        row = self.run_mode("apply_f")[0]
+        self.assertEqual(row["status"], 0)
+        self.assertEqual(row["second"], 1)
+        declared = b'{"next_use_intent_v":2,"op":"fountain_refresh","state":0}'
+        self.assertEqual(row["intent_sha"], hashlib.sha256(declared).hexdigest())
+
+    def test_replay_applies_two_slot_w_then_blocks_repeat(self):
+        row = self.run_mode("apply_wf")[0]
+        self.assertEqual(row["status"], 0)
+        self.assertEqual(row["second"], 1)
+        declared = b'{"next_use_intent_v":2,"op":"quiet","state":0}'
+        self.assertEqual(row["intent_sha"], hashlib.sha256(declared).hexdigest())
+
+    def test_replay_after_save_restore_applies_once(self):
+        row = self.run_mode("apply_w_save")[0]
+        self.assertEqual(row["restored"], 1)
+        self.assertEqual(row["status"], 0)
+        self.assertEqual(row["second"], 1)
+        declared = b'{"next_use_intent_v":2,"op":"quiet","state":0}'
+        self.assertEqual(row["intent_sha"], hashlib.sha256(declared).hexdigest())
+
+    def test_independently_wrong_intent_digest_is_blocked(self):
+        row = self.run_mode("apply_w_bad_intent")[0]
+        self.assertEqual(row["status"], 1)
+        self.assertEqual(row["second"], 1)
 
 
 if __name__ == "__main__":

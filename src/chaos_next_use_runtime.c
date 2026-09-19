@@ -1455,6 +1455,7 @@ int chaos_next_use_snapshot_import(const struct chaos_next_use_snapshot *in)
     copy_hash(live_runtime.source_sha256, in->source_sha256);
     memcpy(live_runtime.source, in->source, in->source_length);
     live_runtime.source[in->source_length] = '\0';
+    replay_runtime = live_runtime;
     return 1;
 }
 
