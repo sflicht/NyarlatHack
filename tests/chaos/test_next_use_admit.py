@@ -118,6 +118,12 @@ class NextUseAdmitTests(unittest.TestCase):
         self.assertEqual(row["install"], 1)
         self.assertFalse(row["ready"])
 
+    def test_ticks_after_consume_do_not_act_or_spend(self):
+        row = self.run_mode("ticks")
+        self.assertEqual(row["install"], 1)
+        self.assertEqual(row["extra"], 0)
+        self.assertEqual(row["spent_delta"], 0)
+
     def test_expired_w_slot_is_not_ready(self):
         row = self.run_mode("expire-w")
         self.assertEqual(row["admit"], 0)
