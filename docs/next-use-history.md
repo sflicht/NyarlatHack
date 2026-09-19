@@ -77,10 +77,14 @@ removed and are not success.
 
 Irreversible commit is `chaos_next_use_debit` succeeding inside
 `chaos_next_use_admit`: spend increases by the operation-count price and is not
-refunded. Receipt delivery runs after that point. A failed receipt terminates
-the program without installing a live mechanic. Precommit schema/budget
-failures leave the caller's spend unchanged. The admission unit does not apply
-native W/F effects; install is a separate runtime step.
+refunded. One W or F costs 1; a two-operation W+F envelope costs 2. Receipt
+delivery runs after that point. A failed receipt terminates the program without
+installing a live mechanic. Precommit schema/budget/carrier-capacity failures
+leave the caller's spend unchanged. A committed install failure does not refund
+spend, does not rewind private-record sequence, and does not overwrite an
+unrelated already-active runtime. Parser rejects duplicate operations and
+malformed origin clocks. The admission unit does not apply native W/F effects;
+install is a separate runtime step.
 
 ### Envelope handoff
 
