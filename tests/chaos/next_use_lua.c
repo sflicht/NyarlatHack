@@ -95,6 +95,15 @@ int main(int argc, char **argv)
         print_intent(status, &intent);
         return 0;
     }
+    if (!strcmp(argv[1], "hidden-fate")) {
+        const char *s = "return {on_action=function(c) "
+                        "if c.fate ~= nil or c.rnd ~= nil or c.outcome ~= nil then "
+                        "return {next_use_intent_v=2, op=\"delay\", state=0} end "
+                        "return {next_use_intent_v=2, op=\"quiet\", state=0} end}";
+        status = chaos_lua_next_use_on_action(s, strlen(s), &context, &intent);
+        print_intent(status, &intent);
+        return 0;
+    }
     if (!strcmp(argv[1], "loop")) {
         const char *s = "return {on_action=function(c) while true do end end}";
         status = chaos_lua_next_use_on_action(s, strlen(s), &context, &intent);
