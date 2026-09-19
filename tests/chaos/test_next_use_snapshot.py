@@ -137,6 +137,12 @@ class NextUseSnapshotTests(unittest.TestCase):
         self.assertEqual(after["restored"], 1)
         self.assertEqual(after["exported"], 0)
 
+    def test_restore_wrong_level_terminates(self):
+        rows = self.run_mode("restore_level")
+        after = next(row for row in rows if row["tag"] == "after_level")
+        self.assertEqual(after["ok"], 1)
+        self.assertEqual(after["slot_w"], 8)
+
 
 if __name__ == "__main__":
     unittest.main()
