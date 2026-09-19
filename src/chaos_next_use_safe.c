@@ -219,6 +219,10 @@ int chaos_next_use_safe_try(const struct chaos_next_use_safe_request *request,
         return finish(result, CHAOS_NEXT_USE_ADMISSION_NOT_OPEN);
     }
     settled = 1;
+    if (envelope.operation_count != 1) {
+        result->rejected = 1;
+        return finish(result, CHAOS_NEXT_USE_ADMISSION_SCHEMA);
+    }
     origin = &envelope.origin_refs[0];
     if (origin->move < 0 || origin->move > 2147483547) {
         result->rejected = 1;
