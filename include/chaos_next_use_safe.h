@@ -32,6 +32,8 @@ struct chaos_next_use_safe_result {
 
 int chaos_next_use_safe_try(const struct chaos_next_use_safe_request *,
                             struct chaos_next_use_safe_result *);
+int chaos_next_use_on_safe(int dir, long at_safe, int sanity,
+                           struct chaos_state *budget, int dnum, int dlevel);
 void chaos_next_use_safe_reset_for_test(void);
 
 #endif

@@ -36,6 +36,24 @@ static int receipt_ok(void *opaque, const struct chaos_next_use_private_record *
     return 1;
 }
 
+int chaos_next_use_on_safe(int dir, long at_safe, int sanity,
+                           struct chaos_state *budget, int dnum, int dlevel)
+{
+    struct chaos_next_use_safe_request req;
+    struct chaos_next_use_safe_result res;
+    memset(&req, 0, sizeof req);
+    req.dir = dir;
+    req.enabled = 1;
+    req.at_safe = at_safe > 2147483647L ? 2147483647 : (int)at_safe;
+    req.at_move = monstermoves > 2147483547L ? 2147483547
+                  : monstermoves < 0L ? 0 : (int)monstermoves;
+    req.level_dnum = dnum;
+    req.level_dlevel = dlevel;
+    req.sanity = sanity;
+    req.budget = budget;
+    return chaos_next_use_safe_try(&req, &res);
+}
+
 int chaos_next_use_safe_try(const struct chaos_next_use_safe_request *request,
                             struct chaos_next_use_safe_result *result)
 {
