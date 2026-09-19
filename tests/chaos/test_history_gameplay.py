@@ -610,12 +610,12 @@ def native(args):
         "compiled base identity mismatch",
     )
     require(
-        len(manifest["objects"]) == 160
+        len(manifest["objects"]) == 161
         and "sys/unix/unixmain.o" in manifest["objects"],
         "complete original production object receipt required",
     )
     require(
-        len(manifest["generated_headers"]) == 126
+        len(manifest["generated_headers"]) == 127
         and "include/date.h" in manifest["generated_headers"],
         "complete frozen header receipt required",
     )
