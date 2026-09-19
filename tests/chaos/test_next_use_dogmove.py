@@ -212,6 +212,29 @@ class NextUseDogMoveTests(unittest.TestCase):
         self.assertEqual(row["spent"], 1)
         self.assertEqual(row["arm"], 2)
 
+    def test_save_restore_continues_without_readmit(self):
+        row = self.run_case("save")
+        self.assertEqual(row["arm"], 2)
+        self.assertEqual(row["restored"], 1)
+        self.assertEqual(row["spent2"], 0)
+        self.assertEqual(row["ready_before"], 1)
+        self.assertEqual(row["ready_after"], 0)
+        self.assertEqual(row["public"], 1)
+
+    def test_save_restore_missing_companion_does_not_witness(self):
+        row = self.run_case("savegone")
+        self.assertEqual(row["arm"], 2)
+        self.assertEqual(row["restored"], 1)
+        self.assertEqual(row["public"], 0)
+
+    def test_save_restore_other_monster_does_not_rebind(self):
+        row = self.run_case("saveother")
+        self.assertEqual(row["arm"], 2)
+        self.assertEqual(row["restored"], 1)
+        self.assertEqual(row["ready_before"], 0)
+        self.assertEqual(row["orig_ready_after"], 1)
+        self.assertEqual(row["public"], 0)
+
 
 if __name__ == "__main__":
     unittest.main()
