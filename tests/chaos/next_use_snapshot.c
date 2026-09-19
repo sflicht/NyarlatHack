@@ -451,6 +451,24 @@ int main(int argc, char **argv)
         return installed && imported && exported
                && live.slot_w == CHAOS_SLOT_W_TERMINATED_EXPIRY ? 0 : 1;
     }
+    if (!strcmp(mode, "save_expiry")) {
+        FILE *fp;
+        int fd, restored;
+
+        chaos_next_use_expire(CHAOS_END_PROGRAM_EXPIRED);
+        fp = tmpfile();
+        if (!fp) return 1;
+        fd = fileno(fp);
+        chaos_next_use_save(fd);
+        chaos_next_use_runtime_reset();
+        if (fseek(fp, 0, SEEK_SET)) return 1;
+        restored = chaos_next_use_restore(fd);
+        fclose(fp);
+        exported = chaos_next_use_snapshot_export(&live);
+        print_snap("after_save_expiry", restored && exported, &live);
+        return installed && restored && exported
+               && live.slot_w == CHAOS_SLOT_W_TERMINATED_EXPIRY ? 0 : 1;
+    }
     if (!strcmp(mode, "save_restore")) {
         FILE *fp;
         int fd, restored;

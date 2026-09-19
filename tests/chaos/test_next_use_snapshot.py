@@ -139,6 +139,12 @@ class NextUseSnapshotTests(unittest.TestCase):
         self.assertEqual(after["ok"], 1)
         self.assertEqual(after["slot_w"], 7)
 
+    def test_save_restore_expiry(self):
+        rows = self.run_mode("save_expiry")
+        after = next(row for row in rows if row["tag"] == "after_save_expiry")
+        self.assertEqual(after["ok"], 1)
+        self.assertEqual(after["slot_w"], 7)
+
     def test_save_restore_does_not_readmit(self):
         rows = self.run_mode("save_restore")
         after = next(row for row in rows if row["tag"] == "after_save_restore")
