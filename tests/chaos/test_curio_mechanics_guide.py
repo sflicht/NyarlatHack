@@ -43,7 +43,20 @@ class SanityInsightGuideTests(unittest.TestCase):
         self.assertNotIn("dungeon", payload)
         self.assertIn('"sanity":100', payload)
 
-    def test_combined_prompt_stays_in_byte_cap(self):
+    def test_wf_notes_are_source_checked_not_placeholders(self):
+        text = GUIDE.read_text(encoding="utf-8")
+        self.assertNotIn("wait on #60", text)
+        self.assertIn("LEGAL", text)
+        self.assertIn("SOURCE", text)
+        self.assertIn("MEASURED", text)
+        self.assertIn("UNKNOWN", text)
+        self.assertIn("whistle_attention", text)
+        self.assertIn("fountain_refresh", text)
+        self.assertIn("src/dogmove.c", text)
+        self.assertIn("src/fountain.c", text)
+        self.assertIn("monstermoves", text)
+        composed = compose_prompt(PUBLIC).instructions
+        self.assertIn(text, composed)
         result = compose_prompt(PUBLIC)
         n = len((result.instructions + result.prompt).encode())
         self.assertLessEqual(n, MAX_PROMPT_BYTES)

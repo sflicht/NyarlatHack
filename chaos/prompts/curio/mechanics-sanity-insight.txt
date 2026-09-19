@@ -21,4 +21,28 @@ src/attrib.c returns while u.veil; else add delta, clamp at 0, no upper cap.
 Init u.uinsight=0 and u.veil=TRUE (src/u_init.c). Lua cannot query veil or map.
 MEASURED none here. UNKNOWN veil-lift timing and typical Insight.
 
-Do not invent typical Sanity/Insight. W/F notes wait on #60/#61.
+Do not invent typical Sanity/Insight.
+
+W whistle attention
+LEGAL Lua ops quiet or whistle_attention; state 0..3; one delay; cost 1;
+TTL 100 native moves; one W slot. Protocol id next-use-v2-W is not player
+prose.
+SOURCE capture chaos_next_use_whistle_completed after ordinary WHISTLE
+(src/chaos_engine.c). Extra attention only if A+5 <= monstermoves < A+10
+and bound m_id matches (src/chaos_next_use_runtime.c,
+chaos_next_use_whistle_decision_ready). dog_move uses
+whappr || extra_attention (src/dogmove.c). Quiet/wrong-family/no companion
+do not arm. Lua on_action context has no hidden target or fate.
+MEASURED linked dog_move extra-attention vs no-candidate
+(tests/chaos/test_next_use_dogmove.py). UNKNOWN ordinary-play qualify rate.
+
+F fountain remap
+LEGAL Lua ops quiet or fountain_refresh; cost 1; TTL 100; one F slot.
+SOURCE F-only install origin_f (src/chaos_next_use_runtime.c).
+drinkfountain remaps fate 10-18 once; 9 stays natural; 19 stays native;
+levitation cannot-reach (src/fountain.c). Lua on_action has no fate field.
+MEASURED remap vs tepid RNG and levitation guard
+(tests/chaos/test_next_use_fountain.py). UNKNOWN ordinary-play drink rate.
+
+NOT exposed: veil, map secrets, fountain fate, protocol telegraph IDs as
+normal prose, private runtime records.
