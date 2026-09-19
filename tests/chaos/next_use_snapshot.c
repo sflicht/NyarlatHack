@@ -381,6 +381,7 @@ int main(int argc, char **argv)
         monstermoves = 40;
         memset(&token, 0, sizeof token);
         chaos_next_use_on_action(CHAOS_NEXT_USE_FAMILY_W, 10, &token);
+        chaos_next_use_capture_whistle(10, 7, 40);
         exported = chaos_next_use_snapshot_export(&snap);
         print_snap("after_armed", exported, &snap);
         chaos_next_use_runtime_reset();
