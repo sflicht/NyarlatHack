@@ -35,6 +35,8 @@ class NextUseSnapshotTests(unittest.TestCase):
             str(ROOT / "src/chaos_next_use_runtime.c"),
             str(ROOT / "src/chaos_protocol.c"),
             str(ROOT / "src/chaos_lua.c"),
+            str(ROOT / "src/chaos_next_use_safe.c"),
+            str(ROOT / "src/chaos_next_use_io.c"),
             "-Wl,--gc-sections",
             *flags,
             "-lm",
@@ -161,6 +163,14 @@ class NextUseSnapshotTests(unittest.TestCase):
         after = next(row for row in rows if row["tag"] == "after_run")
         self.assertEqual(after["ok"], 1)
         self.assertEqual(after["slot_w"], 7)
+
+    def test_restore_settles_candidate_latch(self):
+        rows = self.run_mode("restore_latch")
+        after = next(row for row in rows if row["tag"] == "restore_latch")
+        self.assertEqual(after["restored"], 1)
+        self.assertEqual(after["admitted"], 2)
+        self.assertEqual(after["safe_admitted"], 0)
+        self.assertEqual(after["slot_w"], 1)
 
 
 if __name__ == "__main__":
