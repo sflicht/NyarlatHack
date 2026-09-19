@@ -106,6 +106,12 @@ class NextUseAdmitTests(unittest.TestCase):
         self.assertFalse(row["second_ready"])
         self.assertFalse(row["second"])
 
+    def test_expired_w_slot_is_not_ready(self):
+        row = self.run_mode("expire-w")
+        self.assertEqual(row["admit"], 0)
+        self.assertEqual(row["install"], 1)
+        self.assertFalse(row["ready"])
+
     def test_quiet_consumes_w_slot(self):
         row = self.run_mode("quiet-w")
         self.assertEqual(row["admit"], 0)
