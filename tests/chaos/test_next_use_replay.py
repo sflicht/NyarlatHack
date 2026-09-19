@@ -71,6 +71,12 @@ class NextUseReplayTests(unittest.TestCase):
         row = self.run_mode("after_expire")[0]
         self.assertEqual(row["status"], 1)
 
+    def test_save_restore_keeps_pending_and_blocks_skip(self):
+        row = self.run_mode("save_replay")[0]
+        self.assertEqual(row["restored"], 1)
+        self.assertEqual(row["status"], 1)
+        self.assertEqual(row["slot_w"], 1)
+
 
 if __name__ == "__main__":
     unittest.main()

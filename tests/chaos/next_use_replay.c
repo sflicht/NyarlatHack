@@ -24,6 +24,16 @@ void panic(const char *str, ...)
     abort();
 }
 
+void bwrite(int fd, genericptr_t loc, unsigned int num)
+{
+    if (write(fd, loc, num) != (ssize_t)num) abort();
+}
+
+void mread(int fd, genericptr_t loc, unsigned int num)
+{
+    if (read(fd, loc, num) != (ssize_t)num) abort();
+}
+
 static const char source_text[] = "return 0";
 static const char run_hex[] =
     "0000000000000000000000000000000000000000000000000000000000000000";
@@ -172,6 +182,27 @@ int main(int argc, char **argv)
         status = chaos_next_use_replay_record(&record);
         printf("{\"tag\":\"after_expire\",\"status\":%d}\n", status);
         return installed && status == CHAOS_REPLAY_BLOCKED_REPLAY ? 0 : 1;
+    }
+    if (!strcmp(mode, "save_replay")) {
+        FILE *fp;
+        int fd, restored;
+
+        fp = tmpfile();
+        if (!fp) return 1;
+        fd = fileno(fp);
+        chaos_next_use_save(fd);
+        chaos_next_use_runtime_reset();
+        if (fseek(fp, 0, SEEK_SET)) return 1;
+        restored = chaos_next_use_restore(fd);
+        fclose(fp);
+        fill_replay(&record, &snap, 2);
+        status = chaos_next_use_replay_record(&record);
+        if (!chaos_next_use_snapshot_export(&live))
+            return 1;
+        printf("{\"tag\":\"save_replay\",\"restored\":%d,\"status\":%d,\"slot_w\":%d}\n",
+               restored, status, live.slot_w);
+        return installed && restored && status == CHAOS_REPLAY_BLOCKED_REPLAY
+               && live.slot_w == CHAOS_SLOT_W_PENDING ? 0 : 1;
     }
     return 2;
 }
