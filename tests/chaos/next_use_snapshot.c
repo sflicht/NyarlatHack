@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 long moves;
 long monstermoves;
@@ -237,6 +238,25 @@ int main(int argc, char **argv)
         return installed && imported && exported
                && live.slot_w == CHAOS_SLOT_W_UNDECLARED
                && live.slot_f == CHAOS_SLOT_F_PENDING ? 0 : 1;
+    }
+    if (!strcmp(mode, "file")) {
+        FILE *fp;
+        int fd, wrote, loaded;
+
+        fp = tmpfile();
+        if (!fp) return 1;
+        fd = fileno(fp);
+        wrote = chaos_next_use_snapshot_write(fd, &snap);
+        if (fseek(fp, 0, SEEK_SET)) return 1;
+        loaded = chaos_next_use_snapshot_read(fd, &live);
+        fclose(fp);
+        chaos_next_use_runtime_reset();
+        imported = chaos_next_use_snapshot_import(&live);
+        exported = chaos_next_use_snapshot_export(&live);
+        print_snap("after_file", wrote && loaded && imported && exported, &live);
+        return installed && wrote && loaded && imported && exported
+               && live.slot_w == snap.slot_w
+               && live.program_id == snap.program_id ? 0 : 1;
     }
     return 2;
 }

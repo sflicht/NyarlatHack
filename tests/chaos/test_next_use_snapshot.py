@@ -95,6 +95,12 @@ class NextUseSnapshotTests(unittest.TestCase):
         self.assertEqual(imported["slot_w"], 0)
         self.assertEqual(imported["sha"], after["sha"])
 
+    def test_file_bytes_roundtrip(self):
+        rows = self.run_mode("file")
+        after = next(row for row in rows if row["tag"] == "after_file")
+        self.assertEqual(after["ok"], 1)
+        self.assertEqual(after["slot_w"], 1)
+
 
 if __name__ == "__main__":
     unittest.main()

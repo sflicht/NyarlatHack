@@ -7,6 +7,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <limits.h>
+#include <stdint.h>
+#include <unistd.h>
 
 #define CHAOS_RUNTIME_PRIVATE_MAX 16
 #define CHAOS_RUNTIME_PUBLIC_MAX 1
@@ -1439,6 +1441,101 @@ int chaos_next_use_snapshot_import(const struct chaos_next_use_snapshot *in)
     copy_hash(live_runtime.source_sha256, in->source_sha256);
     memcpy(live_runtime.source, in->source, in->source_length);
     live_runtime.source[in->source_length] = '\0';
+    return 1;
+}
+
+static int snapshot_io_all(int fd, void *buf, size_t n, int writing)
+{
+    unsigned char *p = buf;
+    while (n) {
+        ssize_t k = writing ? write(fd, p, n) : read(fd, p, n);
+        if (k <= 0) return 0;
+        p += (size_t)k;
+        n -= (size_t)k;
+    }
+    return 1;
+}
+
+int chaos_next_use_snapshot_write(int fd, const struct chaos_next_use_snapshot *in)
+{
+    int32_t header[24];
+
+    if (fd < 0 || !chaos_next_use_snapshot_validate(in))
+        return 0;
+    memset(header, 0, sizeof header);
+    header[0] = CHAOS_NEXT_USE_SNAPSHOT_V;
+    header[1] = in->program_id;
+    header[2] = in->phase;
+    header[3] = in->slot_w;
+    header[4] = in->slot_f;
+    header[5] = in->w_runtime;
+    header[6] = in->state;
+    header[7] = in->delay_used;
+    header[8] = in->callback_ordinal;
+    header[9] = in->admission_move;
+    header[10] = in->program_expiry;
+    header[11] = in->delay_until;
+    header[12] = in->variant;
+    header[13] = (int32_t)in->source_length;
+    header[14] = in->origin_w_live;
+    header[15] = in->origin_f_live;
+    header[16] = (int32_t)in->origin_w;
+    header[17] = (int32_t)in->origin_f;
+    header[18] = (int32_t)in->origin_w_deadline;
+    header[19] = (int32_t)in->origin_f_deadline;
+    header[20] = (int32_t)in->armed_m_id;
+    header[21] = (int32_t)in->replay_cursor;
+    if (!snapshot_io_all(fd, header, sizeof header, 1))
+        return 0;
+    if (!snapshot_io_all(fd, (void *)in->source_sha256, 65, 1))
+        return 0;
+    if (!snapshot_io_all(fd, (void *)in->source, in->source_length, 1))
+        return 0;
+    return 1;
+}
+
+int chaos_next_use_snapshot_read(int fd, struct chaos_next_use_snapshot *out)
+{
+    int32_t header[24];
+    struct chaos_next_use_snapshot snap;
+
+    if (fd < 0 || !out)
+        return 0;
+    memset(&snap, 0, sizeof snap);
+    if (!snapshot_io_all(fd, header, sizeof header, 0))
+        return 0;
+    snap.snapshot_v = header[0];
+    snap.program_id = header[1];
+    snap.phase = header[2];
+    snap.slot_w = header[3];
+    snap.slot_f = header[4];
+    snap.w_runtime = header[5];
+    snap.state = header[6];
+    snap.delay_used = header[7];
+    snap.callback_ordinal = header[8];
+    snap.admission_move = header[9];
+    snap.program_expiry = header[10];
+    snap.delay_until = header[11];
+    snap.variant = header[12];
+    if (header[13] < 1 || header[13] > CHAOS_NEXT_USE_SOURCE_MAX)
+        return 0;
+    snap.source_length = (size_t)header[13];
+    snap.origin_w_live = header[14];
+    snap.origin_f_live = header[15];
+    snap.origin_w = header[16];
+    snap.origin_f = header[17];
+    snap.origin_w_deadline = header[18];
+    snap.origin_f_deadline = header[19];
+    snap.armed_m_id = (unsigned)header[20];
+    snap.replay_cursor = (unsigned long)header[21];
+    if (!snapshot_io_all(fd, snap.source_sha256, 65, 0))
+        return 0;
+    if (!snapshot_io_all(fd, snap.source, snap.source_length, 0))
+        return 0;
+    snap.source[snap.source_length] = '\0';
+    if (!chaos_next_use_snapshot_validate(&snap))
+        return 0;
+    *out = snap;
     return 1;
 }
 
