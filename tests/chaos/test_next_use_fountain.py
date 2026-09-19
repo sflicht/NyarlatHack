@@ -140,6 +140,12 @@ class NextUseFountainTests(unittest.TestCase):
         self.assertEqual(row["hunger_delta"], 0)
         self.assertLess(row["seq_delta"], 3)
 
+    def test_remap_consumes_more_rng_than_tepid(self):
+        remap = self.run_case(10, True)
+        tepid = self.run_case(10, False)
+        self.assertEqual(remap["seed"], tepid["seed"])
+        self.assertGreater(remap["reseed"], tepid["reseed"])
+
     def test_levitation_blocks_remap(self):
         row = self.run_mode(10, "levitate")
         self.assertEqual(row["admit"], 1)
