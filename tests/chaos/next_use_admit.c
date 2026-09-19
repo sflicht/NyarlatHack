@@ -586,6 +586,62 @@ int main(int argc, char **argv)
                admit_rc, installed, w_act, f_act, token.remap);
         return 0;
     }
+    if (argc >= 2 && !strcmp(argv[1], "fw-order")) {
+        static const char src[] =
+            "return {on_action=function(c) "
+            "if c.trigger==[[W]] then "
+            "return {next_use_intent_v=2, op=[[whistle_attention]], state=0} end "
+            "return {next_use_intent_v=2, op=[[fountain_refresh]], state=0} end}";
+        struct chaos_next_use_envelope envelope;
+        struct chaos_next_use_admission source, admitted;
+        struct chaos_next_use_attempt_gate gate;
+        struct chaos_fountain_token token;
+        unsigned char digest[32];
+        char source_sha[65], o1[320], o2[320], raw[CHAOS_NEXT_USE_ENVELOPE_MAX + 1];
+        int n, w_act, f_act, installed;
+
+        memset(&source, 0, sizeof source);
+        memset(&admitted, 0, sizeof admitted);
+        chaos_next_use_runtime_reset();
+        chaos_state_init(&source.budget_state);
+        source.program.phase = CHAOS_ATTEMPT_OPEN;
+        gate.phase = CHAOS_ATTEMPT_OPEN;
+        gate.reason = 0;
+        if (chaos_next_use_sha256(src, sizeof src - 1, digest) != CHAOS_NEXT_USE_OK)
+            return 1;
+        digest_hex(digest, source_sha);
+        if (origin_json(o1, sizeof o1, 10, "W", "ordinary_whistle") < 1
+            || origin_json(o2, sizeof o2, 20, "F", "water_refreshed") < 1)
+            return 1;
+        n = snprintf(raw, sizeof raw,
+            "{\"at\":7,\"cost\":2,\"id\":1,\"next_use_program_v\":2,"
+            "\"operations\":[\"W\",\"F\"],\"origin_refs\":[%s,%s],\"source\":\"%s\","
+            "\"source_sha256\":\"%s\",\"telegraph\":\"next-use-v2-WF\",\"ttl\":100,"
+            "\"variant\":0}",
+            o1, o2, src, source_sha);
+        if (n < 1 || (size_t)n >= sizeof raw)
+            return 1;
+        if (chaos_next_use_jcs(raw, (size_t)n, canonical, sizeof canonical,
+                               &canonical_length) != CHAOS_NEXT_USE_OK)
+            return 1;
+        if (chaos_next_use_parse_envelope(canonical, canonical_length, &envelope)
+            != CHAOS_NEXT_USE_OK)
+            return 1;
+        admit_rc = chaos_next_use_admit(&admitted, &source, &gate, &envelope,
+                                        canonical, canonical_length, 0, 40, 1,
+                                        receipt_ok, NULL);
+        installed = chaos_next_use_runtime_install(
+            &admitted, src, sizeof src - 1, source_sha, 1, 1, 10, 100000, 20,
+            100000, 0, 1, 1);
+        monstermoves = 40;
+        memset(&token, 0, sizeof token);
+        f_act = chaos_next_use_on_action(CHAOS_NEXT_USE_FAMILY_F, 20, &token);
+        memset(&token, 0, sizeof token);
+        w_act = chaos_next_use_on_action(CHAOS_NEXT_USE_FAMILY_W, 10, &token);
+        printf("{\"admit\":%d,\"install\":%d,\"w\":%d,\"f\":%d}\n",
+               admit_rc, installed, w_act, f_act);
+        return 0;
+    }
     if (argc < 6) return 2;
     if (argc > 6) tamper = argv[6];
     return run_install(atoi(argv[1]), atoi(argv[2]), atoi(argv[3]), atoi(argv[4]),

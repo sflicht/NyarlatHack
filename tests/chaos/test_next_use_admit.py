@@ -114,6 +114,13 @@ class NextUseAdmitTests(unittest.TestCase):
         self.assertTrue(row["f"])
         self.assertEqual(row["remap"], 1)
 
+    def test_fw_order_f_then_w(self):
+        row = self.run_mode("fw-order")
+        self.assertEqual(row["admit"], 0)
+        self.assertEqual(row["install"], 1)
+        self.assertTrue(row["f"])
+        self.assertTrue(row["w"])
+
     def test_install_failure_after_commit_does_not_rewind(self):
         row = self.run_mode("install-fail")
         self.assertEqual(row["admit"], 0)
