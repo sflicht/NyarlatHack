@@ -109,7 +109,8 @@ static void bind_origin(const char *run)
     chaos_next_use_safe_bind_origin(&origin, 1);
 }
 
-static int admit_and_act(const char *dirpath, struct monst *pet, int *telegraphs)
+static int admit_and_act(const char *dirpath, struct monst *pet, int *telegraphs,
+                         int capture)
 {
     struct chaos_next_use_safe_request req;
     struct chaos_next_use_safe_result admitted;
@@ -139,7 +140,7 @@ static int admit_and_act(const char *dirpath, struct monst *pet, int *telegraphs
     close(dir);
     if (!admitted.active) return 0;
     acted = chaos_next_use_on_action(CHAOS_NEXT_USE_FAMILY_W, 10, 0);
-    if (acted)
+    if (acted && capture)
         chaos_next_use_capture_whistle(10, pet->m_id, 40);
     return admitted.active ? (acted ? 2 : 1) : 0;
 }
@@ -164,7 +165,8 @@ static int run_case(const char *name, const char *dirpath)
     witness.production = strcmp(name, "noprod") != 0;
     arm = 0;
     if (strcmp(name, "none") && strcmp(name, "bypass")) {
-        arm = admit_and_act(dirpath, &pet, &telegraphs);
+        arm = admit_and_act(dirpath, &pet, &telegraphs,
+                            strcmp(name, "nonepet") != 0);
         if (arm < 0) return 2;
     }
     monstermoves = 45;
@@ -176,11 +178,6 @@ static int run_case(const char *name, const char *dirpath)
         pet.mhp = 0;
     if (!strcmp(name, "wrongid"))
         pet.m_id = 8;
-    if (!strcmp(name, "nonepet")) {
-        pet.mtyp = PM_KITTEN;
-        pet.data = &mons[PM_KITTEN];
-        pet.mtame = 0;
-    }
     f_action = 0;
     if (!strcmp(name, "wrongfam") && arm)
         f_action = chaos_next_use_on_action(CHAOS_NEXT_USE_FAMILY_F, 10, 0);
