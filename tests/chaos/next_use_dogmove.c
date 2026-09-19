@@ -160,7 +160,7 @@ static int run_case(const char *name, const char *dirpath)
 {
     struct monst pet;
     struct chaos_whistle_witness witness;
-    int telegraphs = 0, rc, ox, oy, ready, arm, public_n, f_action;
+    int telegraphs = 0, rc, ox, oy, ready, arm, public_n, public2, f_action;
     int snapshot = 0, windowed = 0, pre_glyph = 0;
     unsigned orig_id;
 
@@ -207,13 +207,15 @@ static int run_case(const char *name, const char *dirpath)
     rc = dog_move(&pet, 0, &witness);
     chaos_whistle_witness_finalize(&pet, &witness);
     public_n = (int)chaos_next_use_runtime_public_count();
+    chaos_whistle_witness_finalize(&pet, &witness);
+    public2 = (int)chaos_next_use_runtime_public_count();
     {
         FILE *out = fopen("result.json", "w");
         if (!out) return 2;
         fprintf(out,
             "{\"case\":\"%s\",\"ox\":%d,\"oy\":%d,\"mx\":%d,\"my\":%d,\"rc\":%d,"
             "\"arm\":%d,\"telegraph\":%d,\"ready_before\":%d,\"ready_after\":%d,"
-            "\"orig_ready_after\":%d,\"public\":%d,\"m_id\":%u,\"f_action\":%d,"
+            "\"orig_ready_after\":%d,\"public\":%d,\"public2\":%d,\"m_id\":%u,\"f_action\":%d,"
             "\"displaced\":%d,\"delivered\":%d,\"pre_public\":%d,"
             "\"reseed\":%d,\"rng_next\":%d,\"snapshot\":%d,\"windowed\":%d,"
             "\"pre_glyph\":%d,\"post_glyph\":%d,\"invalid\":%d,\"classifier\":%d,"
@@ -221,7 +223,7 @@ static int run_case(const char *name, const char *dirpath)
             name, ox, oy, pet.mx, pet.my, rc, arm, telegraphs, ready,
             chaos_next_use_whistle_decision_ready(pet.m_id),
             chaos_next_use_whistle_decision_ready(orig_id),
-            public_n, pet.m_id, f_action,
+            public_n, public2, pet.m_id, f_action,
             witness.displaced, witness.manifestation_delivered,
             witness.pre_public, reseed_count, rn2(100000),
             snapshot, windowed, pre_glyph, witness.post_glyph,

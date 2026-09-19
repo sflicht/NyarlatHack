@@ -123,6 +123,7 @@ class NextUseDogMoveTests(unittest.TestCase):
         self.assertEqual(positive["ready_before"], 1)
         self.assertEqual(positive["ready_after"], 0)
         self.assertEqual(positive["public"], 1)
+        self.assertEqual(positive["public2"], 1)
         self.assertEqual(positive["displaced"], 1)
         self.assertEqual(positive["delivered"], 1)
         self.assertEqual(positive["pre_public"], 1)
