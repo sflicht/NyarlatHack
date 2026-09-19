@@ -420,6 +420,26 @@ int main(int argc, char **argv)
                && live.slot_w == CHAOS_SLOT_W_PENDING
                && live.program_id == snap.program_id ? 0 : 1;
     }
+    if (!strcmp(mode, "save_restore_f")) {
+        FILE *fp;
+        int fd, restored;
+
+        chaos_next_use_runtime_reset();
+        installed = install_pending_f();
+        fp = tmpfile();
+        if (!fp) return 1;
+        fd = fileno(fp);
+        chaos_next_use_save(fd);
+        chaos_next_use_runtime_reset();
+        if (fseek(fp, 0, SEEK_SET)) return 1;
+        restored = chaos_next_use_restore(fd);
+        fclose(fp);
+        exported = chaos_next_use_snapshot_export(&live);
+        print_snap("after_save_restore_f", restored && exported, &live);
+        return installed && restored && exported
+               && live.slot_f == CHAOS_SLOT_F_PENDING
+               && live.slot_w == CHAOS_SLOT_W_UNDECLARED ? 0 : 1;
+    }
     if (!strcmp(mode, "empty_save")) {
         FILE *fp;
         int fd, restored;
