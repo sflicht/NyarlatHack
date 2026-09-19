@@ -118,6 +118,8 @@ class NextUseFountainTests(unittest.TestCase):
         self.assertEqual(high["contacted"], 1)
         self.assertGreater(low["hunger_delta"], 0)
         self.assertGreater(high["hunger_delta"], 0)
+        self.assertGreaterEqual(low["seq_delta"], 3)
+        self.assertGreaterEqual(high["seq_delta"], 3)
         self.assertEqual(low["completed_after"], 0)
         self.assertEqual(high["completed_after"], 0)
 
@@ -136,6 +138,7 @@ class NextUseFountainTests(unittest.TestCase):
         row = self.run_case(10, False)
         self.assertEqual(row["contacted"], 0)
         self.assertEqual(row["hunger_delta"], 0)
+        self.assertLess(row["seq_delta"], 3)
 
     def test_levitation_blocks_remap(self):
         row = self.run_mode(10, "levitate")
