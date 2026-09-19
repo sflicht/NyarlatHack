@@ -179,6 +179,7 @@ int main(int argc, char **argv)
 {
     const char *dirpath;
     int want, admit, telegraphs = 0, hunger_before, typ_before, admitted_ok;
+    long seq_before;
     unsigned seed;
     struct chaos_fountain_token token;
     long completed, completed_after;
@@ -207,11 +208,16 @@ int main(int argc, char **argv)
     srandom(seed);
     hunger_before = u.uhunger;
     typ_before = levl[u.ux][u.uy].typ;
+    seq_before = u.chaos.seq;
     memset(&token, 0, sizeof token);
     completed = chaos_next_use_fountain_completed_root();
     contacted = chaos_next_use_fountain_contact(completed, &token);
     chaos_bind_drinkfountain_token(contacted ? &token : 0);
-    drinkfountain();
+    {
+        long obs = chaos_observation_begin(CHAOS_OBS_OP_FOUNTAIN_DRINK);
+        drinkfountain();
+        chaos_observation_end(obs);
+    }
     chaos_bind_drinkfountain_token(0);
     completed_after = chaos_next_use_fountain_completed_root();
     {
@@ -221,10 +227,11 @@ int main(int argc, char **argv)
             "{\"want\":%d,\"seed\":%u,\"admit\":%d,\"contacted\":%d,"
             "\"token_active\":%d,\"remap\":%d,\"consumed\":%d,"
             "\"hunger_delta\":%d,\"typ_before\":%d,\"typ_after\":%d,"
-            "\"telegraph\":%d,\"completed\":%ld,\"completed_after\":%ld}\n",
+            "\"telegraph\":%d,\"completed\":%ld,\"completed_after\":%ld,\"seq_delta\":%ld}\n",
             want, seed, admitted_ok, contacted, token.active, token.remap,
             token.consumed, u.uhunger - hunger_before, typ_before,
-            levl[u.ux][u.uy].typ, telegraphs, completed, completed_after);
+            levl[u.ux][u.uy].typ, telegraphs, completed, completed_after,
+            u.chaos.seq - seq_before);
         fclose(out);
     }
     return 0;
