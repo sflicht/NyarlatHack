@@ -1,5 +1,6 @@
 /* NGPL. Read a published next-use envelope; no admission. */
 #define _GNU_SOURCE
+#include "chaos_next_use.h"
 #include "chaos_next_use_io.h"
 #include <fcntl.h>
 #include <stdio.h>
@@ -14,6 +15,12 @@ int main(int argc, char **argv)
     char run[65];
     int dir, rc;
 
+    if (argc == 3 && !strcmp(argv[1], "warn")) {
+        const char *line = chaos_next_use_player_warning(argv[2]);
+        if (!line) return 1;
+        printf("%s\n", line);
+        return 0;
+    }
     if (argc != 2 && argc != 3) return 2;
     dir = open(argv[1], O_RDONLY | O_DIRECTORY);
     if (dir < 0) return 2;
