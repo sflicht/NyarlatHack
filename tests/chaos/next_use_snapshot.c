@@ -2,6 +2,7 @@
 #include "hack.h"
 #include "chaos_next_use_admission.h"
 #include "chaos_next_use_runtime.h"
+#include "chaos_next_use_safe.h"
 
 #include <stdarg.h>
 #include <stdio.h>
@@ -510,6 +511,33 @@ int main(int argc, char **argv)
         print_snap("after_run", restored && exported, &live);
         return installed && restored && exported
                && live.slot_w == CHAOS_SLOT_W_TERMINATED_EXPIRY ? 0 : 1;
+    }
+    if (!strcmp(mode, "restore_latch")) {
+        FILE *fp;
+        int fd, restored, admitted;
+        struct chaos_state budget;
+        struct chaos_next_use_safe_result last;
+
+        fp = tmpfile();
+        if (!fp) return 1;
+        fd = fileno(fp);
+        chaos_next_use_save(fd);
+        chaos_next_use_runtime_reset();
+        if (fseek(fp, 0, SEEK_SET)) return 1;
+        restored = chaos_next_use_restore(fd);
+        fclose(fp);
+        chaos_next_use_safe_mark_restored();
+        chaos_state_init(&budget);
+        admitted = chaos_next_use_on_safe(0, 40, 100, &budget, 0, 1);
+        chaos_next_use_safe_last(&last);
+        exported = chaos_next_use_snapshot_export(&live);
+        printf("{\"tag\":\"restore_latch\",\"restored\":%d,\"admitted\":%d,"
+               "\"safe_admitted\":%d,\"slot_w\":%d}\n",
+               restored, admitted, last.admitted, live.slot_w);
+        return restored && exported
+               && admitted == CHAOS_NEXT_USE_ADMISSION_NOT_OPEN
+               && !last.admitted
+               && live.slot_w == CHAOS_SLOT_W_PENDING ? 0 : 1;
     }
     return 2;
 }
