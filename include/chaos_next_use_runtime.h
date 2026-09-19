@@ -221,4 +221,27 @@ long chaos_next_use_fountain_completed_root(void);
 void chaos_next_use_fountain_result(const struct chaos_fountain_token *token,
                                     int outcome);
 
+#define CHAOS_NEXT_USE_SNAPSHOT_V 1
+
+struct chaos_next_use_snapshot {
+    int snapshot_v;
+    int program_id;
+    int phase;
+    int slot_w, slot_f, w_runtime;
+    int state, delay_used, callback_ordinal;
+    int admission_move, program_expiry, delay_until, variant;
+    int origin_w_live, origin_f_live;
+    unsigned armed_m_id;
+    unsigned long replay_cursor;
+    long origin_w, origin_f;
+    long origin_w_deadline, origin_f_deadline;
+    size_t source_length;
+    char source_sha256[65];
+    char source[CHAOS_NEXT_USE_SOURCE_MAX + 1];
+};
+
+int chaos_next_use_snapshot_export(struct chaos_next_use_snapshot *);
+int chaos_next_use_snapshot_validate(const struct chaos_next_use_snapshot *);
+int chaos_next_use_snapshot_import(const struct chaos_next_use_snapshot *);
+
 #endif

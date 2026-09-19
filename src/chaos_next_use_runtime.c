@@ -1338,6 +1338,106 @@ int chaos_next_use_replay_record(
     return CHAOS_REPLAY_APPLIED;
 }
 
+int chaos_next_use_snapshot_export(struct chaos_next_use_snapshot *out)
+{
+    if (!out) return 0;
+    memset(out, 0, sizeof *out);
+    if (runtime.program_id <= 0 || runtime.phase == 0)
+        return 0;
+    out->snapshot_v = CHAOS_NEXT_USE_SNAPSHOT_V;
+    out->program_id = runtime.program_id;
+    out->phase = runtime.phase;
+    out->slot_w = runtime.slot_w;
+    out->slot_f = runtime.slot_f;
+    out->w_runtime = runtime.w_runtime;
+    out->state = runtime.state;
+    out->delay_used = runtime.delay_used;
+    out->callback_ordinal = runtime.callback_ordinal;
+    out->admission_move = runtime.admission_move;
+    out->program_expiry = runtime.program_expiry;
+    out->delay_until = runtime.delay_until;
+    out->variant = runtime.variant;
+    out->origin_w_live = runtime.origin_w_live;
+    out->origin_f_live = runtime.origin_f_live;
+    out->armed_m_id = runtime.armed_m_id;
+    out->replay_cursor = runtime.replay_cursor;
+    out->origin_w = runtime.origin_w;
+    out->origin_f = runtime.origin_f;
+    out->origin_w_deadline = runtime.origin_w_deadline;
+    out->origin_f_deadline = runtime.origin_f_deadline;
+    out->source_length = runtime.source_length;
+    copy_hash(out->source_sha256, runtime.source_sha256);
+    if (runtime.source_length > CHAOS_NEXT_USE_SOURCE_MAX)
+        return 0;
+    memcpy(out->source, runtime.source, runtime.source_length);
+    out->source[runtime.source_length] = '\0';
+    return chaos_next_use_snapshot_validate(out);
+}
+
+int chaos_next_use_snapshot_validate(const struct chaos_next_use_snapshot *in)
+{
+    char actual[65];
+
+    if (!in || in->snapshot_v != CHAOS_NEXT_USE_SNAPSHOT_V)
+        return 0;
+    if (in->program_id <= 0 || in->source_length < 1
+        || in->source_length > CHAOS_NEXT_USE_SOURCE_MAX)
+        return 0;
+    if (in->source[in->source_length] != '\0')
+        return 0;
+    if (!valid_hash_field(in->source_sha256))
+        return 0;
+    chaos_next_use_sha256_hex((const unsigned char *)in->source,
+                              in->source_length, actual);
+    if (strcmp(actual, in->source_sha256) != 0)
+        return 0;
+    if (!replay_slot_w_valid(in->slot_w) || !replay_slot_f_valid(in->slot_f)
+        || !replay_w_runtime_valid(in->w_runtime))
+        return 0;
+    if (in->state < 0 || in->state > 3 || in->delay_used < 0
+        || in->delay_used > 1 || in->callback_ordinal < 0
+        || in->variant < 0 || in->variant > 2)
+        return 0;
+    if (in->admission_move < 0 || in->program_expiry < 100)
+        return 0;
+    if ((in->slot_w == CHAOS_SLOT_W_PENDING && in->origin_w <= 0)
+        || (in->slot_f == CHAOS_SLOT_F_PENDING && in->origin_f <= 0))
+        return 0;
+    return 1;
+}
+
+int chaos_next_use_snapshot_import(const struct chaos_next_use_snapshot *in)
+{
+    if (!chaos_next_use_snapshot_validate(in))
+        return 0;
+    chaos_next_use_runtime_reset();
+    live_runtime.program_id = in->program_id;
+    live_runtime.phase = in->phase;
+    live_runtime.slot_w = in->slot_w;
+    live_runtime.slot_f = in->slot_f;
+    live_runtime.w_runtime = in->w_runtime;
+    live_runtime.state = in->state;
+    live_runtime.delay_used = in->delay_used;
+    live_runtime.callback_ordinal = in->callback_ordinal;
+    live_runtime.admission_move = in->admission_move;
+    live_runtime.program_expiry = in->program_expiry;
+    live_runtime.delay_until = in->delay_until;
+    live_runtime.variant = in->variant;
+    live_runtime.origin_w_live = in->origin_w_live;
+    live_runtime.origin_f_live = in->origin_f_live;
+    live_runtime.armed_m_id = in->armed_m_id;
+    live_runtime.replay_cursor = in->replay_cursor;
+    live_runtime.origin_w = in->origin_w;
+    live_runtime.origin_f = in->origin_f;
+    live_runtime.origin_w_deadline = in->origin_w_deadline;
+    live_runtime.origin_f_deadline = in->origin_f_deadline;
+    live_runtime.source_length = in->source_length;
+    copy_hash(live_runtime.source_sha256, in->source_sha256);
+    memcpy(live_runtime.source, in->source, in->source_length);
+    live_runtime.source[in->source_length] = '\0';
+    return 1;
+}
+
 #ifdef CHAOS_NEXT_USE_HASH_FIXTURE
 int chaos_next_use_test_hash_intent(const struct chaos_next_use_intent *intent,
                                     char digest[65])
