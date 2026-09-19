@@ -149,6 +149,12 @@ class NextUseSnapshotTests(unittest.TestCase):
         self.assertEqual(after["ok"], 1)
         self.assertEqual(after["slot_w"], 7)
 
+    def test_restore_wrong_run_terminates(self):
+        rows = self.run_mode("restore_run")
+        after = next(row for row in rows if row["tag"] == "after_run")
+        self.assertEqual(after["ok"], 1)
+        self.assertEqual(after["slot_w"], 7)
+
 
 if __name__ == "__main__":
     unittest.main()
