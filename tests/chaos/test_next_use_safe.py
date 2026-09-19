@@ -299,6 +299,29 @@ class NextUseSafeAdmitTests(unittest.TestCase):
         self.assertEqual(row["budget_valid"], 1)
         self.assertEqual(row["second_caller_spent"], 4)
 
+    def test_production_two_origin_without_lookup_rejects_before_telegraph(self):
+        folder = self.publish()
+        path = Path(folder) / "next_use-envelope.json"
+        payload = json.loads(path.read_text())
+        second = dict(payload["origin_refs"][0])
+        second["family"] = "F"
+        second["fact"] = "water_refreshed"
+        second["root"] = 13
+        second["notice_seq"] = 14
+        second["end_seq"] = 15
+        payload["operations"] = ["W", "F"]
+        payload["origin_refs"] = [payload["origin_refs"][0], second]
+        payload["cost"] = 2
+        payload["telegraph"] = "next-use-v2-WF"
+        path.write_text(json.dumps(payload, separators=(",", ":"), sort_keys=True))
+        os.chmod(path, 0o600)
+        row = self.run_case(folder, wrapper="on_safe")
+        self.assertEqual(row["admitted"], 0)
+        self.assertEqual(row["active"], 0)
+        self.assertEqual(row["caller_spent"], 0)
+        self.assertEqual(row["telegraph"], 0)
+        self.assertEqual(row["rejected"], 1)
+
 
 if __name__ == "__main__":
     unittest.main()
