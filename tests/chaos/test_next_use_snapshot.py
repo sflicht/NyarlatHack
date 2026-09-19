@@ -107,6 +107,12 @@ class NextUseSnapshotTests(unittest.TestCase):
         self.assertEqual(after["ok"], 1)
         self.assertEqual(after["slot_w"], 1)
 
+    def test_empty_save_restores_without_program(self):
+        rows = self.run_mode("empty_save")
+        after = next(row for row in rows if row["tag"] == "empty_save")
+        self.assertEqual(after["restored"], 1)
+        self.assertEqual(after["exported"], 0)
+
 
 if __name__ == "__main__":
     unittest.main()

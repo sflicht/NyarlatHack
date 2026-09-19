@@ -286,5 +286,22 @@ int main(int argc, char **argv)
                && live.slot_w == CHAOS_SLOT_W_PENDING
                && live.program_id == snap.program_id ? 0 : 1;
     }
+    if (!strcmp(mode, "empty_save")) {
+        FILE *fp;
+        int fd, restored;
+
+        chaos_next_use_runtime_reset();
+        fp = tmpfile();
+        if (!fp) return 1;
+        fd = fileno(fp);
+        chaos_next_use_save(fd);
+        if (fseek(fp, 0, SEEK_SET)) return 1;
+        restored = chaos_next_use_restore(fd);
+        fclose(fp);
+        exported = chaos_next_use_snapshot_export(&live);
+        printf("{\"tag\":\"empty_save\",\"restored\":%d,\"exported\":%d}\n",
+               restored, exported);
+        return restored && !exported ? 0 : 1;
+    }
     return 2;
 }
