@@ -103,6 +103,9 @@ class NextUseDogMoveTests(unittest.TestCase):
         env = dict(os.environ)
         env["NYARLATHACK_RUN_DIR"] = str(folder)
         env["NYARLATHACK_OBSERVATIONS"] = "1"
+        env["TERM"] = "xterm"
+        env["COLUMNS"] = "80"
+        env["LINES"] = "24"
         p = subprocess.run(
             [str(self.exe), name, str(folder)],
             capture_output=True,
