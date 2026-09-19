@@ -5,6 +5,7 @@
 #include "chaos_haunt.h"
 #include "chaos_curio.h"
 #include "chaos_next_use_io.h"
+#include "chaos_next_use_safe.h"
 #ifdef TTY_GRAPHICS
 #include "wintty.h"
 #endif
@@ -86,6 +87,25 @@ void chaos_safe(const char *why) {
     /* Preserve the legacy index/ID/ACK schedule. Expiry needs no transport. */
     chaos_curio_safe(started && !io.failed && !io.busy
                      && u.chaos.safe > before ? io.dir : -1);
+    if (started && !io.failed && !io.busy && u.chaos.safe > before) {
+        const char *flag = getenv("NYARLATHACK_NEXT_USE_ADMIT");
+        if (flag && !strcmp(flag, "1")) {
+            struct chaos_next_use_safe_request req;
+            struct chaos_next_use_safe_result res;
+            memset(&req, 0, sizeof req);
+            req.dir = io.dir;
+            req.enabled = 1;
+            req.at_safe = u.chaos.safe > 2147483647L ? 2147483647
+                          : (int)u.chaos.safe;
+            req.at_move = monstermoves > 2147483547L ? 2147483547
+                          : monstermoves < 0L ? 0 : (int)monstermoves;
+            req.level_dnum = (int)u.uz.dnum;
+            req.level_dlevel = (int)u.uz.dlevel;
+            req.sanity = u.usanity;
+            req.budget = &u.chaos;
+            (void)chaos_next_use_safe_try(&req, &res);
+        }
+    }
     busy = 0;
 }
 void chaos_start(void) {

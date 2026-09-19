@@ -86,11 +86,12 @@ SRCOBJ = allmain.o alloc.o apply.o artifact.o astar.o attrib.o ball.o bones.o	\
          were.o wield.o windows.o wizard.o worm.o worn.o write.o 	\
          xhity.o xhityhelpers.o zap.o 
 ifeq ($(CHAOS),1)
-SRCOBJ += chaos_protocol.o chaos_io.o chaos_engine.o chaos_lua.o chaos_next_use.o chaos_next_use_admission.o chaos_next_use_runtime.o chaos_next_use_io.o chaos_shadow.o chaos_haunt.o chaos_curio.o
+SRCOBJ += chaos_protocol.o chaos_io.o chaos_engine.o chaos_lua.o chaos_next_use.o chaos_next_use_admission.o chaos_next_use_runtime.o chaos_next_use_io.o chaos_next_use_safe.o chaos_shadow.o chaos_haunt.o chaos_curio.o
 chaos_next_use.o: src/chaos_next_use.c include/chaos_next_use.h
 chaos_next_use_admission.o: src/chaos_next_use_admission.c include/chaos_next_use_admission.h
 chaos_next_use_runtime.o: src/chaos_next_use_runtime.c include/chaos_next_use_runtime.h
 chaos_next_use_io.o: src/chaos_next_use_io.c include/chaos_next_use_io.h
+chaos_next_use_safe.o: src/chaos_next_use_safe.c include/chaos_next_use_safe.h
 endif
 SYSUNIXOBJ = unixmain.o unixres.o unixunix.o
 SYSSHAREOBJ = ioctl.o unixtty.o
