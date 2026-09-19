@@ -20,6 +20,16 @@ ROW = {
         "fact": "sound_high",
     },
 }
+ROW_F = {
+    "family": "F",
+    "op": "fountain_refresh",
+    "origin": {
+        "root_seq": 10,
+        "notice_seq": 11,
+        "end_seq": 12,
+        "fact": "water_refreshed",
+    },
+}
 HOST = {
     "at": 7,
     "id": 1,
@@ -75,6 +85,31 @@ class NextUseSafeAdmitTests(unittest.TestCase):
         host = dict(HOST)
         host["move"] = move
         publish_envelope(folder, ROW, host)
+        return folder
+
+    def publish_f(self, move=40):
+        folder = tempfile.mkdtemp(prefix="nyarl-next-use-safe-run-")
+        os.chmod(folder, 0o700)
+        host = dict(HOST)
+        host["move"] = move
+        publish_envelope(folder, ROW_F, host)
+        return folder
+
+    def rewrite_wf(self, folder):
+        path = Path(folder) / "next_use-envelope.json"
+        payload = json.loads(path.read_text())
+        second = dict(payload["origin_refs"][0])
+        second["family"] = "F"
+        second["fact"] = "water_refreshed"
+        second["root"] = 13
+        second["notice_seq"] = 14
+        second["end_seq"] = 15
+        payload["operations"] = ["W", "F"]
+        payload["origin_refs"] = [payload["origin_refs"][0], second]
+        payload["cost"] = 2
+        payload["telegraph"] = "next-use-v2-WF"
+        path.write_text(json.dumps(payload, separators=(",", ":"), sort_keys=True))
+        os.chmod(path, 0o600)
         return folder
 
     def run_case(
@@ -304,27 +339,47 @@ class NextUseSafeAdmitTests(unittest.TestCase):
         self.assertEqual(row["second_caller_spent"], 4)
 
     def test_production_two_origin_without_lookup_rejects_before_telegraph(self):
-        folder = self.publish()
-        path = Path(folder) / "next_use-envelope.json"
-        payload = json.loads(path.read_text())
-        second = dict(payload["origin_refs"][0])
-        second["family"] = "F"
-        second["fact"] = "water_refreshed"
-        second["root"] = 13
-        second["notice_seq"] = 14
-        second["end_seq"] = 15
-        payload["operations"] = ["W", "F"]
-        payload["origin_refs"] = [payload["origin_refs"][0], second]
-        payload["cost"] = 2
-        payload["telegraph"] = "next-use-v2-WF"
-        path.write_text(json.dumps(payload, separators=(",", ":"), sort_keys=True))
-        os.chmod(path, 0o600)
-        row = self.run_case(folder, wrapper="on_safe")
+        row = self.run_case(self.rewrite_wf(self.publish()), wrapper="on_safe")
         self.assertEqual(row["admitted"], 0)
         self.assertEqual(row["active"], 0)
         self.assertEqual(row["caller_spent"], 0)
         self.assertEqual(row["telegraph"], 0)
         self.assertEqual(row["rejected"], 1)
+
+    def test_production_two_origin_both_bound_admits(self):
+        row = self.run_case(
+            self.rewrite_wf(self.publish()), wrapper="on_safe", evidence="wf"
+        )
+        self.assertEqual(row["admitted"], 1)
+        self.assertEqual(row["active"], 1)
+        self.assertEqual(row["caller_spent"], 2)
+        self.assertEqual(row["telegraph"], 1)
+        self.assertEqual(row["rejected"], 0)
+
+    def test_production_wrong_second_origin_rejects_before_telegraph(self):
+        row = self.run_case(
+            self.rewrite_wf(self.publish()),
+            wrapper="on_safe",
+            evidence="wf_wrong_f",
+        )
+        self.assertEqual(row["admitted"], 0)
+        self.assertEqual(row["caller_spent"], 0)
+        self.assertEqual(row["telegraph"], 0)
+        self.assertEqual(row["rejected"], 1)
+
+    def test_production_f_then_w_bind_order_admits(self):
+        row = self.run_case(
+            self.rewrite_wf(self.publish()), wrapper="on_safe", evidence="fw"
+        )
+        self.assertEqual(row["admitted"], 1)
+        self.assertEqual(row["caller_spent"], 2)
+        self.assertEqual(row["telegraph"], 1)
+
+    def test_production_f_only_admits(self):
+        row = self.run_case(self.publish_f(), wrapper="on_safe", evidence="valid_f")
+        self.assertEqual(row["admitted"], 1)
+        self.assertEqual(row["caller_spent"], 1)
+        self.assertEqual(row["telegraph"], 1)
 
     def test_production_negative_native_clock_rejects(self):
         row = self.run_case(self.publish(), wrapper="on_safe", clock="negative")

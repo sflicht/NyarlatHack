@@ -167,10 +167,14 @@ mismatched source digest is not repaired.
 is the lower-level seam. The path is opt-in (`NYARLATHACK_NEXT_USE_ADMIT=1`)
 and is not enabled merely because `next_use.lua` exists. The wrapper supplies
 engine-owned 64-hex run identity (`engine_run_hex()` / `st_dev`+`st_ino`), a telegraph callback, and a receipt writer.
-Admission revalidates the referenced origin against bounded retained
-observation evidence. Telegraph is mandatory and happens before debit; a NULL
-callback is rejection, not permission to skip. Successful debit is published
-back into the caller's `struct chaos_state` exactly once. Invalid caller
+Admission revalidates **every** referenced origin against a two-slot
+engine-owned evidence view keyed by family (W and F can coexist; binding one
+family does not replace the other). Telegraph is mandatory and happens before
+debit; a NULL callback is rejection, not permission to skip. A well-formed
+second origin that was not independently observed, or that is stale, evicted,
+wrong-run, wrong-level, or wrong-family, fails before telegraph, debit, or
+install. Unrelated observations do not substitute an origin. Successful debit
+is published back into the caller's `struct chaos_state` exactly once. Invalid caller
 budget is rejected unchanged rather than reinitialized. A matching envelope
 admits and installs once; later polls do not repeat warning or spend. Future
 `envelope.at` stays pending; late, wrong-run, wrong-level, stale/missing

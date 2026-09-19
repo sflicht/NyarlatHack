@@ -20,9 +20,11 @@ static int (*owned_warn)(void *, const char *);
 static void *owned_warn_opaque;
 static chaos_next_use_receipt_fn owned_receipt;
 static void *owned_receipt_opaque;
-static int origin_bound;
-static int origin_qualifying;
-static struct chaos_next_use_origin_ref origin_evidence;
+static struct {
+    int bound;
+    int qualifying;
+    struct chaos_next_use_origin_ref origin;
+} origin_evidence[2];
 static struct chaos_next_use_safe_result last_result;
 
 void chaos_next_use_safe_reset_for_test(void)
@@ -34,9 +36,7 @@ void chaos_next_use_safe_reset_for_test(void)
     owned_warn_opaque = 0;
     owned_receipt = 0;
     owned_receipt_opaque = 0;
-    origin_bound = 0;
-    origin_qualifying = 0;
-    memset(&origin_evidence, 0, sizeof origin_evidence);
+    memset(origin_evidence, 0, sizeof origin_evidence);
     memset(&last_result, 0, sizeof last_result);
     chaos_next_use_runtime_reset();
 }
@@ -73,13 +73,15 @@ void chaos_next_use_safe_bind_receipt(chaos_next_use_receipt_fn fn, void *opaque
 void chaos_next_use_safe_bind_origin(const struct chaos_next_use_origin_ref *origin,
                                     int qualifying)
 {
-    origin_bound = 0;
-    origin_qualifying = 0;
-    memset(&origin_evidence, 0, sizeof origin_evidence);
+    int slot;
+
     if (!origin) return;
-    origin_evidence = *origin;
-    origin_bound = 1;
-    origin_qualifying = qualifying ? 1 : 0;
+    if (origin->family == CHAOS_NEXT_USE_FAMILY_W) slot = 0;
+    else if (origin->family == CHAOS_NEXT_USE_FAMILY_F) slot = 1;
+    else return;
+    origin_evidence[slot].origin = *origin;
+    origin_evidence[slot].bound = 1;
+    origin_evidence[slot].qualifying = qualifying ? 1 : 0;
 }
 
 int chaos_next_use_safe_last(struct chaos_next_use_safe_result *out)
@@ -103,19 +105,54 @@ static int hex64(const char *text)
 
 static int origin_evidence_ok(const struct chaos_next_use_origin_ref *origin)
 {
-    if (!origin_bound || !origin_qualifying || !origin)
+    int slot;
+    const struct chaos_next_use_origin_ref *bound;
+
+    if (!origin) return 0;
+    if (origin->family == CHAOS_NEXT_USE_FAMILY_W) slot = 0;
+    else if (origin->family == CHAOS_NEXT_USE_FAMILY_F) slot = 1;
+    else return 0;
+    if (!origin_evidence[slot].bound || !origin_evidence[slot].qualifying)
         return 0;
-    if (origin_evidence.root != origin->root
-        || origin_evidence.notice_seq != origin->notice_seq
-        || origin_evidence.end_seq != origin->end_seq
-        || origin_evidence.family != origin->family
-        || origin_evidence.level_dnum != origin->level_dnum
-        || origin_evidence.level_dlevel != origin->level_dlevel
-        || origin_evidence.move != origin->move)
+    bound = &origin_evidence[slot].origin;
+    if (bound->root != origin->root
+        || bound->notice_seq != origin->notice_seq
+        || bound->end_seq != origin->end_seq
+        || bound->family != origin->family
+        || bound->level_dnum != origin->level_dnum
+        || bound->level_dlevel != origin->level_dlevel
+        || bound->move != origin->move)
         return 0;
-    if (strcmp(origin_evidence.fact, origin->fact)
-        || strcmp(origin_evidence.run, origin->run))
+    if (strcmp(bound->fact, origin->fact)
+        || strcmp(bound->run, origin->run))
         return 0;
+    return 1;
+}
+
+static int envelope_origins_ok(const struct chaos_next_use_envelope *envelope,
+                               const struct chaos_next_use_safe_request *request)
+{
+    int i;
+
+    if (!envelope || !request || !hex64(request->run_hex))
+        return 0;
+    if (envelope->operation_count < 1 || envelope->operation_count > 2)
+        return 0;
+    for (i = 0; i < envelope->operation_count; ++i) {
+        const struct chaos_next_use_origin_ref *origin = &envelope->origin_refs[i];
+        int expiry;
+
+        if (origin->move < 0 || origin->move > 2147483547)
+            return 0;
+        expiry = origin->move + 100;
+        if (strcmp(origin->run, request->run_hex)
+            || origin->level_dnum != request->level_dnum
+            || origin->level_dlevel != request->level_dlevel
+            || request->at_move < 0
+            || request->at_move > expiry
+            || !origin_evidence_ok(origin))
+            return 0;
+    }
     return 1;
 }
 
@@ -193,9 +230,8 @@ int chaos_next_use_safe_try(const struct chaos_next_use_safe_request *request,
     struct chaos_next_use_envelope envelope;
     struct chaos_next_use_admission source, admitted;
     struct chaos_next_use_attempt_gate gate;
-    struct chaos_next_use_origin_ref *origin;
     size_t n = 0, written = 0;
-    int rc, expiry;
+    int rc;
 
     if (!result)
         return CHAOS_NEXT_USE_ADMISSION_SCHEMA;
@@ -219,26 +255,10 @@ int chaos_next_use_safe_try(const struct chaos_next_use_safe_request *request,
         return finish(result, CHAOS_NEXT_USE_ADMISSION_NOT_OPEN);
     }
     settled = 1;
-    if (envelope.operation_count != 1) {
-        result->rejected = 1;
-        return finish(result, CHAOS_NEXT_USE_ADMISSION_SCHEMA);
-    }
-    origin = &envelope.origin_refs[0];
-    if (origin->move < 0 || origin->move > 2147483547) {
-        result->rejected = 1;
-        return finish(result, CHAOS_NEXT_USE_ADMISSION_SCHEMA);
-    }
-    expiry = origin->move + 100;
     if (envelope.at != request->at_safe
         || !request->budget
         || !chaos_state_valid(request->budget)
-        || !hex64(request->run_hex)
-        || strcmp(origin->run, request->run_hex)
-        || origin->level_dnum != request->level_dnum
-        || origin->level_dlevel != request->level_dlevel
-        || request->at_move < 0
-        || request->at_move > expiry
-        || !origin_evidence_ok(origin)
+        || !envelope_origins_ok(&envelope, request)
         || chaos_lua_next_use_load(envelope.source, envelope.source_length) != 0) {
         result->rejected = 1;
         return finish(result, CHAOS_NEXT_USE_ADMISSION_SCHEMA);
