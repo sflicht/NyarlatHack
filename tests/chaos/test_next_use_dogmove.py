@@ -122,7 +122,10 @@ class NextUseDogMoveTests(unittest.TestCase):
         self.assertEqual(positive["telegraph"], 1)
         self.assertEqual(positive["ready_before"], 1)
         self.assertEqual(positive["ready_after"], 0)
-        self.assertEqual(positive["public"], 0)
+        self.assertEqual(positive["public"], 1)
+        self.assertEqual(positive["displaced"], 1)
+        self.assertEqual(positive["delivered"], 1)
+        self.assertEqual(positive["pre_public"], 1)
         self.assertEqual((control["mx"], control["my"]), (bypass["mx"], bypass["my"]))
 
     def test_late_window_does_not_take_extra_attention(self):
@@ -165,6 +168,11 @@ class NextUseDogMoveTests(unittest.TestCase):
         row = self.run_case("noprod")
         self.assertEqual(row["ready_before"], 1)
         self.assertEqual(row["ready_after"], 1)
+        self.assertEqual(row["public"], 0)
+
+    def test_hidden_map_does_not_publish_witness(self):
+        row = self.run_case("hidden")
+        self.assertEqual(row["ready_before"], 1)
         self.assertEqual(row["public"], 0)
 
 

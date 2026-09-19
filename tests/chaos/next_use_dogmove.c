@@ -5,6 +5,7 @@
 #include "chaos_next_use_runtime.h"
 #include "chaos_next_use_safe.h"
 #include "native_rng.h"
+#include "wintty.h"
 
 #include <fcntl.h>
 #include <stdio.h>
@@ -12,12 +13,15 @@
 #include <string.h>
 #include <unistd.h>
 
-static void quietglyph(winid w, XCHAR_P x, XCHAR_P y, int g)
+static void setup_tty(int *argc, char **argv)
 {
-    (void)w;
-    (void)x;
-    (void)y;
-    (void)g;
+    choose_windows("tty");
+    initoptions();
+    init_nhwindows(argc, argv);
+    WIN_MESSAGE = create_nhwindow(NHW_MESSAGE);
+    WIN_STATUS = create_nhwindow(NHW_STATUS);
+    WIN_MAP = create_nhwindow(NHW_MAP);
+    display_nhwindow(WIN_MESSAGE, FALSE);
 }
 
 static void setup_level(struct monst *pet)
@@ -46,7 +50,6 @@ static void setup_level(struct monst *pet)
     monstermoves = 40;
     flags.ident = 1;
     program_state.gameover = 0;
-    windowprocs.win_print_glyph = quietglyph;
     for (y = 0; y < ROWNO; ++y) {
         rows[y] = visible[y];
         for (x = 1; x < COLNO; ++x) {
@@ -76,6 +79,11 @@ static void setup_level(struct monst *pet)
     EDOG(pet)->whistletime = 0;
     place_monster(pet, 12, 10);
     fmon = pet;
+    vision_init();
+    vision_reset();
+    vision_recalc(0);
+    newsym(u.ux, u.uy);
+    newsym(pet->mx, pet->my);
 }
 
 static int telegraph_ok(void *opaque, const char *text)
@@ -181,22 +189,34 @@ static int run_case(const char *name, const char *dirpath)
     f_action = 0;
     if (!strcmp(name, "wrongfam") && arm)
         f_action = chaos_next_use_on_action(CHAOS_NEXT_USE_FAMILY_F, 10, 0);
+    if (!strcmp(name, "hidden") && WIN_MAP != WIN_ERR && wins[WIN_MAP])
+        wins[WIN_MAP]->flags |= WIN_CANCELLED;
     ready = chaos_next_use_whistle_decision_ready(pet.m_id);
     rc = dog_move(&pet, 0, &witness);
+    chaos_whistle_witness_finalize(&pet, &witness);
     public_n = (int)chaos_next_use_runtime_public_count();
     printf("{\"case\":\"%s\",\"ox\":%d,\"oy\":%d,\"mx\":%d,\"my\":%d,\"rc\":%d,"
            "\"arm\":%d,\"telegraph\":%d,\"ready_before\":%d,\"ready_after\":%d,"
-           "\"orig_ready_after\":%d,\"public\":%d,\"m_id\":%u,\"f_action\":%d}\n",
+           "\"orig_ready_after\":%d,\"public\":%d,\"m_id\":%u,\"f_action\":%d,"
+           "\"displaced\":%d,\"delivered\":%d,\"pre_public\":%d}\n",
            name, ox, oy, pet.mx, pet.my, rc, arm, telegraphs, ready,
            chaos_next_use_whistle_decision_ready(pet.m_id),
            chaos_next_use_whistle_decision_ready(orig_id),
-           public_n, pet.m_id, f_action);
+           public_n, pet.m_id, f_action,
+           witness.displaced, witness.manifestation_delivered,
+           witness.pre_public);
     return 0;
 }
 
 int main(int argc, char **argv)
 {
+    const char *name;
+    const char *dirpath;
+
     if (argc != 3) return 2;
+    name = argv[1];
+    dirpath = argv[2];
     fqn_prefix[TROUBLEPREFIX] = "./";
-    return run_case(argv[1], argv[2]);
+    setup_tty(&argc, argv);
+    return run_case(name, dirpath);
 }
