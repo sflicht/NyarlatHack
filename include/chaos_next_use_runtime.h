@@ -243,5 +243,7 @@ struct chaos_next_use_snapshot {
 int chaos_next_use_snapshot_export(struct chaos_next_use_snapshot *);
 int chaos_next_use_snapshot_validate(const struct chaos_next_use_snapshot *);
 int chaos_next_use_snapshot_import(const struct chaos_next_use_snapshot *);
+int chaos_next_use_snapshot_write(int fd, const struct chaos_next_use_snapshot *);
+int chaos_next_use_snapshot_read(int fd, struct chaos_next_use_snapshot *);
 
 #endif
