@@ -7,6 +7,9 @@ import tempfile
 import unittest
 
 ROOT = Path(__file__).resolve().parents[2]
+LUA = subprocess.check_output(
+    ["pkg-config", "--cflags", "--libs", "lua5.4"], text=True
+).split()
 
 
 class NextUseAdmitTests(unittest.TestCase):
@@ -31,8 +34,10 @@ class NextUseAdmitTests(unittest.TestCase):
             str(ROOT / "src/chaos_next_use_admission.c"),
             str(ROOT / "src/chaos_next_use_runtime.c"),
             str(ROOT / "src/chaos_protocol.c"),
+            str(ROOT / "src/chaos_lua.c"),
             "-Wl,--gc-sections",
             "-lm",
+            *LUA,
             "-o",
             str(cls.exe),
         ]
@@ -93,6 +98,13 @@ class NextUseAdmitTests(unittest.TestCase):
         self.assertEqual(row["install"], 1)
         self.assertEqual(row["slot_w"], 1)
         self.assertEqual(row["slot_f"], 1)
+
+    def test_second_delay_does_not_act(self):
+        row = self.run_mode("delay-twice")
+        self.assertEqual(row["admit"], 0)
+        self.assertEqual(row["install"], 1)
+        self.assertFalse(row["second_ready"])
+        self.assertFalse(row["second"])
 
     def test_install_failure_after_commit_does_not_rewind(self):
         row = self.run_mode("install-fail")
@@ -162,8 +174,10 @@ class NextUseAdmitTests(unittest.TestCase):
             str(source),
             str(ROOT / "src/chaos_next_use_runtime.c"),
             str(ROOT / "src/chaos_protocol.c"),
+            str(ROOT / "src/chaos_lua.c"),
             "-Wl,--gc-sections",
             "-lm",
+            *LUA,
             "-o",
             str(exe),
         ]
