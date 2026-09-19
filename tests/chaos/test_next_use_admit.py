@@ -134,6 +134,11 @@ class NextUseAdmitTests(unittest.TestCase):
         self.assertEqual(row["install"], 1)
         self.assertFalse(row["ready"])
 
+    def test_origin_eviction_does_not_keep_slot(self):
+        row = self.run_mode("origin-evict")
+        self.assertEqual(row["install"], 1)
+        self.assertFalse(row["ready"])
+
     def test_expired_w_slot_is_not_ready(self):
         row = self.run_mode("expire-w")
         self.assertEqual(row["admit"], 0)
