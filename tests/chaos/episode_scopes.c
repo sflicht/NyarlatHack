@@ -13,6 +13,7 @@ struct permonst mons[NUMMONS];
 struct Race urace;
 struct sinfo program_state;
 long moves = 1;
+long monstermoves = 1;
 int multi;
 static int shadow, write_count, sync_count, fail_write, fail_sync;
 int chaos_shadow_active(void) { return shadow; }
