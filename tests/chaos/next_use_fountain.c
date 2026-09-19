@@ -227,11 +227,11 @@ int main(int argc, char **argv)
             "{\"want\":%d,\"seed\":%u,\"admit\":%d,\"contacted\":%d,"
             "\"token_active\":%d,\"remap\":%d,\"consumed\":%d,"
             "\"hunger_delta\":%d,\"typ_before\":%d,\"typ_after\":%d,"
-            "\"telegraph\":%d,\"completed\":%ld,\"completed_after\":%ld,\"seq_delta\":%ld}\n",
+            "\"telegraph\":%d,\"completed\":%ld,\"completed_after\":%ld,\"seq_delta\":%ld,\"reseed\":%d}\n",
             want, seed, admitted_ok, contacted, token.active, token.remap,
             token.consumed, u.uhunger - hunger_before, typ_before,
             levl[u.ux][u.uy].typ, telegraphs, completed, completed_after,
-            u.chaos.seq - seq_before);
+            u.chaos.seq - seq_before, reseed_count);
         fclose(out);
     }
     return 0;
