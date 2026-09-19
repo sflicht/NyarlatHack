@@ -204,7 +204,12 @@ def compose_prompt(public_context, *, prior_notes=(), literary_layer="poe"):
     notes = _prior_notes(prior_notes)
     instructions = "\n\n".join(
         (_PROMPTS / name).read_text(encoding="utf-8")
-        for name in ("contract.txt", "gothic.txt", _LITERARY_FILES[literary_layer])
+        for name in (
+            "contract.txt",
+            "mechanics-sanity-insight.txt",
+            "gothic.txt",
+            _LITERARY_FILES[literary_layer],
+        )
     )
     prompt = json.dumps(
         {"public_context": public, "prior_notes": notes},

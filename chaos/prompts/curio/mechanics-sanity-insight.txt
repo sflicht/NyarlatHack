@@ -1,0 +1,24 @@
+Sanity/Insight mechanics guide (trusted; not public_context)
+Bound: main 082f94611 attrib.c u_init.c youprop.h chaos/curio.py.
+LEGAL = validation bound. SOURCE = named symbol. MEASURED = retained artifact.
+UNKNOWN = no typical-play distribution. LEGAL maxima are not ordinary values.
+
+Sanity
+LEGAL Lua ctx.sanity integer 0..100 (curio._public_context, contract.txt).
+SOURCE u.usanity via change_usanity(delta, check) src/attrib.c: add delta, clamp
+0..100; if !u.umadness && result < 50 && delta < 0, floor min(start, 50).
+check TRUE may roll acute-madness; curio apply uses FALSE (src/chaos_curio.c)
+so that extra check is omitted. calc_total_maxhp/maxen always run.
+SOURCE init u.usanity=100 (src/u_init.c); Madman later sets 75.
+MEASURED none here. UNKNOWN ordinary-play Sanity distribution.
+
+Insight
+LEGAL Lua ctx.insight integer 0..1000000: transport bound, not typical early
+native Insight. insight>500 is LEGAL in Lua and may be uninformative early;
+it is not invalid.
+SOURCE Insight is u.uinsight (include/youprop.h). change_uinsight(delta) in
+src/attrib.c returns while u.veil; else add delta, clamp at 0, no upper cap.
+Init u.uinsight=0 and u.veil=TRUE (src/u_init.c). Lua cannot query veil or map.
+MEASURED none here. UNKNOWN veil-lift timing and typical Insight.
+
+Do not invent typical Sanity/Insight. W/F notes wait on #60/#61.
