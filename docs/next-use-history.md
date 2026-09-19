@@ -73,6 +73,15 @@ process's one attempt after a private `next_use.lua` is opened, including
 invalid Lua; absent files keep polling without latching. Partial markers are
 removed and are not success.
 
+### Admission commit
+
+Irreversible commit is `chaos_next_use_debit` succeeding inside
+`chaos_next_use_admit`: spend increases by the operation-count price and is not
+refunded. Receipt delivery runs after that point. A failed receipt terminates
+the program without installing a live mechanic. Precommit schema/budget
+failures leave the caller's spend unchanged. The admission unit does not apply
+native W/F effects; install is a separate runtime step.
+
 Empty menus and rejected intents leave stock behavior unchanged.
 
 ## What this slice does not include
