@@ -376,9 +376,7 @@ class NextUseSafeAdmitTests(unittest.TestCase):
         self.assertEqual(row["telegraph"], 1)
 
     def test_production_f_only_admits(self):
-        row = self.run_case(
-            self.publish_f(), wrapper="on_safe", evidence="valid_f"
-        )
+        row = self.run_case(self.publish_f(), wrapper="on_safe", evidence="valid_f")
         self.assertEqual(row["admitted"], 1)
         self.assertEqual(row["caller_spent"], 1)
         self.assertEqual(row["telegraph"], 1)
