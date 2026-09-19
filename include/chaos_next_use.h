@@ -12,6 +12,7 @@
 #define CHAOS_NEXT_USE_SHA256_BYTES 32
 #define CHAOS_NEXT_USE_SHA256_HEX 64
 #define CHAOS_NEXT_USE_RUN_HEX 64
+#define CHAOS_NEXT_USE_LOGICAL_HEX 16
 
 /* Parse/JCS failures are closed and stable. No input is repaired. */
 enum chaos_next_use_error {
@@ -101,6 +102,8 @@ int chaos_next_use_parse_intent(const char *, size_t,
 int chaos_next_use_jcs(const char *, size_t, char *, size_t, size_t *);
 int chaos_next_use_sha256(const void *, size_t,
                           unsigned char [CHAOS_NEXT_USE_SHA256_BYTES]);
+int chaos_next_use_format_logical_id(unsigned long long,
+                                     char [CHAOS_NEXT_USE_LOGICAL_HEX + 1]);
 const char *chaos_next_use_player_warning(const char *identifier);
 
 #endif
