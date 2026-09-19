@@ -192,6 +192,8 @@ static int run_case(const char *name, const char *dirpath)
     }
     if (!strcmp(name, "wrongid"))
         pet.m_id = 8;
+    if (!strcmp(name, "changed"))
+        pet.mtyp = PM_KITTEN;
     f_action = 0;
     if (!strcmp(name, "wrongfam") && arm)
         f_action = chaos_next_use_on_action(CHAOS_NEXT_USE_FAMILY_F, 10, 0);

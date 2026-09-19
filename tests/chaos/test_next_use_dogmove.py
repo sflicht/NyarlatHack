@@ -178,6 +178,10 @@ class NextUseDogMoveTests(unittest.TestCase):
         self.assertEqual(row["ready_before"], 1)
         self.assertEqual(row["public"], 0)
 
+    def test_changed_companion_does_not_publish_witness(self):
+        row = self.run_case("changed")
+        self.assertEqual(row["public"], 0)
+
 
 if __name__ == "__main__":
     unittest.main()
