@@ -133,6 +133,26 @@ class EnvelopePublishTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as a, tempfile.TemporaryDirectory() as b:
             self.assertNotEqual(engine_run_hex(a), engine_run_hex(b))
 
+    def test_logical_id_is_not_transport_run_hex(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            os.chmod(tmp, 0o700)
+            binary = Path(tmp) / "next_use_envelope"
+            _compile(binary)
+            first = subprocess.check_output(
+                [str(binary), "1", "logical"], text=True
+            ).strip()
+            second = subprocess.check_output(
+                [str(binary), "2", "logical"], text=True
+            ).strip()
+            owned = subprocess.check_output(
+                [str(binary), tmp, "runhex"], text=True
+            ).strip()
+            self.assertEqual(len(first), 16)
+            self.assertEqual(first, "0000000000000001")
+            self.assertNotEqual(first, second)
+            self.assertNotEqual(first, owned)
+            self.assertEqual(len(owned), 64)
+
 
 if __name__ == "__main__":
     unittest.main()
