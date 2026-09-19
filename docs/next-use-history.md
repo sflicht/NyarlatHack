@@ -93,6 +93,18 @@ returns a snapshot. Load is not admission, spend, or Lua execution. A second
 publish into the same directory fails closed. Missing provenance or a
 mismatched source digest is not repaired.
 
+### Safe-point admission
+
+`chaos_next_use_safe_try` is the one integration seam. It is opt-in
+(`NYARLATHACK_NEXT_USE_ADMIT=1`) and is not enabled merely because
+`next_use.lua` exists. Telegraph happens before debit. A matching envelope
+admits and installs once; later polls do not repeat warning or spend. Future
+`envelope.at` stays pending; late, wrong-run, wrong-level, stale-origin,
+Lua-invalid, and tampered-source candidates reject without an effect. Ordinary
+play still lacks an engine-owned 64-hex run identity, so the live `chaos_safe`
+hook cannot prove run provenance and will not admit. This PR does not claim
+native whistle/fountain effect, save/restore, or replay.
+
 Empty menus and rejected intents leave stock behavior unchanged.
 
 ## What this slice does not include

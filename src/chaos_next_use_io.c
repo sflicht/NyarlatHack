@@ -119,3 +119,27 @@ int chaos_next_use_envelope_load(int dir, struct chaos_next_use_envelope *out)
         return CHAOS_NEXT_USE_UTF8;
     return chaos_next_use_parse_envelope(buf, (size_t)n, out);
 }
+
+int chaos_next_use_envelope_read(int dir, char *buf, size_t cap, size_t *written)
+{
+    ssize_t n;
+    int fd;
+
+    if (!buf || !written)
+        return CHAOS_NEXT_USE_NULL_ARGUMENT;
+    *written = 0;
+    if (dir < 0 || cap < 1)
+        return CHAOS_NEXT_USE_OUTPUT;
+    fd = private_file(dir, "next_use-envelope.json", O_RDONLY);
+    if (fd < 0)
+        return CHAOS_NEXT_USE_OUTPUT;
+    n = full_read(fd, buf, cap);
+    close(fd);
+    if (n < 1 || (size_t)n >= cap)
+        return CHAOS_NEXT_USE_LIMIT;
+    if (memchr(buf, 0, (size_t)n))
+        return CHAOS_NEXT_USE_UTF8;
+    buf[n] = '\0';
+    *written = (size_t)n;
+    return CHAOS_NEXT_USE_OK;
+}
