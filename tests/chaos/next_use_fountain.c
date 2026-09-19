@@ -186,7 +186,7 @@ int main(int argc, char **argv)
 
     if (argc != 4) return 2;
     want = atoi(argv[1]);
-    admit = !strcmp(argv[2], "admit");
+    admit = !strcmp(argv[2], "admit") || !strcmp(argv[2], "levitate");
     dirpath = argv[3];
     setup_tty(&argc, argv);
     setup_level();
@@ -196,6 +196,10 @@ int main(int argc, char **argv)
     admitted_ok = 1;
     if (admit && admit_f(dirpath, &telegraphs) != 1)
         admitted_ok = 0;
+    if (!strcmp(argv[2], "levitate")) {
+        set_itimeout(&HLevitation, 500L);
+        float_up();
+    }
     seed = find_seed(want);
     if (!seed) return 4;
     reseed_period = INT_MAX;

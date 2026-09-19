@@ -85,6 +85,9 @@ class NextUseFountainTests(unittest.TestCase):
             raise RuntimeError(result.stderr.decode())
 
     def run_case(self, fate, admit):
+        return self.run_mode(fate, "admit" if admit else "none")
+
+    def run_mode(self, fate, mode):
         folder = Path(tempfile.mkdtemp(prefix="nyarl-next-use-fountain-run-"))
         os.chmod(folder, 0o700)
         host = dict(HOST)
@@ -97,7 +100,7 @@ class NextUseFountainTests(unittest.TestCase):
         env["COLUMNS"] = "80"
         env["LINES"] = "24"
         p = subprocess.run(
-            [str(self.exe), str(fate), "admit" if admit else "none", str(folder)],
+            [str(self.exe), str(fate), mode, str(folder)],
             capture_output=True,
             text=True,
             timeout=10,
@@ -133,6 +136,12 @@ class NextUseFountainTests(unittest.TestCase):
         row = self.run_case(10, False)
         self.assertEqual(row["contacted"], 0)
         self.assertEqual(row["hunger_delta"], 0)
+
+    def test_levitation_blocks_remap(self):
+        row = self.run_mode(10, "levitate")
+        self.assertEqual(row["admit"], 1)
+        self.assertEqual(row["hunger_delta"], 0)
+        self.assertEqual(row["typ_after"], row["typ_before"])
 
 
 if __name__ == "__main__":
