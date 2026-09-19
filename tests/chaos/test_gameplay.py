@@ -408,7 +408,6 @@ class GameplayTests(unittest.TestCase):
         self.assertEqual(g.quit(), 0)
 
     def test_next_use_lua_is_consumed_not_admitted(self):
-        g = self.game("next-use-candidate", wizard=True)
         source = (
             b"return {\n"
             b"  on_action = function(context)\n"
@@ -416,10 +415,38 @@ class GameplayTests(unittest.TestCase):
             b"  end\n"
             b"}\n"
         )
+
+        def events(game):
+            path = game.run / "events.jsonl"
+            if not path.is_file():
+                return []
+            return [json.loads(line) for line in path.read_bytes().splitlines() if line]
+
+        control = self.game("next-use-control", wizard=True)
+        control.start()
+        control.wait_turns(2)
+        self.assertFalse((control.run / "next_use-used.lua").exists())
+        control_events = events(control)
+        self.assertFalse(any("next_use" in json.dumps(row) for row in control_events))
+        self.assertEqual(control.quit(), 0)
+
+        g = self.game("next-use-candidate", wizard=True)
         path = g.run / "next_use.lua"
         path.write_bytes(source)
         path.chmod(0o600)
         g.start()
         g.wait_turns(2)
         self.assertEqual((g.run / "next_use-used.lua").read_bytes(), source)
+        candidate_events = events(g)
+        self.assertFalse(
+            any(row.get("event") in {"whisper", "next_use"} for row in candidate_events)
+        )
+        self.assertEqual(
+            [row.get("spent") for row in candidate_events],
+            [row.get("spent") for row in control_events],
+        )
+        self.assertEqual(
+            [row.get("reserved") for row in candidate_events],
+            [row.get("reserved") for row in control_events],
+        )
         self.assertEqual(g.quit(), 0)

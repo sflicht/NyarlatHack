@@ -65,6 +65,14 @@ on-disk intent hash to migrate. Records produced with the escaped formatter
 are invalid and fail closed. There is no accept-either-hash fallback, and
 historical captures are not rewritten.
 
+### Load marker versus admission
+
+A marker file `next_use-used.lua` is durable evidence of a complete load/copy
+only. It is not admission. The process-local `checked` latch consumes this
+process's one attempt after a private `next_use.lua` is opened, including
+invalid Lua; absent files keep polling without latching. Partial markers are
+removed and are not success.
+
 Empty menus and rejected intents leave stock behavior unchanged.
 
 ## What this slice does not include
