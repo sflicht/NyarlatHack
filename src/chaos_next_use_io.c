@@ -1,11 +1,20 @@
 /* NetHack General Public License. Consume next_use.lua once; not admission. */
-#include "hack.h"
+#define _GNU_SOURCE
 #include "chaos_lua.h"
 #include "chaos_next_use_io.h"
+#include <errno.h>
 #include <fcntl.h>
 #include <string.h>
 #include <sys/stat.h>
 #include <unistd.h>
+
+/*
+ * Process-local `checked` is not durable evidence. It latches after this
+ * process opens a private next_use.lua, including invalid Lua, so a failed
+ * candidate is not retried every turn. Absent/unreadable files do not latch;
+ * polling stays nonblocking. next_use-used.lua is proof of a complete
+ * load/copy only, never admission or permission to run a mechanic.
+ */
 
 static int private_file(int dir, const char *name, int flags)
 {
@@ -23,6 +32,36 @@ static int private_file(int dir, const char *name, int flags)
     return fd;
 }
 
+static ssize_t full_read(int fd, char *buf, size_t cap)
+{
+    size_t pos = 0;
+    while (pos < cap) {
+        ssize_t n = read(fd, buf + pos, cap - pos);
+        if (n < 0 && errno == EINTR)
+            continue;
+        if (n < 0)
+            return -1;
+        if (n == 0)
+            return (ssize_t)pos;
+        pos += (size_t)n;
+    }
+    return (ssize_t)pos;
+}
+
+static int full_write(int fd, const char *buf, size_t len)
+{
+    size_t pos = 0;
+    while (pos < len) {
+        ssize_t n = write(fd, buf + pos, len - pos);
+        if (n < 0 && errno == EINTR)
+            continue;
+        if (n <= 0)
+            return 0;
+        pos += (size_t)n;
+    }
+    return 1;
+}
+
 void chaos_next_use_candidate_tick(int dir)
 {
     static int checked;
@@ -36,19 +75,23 @@ void chaos_next_use_candidate_tick(int dir)
     if (fd < 0)
         return;
     checked = 1;
-    n = read(fd, source, CHAOS_LUA_SOURCE + 1);
+    n = full_read(fd, source, CHAOS_LUA_SOURCE + 1);
     close(fd);
-    if (n < 1 || n > CHAOS_LUA_SOURCE || memchr(source, 0, (size_t) n))
+    if (n < 1 || n > CHAOS_LUA_SOURCE || memchr(source, 0, (size_t)n))
         return;
-    source[n] = 0;
-    if (chaos_lua_next_use_load(source, (size_t) n) != 0)
+    if (chaos_lua_next_use_load(source, (size_t)n) != 0)
         return;
-    used = private_file(dir, "next_use-used.lua", O_WRONLY | O_CREAT | O_EXCL);
+    used = private_file(dir, "next_use-used.lua",
+                        O_WRONLY | O_CREAT | O_EXCL);
     if (used < 0)
         return;
-    if (write(used, source, n) != n || fsync(used)) {
+    if (!full_write(used, source, (size_t)n) || fsync(used)) {
         close(used);
+        unlinkat(dir, "next_use-used.lua", 0);
         return;
     }
-    close(used);
+    if (close(used) || fsync(dir)) {
+        unlinkat(dir, "next_use-used.lua", 0);
+        return;
+    }
 }
