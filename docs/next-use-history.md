@@ -82,6 +82,17 @@ the program without installing a live mechanic. Precommit schema/budget
 failures leave the caller's spend unchanged. The admission unit does not apply
 native W/F effects; install is a separate runtime step.
 
+### Envelope handoff
+
+Python publishes one complete `next_use-envelope.json` from a trusted selected
+row, host scheduling fields (`at`, `id`, `run`, level, `move`, `variant`), and
+engine-owned policy (`ttl` 100, cost = operation count, telegraph). Public
+history facts stay in the menu; envelope `origin_refs` use engine facts
+(`ordinary_whistle` / `water_refreshed`). The C reader parses that file and
+returns a snapshot. Load is not admission, spend, or Lua execution. A second
+publish into the same directory fails closed. Missing provenance or a
+mismatched source digest is not repaired.
+
 Empty menus and rejected intents leave stock behavior unchanged.
 
 ## What this slice does not include
