@@ -260,13 +260,31 @@ int chaos_next_use_safe_try(const struct chaos_next_use_safe_request *request,
         return finish(result, rc);
     }
     result->admitted = 1;
-    if (!chaos_next_use_runtime_install(&admitted, envelope.source,
-                                        envelope.source_length,
-                                        envelope.source_sha256, 1, 1,
-                                        origin->root, expiry, 0, 0,
-                                        envelope.variant, 0, 0)) {
-        result->rejected = 1;
-        return finish(result, CHAOS_NEXT_USE_ADMISSION_RECEIPT_TRANSPORT);
+    {
+        long origin_w = 0, origin_w_deadline = 0;
+        long origin_f = 0, origin_f_deadline = 0;
+        int i;
+
+        for (i = 0; i < envelope.operation_count; ++i) {
+            const struct chaos_next_use_origin_ref *ref = &envelope.origin_refs[i];
+            long ref_expiry = ref->move > 2147483547 ? ref->move : ref->move + 100;
+            if (ref->family == CHAOS_NEXT_USE_FAMILY_W) {
+                origin_w = ref->root;
+                origin_w_deadline = ref_expiry;
+            } else if (ref->family == CHAOS_NEXT_USE_FAMILY_F) {
+                origin_f = ref->root;
+                origin_f_deadline = ref_expiry;
+            }
+        }
+        if (!chaos_next_use_runtime_install(&admitted, envelope.source,
+                                            envelope.source_length,
+                                            envelope.source_sha256, 1, 1,
+                                            origin_w, origin_w_deadline,
+                                            origin_f, origin_f_deadline,
+                                            envelope.variant, 0, 0)) {
+            result->rejected = 1;
+            return finish(result, CHAOS_NEXT_USE_ADMISSION_RECEIPT_TRANSPORT);
+        }
     }
     result->active = 1;
     return finish(result, CHAOS_NEXT_USE_ADMISSION_OK);
