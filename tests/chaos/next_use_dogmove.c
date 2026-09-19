@@ -105,6 +105,20 @@ static int receipt_ok(void *opaque, const struct chaos_next_use_private_record *
     return 1;
 }
 
+static int dir_run_hex(int dir, char run[65])
+{
+    struct stat st;
+
+    if (dir < 0 || fstat(dir, &st)
+        || snprintf(run, 65, "%016llx%016llx%016llx%016llx",
+                    (unsigned long long)st.st_dev,
+                    (unsigned long long)st.st_ino,
+                    (unsigned long long)st.st_dev,
+                    (unsigned long long)st.st_ino) != 64)
+        return -1;
+    return 0;
+}
+
 static void bind_origin(const char *run)
 {
     struct chaos_next_use_origin_ref origin;
@@ -127,18 +141,12 @@ static int admit_and_act(const char *dirpath, struct monst *pet, int *telegraphs
     struct chaos_next_use_safe_request req;
     struct chaos_next_use_safe_result admitted;
     struct chaos_state budget;
-    struct stat st;
     char run[65];
     int dir, acted;
 
     dir = open(dirpath, O_RDONLY | O_DIRECTORY);
     if (dir < 0) return -1;
-    if (fstat(dir, &st)
-        || snprintf(run, sizeof run, "%016llx%016llx%016llx%016llx",
-                    (unsigned long long)st.st_dev,
-                    (unsigned long long)st.st_ino,
-                    (unsigned long long)st.st_dev,
-                    (unsigned long long)st.st_ino) != 64) {
+    if (dir_run_hex(dir, run)) {
         close(dir);
         return -1;
     }
@@ -194,19 +202,13 @@ static int run_case(const char *name, const char *dirpath)
         if (arm < 0) return 2;
     }
     if (!strcmp(name, "safemiss") || !strcmp(name, "safehit")) {
-        struct stat st;
         char run[65];
         int dir;
 
         setenv("NYARLATHACK_NEXT_USE_ADMIT", "1", 1);
         dir = open(dirpath, O_RDONLY | O_DIRECTORY);
         if (dir < 0) return 2;
-        if (fstat(dir, &st)
-            || snprintf(run, sizeof run, "%016llx%016llx%016llx%016llx",
-                        (unsigned long long)st.st_dev,
-                        (unsigned long long)st.st_ino,
-                        (unsigned long long)st.st_dev,
-                        (unsigned long long)st.st_ino) != 64) {
+        if (dir_run_hex(dir, run)) {
             close(dir);
             return 2;
         }
