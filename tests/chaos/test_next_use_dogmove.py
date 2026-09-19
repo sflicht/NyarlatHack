@@ -7,7 +7,7 @@ import subprocess
 import tempfile
 import unittest
 
-from chaos.next_use_envelope import publish_envelope
+from chaos.next_use_envelope import engine_run_hex, publish_envelope
 from native_rng import controlled_rng_objects
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -97,7 +97,9 @@ class NextUseDogMoveTests(unittest.TestCase):
     def run_case(self, name, row=ROW):
         folder = Path(tempfile.mkdtemp(prefix="nyarl-next-use-dogmove-run-"))
         os.chmod(folder, 0o700)
-        publish_envelope(folder, row, HOST)
+        host = dict(HOST)
+        host["run"] = engine_run_hex(folder)
+        publish_envelope(folder, row, host)
         env = dict(os.environ)
         env["NYARLATHACK_RUN_DIR"] = str(folder)
         env["NYARLATHACK_OBSERVATIONS"] = "1"

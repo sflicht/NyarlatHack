@@ -11,6 +11,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
 #include <unistd.h>
 
 static void setup_tty(int *argc, char **argv)
@@ -126,11 +127,21 @@ static int admit_and_act(const char *dirpath, struct monst *pet, int *telegraphs
     struct chaos_next_use_safe_request req;
     struct chaos_next_use_safe_result admitted;
     struct chaos_state budget;
-    const char *run = "abababababababababababababababababababababababababababababababab";
+    struct stat st;
+    char run[65];
     int dir, acted;
 
     dir = open(dirpath, O_RDONLY | O_DIRECTORY);
     if (dir < 0) return -1;
+    if (fstat(dir, &st)
+        || snprintf(run, sizeof run, "%016llx%016llx%016llx%016llx",
+                    (unsigned long long)st.st_dev,
+                    (unsigned long long)st.st_ino,
+                    (unsigned long long)st.st_dev,
+                    (unsigned long long)st.st_ino) != 64) {
+        close(dir);
+        return -1;
+    }
     chaos_next_use_safe_reset_for_test();
     chaos_state_init(&budget);
     memset(&req, 0, sizeof req);
