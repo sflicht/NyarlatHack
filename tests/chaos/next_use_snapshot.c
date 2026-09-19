@@ -35,6 +35,10 @@ void mread(int fd, genericptr_t loc, unsigned int num)
 }
 
 static const char source_text[] = "return 0";
+static const char quiet_lua[] =
+    "return {on_action=function(c) return {next_use_intent_v=2, op=\"quiet\", state=0} end}";
+static const char delay_lua[] =
+    "return {on_action=function(c) return {next_use_intent_v=2, op=\"delay\", state=0} end}";
 static const char run_hex[] =
     "0000000000000000000000000000000000000000000000000000000000000000";
 
@@ -47,6 +51,23 @@ static void digest_hex(const unsigned char digest[32], char output[65])
         output[i * 2 + 1] = hex[digest[i] & 15];
     }
     output[64] = '\0';
+}
+
+static int json_escape(const char *in, char *out, size_t cap)
+{
+    size_t n = 0;
+    for (; *in; ++in) {
+        if (*in == '"' || *in == '\\') {
+            if (n + 2 >= cap) return 0;
+            out[n++] = '\\';
+            out[n++] = *in;
+        } else {
+            if (n + 1 >= cap) return 0;
+            out[n++] = *in;
+        }
+    }
+    out[n] = '\0';
+    return 1;
 }
 
 static int receipt_ok(void *opaque, const struct chaos_next_use_private_record *record)
@@ -161,6 +182,54 @@ static int install_pending_f(void)
                                           1, 1, 0, 0, 10, 110, 0, 0, 1);
 }
 
+static int install_lua(const char *lua)
+{
+    struct chaos_next_use_envelope envelope;
+    struct chaos_next_use_admission source, admitted;
+    struct chaos_next_use_attempt_gate gate;
+    char canonical[CHAOS_NEXT_USE_ENVELOPE_MAX + 1];
+    char source_sha[65], raw[CHAOS_NEXT_USE_ENVELOPE_MAX + 1];
+    char escaped[CHAOS_NEXT_USE_SOURCE_MAX * 2];
+    unsigned char digest[32];
+    size_t canonical_length = 0, lua_len;
+    int n;
+
+    lua_len = strlen(lua);
+    memset(&source, 0, sizeof source);
+    memset(&admitted, 0, sizeof admitted);
+    chaos_state_init(&source.budget_state);
+    source.program.phase = CHAOS_ATTEMPT_OPEN;
+    gate.phase = CHAOS_ATTEMPT_OPEN;
+    gate.reason = 0;
+    if (!json_escape(lua, escaped, sizeof escaped))
+        return 0;
+    if (chaos_next_use_sha256(lua, lua_len, digest) != CHAOS_NEXT_USE_OK)
+        return 0;
+    digest_hex(digest, source_sha);
+    n = snprintf(raw, sizeof raw,
+        "{\"at\":7,\"cost\":1,\"id\":1,\"next_use_program_v\":2,"
+        "\"operations\":[\"W\"],\"origin_refs\":[{\"end_seq\":12,"
+        "\"fact\":\"ordinary_whistle\",\"family\":\"W\",\"level_dlevel\":1,"
+        "\"level_dnum\":0,\"move\":10,\"notice_seq\":11,\"root\":10,"
+        "\"run\":\"%s\"}],\"source\":\"%s\",\"source_sha256\":\"%s\","
+        "\"telegraph\":\"next-use-v2-W\",\"ttl\":100,\"variant\":0}",
+        run_hex, escaped, source_sha);
+    if (n < 1 || (size_t)n >= sizeof raw) return 0;
+    if (chaos_next_use_jcs(raw, (size_t)n, canonical,
+                           CHAOS_NEXT_USE_ENVELOPE_MAX + 1, &canonical_length)
+        != CHAOS_NEXT_USE_OK)
+        return 0;
+    if (chaos_next_use_parse_envelope(canonical, canonical_length, &envelope)
+        != CHAOS_NEXT_USE_OK)
+        return 0;
+    if (chaos_next_use_admit(&admitted, &source, &gate, &envelope, canonical,
+                             canonical_length, 0, 40, 1, receipt_ok, NULL)
+        != CHAOS_NEXT_USE_ADMISSION_OK)
+        return 0;
+    return chaos_next_use_runtime_install(&admitted, lua, lua_len, source_sha,
+                                          1, 1, 10, 110, 0, 0, 0, 1, 0);
+}
+
 static void print_snap(const char *tag, int ok,
                        const struct chaos_next_use_snapshot *snap)
 {
@@ -267,6 +336,51 @@ int main(int argc, char **argv)
         return installed && wrote && loaded && imported && exported
                && live.slot_w == snap.slot_w
                && live.program_id == snap.program_id ? 0 : 1;
+    }
+    if (!strcmp(mode, "quiet")) {
+        struct chaos_fountain_token token;
+
+        chaos_next_use_runtime_reset();
+        installed = install_lua(quiet_lua);
+        monstermoves = 40;
+        memset(&token, 0, sizeof token);
+        chaos_next_use_on_action(CHAOS_NEXT_USE_FAMILY_W, 10, &token);
+        exported = chaos_next_use_snapshot_export(&snap);
+        print_snap("after_quiet", exported, &snap);
+        chaos_next_use_runtime_reset();
+        imported = chaos_next_use_snapshot_import(&snap);
+        exported = chaos_next_use_snapshot_export(&live);
+        print_snap("imported_quiet", imported && exported, &live);
+        return installed && imported && exported
+               && live.slot_w == CHAOS_SLOT_W_CONSUMED_QUIET ? 0 : 1;
+    }
+    if (!strcmp(mode, "delay")) {
+        struct chaos_fountain_token token;
+
+        chaos_next_use_runtime_reset();
+        installed = install_lua(delay_lua);
+        monstermoves = 40;
+        memset(&token, 0, sizeof token);
+        chaos_next_use_on_action(CHAOS_NEXT_USE_FAMILY_W, 10, &token);
+        exported = chaos_next_use_snapshot_export(&snap);
+        print_snap("after_delay", exported, &snap);
+        chaos_next_use_runtime_reset();
+        imported = chaos_next_use_snapshot_import(&snap);
+        exported = chaos_next_use_snapshot_export(&live);
+        print_snap("imported_delay", imported && exported, &live);
+        return installed && imported && exported
+               && live.slot_w == CHAOS_SLOT_W_CONSUMED_DELAY ? 0 : 1;
+    }
+    if (!strcmp(mode, "expired")) {
+        chaos_next_use_expire(CHAOS_END_PROGRAM_EXPIRED);
+        exported = chaos_next_use_snapshot_export(&snap);
+        print_snap("after_expiry", exported, &snap);
+        chaos_next_use_runtime_reset();
+        imported = chaos_next_use_snapshot_import(&snap);
+        exported = chaos_next_use_snapshot_export(&live);
+        print_snap("imported_expiry", imported && exported, &live);
+        return installed && imported && exported
+               && live.slot_w == CHAOS_SLOT_W_TERMINATED_EXPIRY ? 0 : 1;
     }
     if (!strcmp(mode, "save_restore")) {
         FILE *fp;

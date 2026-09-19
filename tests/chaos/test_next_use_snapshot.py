@@ -101,6 +101,24 @@ class NextUseSnapshotTests(unittest.TestCase):
         self.assertEqual(after["ok"], 1)
         self.assertEqual(after["slot_w"], 1)
 
+    def test_quiet_roundtrip(self):
+        rows = self.run_mode("quiet")
+        after = next(row for row in rows if row["tag"] == "imported_quiet")
+        self.assertEqual(after["ok"], 1)
+        self.assertEqual(after["slot_w"], 3)
+
+    def test_delay_roundtrip(self):
+        rows = self.run_mode("delay")
+        after = next(row for row in rows if row["tag"] == "imported_delay")
+        self.assertEqual(after["ok"], 1)
+        self.assertEqual(after["slot_w"], 4)
+
+    def test_expired_roundtrip(self):
+        rows = self.run_mode("expired")
+        after = next(row for row in rows if row["tag"] == "imported_expiry")
+        self.assertEqual(after["ok"], 1)
+        self.assertEqual(after["slot_w"], 7)
+
     def test_save_restore_does_not_readmit(self):
         rows = self.run_mode("save_restore")
         after = next(row for row in rows if row["tag"] == "after_save_restore")
