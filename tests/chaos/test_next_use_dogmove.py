@@ -7,7 +7,7 @@ import subprocess
 import tempfile
 import unittest
 
-from chaos.next_use_envelope import publish_envelope
+from chaos.next_use_envelope import engine_run_hex, publish_envelope
 from native_rng import controlled_rng_objects
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -97,10 +97,15 @@ class NextUseDogMoveTests(unittest.TestCase):
     def run_case(self, name, row=ROW):
         folder = Path(tempfile.mkdtemp(prefix="nyarl-next-use-dogmove-run-"))
         os.chmod(folder, 0o700)
-        publish_envelope(folder, row, HOST)
+        host = dict(HOST)
+        host["run"] = engine_run_hex(folder)
+        publish_envelope(folder, row, host)
         env = dict(os.environ)
         env["NYARLATHACK_RUN_DIR"] = str(folder)
         env["NYARLATHACK_OBSERVATIONS"] = "1"
+        env["TERM"] = "xterm"
+        env["COLUMNS"] = "80"
+        env["LINES"] = "24"
         p = subprocess.run(
             [str(self.exe), name, str(folder)],
             capture_output=True,
@@ -110,7 +115,7 @@ class NextUseDogMoveTests(unittest.TestCase):
             cwd=folder,
         )
         self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
-        return json.loads(p.stdout)
+        return json.loads((folder / "result.json").read_text())
 
     def test_admitted_dog_move_consumes_extra_attention(self):
         control = self.run_case("none")
@@ -122,8 +127,14 @@ class NextUseDogMoveTests(unittest.TestCase):
         self.assertEqual(positive["telegraph"], 1)
         self.assertEqual(positive["ready_before"], 1)
         self.assertEqual(positive["ready_after"], 0)
-        self.assertEqual(positive["public"], 0)
+        self.assertEqual(positive["public"], 1)
+        self.assertEqual(positive["public2"], 1)
+        self.assertEqual(positive["displaced"], 1)
+        self.assertEqual(positive["delivered"], 1)
+        self.assertEqual(positive["pre_public"], 1)
         self.assertEqual((control["mx"], control["my"]), (bypass["mx"], bypass["my"]))
+        self.assertEqual(control["rng_next"], bypass["rng_next"])
+        self.assertEqual(control["reseed"], bypass["reseed"])
 
     def test_late_window_does_not_take_extra_attention(self):
         late = self.run_case("late")
@@ -166,6 +177,28 @@ class NextUseDogMoveTests(unittest.TestCase):
         self.assertEqual(row["ready_before"], 1)
         self.assertEqual(row["ready_after"], 1)
         self.assertEqual(row["public"], 0)
+
+    def test_hidden_map_does_not_publish_witness(self):
+        row = self.run_case("hidden")
+        self.assertEqual(row["ready_before"], 1)
+        self.assertEqual(row["public"], 0)
+
+    def test_changed_companion_does_not_publish_witness(self):
+        row = self.run_case("changed")
+        self.assertEqual(row["public"], 0)
+
+    def test_chaos_safe_without_origin_does_not_admit(self):
+        row = self.run_case("safemiss")
+        self.assertEqual(row["arm"], 0)
+        self.assertEqual(row["spent"], 0)
+        self.assertEqual(row["ready_before"], 0)
+        self.assertEqual(row["public"], 0)
+
+    def test_chaos_safe_with_origin_admits_once(self):
+        row = self.run_case("safehit")
+        self.assertEqual(row["spent"], 1)
+        self.assertEqual(row["arm"], 2)
+        self.assertEqual(row["ready_before"], 1)
 
 
 if __name__ == "__main__":

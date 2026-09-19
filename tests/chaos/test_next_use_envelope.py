@@ -8,7 +8,11 @@ import tempfile
 import unittest
 
 from chaos.next_use_compose import compose
-from chaos.next_use_envelope import envelope_from_selection, publish_envelope
+from chaos.next_use_envelope import (
+    engine_run_hex,
+    envelope_from_selection,
+    publish_envelope,
+)
 
 ROOT = Path(__file__).resolve().parents[2]
 HARNESS = ROOT / "tests" / "chaos" / "next_use_envelope.c"
@@ -113,6 +117,17 @@ class EnvelopePublishTests(unittest.TestCase):
             self.assertNotEqual(proc.returncode, 0)
             self.assertIn("load=", proc.stdout)
             self.assertNotIn("load=0", proc.stdout)
+
+    def test_engine_run_hex_matches_owned_identity(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            os.chmod(tmp, 0o700)
+            binary = Path(tmp) / "next_use_envelope"
+            _compile(binary)
+            owned = subprocess.check_output(
+                [str(binary), tmp, "runhex"], text=True
+            ).strip()
+            self.assertEqual(engine_run_hex(tmp), owned)
+            self.assertEqual(len(owned), 64)
 
 
 if __name__ == "__main__":

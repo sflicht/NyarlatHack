@@ -2706,6 +2706,7 @@ int expected_glyph;
     if (clipping && (x <= clipx || y < clipy
         || x >= clipxmax || y >= clipymax)) return FALSE;
 #endif
+    if (wins[WIN_MAP]->flags & WIN_CANCELLED) return FALSE;
     if (expected_glyph != glyph_at(x, y)) return FALSE;
     if (ferror(stdout)) return FALSE;
     certificate.x = x;
@@ -2713,7 +2714,7 @@ int expected_glyph;
     certificate.expected_glyph = expected_glyph;
     certificate.seen = FALSE;
     certificate_observer = &certificate;
-    flush_screen(0);
+    tty_print_glyph(WIN_MAP, x, y, expected_glyph);
     certificate_observer = NULL;
     return certificate.seen;
 }
