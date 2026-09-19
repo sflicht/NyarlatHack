@@ -148,7 +148,7 @@ static int run_case(const char *name, const char *dirpath)
 {
     struct monst pet;
     struct chaos_whistle_witness witness;
-    int telegraphs = 0, rc, ox, oy, ready, arm, public_n;
+    int telegraphs = 0, rc, ox, oy, ready, arm, public_n, f_action;
     unsigned orig_id;
 
     test_rng_control();
@@ -181,16 +181,19 @@ static int run_case(const char *name, const char *dirpath)
         pet.data = &mons[PM_KITTEN];
         pet.mtame = 0;
     }
+    f_action = 0;
+    if (!strcmp(name, "wrongfam") && arm)
+        f_action = chaos_next_use_on_action(CHAOS_NEXT_USE_FAMILY_F, 10, 0);
     ready = chaos_next_use_whistle_decision_ready(pet.m_id);
     rc = dog_move(&pet, 0, &witness);
     public_n = (int)chaos_next_use_runtime_public_count();
     printf("{\"case\":\"%s\",\"ox\":%d,\"oy\":%d,\"mx\":%d,\"my\":%d,\"rc\":%d,"
            "\"arm\":%d,\"telegraph\":%d,\"ready_before\":%d,\"ready_after\":%d,"
-           "\"orig_ready_after\":%d,\"public\":%d,\"m_id\":%u}\n",
+           "\"orig_ready_after\":%d,\"public\":%d,\"m_id\":%u,\"f_action\":%d}\n",
            name, ox, oy, pet.mx, pet.my, rc, arm, telegraphs, ready,
            chaos_next_use_whistle_decision_ready(pet.m_id),
            chaos_next_use_whistle_decision_ready(orig_id),
-           public_n, pet.m_id);
+           public_n, pet.m_id, f_action);
     return 0;
 }
 

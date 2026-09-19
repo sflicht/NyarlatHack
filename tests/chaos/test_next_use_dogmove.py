@@ -155,6 +155,11 @@ class NextUseDogMoveTests(unittest.TestCase):
         self.assertEqual(row["ready_before"], 0)
         self.assertEqual(row["public"], 0)
 
+    def test_wrong_family_action_does_not_apply(self):
+        row = self.run_case("wrongfam")
+        self.assertEqual(row["arm"], 2)
+        self.assertEqual(row["f_action"], 0)
+
     def test_no_production_is_a_w_effect_bypass(self):
         """If extra_attention no longer requires witness.production, this fails."""
         row = self.run_case("noprod")
