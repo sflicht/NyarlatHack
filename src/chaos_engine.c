@@ -4,13 +4,20 @@
 #include "chaos_io.h"
 #include "chaos_haunt.h"
 #include "chaos_curio.h"
+#include "chaos_next_use.h"
 #include "chaos_next_use_io.h"
+#include <sys/stat.h>
 #ifdef TTY_GRAPHICS
 #include "wintty.h"
 #endif
 
 int chaos_next_use_on_safe(int, long, int, struct chaos_state *, int, int)
     __attribute__((weak));
+void chaos_next_use_safe_bind_run(const char *) __attribute__((weak));
+void chaos_next_use_safe_bind_telegraph(int (*)(void *, const char *), void *)
+    __attribute__((weak));
+void chaos_next_use_safe_bind_origin(const struct chaos_next_use_origin_ref *,
+                                    int) __attribute__((weak));
 static struct chaos_io io = { -1, -1, -1, 0, 0 };
 static int started, oldsanity, oldinsight;
 static int observations;
@@ -38,6 +45,62 @@ static int observation_current(void) {
 }
 static int food_metabolism(void) {
     return !inediate(youracedata) && !uclockwork && !Race_if(PM_INCANTIFIER);
+}
+static struct {
+    int ready, pending;
+    int root, notice, end, fact, operation, dnum, dlevel, move;
+} next_use_origin;
+static int next_use_warn(void *unused, const char *text)
+{
+    (void)unused;
+    if (!text || !text[0]) return 0;
+    pline("%s", text);
+    return 1;
+}
+static const char *next_use_engine_fact(int operation, int fact)
+{
+    if (operation == CHAOS_OBS_OP_WHISTLING
+        && fact >= CHAOS_OBS_FACT_SOUND_HIGH
+        && fact <= CHAOS_OBS_FACT_SOUND_HUMMING)
+        return "ordinary_whistle";
+    if (operation == CHAOS_OBS_OP_FOUNTAIN_DRINK
+        && fact == CHAOS_OBS_FACT_WATER_REFRESHED)
+        return "water_refreshed";
+    return 0;
+}
+static void next_use_bind_owned(void)
+{
+    struct chaos_next_use_origin_ref origin;
+    struct stat st;
+    char run[65];
+    const char *fact;
+    if (io.dir < 0 || fstat(io.dir, &st)) return;
+    if (snprintf(run, sizeof run, "%016llx%016llx%016llx%016llx",
+                 (unsigned long long)st.st_dev,
+                 (unsigned long long)st.st_ino,
+                 (unsigned long long)st.st_dev,
+                 (unsigned long long)st.st_ino) != 64)
+        return;
+    if (chaos_next_use_safe_bind_run)
+        chaos_next_use_safe_bind_run(run);
+    if (chaos_next_use_safe_bind_telegraph)
+        chaos_next_use_safe_bind_telegraph(next_use_warn, 0);
+    if (!chaos_next_use_safe_bind_origin || !next_use_origin.ready)
+        return;
+    fact = next_use_engine_fact(next_use_origin.operation, next_use_origin.fact);
+    if (!fact) return;
+    memset(&origin, 0, sizeof origin);
+    origin.end_seq = next_use_origin.end;
+    strncpy(origin.fact, fact, sizeof origin.fact - 1);
+    origin.family = next_use_origin.operation == CHAOS_OBS_OP_FOUNTAIN_DRINK
+                    ? CHAOS_NEXT_USE_FAMILY_F : CHAOS_NEXT_USE_FAMILY_W;
+    origin.level_dlevel = next_use_origin.dlevel;
+    origin.level_dnum = next_use_origin.dnum;
+    origin.move = next_use_origin.move;
+    origin.notice_seq = next_use_origin.notice;
+    origin.root = next_use_origin.root;
+    memcpy(origin.run, run, 65);
+    chaos_next_use_safe_bind_origin(&origin, 1);
 }
 static struct chaos_context context(void) {
     struct chaos_context c;
@@ -90,10 +153,12 @@ void chaos_safe(const char *why) {
                      && u.chaos.safe > before ? io.dir : -1);
     if (started && !io.failed && !io.busy && u.chaos.safe > before) {
         const char *flag = getenv("NYARLATHACK_NEXT_USE_ADMIT");
-        if (flag && !strcmp(flag, "1") && chaos_next_use_on_safe)
+        if (flag && !strcmp(flag, "1") && chaos_next_use_on_safe) {
+            next_use_bind_owned();
             (void)chaos_next_use_on_safe(
                 io.dir, u.chaos.safe, u.usanity, &u.chaos,
                 (int)u.uz.dnum, (int)u.uz.dlevel);
+        }
     }
     busy = 0;
 }
@@ -208,6 +273,13 @@ void chaos_observation_end(long root) {
         (void)chaos_io_observation(&io, &u.chaos, &c, observation_operation,
             observation_blocked ? CHAOS_OBS_STAGE_BLOCKED : CHAOS_OBS_STAGE_COMPLETED,
             root, CHAOS_OBS_FACT_NONE);
+        if (!observation_blocked && next_use_origin.pending
+            && next_use_origin.root == (int)root
+            && next_use_engine_fact(observation_operation, next_use_origin.fact)) {
+            next_use_origin.end = u.chaos.seq;
+            next_use_origin.ready = 1;
+            next_use_origin.pending = 0;
+        }
     }
     observation_clear();
 }
@@ -248,6 +320,19 @@ static void observation_notice(const struct chaos_obs_fact_info *fact) {
     if (fact->implies_blocked) observation_blocked = 1;
     (void)chaos_io_observation(&io, &u.chaos, &c, observation_operation,
         CHAOS_OBS_STAGE_NOTICE, observation_root, fact->id);
+    if (next_use_engine_fact(observation_operation, fact->id)) {
+        next_use_origin.pending = 1;
+        next_use_origin.ready = 0;
+        next_use_origin.root = (int)observation_root;
+        next_use_origin.notice = u.chaos.seq;
+        next_use_origin.end = 0;
+        next_use_origin.fact = fact->id;
+        next_use_origin.operation = observation_operation;
+        next_use_origin.dnum = (int)u.uz.dnum;
+        next_use_origin.dlevel = (int)u.uz.dlevel;
+        next_use_origin.move = moves > 2147483647L ? 2147483647
+                               : moves < 0L ? 0 : (int)moves;
+    }
 }
 static void observation_deliver(struct chaos_observation_token token, int channel) {
     const struct chaos_obs_fact_info *fact;

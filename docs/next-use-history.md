@@ -95,14 +95,19 @@ mismatched source digest is not repaired.
 
 ### Safe-point admission
 
-`chaos_next_use_safe_try` is the one integration seam. It is opt-in
-(`NYARLATHACK_NEXT_USE_ADMIT=1`) and is not enabled merely because
-`next_use.lua` exists. Telegraph happens before debit. A matching envelope
+`chaos_next_use_on_safe` is the production wrapper; `chaos_next_use_safe_try`
+is the lower-level seam. The path is opt-in (`NYARLATHACK_NEXT_USE_ADMIT=1`)
+and is not enabled merely because `next_use.lua` exists. The wrapper supplies
+engine-owned 64-hex run identity, a telegraph callback, and a receipt writer.
+Admission revalidates the referenced origin against bounded retained
+observation evidence. Telegraph is mandatory and happens before debit; a NULL
+callback is rejection, not permission to skip. Successful debit is published
+back into the caller's `struct chaos_state` exactly once. Invalid caller
+budget is rejected unchanged rather than reinitialized. A matching envelope
 admits and installs once; later polls do not repeat warning or spend. Future
-`envelope.at` stays pending; late, wrong-run, wrong-level, stale-origin,
-Lua-invalid, and tampered-source candidates reject without an effect. Ordinary
-play still lacks an engine-owned 64-hex run identity, so the live `chaos_safe`
-hook cannot prove run provenance and will not admit. This PR does not claim
+`envelope.at` stays pending; late, wrong-run, wrong-level, stale/missing
+origin, Lua-invalid, missing/failed telegraph, receipt failure, and
+tampered-source candidates reject without an effect. This PR does not claim
 native whistle/fountain effect, save/restore, or replay.
 
 Empty menus and rejected intents leave stock behavior unchanged.

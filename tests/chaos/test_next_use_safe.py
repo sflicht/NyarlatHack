@@ -85,6 +85,11 @@ class NextUseSafeAdmitTests(unittest.TestCase):
         run=None,
         polls=2,
         enabled=1,
+        wrapper="try",
+        telegraph="ok",
+        budget="valid",
+        receipt="ok",
+        evidence="valid",
     ):
         if run is None:
             run = HOST["run"]
@@ -99,6 +104,11 @@ class NextUseSafeAdmitTests(unittest.TestCase):
                 run,
                 str(polls),
                 str(enabled),
+                wrapper,
+                telegraph,
+                budget,
+                receipt,
+                evidence,
             ],
             capture_output=True,
             text=True,
@@ -162,6 +172,120 @@ class NextUseSafeAdmitTests(unittest.TestCase):
         row = self.run_case(folder)
         self.assertEqual(row["rejected"], 1)
         self.assertEqual(row["admitted"], 0)
+
+    def test_try_missing_telegraph_does_not_admit(self):
+        row = self.run_case(self.publish(), telegraph="none")
+        self.assertEqual(row["admitted"], 0)
+        self.assertEqual(row["spent"], 0)
+        self.assertEqual(row["caller_spent"], 0)
+
+    def test_production_wrapper_admits_and_charges_caller_once(self):
+        row = self.run_case(self.publish(), wrapper="on_safe")
+        self.assertEqual(row["loaded"], 1)
+        self.assertEqual(row["admitted"], 1)
+        self.assertEqual(row["active"], 1)
+        self.assertEqual(row["telegraph"], 1)
+        self.assertEqual(row["caller_spent_before"], 0)
+        self.assertEqual(row["caller_spent"], 1)
+        self.assertEqual(row["second_admitted"], 0)
+        self.assertEqual(row["second_telegraph"], 0)
+        self.assertEqual(row["second_caller_spent"], 1)
+        self.assertEqual(row["telegraph_spent"], 0)
+
+    def test_production_missing_telegraph_rejects(self):
+        row = self.run_case(self.publish(), wrapper="on_safe", telegraph="none")
+        self.assertEqual(row["admitted"], 0)
+        self.assertEqual(row["caller_spent"], 0)
+
+    def test_production_failed_telegraph_rejects_unchanged(self):
+        row = self.run_case(self.publish(), wrapper="on_safe", telegraph="fail")
+        self.assertEqual(row["admitted"], 0)
+        self.assertEqual(row["active"], 0)
+        self.assertEqual(row["caller_spent"], 0)
+        self.assertEqual(row["telegraph_spent"], 0)
+
+    def test_production_missing_run_rejects(self):
+        row = self.run_case(self.publish(), wrapper="on_safe", run="none")
+        self.assertEqual(row["admitted"], 0)
+        self.assertEqual(row["caller_spent"], 0)
+
+    def test_production_wrong_run_rejects(self):
+        row = self.run_case(self.publish(), wrapper="on_safe", run="cd" * 32)
+        self.assertEqual(row["admitted"], 0)
+        self.assertEqual(row["caller_spent"], 0)
+
+    def test_production_wrong_level_rejects(self):
+        row = self.run_case(self.publish(), wrapper="on_safe", dlevel=2)
+        self.assertEqual(row["admitted"], 0)
+        self.assertEqual(row["caller_spent"], 0)
+
+    def test_production_late_schedule_rejects(self):
+        row = self.run_case(self.publish(), wrapper="on_safe", at_safe=8)
+        self.assertEqual(row["admitted"], 0)
+        self.assertEqual(row["caller_spent"], 0)
+
+    def test_production_stale_origin_clock_rejects(self):
+        row = self.run_case(self.publish(), wrapper="on_safe", at_move=141)
+        self.assertEqual(row["admitted"], 0)
+        self.assertEqual(row["caller_spent"], 0)
+
+    def test_production_missing_origin_evidence_rejects(self):
+        row = self.run_case(self.publish(), wrapper="on_safe", evidence="missing")
+        self.assertEqual(row["admitted"], 0)
+        self.assertEqual(row["caller_spent"], 0)
+
+    def test_production_incomplete_origin_rejects(self):
+        row = self.run_case(self.publish(), wrapper="on_safe", evidence="incomplete")
+        self.assertEqual(row["admitted"], 0)
+        self.assertEqual(row["caller_spent"], 0)
+
+    def test_production_stale_origin_evidence_rejects(self):
+        row = self.run_case(self.publish(), wrapper="on_safe", evidence="stale")
+        self.assertEqual(row["admitted"], 0)
+        self.assertEqual(row["caller_spent"], 0)
+
+    def test_production_wrong_origin_run_rejects(self):
+        row = self.run_case(self.publish(), wrapper="on_safe", evidence="wrong_run")
+        self.assertEqual(row["admitted"], 0)
+        self.assertEqual(row["caller_spent"], 0)
+
+    def test_production_wrong_origin_level_rejects(self):
+        row = self.run_case(self.publish(), wrapper="on_safe", evidence="wrong_level")
+        self.assertEqual(row["admitted"], 0)
+        self.assertEqual(row["caller_spent"], 0)
+
+    def test_production_wrong_origin_fact_rejects(self):
+        row = self.run_case(self.publish(), wrapper="on_safe", evidence="wrong_fact")
+        self.assertEqual(row["admitted"], 0)
+        self.assertEqual(row["caller_spent"], 0)
+
+    def test_production_invalid_budget_rejects_unchanged(self):
+        row = self.run_case(self.publish(), wrapper="on_safe", budget="invalid")
+        self.assertEqual(row["admitted"], 0)
+        self.assertEqual(row["caller_spent"], 100)
+        self.assertEqual(row["budget_valid"], 0)
+
+    def test_production_insufficient_budget_rejects_unchanged(self):
+        row = self.run_case(self.publish(), wrapper="on_safe", budget="empty")
+        self.assertEqual(row["admitted"], 0)
+        self.assertEqual(row["caller_spent"], 12)
+
+    def test_production_receipt_failure_does_not_install(self):
+        row = self.run_case(self.publish(), wrapper="on_safe", receipt="fail")
+        self.assertEqual(row["active"], 0)
+        self.assertEqual(row["admitted"], 0)
+        self.assertEqual(row["caller_spent"], 1)
+
+    def test_production_tampered_source_rejects(self):
+        folder = self.publish()
+        path = Path(folder) / "next_use-envelope.json"
+        payload = json.loads(path.read_text())
+        payload["source"] = payload["source"] + " "
+        path.write_text(json.dumps(payload, separators=(",", ":"), sort_keys=True))
+        os.chmod(path, 0o600)
+        row = self.run_case(folder, wrapper="on_safe")
+        self.assertEqual(row["admitted"], 0)
+        self.assertEqual(row["caller_spent"], 0)
 
 
 if __name__ == "__main__":

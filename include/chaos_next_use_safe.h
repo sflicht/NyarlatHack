@@ -35,5 +35,11 @@ int chaos_next_use_safe_try(const struct chaos_next_use_safe_request *,
 int chaos_next_use_on_safe(int dir, long at_safe, int sanity,
                            struct chaos_state *budget, int dnum, int dlevel);
 void chaos_next_use_safe_reset_for_test(void);
+void chaos_next_use_safe_bind_run(const char *);
+void chaos_next_use_safe_bind_telegraph(int (*)(void *, const char *), void *);
+void chaos_next_use_safe_bind_receipt(chaos_next_use_receipt_fn, void *);
+void chaos_next_use_safe_bind_origin(const struct chaos_next_use_origin_ref *,
+                                    int qualifying);
+int chaos_next_use_safe_last(struct chaos_next_use_safe_result *);
 
 #endif
