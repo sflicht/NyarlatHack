@@ -145,6 +145,16 @@ class NextUseDogMoveTests(unittest.TestCase):
         self.assertEqual(row["ready_before"], 0)
         self.assertEqual(row["orig_ready_after"], 1)
 
+    def test_early_window_does_not_take_extra_attention(self):
+        early = self.run_case("early")
+        self.assertEqual(early["ready_before"], 0)
+        self.assertEqual(early["ready_after"], 0)
+
+    def test_no_eligible_companion_does_not_take_extra_attention(self):
+        row = self.run_case("nonepet")
+        self.assertEqual(row["ready_before"], 0)
+        self.assertEqual(row["public"], 0)
+
     def test_no_production_is_a_w_effect_bypass(self):
         """If extra_attention no longer requires witness.production, this fails."""
         row = self.run_case("noprod")

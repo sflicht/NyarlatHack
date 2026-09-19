@@ -31,6 +31,29 @@ static int telegraph_ok(void *opaque, const char *text)
     return text && text[0];
 }
 
+static int receipt_ok(void *opaque, const struct chaos_next_use_private_record *record)
+{
+    (void)opaque;
+    (void)record;
+    return 1;
+}
+
+static void bind_origin(const char *run)
+{
+    struct chaos_next_use_origin_ref origin;
+    memset(&origin, 0, sizeof origin);
+    origin.end_seq = 12;
+    memcpy(origin.fact, "ordinary_whistle", 16);
+    origin.family = CHAOS_NEXT_USE_FAMILY_W;
+    origin.level_dlevel = 1;
+    origin.level_dnum = 0;
+    origin.move = 40;
+    origin.notice_seq = 11;
+    origin.root = 10;
+    memcpy(origin.run, run, 64);
+    chaos_next_use_safe_bind_origin(&origin, 1);
+}
+
 int main(int argc, char **argv)
 {
     struct chaos_next_use_safe_request req;
@@ -56,6 +79,8 @@ int main(int argc, char **argv)
     req.sanity = 50;
     req.budget = &budget;
     req.telegraph = telegraph_ok;
+    req.receipt = receipt_ok;
+    bind_origin(argv[4]);
     chaos_next_use_safe_try(&req, &admitted);
     monstermoves = at_move;
     if (!admitted.active

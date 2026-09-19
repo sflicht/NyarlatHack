@@ -86,6 +86,29 @@ static int telegraph_ok(void *opaque, const char *text)
     return 1;
 }
 
+static int receipt_ok(void *opaque, const struct chaos_next_use_private_record *record)
+{
+    (void)opaque;
+    (void)record;
+    return 1;
+}
+
+static void bind_origin(const char *run)
+{
+    struct chaos_next_use_origin_ref origin;
+    memset(&origin, 0, sizeof origin);
+    origin.end_seq = 12;
+    memcpy(origin.fact, "ordinary_whistle", 16);
+    origin.family = CHAOS_NEXT_USE_FAMILY_W;
+    origin.level_dlevel = 1;
+    origin.level_dnum = 0;
+    origin.move = 40;
+    origin.notice_seq = 11;
+    origin.root = 10;
+    memcpy(origin.run, run, 64);
+    chaos_next_use_safe_bind_origin(&origin, 1);
+}
+
 static int admit_and_act(const char *dirpath, struct monst *pet, int *telegraphs)
 {
     struct chaos_next_use_safe_request req;
@@ -110,6 +133,8 @@ static int admit_and_act(const char *dirpath, struct monst *pet, int *telegraphs
     req.budget = &budget;
     req.telegraph = telegraph_ok;
     req.telegraph_opaque = telegraphs;
+    req.receipt = receipt_ok;
+    bind_origin(run);
     chaos_next_use_safe_try(&req, &admitted);
     close(dir);
     if (!admitted.active) return 0;
@@ -145,10 +170,17 @@ static int run_case(const char *name, const char *dirpath)
     monstermoves = 45;
     if (!strcmp(name, "late"))
         monstermoves = 50;
+    if (!strcmp(name, "early"))
+        monstermoves = 44;
     if (!strcmp(name, "dead"))
         pet.mhp = 0;
     if (!strcmp(name, "wrongid"))
         pet.m_id = 8;
+    if (!strcmp(name, "nonepet")) {
+        pet.mtyp = PM_KITTEN;
+        pet.data = &mons[PM_KITTEN];
+        pet.mtame = 0;
+    }
     ready = chaos_next_use_whistle_decision_ready(pet.m_id);
     rc = dog_move(&pet, 0, &witness);
     public_n = (int)chaos_next_use_runtime_public_count();
