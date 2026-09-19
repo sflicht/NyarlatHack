@@ -110,7 +110,7 @@ class NextUseDogMoveTests(unittest.TestCase):
             cwd=folder,
         )
         self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
-        return json.loads(p.stdout)
+        return json.loads((folder / "result.json").read_text())
 
     def test_admitted_dog_move_consumes_extra_attention(self):
         control = self.run_case("none")
@@ -127,6 +127,8 @@ class NextUseDogMoveTests(unittest.TestCase):
         self.assertEqual(positive["delivered"], 1)
         self.assertEqual(positive["pre_public"], 1)
         self.assertEqual((control["mx"], control["my"]), (bypass["mx"], bypass["my"]))
+        self.assertEqual(control["rng_next"], bypass["rng_next"])
+        self.assertEqual(control["reseed"], bypass["reseed"])
 
     def test_late_window_does_not_take_extra_attention(self):
         late = self.run_case("late")

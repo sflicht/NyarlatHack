@@ -82,8 +82,11 @@ static void setup_level(struct monst *pet)
     vision_init();
     vision_reset();
     vision_recalc(0);
+    display_nhwindow(WIN_MAP, FALSE);
     newsym(u.ux, u.uy);
     newsym(pet->mx, pet->my);
+    docrt();
+    flush_screen(1);
 }
 
 static int telegraph_ok(void *opaque, const char *text)
@@ -158,6 +161,7 @@ static int run_case(const char *name, const char *dirpath)
     struct monst pet;
     struct chaos_whistle_witness witness;
     int telegraphs = 0, rc, ox, oy, ready, arm, public_n, f_action;
+    int snapshot = 0, windowed = 0, pre_glyph = 0;
     unsigned orig_id;
 
     test_rng_control();
@@ -182,8 +186,10 @@ static int run_case(const char *name, const char *dirpath)
         monstermoves = 50;
     if (!strcmp(name, "early"))
         monstermoves = 44;
-    if (!strcmp(name, "dead"))
+    if (!strcmp(name, "dead")) {
         pet.mhp = 0;
+        pet.deadmonster = DEADMONSTER_DEAD;
+    }
     if (!strcmp(name, "wrongid"))
         pet.m_id = 8;
     f_action = 0;
@@ -192,19 +198,37 @@ static int run_case(const char *name, const char *dirpath)
     if (!strcmp(name, "hidden") && WIN_MAP != WIN_ERR && wins[WIN_MAP])
         wins[WIN_MAP]->flags |= WIN_CANCELLED;
     ready = chaos_next_use_whistle_decision_ready(pet.m_id);
+    {
+        int glyph = glyph_at(pet.mx, pet.my);
+        snapshot = tty_snapshot_projectable(pet.mx, pet.my, glyph);
+        windowed = iflags.window_inited && windowprocs.win_print_glyph == tty_print_glyph;
+        pre_glyph = glyph;
+    }
     rc = dog_move(&pet, 0, &witness);
     chaos_whistle_witness_finalize(&pet, &witness);
     public_n = (int)chaos_next_use_runtime_public_count();
-    printf("{\"case\":\"%s\",\"ox\":%d,\"oy\":%d,\"mx\":%d,\"my\":%d,\"rc\":%d,"
-           "\"arm\":%d,\"telegraph\":%d,\"ready_before\":%d,\"ready_after\":%d,"
-           "\"orig_ready_after\":%d,\"public\":%d,\"m_id\":%u,\"f_action\":%d,"
-           "\"displaced\":%d,\"delivered\":%d,\"pre_public\":%d}\n",
-           name, ox, oy, pet.mx, pet.my, rc, arm, telegraphs, ready,
-           chaos_next_use_whistle_decision_ready(pet.m_id),
-           chaos_next_use_whistle_decision_ready(orig_id),
-           public_n, pet.m_id, f_action,
-           witness.displaced, witness.manifestation_delivered,
-           witness.pre_public);
+    {
+        FILE *out = fopen("result.json", "w");
+        if (!out) return 2;
+        fprintf(out,
+            "{\"case\":\"%s\",\"ox\":%d,\"oy\":%d,\"mx\":%d,\"my\":%d,\"rc\":%d,"
+            "\"arm\":%d,\"telegraph\":%d,\"ready_before\":%d,\"ready_after\":%d,"
+            "\"orig_ready_after\":%d,\"public\":%d,\"m_id\":%u,\"f_action\":%d,"
+            "\"displaced\":%d,\"delivered\":%d,\"pre_public\":%d,"
+            "\"reseed\":%d,\"rng_next\":%d,\"snapshot\":%d,\"windowed\":%d,"
+            "\"pre_glyph\":%d,\"post_glyph\":%d,\"invalid\":%d,\"classifier\":%d,"
+            "\"root\":%ld,\"notice\":%ld}\n",
+            name, ox, oy, pet.mx, pet.my, rc, arm, telegraphs, ready,
+            chaos_next_use_whistle_decision_ready(pet.m_id),
+            chaos_next_use_whistle_decision_ready(orig_id),
+            public_n, pet.m_id, f_action,
+            witness.displaced, witness.manifestation_delivered,
+            witness.pre_public, reseed_count, rn2(100000),
+            snapshot, windowed, pre_glyph, witness.post_glyph,
+            witness.invalid, witness.classifier_ok,
+            witness.root, witness.notice_seq);
+        fclose(out);
+    }
     return 0;
 }
 

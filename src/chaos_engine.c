@@ -404,10 +404,9 @@ void chaos_whistle_witness_finalize(struct monst *mtmp,
 #if defined(CHAOS) && defined(TTY_GRAPHICS)
             if (witness->manifestation_delivered && witness->displaced
                 && witness->pre_public && !Hallucination && !u.uswallow
-                && canseemon(mtmp) && glyph_is_monster(witness->post_glyph)
-                && glyph_to_mon(witness->post_glyph) == PM_LITTLE_DOG)
+                && canseemon(mtmp))
                 published = chaos_tty_publication_certificate(
-                    witness->newx, witness->newy, witness->post_glyph);
+                    mtmp->mx, mtmp->my, glyph_at(mtmp->mx, mtmp->my));
 #endif
         }
         stage = published ? CHAOS_OBS_STAGE_COMPLETED
