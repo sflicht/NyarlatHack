@@ -129,6 +129,11 @@ class NextUseAdmitTests(unittest.TestCase):
         self.assertEqual(row["install"], 1)
         self.assertEqual(row["public_delta"], 0)
 
+    def test_level_departure_does_not_keep_slot(self):
+        row = self.run_mode("level-depart")
+        self.assertEqual(row["install"], 1)
+        self.assertFalse(row["ready"])
+
     def test_expired_w_slot_is_not_ready(self):
         row = self.run_mode("expire-w")
         self.assertEqual(row["admit"], 0)
