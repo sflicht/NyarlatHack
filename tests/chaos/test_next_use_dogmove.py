@@ -191,6 +191,12 @@ class NextUseDogMoveTests(unittest.TestCase):
         self.assertEqual(row["ready_before"], 0)
         self.assertEqual(row["public"], 0)
 
+    def test_chaos_safe_with_origin_admits_once(self):
+        row = self.run_case("safehit")
+        self.assertEqual(row["spent"], 1)
+        self.assertEqual(row["arm"], 2)
+        self.assertEqual(row["ready_before"], 1)
+
 
 if __name__ == "__main__":
     unittest.main()

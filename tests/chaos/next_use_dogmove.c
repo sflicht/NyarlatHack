@@ -188,14 +188,40 @@ static int run_case(const char *name, const char *dirpath)
     witness.production = strcmp(name, "noprod") != 0;
     arm = 0;
     if (strcmp(name, "none") && strcmp(name, "bypass")
-        && strcmp(name, "safemiss")) {
+        && strcmp(name, "safemiss") && strcmp(name, "safehit")) {
         arm = admit_and_act(dirpath, &pet, &telegraphs,
                             strcmp(name, "nonepet") != 0);
         if (arm < 0) return 2;
     }
-    if (!strcmp(name, "safemiss")) {
+    if (!strcmp(name, "safemiss") || !strcmp(name, "safehit")) {
+        struct stat st;
+        char run[65];
+        int dir;
+
         setenv("NYARLATHACK_NEXT_USE_ADMIT", "1", 1);
+        dir = open(dirpath, O_RDONLY | O_DIRECTORY);
+        if (dir < 0) return 2;
+        if (fstat(dir, &st)
+            || snprintf(run, sizeof run, "%016llx%016llx%016llx%016llx",
+                        (unsigned long long)st.st_dev,
+                        (unsigned long long)st.st_ino,
+                        (unsigned long long)st.st_dev,
+                        (unsigned long long)st.st_ino) != 64) {
+            close(dir);
+            return 2;
+        }
+        close(dir);
+        if (!strcmp(name, "safehit")) {
+            bind_origin(run);
+            u.chaos.safe = 6;
+        }
         chaos_safe("level_enter");
+        if (!strcmp(name, "safehit") && u.chaos.spent == 1) {
+            int acted = chaos_next_use_on_action(CHAOS_NEXT_USE_FAMILY_W, 10, 0);
+            if (acted)
+                chaos_next_use_capture_whistle(10, pet.m_id, 40);
+            arm = acted ? 2 : 1;
+        }
     }
     monstermoves = 45;
     if (!strcmp(name, "late"))
