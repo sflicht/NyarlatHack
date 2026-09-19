@@ -280,68 +280,17 @@ int chaos_lua_curio_apply(const char *source, size_t length,
     return status;
 }
 
-/* The next-use boundary is deliberately separate from the older encounter
- * sandbox. It exposes no C function or library to the candidate. */
-struct next_lua_memory { size_t used; };
+/* Next-use schema stays family-specific; VM containment uses the shared
+ * allocator, instruction hook, and source bound. */
 struct next_lua_request {
     const char *source;
     size_t length;
     const struct chaos_next_use_context *context;
     struct chaos_next_use_intent intent;
     int call_handler;
-    int fuel;
     int valid;
     int failure_code;
 };
-
-static void *next_lua_alloc(void *, void *, size_t, size_t);
-static void *next_lua_alloc(void *opaque, void *pointer, size_t old_size,
-                            size_t new_size)
-{
-    struct next_lua_memory *memory = (struct next_lua_memory *)opaque;
-    void *replacement;
-    if (!pointer) old_size = 0;
-    if (!new_size) {
-        free(pointer);
-        memory->used = old_size <= memory->used ? memory->used - old_size : 0;
-        return NULL;
-    }
-    if (new_size > 262144 || old_size > memory->used ||
-        memory->used - old_size > 262144 - new_size) return NULL;
-    replacement = realloc(pointer, new_size);
-    if (replacement) memory->used = memory->used - old_size + new_size;
-    return replacement;
-}
-
-static void next_fuel_hook(lua_State *, lua_Debug *);
-static void next_fuel_hook(lua_State *L, lua_Debug *debug_record)
-{
-    static const char message[] = "instruction limit";
-    struct next_lua_request *request = NULL;
-    (void)debug_record;
-    memcpy(&request, lua_getextraspace(L), sizeof request);
-    if (!request) {
-        lua_pushlstring(L, message, sizeof message - 1);
-        (void)lua_error(L);
-        return;
-    }
-    request->fuel += 100;
-    if (request->fuel >= 20000) {
-        lua_pushlstring(L, message, sizeof message - 1);
-        (void)lua_error(L);
-        return;
-    }
-}
-
-static int next_lua_source_valid(const char *, size_t);
-static int next_lua_source_valid(const char *source, size_t length)
-{
-    size_t index;
-    if (!source || !length || length > 4096) return 0;
-    for (index = 0; index < length; ++index)
-        if (source[index] == 0) return 0;
-    return 1;
-}
 
 static int next_hex64(const char *text);
 static int next_hex64(const char *text)
@@ -535,31 +484,38 @@ static int next_protected_call(lua_State *L)
     return 0;
 }
 
+static int next_use_vm(struct next_lua_request *request)
+{
+    struct limits limits = {0, 0};
+    struct next_lua_request *request_pointer = request;
+    lua_State *L;
+    int status;
+    if (!sandbox_source_valid(request->source, request->length)) return 1;
+    L = lua_newstate(limited_alloc, &limits);
+    if (!L) return CHAOS_LUA_NEXT_USE_SANDBOX_MEMORY;
+    memcpy(lua_getextraspace(L), &request_pointer, sizeof request_pointer);
+    lua_sethook(L, instruction_hook, LUA_MASKCOUNT, 100);
+    lua_pushcclosure(L, next_protected_call, 0);
+    status = lua_pcall(L, 0, 0, 0);
+    if (status != LUA_OK && !request->failure_code)
+        request->failure_code = next_lua_failure(L, status);
+    if (status == LUA_OK && request->valid) {
+        lua_close(L);
+        return 0;
+    }
+    status = request->failure_code ? request->failure_code
+                                   : CHAOS_LUA_NEXT_USE_OUTPUT_COPY;
+    lua_close(L);
+    return status;
+}
+
 int chaos_lua_next_use_load(const char *, size_t);
 int chaos_lua_next_use_load(const char *source, size_t length)
 {
-    struct next_lua_memory memory;
     struct next_lua_request request;
-    struct next_lua_request *request_pointer = &request;
-    lua_State *L;
-    int status;
-    memset(&memory, 0, sizeof memory);
     memset(&request, 0, sizeof request);
-    if (!next_lua_source_valid(source, length) || length > 4096) return 1;
     request.source = source; request.length = length;
-    L = lua_newstate(next_lua_alloc, &memory);
-    if (!L) return CHAOS_LUA_NEXT_USE_SANDBOX_MEMORY;
-    memcpy(lua_getextraspace(L), &request_pointer, sizeof request_pointer);
-    lua_sethook(L, next_fuel_hook, LUA_MASKCOUNT, 100);
-    lua_pushcclosure(L, next_protected_call, 0);
-    status = lua_pcall(L, 0, 0, 0);
-    if (status != LUA_OK && !request.failure_code)
-        request.failure_code = next_lua_failure(L, status);
-    status = status == LUA_OK && request.valid ? 0
-        : (request.failure_code ? request.failure_code
-                               : CHAOS_LUA_NEXT_USE_OUTPUT_COPY);
-    lua_close(L);
-    return status;
+    return next_use_vm(&request);
 }
 
 int chaos_lua_next_use_on_action(const char *, size_t,
@@ -569,16 +525,12 @@ int chaos_lua_next_use_on_action(const char *source, size_t length,
                                  const struct chaos_next_use_context *context,
                                  struct chaos_next_use_intent *intent)
 {
-    struct next_lua_memory memory;
     struct next_lua_request request;
-    struct next_lua_request *request_pointer = &request;
-    lua_State *L;
     int status;
     if (!intent) return 1;
     memset(intent, 0, sizeof *intent);
-    memset(&memory, 0, sizeof memory);
     memset(&request, 0, sizeof request);
-    if (!context || !next_lua_source_valid(source, length) || length > 4096 ||
+    if (!context ||
         context->age < 0 || context->age > 99 ||
         context->fountain_count < 0 || context->fountain_count > 3 ||
         context->own_witnessed < 0 || context->own_witnessed > 1 ||
@@ -590,22 +542,11 @@ int chaos_lua_next_use_on_action(const char *source, size_t length,
         !next_hex64(context->source_sha256)) return 1;
     request.source = source; request.length = length;
     request.context = context; request.call_handler = 1;
-    L = lua_newstate(next_lua_alloc, &memory);
-    if (!L) return CHAOS_LUA_NEXT_USE_SANDBOX_MEMORY;
-    memcpy(lua_getextraspace(L), &request_pointer, sizeof request_pointer);
-    lua_sethook(L, next_fuel_hook, LUA_MASKCOUNT, 100);
-    lua_pushcclosure(L, next_protected_call, 0);
-    status = lua_pcall(L, 0, 0, 0);
-    if (status != LUA_OK && !request.failure_code)
-        request.failure_code = next_lua_failure(L, status);
-    if (status == LUA_OK && request.valid) {
+    status = next_use_vm(&request);
+    if (!status) {
         *intent = request.intent;
-        lua_close(L);
         return 0;
     }
-    status = request.failure_code ? request.failure_code
-                                  : CHAOS_LUA_NEXT_USE_OUTPUT_COPY;
-    lua_close(L);
     memset(intent, 0, sizeof *intent);
     return status;
 }
