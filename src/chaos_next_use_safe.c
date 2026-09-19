@@ -84,6 +84,11 @@ void chaos_next_use_safe_bind_origin(const struct chaos_next_use_origin_ref *ori
     origin_evidence[slot].qualifying = qualifying ? 1 : 0;
 }
 
+void chaos_next_use_safe_mark_restored(void)
+{
+    settled = 1;
+}
+
 int chaos_next_use_safe_last(struct chaos_next_use_safe_result *out)
 {
     if (!out) return 0;

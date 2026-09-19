@@ -1367,6 +1367,8 @@ int chaos_next_use_snapshot_export(struct chaos_next_use_snapshot *out)
     out->origin_f = runtime.origin_f;
     out->origin_w_deadline = runtime.origin_w_deadline;
     out->origin_f_deadline = runtime.origin_f_deadline;
+    out->run_token = runtime.run_token;
+    out->level_token = runtime.level_token;
     out->source_length = runtime.source_length;
     copy_hash(out->source_sha256, runtime.source_sha256);
     if (runtime.source_length > CHAOS_NEXT_USE_SOURCE_MAX)
@@ -1437,6 +1439,10 @@ int chaos_next_use_snapshot_import(const struct chaos_next_use_snapshot *in)
     live_runtime.origin_f = in->origin_f;
     live_runtime.origin_w_deadline = in->origin_w_deadline;
     live_runtime.origin_f_deadline = in->origin_f_deadline;
+    live_runtime.run_token = in->run_token;
+    live_runtime.level_token = in->level_token;
+    live_runtime.current_run_token = in->run_token;
+    live_runtime.current_level_token = in->level_token;
     live_runtime.source_length = in->source_length;
     copy_hash(live_runtime.source_sha256, in->source_sha256);
     memcpy(live_runtime.source, in->source, in->source_length);
@@ -1446,13 +1452,10 @@ int chaos_next_use_snapshot_import(const struct chaos_next_use_snapshot *in)
 
 static int snapshot_io_all(int fd, void *buf, size_t n, int writing)
 {
-    unsigned char *p = buf;
-    while (n) {
-        ssize_t k = writing ? write(fd, p, n) : read(fd, p, n);
-        if (k <= 0) return 0;
-        p += (size_t)k;
-        n -= (size_t)k;
-    }
+    if (writing)
+        bwrite(fd, buf, (unsigned)n);
+    else
+        mread(fd, buf, (unsigned)n);
     return 1;
 }
 
@@ -1485,6 +1488,8 @@ int chaos_next_use_snapshot_write(int fd, const struct chaos_next_use_snapshot *
     header[19] = (int32_t)in->origin_f_deadline;
     header[20] = (int32_t)in->armed_m_id;
     header[21] = (int32_t)in->replay_cursor;
+    header[22] = (int32_t)in->run_token;
+    header[23] = (int32_t)in->level_token;
     if (!snapshot_io_all(fd, header, sizeof header, 1))
         return 0;
     if (!snapshot_io_all(fd, (void *)in->source_sha256, 65, 1))
@@ -1528,6 +1533,8 @@ int chaos_next_use_snapshot_read(int fd, struct chaos_next_use_snapshot *out)
     snap.origin_f_deadline = header[19];
     snap.armed_m_id = (unsigned)header[20];
     snap.replay_cursor = (unsigned long)header[21];
+    snap.run_token = header[22];
+    snap.level_token = header[23];
     if (!snapshot_io_all(fd, snap.source_sha256, 65, 0))
         return 0;
     if (!snapshot_io_all(fd, snap.source, snap.source_length, 0))
@@ -1537,6 +1544,41 @@ int chaos_next_use_snapshot_read(int fd, struct chaos_next_use_snapshot *out)
         return 0;
     *out = snap;
     return 1;
+}
+
+void chaos_next_use_save(int fd)
+{
+    static const char magic[4] = { 'N', 'U', 'S', '1' };
+    struct chaos_next_use_snapshot snap;
+    int present = 0;
+
+    bwrite(fd, (genericptr_t)magic, 4);
+    if (chaos_next_use_snapshot_export(&snap))
+        present = 1;
+    bwrite(fd, (genericptr_t)&present, sizeof present);
+    if (present)
+        (void)chaos_next_use_snapshot_write(fd, &snap);
+}
+
+int chaos_next_use_restore(int fd)
+{
+    char magic[4];
+    int present = 0;
+    struct chaos_next_use_snapshot snap;
+
+    mread(fd, magic, 4);
+    if (memcmp(magic, "NUS1", 4) != 0)
+        return 0;
+    mread(fd, (genericptr_t)&present, sizeof present);
+    chaos_next_use_runtime_reset();
+    if (present == 0)
+        return 1;
+    if (present != 1)
+        return 0;
+    memset(&snap, 0, sizeof snap);
+    if (!chaos_next_use_snapshot_read(fd, &snap))
+        return 0;
+    return chaos_next_use_snapshot_import(&snap);
 }
 
 #ifdef CHAOS_NEXT_USE_HASH_FIXTURE
