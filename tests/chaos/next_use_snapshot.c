@@ -359,6 +359,29 @@ int main(int argc, char **argv)
         return installed && imported && exported
                && live.slot_w == CHAOS_SLOT_W_CONSUMED_QUIET ? 0 : 1;
     }
+    if (!strcmp(mode, "save_quiet")) {
+        FILE *fp;
+        int fd, restored;
+        struct chaos_fountain_token token;
+
+        chaos_next_use_runtime_reset();
+        installed = install_lua(quiet_lua);
+        monstermoves = 40;
+        memset(&token, 0, sizeof token);
+        chaos_next_use_on_action(CHAOS_NEXT_USE_FAMILY_W, 10, &token);
+        fp = tmpfile();
+        if (!fp) return 1;
+        fd = fileno(fp);
+        chaos_next_use_save(fd);
+        chaos_next_use_runtime_reset();
+        if (fseek(fp, 0, SEEK_SET)) return 1;
+        restored = chaos_next_use_restore(fd);
+        fclose(fp);
+        exported = chaos_next_use_snapshot_export(&live);
+        print_snap("after_save_quiet", restored && exported, &live);
+        return installed && restored && exported
+               && live.slot_w == CHAOS_SLOT_W_CONSUMED_QUIET ? 0 : 1;
+    }
     if (!strcmp(mode, "delay")) {
         struct chaos_fountain_token token;
 

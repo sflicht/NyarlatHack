@@ -109,6 +109,12 @@ class NextUseSnapshotTests(unittest.TestCase):
         self.assertEqual(after["ok"], 1)
         self.assertEqual(after["slot_w"], 3)
 
+    def test_save_restore_quiet(self):
+        rows = self.run_mode("save_quiet")
+        after = next(row for row in rows if row["tag"] == "after_save_quiet")
+        self.assertEqual(after["ok"], 1)
+        self.assertEqual(after["slot_w"], 3)
+
     def test_delay_roundtrip(self):
         rows = self.run_mode("delay")
         after = next(row for row in rows if row["tag"] == "imported_delay")
