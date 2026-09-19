@@ -52,8 +52,7 @@ class SanityInsightGuideTests(unittest.TestCase):
         self.assertIn("UNKNOWN", text)
         self.assertIn("whistle_attention", text)
         self.assertIn("fountain_refresh", text)
-        self.assertIn("src/dogmove.c", text)
-        self.assertIn("src/fountain.c", text)
+        self.assertIn("drinkfountain", text)
         self.assertIn("monstermoves", text)
         composed = compose_prompt(PUBLIC).instructions
         self.assertIn(text, composed)
