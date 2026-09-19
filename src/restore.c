@@ -471,6 +471,8 @@ restgamestate(int fd, unsigned int *stuckid, unsigned int *steedid, unsigned int
 #ifdef CHAOS
 	if (!chaos_state_valid(&u.chaos) || !chaos_haunt_valid(&u.haunt)
             || !chaos_curio_valid(&u.curio)) return chaos_restore_reject(fd);
+	if (!chaos_next_use_restore(fd)) return chaos_restore_reject(fd);
+	chaos_next_use_safe_mark_restored();
 #endif
 	mread(fd, (genericptr_t) &youmonst, sizeof(struct monst));
 	if (youmonst.light)
