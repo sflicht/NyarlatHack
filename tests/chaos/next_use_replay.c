@@ -166,5 +166,12 @@ int main(int argc, char **argv)
         return installed && status == CHAOS_REPLAY_BLOCKED_REPLAY
                && live.slot_w == CHAOS_SLOT_W_PENDING ? 0 : 1;
     }
+    if (!strcmp(mode, "after_expire")) {
+        chaos_next_use_expire(CHAOS_END_PROGRAM_EXPIRED);
+        fill_replay(&record, &snap, 1);
+        status = chaos_next_use_replay_record(&record);
+        printf("{\"tag\":\"after_expire\",\"status\":%d}\n", status);
+        return installed && status == CHAOS_REPLAY_BLOCKED_REPLAY ? 0 : 1;
+    }
     return 2;
 }

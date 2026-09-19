@@ -67,6 +67,10 @@ class NextUseReplayTests(unittest.TestCase):
         self.assertEqual(row["status"], 1)
         self.assertEqual(row["slot_w"], 1)
 
+    def test_replay_after_expiry_is_blocked(self):
+        row = self.run_mode("after_expire")[0]
+        self.assertEqual(row["status"], 1)
+
 
 if __name__ == "__main__":
     unittest.main()
