@@ -106,6 +106,12 @@ class NextUseAdmitTests(unittest.TestCase):
         self.assertFalse(row["second_ready"])
         self.assertFalse(row["second"])
 
+    def test_quiet_consumes_w_slot(self):
+        row = self.run_mode("quiet-w")
+        self.assertEqual(row["admit"], 0)
+        self.assertEqual(row["install"], 1)
+        self.assertFalse(row["second_ready"])
+
     def test_wf_order_w_then_f(self):
         row = self.run_mode("wf-order")
         self.assertEqual(row["admit"], 0)
