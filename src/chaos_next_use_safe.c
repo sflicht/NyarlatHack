@@ -157,11 +157,16 @@ int chaos_next_use_on_safe(int dir, long at_safe, int sanity,
     struct chaos_next_use_safe_request req;
     struct chaos_next_use_safe_result res;
     memset(&req, 0, sizeof req);
+    memset(&res, 0, sizeof res);
+    if (at_safe < 0 || at_safe > 2147483647L
+        || monstermoves < 0 || monstermoves > 2147483547L) {
+        res.rejected = 1;
+        return finish(&res, CHAOS_NEXT_USE_ADMISSION_SCHEMA);
+    }
     req.dir = dir;
     req.enabled = 1;
-    req.at_safe = at_safe > 2147483647L ? 2147483647 : (int)at_safe;
-    req.at_move = monstermoves > 2147483547L ? 2147483547
-                  : monstermoves < 0L ? 0 : (int)monstermoves;
+    req.at_safe = (int)at_safe;
+    req.at_move = (int)monstermoves;
     req.level_dnum = dnum;
     req.level_dlevel = dlevel;
     req.sanity = sanity;
@@ -215,7 +220,11 @@ int chaos_next_use_safe_try(const struct chaos_next_use_safe_request *request,
     }
     settled = 1;
     origin = &envelope.origin_refs[0];
-    expiry = origin->move > 2147483547 ? origin->move : origin->move + 100;
+    if (origin->move < 0 || origin->move > 2147483547) {
+        result->rejected = 1;
+        return finish(result, CHAOS_NEXT_USE_ADMISSION_SCHEMA);
+    }
+    expiry = origin->move + 100;
     if (envelope.at != request->at_safe
         || !request->budget
         || !chaos_state_valid(request->budget)
