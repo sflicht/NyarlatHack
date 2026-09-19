@@ -131,6 +131,13 @@ class NextUseSnapshotTests(unittest.TestCase):
         self.assertEqual(after["ok"], 1)
         self.assertEqual(after["slot_w"], 1)
 
+    def test_save_restore_pending_f(self):
+        rows = self.run_mode("save_restore_f")
+        after = next(row for row in rows if row["tag"] == "after_save_restore_f")
+        self.assertEqual(after["ok"], 1)
+        self.assertEqual(after["slot_f"], 1)
+        self.assertEqual(after["slot_w"], 0)
+
     def test_empty_save_restores_without_program(self):
         rows = self.run_mode("empty_save")
         after = next(row for row in rows if row["tag"] == "empty_save")
