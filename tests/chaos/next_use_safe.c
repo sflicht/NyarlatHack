@@ -111,6 +111,13 @@ int main(int argc, char **argv)
         budget.spent = 100;
     else if (!strcmp(budget_mode, "empty"))
         budget.spent = 12;
+    else if (!strcmp(budget_mode, "shared")) {
+        budget.effects[CHAOS_HUNGER].value = 2;
+        budget.effects[CHAOS_HUNGER].cost = 3;
+        budget.effects[CHAOS_HUNGER].expires = 100;
+        budget.reserved = 3;
+        budget.spent = 3;
+    }
     if (!strcmp(evidence_mode, "valid"))
         bind_origin(run, 1, "ordinary_whistle", 10, 1);
     else if (!strcmp(evidence_mode, "missing"))
@@ -182,11 +189,15 @@ int main(int argc, char **argv)
            "\"second_admitted\":%d,\"second_telegraph\":%d,\"second_spent\":%d,"
            "\"caller_spent_before\":%d,\"caller_spent\":%d,"
            "\"second_caller_spent\":%d,\"telegraph_spent\":%d,"
-           "\"budget_valid\":%d}\n",
+           "\"budget_valid\":%d,\"reserved\":%d,\"hunger_value\":%d,"
+           "\"hunger_cost\":%d,\"hunger_expires\":%ld}\n",
            first.loaded, first.rejected, first.admitted, first.active,
            first.pending, first.telegraph_count, first.spent,
            second.admitted, second.telegraph_count, second.spent,
            before, budget.spent, second_caller, spent_at_telegraph,
-           chaos_state_valid(&budget));
+           chaos_state_valid(&budget), budget.reserved,
+           budget.effects[CHAOS_HUNGER].value,
+           budget.effects[CHAOS_HUNGER].cost,
+           budget.effects[CHAOS_HUNGER].expires);
     return 0;
 }

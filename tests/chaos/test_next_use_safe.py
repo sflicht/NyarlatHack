@@ -287,6 +287,18 @@ class NextUseSafeAdmitTests(unittest.TestCase):
         self.assertEqual(row["admitted"], 0)
         self.assertEqual(row["caller_spent"], 0)
 
+    def test_production_shared_spender_does_not_rewind_hunger(self):
+        row = self.run_case(self.publish(), wrapper="on_safe", budget="shared")
+        self.assertEqual(row["admitted"], 1)
+        self.assertEqual(row["caller_spent_before"], 3)
+        self.assertEqual(row["caller_spent"], 4)
+        self.assertEqual(row["reserved"], 3)
+        self.assertEqual(row["hunger_value"], 2)
+        self.assertEqual(row["hunger_cost"], 3)
+        self.assertEqual(row["hunger_expires"], 100)
+        self.assertEqual(row["budget_valid"], 1)
+        self.assertEqual(row["second_caller_spent"], 4)
+
 
 if __name__ == "__main__":
     unittest.main()
