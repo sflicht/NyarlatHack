@@ -16,6 +16,8 @@
 
 static void setup_tty(int *argc, char **argv)
 {
+    if (!getenv("TERM") || !getenv("TERM")[0])
+        setenv("TERM", "xterm", 1);
     choose_windows("tty");
     initoptions();
     init_nhwindows(argc, argv);
