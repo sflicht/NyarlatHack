@@ -143,6 +143,12 @@ class NextUseSnapshotTests(unittest.TestCase):
         self.assertEqual(after["ok"], 1)
         self.assertEqual(after["slot_w"], 8)
 
+    def test_restore_missing_origin_terminates(self):
+        rows = self.run_mode("restore_origin")
+        after = next(row for row in rows if row["tag"] == "after_origin")
+        self.assertEqual(after["ok"], 1)
+        self.assertEqual(after["slot_w"], 7)
+
 
 if __name__ == "__main__":
     unittest.main()
