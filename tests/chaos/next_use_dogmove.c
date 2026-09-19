@@ -177,12 +177,37 @@ static int admit_and_act(const char *dirpath, struct monst *pet, int *telegraphs
     return admitted.active ? (acted ? 2 : 1) : 0;
 }
 
+static int persist_and_restore(const char *dirpath)
+{
+    char path[512], envelope[512];
+    int fd, restored;
+
+    if (snprintf(path, sizeof path, "%s/next-use-save.bin", dirpath) >= (int)sizeof path)
+        return 0;
+    fd = open(path, O_RDWR | O_CREAT | O_TRUNC, 0600);
+    if (fd < 0) return 0;
+    chaos_next_use_save(fd);
+    if (snprintf(envelope, sizeof envelope, "%s/next_use-envelope.json", dirpath)
+        < (int)sizeof envelope)
+        unlink(envelope);
+    chaos_next_use_runtime_reset();
+    if (lseek(fd, 0, SEEK_SET) < 0) {
+        close(fd);
+        return 0;
+    }
+    restored = chaos_next_use_restore(fd);
+    close(fd);
+    if (restored)
+        chaos_next_use_safe_mark_restored();
+    return restored;
+}
+
 static int run_case(const char *name, const char *dirpath)
 {
     struct monst pet;
     struct chaos_whistle_witness witness;
     int telegraphs = 0, rc, ox, oy, ready, arm, public_n, public2, f_action;
-    int snapshot = 0, windowed = 0, pre_glyph = 0;
+    int snapshot = 0, windowed = 0, pre_glyph = 0, restored = 0, spent2 = 0;
     unsigned orig_id;
 
     test_rng_control();
@@ -203,6 +228,17 @@ static int run_case(const char *name, const char *dirpath)
         arm = admit_and_act(dirpath, &pet, &telegraphs,
                             strcmp(name, "nonepet") != 0);
         if (arm < 0) return 2;
+    }
+    restored = 0;
+    spent2 = 0;
+    if (!strcmp(name, "save") || !strcmp(name, "savegone")
+        || !strcmp(name, "saveother")) {
+        restored = persist_and_restore(dirpath);
+        if (!restored) return 2;
+        setenv("NYARLATHACK_NEXT_USE_ADMIT", "1", 1);
+        u.chaos.safe = 6;
+        chaos_safe("level_enter");
+        spent2 = u.chaos.spent;
     }
     if (!strcmp(name, "obsorigin") || !strcmp(name, "unequalclock")) {
         long root;
@@ -262,8 +298,15 @@ static int run_case(const char *name, const char *dirpath)
         pet.mhp = 0;
         pet.deadmonster = DEADMONSTER_DEAD;
     }
+    if (!strcmp(name, "savegone")) {
+        pet.mhp = 0;
+        pet.deadmonster = DEADMONSTER_DEAD;
+        fmon = 0;
+    }
     if (!strcmp(name, "wrongid"))
         pet.m_id = 8;
+    if (!strcmp(name, "saveother"))
+        pet.m_id = 9;
     if (!strcmp(name, "changed"))
         pet.mtyp = PM_KITTEN;
     f_action = 0;
@@ -293,7 +336,7 @@ static int run_case(const char *name, const char *dirpath)
             "\"displaced\":%d,\"delivered\":%d,\"pre_public\":%d,"
             "\"reseed\":%d,\"rng_next\":%d,\"snapshot\":%d,\"windowed\":%d,"
             "\"pre_glyph\":%d,\"post_glyph\":%d,\"invalid\":%d,\"classifier\":%d,"
-            "\"root\":%ld,\"notice\":%ld,\"spent\":%d}\n",
+            "\"root\":%ld,\"notice\":%ld,\"spent\":%d,\"spent2\":%d,\"restored\":%d}\n",
             name, ox, oy, pet.mx, pet.my, rc, arm, telegraphs, ready,
             chaos_next_use_whistle_decision_ready(pet.m_id),
             chaos_next_use_whistle_decision_ready(orig_id),
@@ -302,7 +345,7 @@ static int run_case(const char *name, const char *dirpath)
             witness.pre_public, reseed_count, rn2(100000),
             snapshot, windowed, pre_glyph, witness.post_glyph,
             witness.invalid, witness.classifier_ok,
-            witness.root, witness.notice_seq, u.chaos.spent);
+            witness.root, witness.notice_seq, u.chaos.spent, spent2, restored);
         fclose(out);
     }
     return 0;

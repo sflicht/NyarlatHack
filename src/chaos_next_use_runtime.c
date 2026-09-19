@@ -1363,6 +1363,8 @@ int chaos_next_use_snapshot_export(struct chaos_next_use_snapshot *out)
     out->origin_f_live = runtime.origin_f_live;
     out->armed_m_id = runtime.armed_m_id;
     out->replay_cursor = runtime.replay_cursor;
+    out->activation_monstermoves = runtime.activation_monstermoves;
+    out->armed_root = runtime.armed_root;
     out->origin_w = runtime.origin_w;
     out->origin_f = runtime.origin_f;
     out->origin_w_deadline = runtime.origin_w_deadline;
@@ -1411,6 +1413,10 @@ int chaos_next_use_snapshot_validate(const struct chaos_next_use_snapshot *in)
          || in->slot_f == CHAOS_SLOT_F_PENDING)
         && in->callback_ordinal > 0)
         return 0;
+    if (in->w_runtime == CHAOS_W_RUNTIME_ARMED
+        && (in->armed_m_id == 0 || in->activation_monstermoves < 0
+            || in->armed_root <= 0))
+        return 0;
     return 1;
 }
 
@@ -1435,6 +1441,8 @@ int chaos_next_use_snapshot_import(const struct chaos_next_use_snapshot *in)
     live_runtime.origin_f_live = in->origin_f_live;
     live_runtime.armed_m_id = in->armed_m_id;
     live_runtime.replay_cursor = in->replay_cursor;
+    live_runtime.activation_monstermoves = in->activation_monstermoves;
+    live_runtime.armed_root = in->armed_root;
     live_runtime.origin_w = in->origin_w;
     live_runtime.origin_f = in->origin_f;
     live_runtime.origin_w_deadline = in->origin_w_deadline;
@@ -1461,7 +1469,7 @@ static int snapshot_io_all(int fd, void *buf, size_t n, int writing)
 
 int chaos_next_use_snapshot_write(int fd, const struct chaos_next_use_snapshot *in)
 {
-    int32_t header[24];
+    int32_t header[26];
 
     if (fd < 0 || !chaos_next_use_snapshot_validate(in))
         return 0;
@@ -1490,6 +1498,8 @@ int chaos_next_use_snapshot_write(int fd, const struct chaos_next_use_snapshot *
     header[21] = (int32_t)in->replay_cursor;
     header[22] = (int32_t)in->run_token;
     header[23] = (int32_t)in->level_token;
+    header[24] = (int32_t)in->activation_monstermoves;
+    header[25] = (int32_t)in->armed_root;
     if (!snapshot_io_all(fd, header, sizeof header, 1))
         return 0;
     if (!snapshot_io_all(fd, (void *)in->source_sha256, 65, 1))
@@ -1501,7 +1511,7 @@ int chaos_next_use_snapshot_write(int fd, const struct chaos_next_use_snapshot *
 
 int chaos_next_use_snapshot_read(int fd, struct chaos_next_use_snapshot *out)
 {
-    int32_t header[24];
+    int32_t header[26];
     struct chaos_next_use_snapshot snap;
 
     if (fd < 0 || !out)
@@ -1535,6 +1545,8 @@ int chaos_next_use_snapshot_read(int fd, struct chaos_next_use_snapshot *out)
     snap.replay_cursor = (unsigned long)header[21];
     snap.run_token = header[22];
     snap.level_token = header[23];
+    snap.activation_monstermoves = header[24];
+    snap.armed_root = header[25];
     if (!snapshot_io_all(fd, snap.source_sha256, 65, 0))
         return 0;
     if (!snapshot_io_all(fd, snap.source, snap.source_length, 0))

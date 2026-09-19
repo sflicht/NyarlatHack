@@ -221,7 +221,7 @@ long chaos_next_use_fountain_completed_root(void);
 void chaos_next_use_fountain_result(const struct chaos_fountain_token *token,
                                     int outcome);
 
-#define CHAOS_NEXT_USE_SNAPSHOT_V 1
+#define CHAOS_NEXT_USE_SNAPSHOT_V 2
 
 struct chaos_next_use_snapshot {
     int snapshot_v;
@@ -236,6 +236,7 @@ struct chaos_next_use_snapshot {
     long origin_w, origin_f;
     long origin_w_deadline, origin_f_deadline;
     long run_token, level_token;
+    long activation_monstermoves, armed_root;
     size_t source_length;
     char source_sha256[65];
     char source[CHAOS_NEXT_USE_SOURCE_MAX + 1];

@@ -625,11 +625,19 @@ int main(int argc, char **argv)
         restored = chaos_next_use_restore(fd);
         fclose(fp);
         chaos_next_use_capture_whistle(10, 8, 40);
+        monstermoves = 45;
         exported = chaos_next_use_snapshot_export(&live);
         print_snap("after_rebind", restored && exported, &live);
+        printf("{\"tag\":\"armed_window\",\"ready\":%d,\"wrong\":%d,\"activation\":%ld}\n",
+               chaos_next_use_whistle_decision_ready(7),
+               chaos_next_use_whistle_decision_ready(8),
+               live.activation_monstermoves);
         return installed && restored && exported
                && live.slot_w == CHAOS_SLOT_W_CONSUMED_ARMED
-               && live.armed_m_id == 7 ? 0 : 1;
+               && live.armed_m_id == 7
+               && live.activation_monstermoves == 40
+               && chaos_next_use_whistle_decision_ready(7)
+               && !chaos_next_use_whistle_decision_ready(8) ? 0 : 1;
     }
     return 2;
 }
