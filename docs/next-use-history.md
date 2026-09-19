@@ -113,6 +113,9 @@ admits and installs once; later polls do not repeat warning or spend. Future
 origin, Lua-invalid, missing/failed telegraph, receipt failure, and
 tampered-source candidates reject without an effect. Linked `dog_move` now
 proves extra-attention consume, TTY publication, and live `chaos_safe` admit.
+F-only envelopes install as `origin_f`. `drinkfountain` remaps fate 10–18 to
+`fountain_refresh` once; fate 9 stays natural; fate 19 stays native; levitation
+cannot-reach; Lua `on_action` context has no fate field.
 This slice does not claim save/restore or replay.
 
 Empty menus and rejected intents leave stock behavior unchanged.
