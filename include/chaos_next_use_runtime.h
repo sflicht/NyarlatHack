@@ -19,6 +19,7 @@ enum chaos_next_use_slot_w {
     CHAOS_SLOT_W_CONSUMED_SUPPRESSED,
     CHAOS_SLOT_W_TERMINATED_EXPIRY,
     CHAOS_SLOT_W_TERMINATED_LEVEL,
+    /* Admission receipt failure only; no live-runtime transport setter. */
     CHAOS_SLOT_W_TERMINATED_TRANSPORT
 };
 

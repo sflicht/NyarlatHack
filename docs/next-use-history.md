@@ -86,6 +86,61 @@ unrelated already-active runtime. Parser rejects duplicate operations and
 malformed origin clocks. The admission unit does not apply native W/F effects;
 install is a separate runtime step.
 
+### Lifecycle transition table
+
+Vocabulary is the existing slot, attention, delay and terminal enums. This is
+not a broader haunting scheduler. Each declared slot acts at most once.
+
+**W slot (`chaos_next_use_slot_w`)**
+
+- undeclared → pending on W-only or W+F admit
+- pending → consumed_quiet / consumed_delay / consumed_invalid on that
+  callback
+- pending → consumed_armed on extra-attention capture; consumed_suppressed
+  on missing companion or failed capture
+- pending → terminated_expiry / terminated_level from runtime boundary
+- pending → terminated_transport only from post-commit receipt failure
+  (admission, before install)
+
+**F slot (`chaos_next_use_slot_f`)**
+
+- undeclared → pending on F-only or W+F admit
+- pending → consumed_quiet / consumed_delay / consumed_invalid on that
+  callback
+- pending → consumed_applied on remap; consumed_nonremappable on natural /
+  early-return / native 19–30; consumed_suppressed on guard or default
+  without intent
+- pending → terminated_expiry / terminated_level from runtime boundary
+- pending → terminated_transport only from post-commit receipt failure
+
+W then F and F then W are both legal; a W effect record is never an F
+witness, and the reverse.
+
+**Attention runtime (`chaos_next_use_w_runtime_state`)**
+
+- inactive until capture arms it
+- armed → window_ended at A+10; departed on level change; expired on
+  origin/program expiry or eviction; identity_unsafe on unsafe identity;
+  invalid_terminated on invalid callback
+- transport_terminated is written only by admission receipt failure
+
+**Callback and delay**
+
+- one `on_action` callback per pending slot use
+- one delay is allowed (`delay_used`); a second delay is
+  `CHAOS_INTENT_FAILURE_SECOND_DELAY` and does not act
+- quiet, wrong-family, and invalid callback consume without native effect
+- ticks after consume or terminate do not act, spend, refund, or resurrect
+
+**Transport shutdown**
+
+There is no live-runtime setter for transport shutdown. Unhealthy event
+transport blocks **new** admission; it does not cancel an already-installed
+native program. The `TERMINATED_TRANSPORT` slot values exist so a failed
+receipt can leave a consistent terminal record without installing. Adding a
+production runtime setter solely to drive that enum would invent a gameplay
+path the engine does not own.
+
 ### Envelope handoff
 
 Python publishes one complete `next_use-envelope.json` from a trusted selected
