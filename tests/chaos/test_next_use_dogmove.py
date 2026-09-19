@@ -1,0 +1,124 @@
+"""Linked dog_move: extra attention vs no-candidate control. Not ordinary play."""
+
+import json
+import os
+from pathlib import Path
+import subprocess
+import tempfile
+import unittest
+
+from chaos.next_use_envelope import publish_envelope
+from native_rng import controlled_rng_objects
+
+ROOT = Path(__file__).resolve().parents[2]
+ROW = {
+    "family": "W",
+    "op": "whistle_attention",
+    "origin": {
+        "root_seq": 10,
+        "notice_seq": 11,
+        "end_seq": 12,
+        "fact": "sound_high",
+    },
+}
+HOST = {
+    "at": 7,
+    "id": 1,
+    "level_dlevel": 1,
+    "level_dnum": 0,
+    "move": 40,
+    "run": "ab" * 32,
+    "variant": 0,
+}
+
+
+@unittest.skipUnless(
+    os.environ.get("NYARLATHACK_GAME_TESTS") == "1", "real game opt-in"
+)
+class NextUseDogMoveTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.root = Path(tempfile.mkdtemp(prefix="nyarl-next-use-dogmove-"))
+        print("NEXT_USE_DOGMOVE_ARTIFACTS=" + str(cls.root), flush=True)
+        subprocess.run(
+            [
+                "objcopy",
+                "--redefine-sym",
+                "main=original_game_main",
+                str(ROOT / "sys/unix/unixmain.o"),
+                str(cls.root / "unixmain.o"),
+            ],
+            check=True,
+        )
+        objects = (
+            sorted((ROOT / "src").glob("*.o"))
+            + [
+                ROOT / "sys/unix/unixres.o",
+                ROOT / "sys/unix/unixunix.o",
+                cls.root / "unixmain.o",
+                ROOT / "sys/share/ioctl.o",
+                ROOT / "sys/share/unixtty.o",
+            ]
+            + sorted((ROOT / "win/tty").glob("*.o"))
+            + sorted((ROOT / "win/curses").glob("*.o"))
+        )
+        cls.objects = controlled_rng_objects(objects, cls.root)
+        cls.exe = cls.root / "dogmove"
+        command = [
+            "cc",
+            "-g",
+            "-DCHAOS",
+            "-I" + str(ROOT / "include"),
+            str(ROOT / "tests/chaos/next_use_dogmove.c"),
+            *map(str, cls.objects),
+            "-lncursesw",
+            "-ltinfo",
+            "-lm",
+            *subprocess.check_output(
+                ["pkg-config", "--libs", "lua5.4"], text=True
+            ).split(),
+            "-o",
+            str(cls.exe),
+        ]
+        result = subprocess.run(command, capture_output=True, timeout=45)
+        if result.returncode:
+            raise RuntimeError(result.stderr.decode())
+
+    def run_case(self, name):
+        folder = Path(tempfile.mkdtemp(prefix="nyarl-next-use-dogmove-run-"))
+        os.chmod(folder, 0o700)
+        publish_envelope(folder, ROW, HOST)
+        env = dict(os.environ)
+        env["NYARLATHACK_RUN_DIR"] = str(folder)
+        env["NYARLATHACK_OBSERVATIONS"] = "1"
+        p = subprocess.run(
+            [str(self.exe), name, str(folder)],
+            capture_output=True,
+            text=True,
+            timeout=10,
+            env=env,
+            cwd=folder,
+        )
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        return json.loads(p.stdout)
+
+    def test_admitted_dog_move_consumes_extra_attention(self):
+        control = self.run_case("none")
+        positive = self.run_case("admit")
+        bypass = self.run_case("bypass")
+        self.assertEqual(control["ready_before"], 0)
+        self.assertEqual(bypass["ready_before"], 0)
+        self.assertEqual(positive["admitted"], 1)
+        self.assertEqual(positive["telegraph"], 1)
+        self.assertEqual(positive["ready_before"], 1)
+        self.assertEqual(positive["ready_after"], 0)
+        self.assertEqual((control["mx"], control["my"]), (bypass["mx"], bypass["my"]))
+
+    def test_late_window_does_not_take_extra_attention(self):
+        late = self.run_case("late")
+        self.assertEqual(late["ready_before"], 0)
+        self.assertEqual(late["ready_after"], 0)
+
+
+if __name__ == "__main__":
+    unittest.main()
