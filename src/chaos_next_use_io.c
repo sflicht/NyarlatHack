@@ -1,6 +1,7 @@
 /* NetHack General Public License. Consume next_use.lua once; not admission. */
 #define _GNU_SOURCE
 #include "chaos_lua.h"
+#include "chaos_next_use.h"
 #include "chaos_next_use_io.h"
 #include <errno.h>
 #include <fcntl.h>
@@ -94,4 +95,27 @@ void chaos_next_use_candidate_tick(int dir)
         unlinkat(dir, "next_use-used.lua", 0);
         return;
     }
+}
+
+int chaos_next_use_envelope_load(int dir, struct chaos_next_use_envelope *out)
+{
+    char buf[CHAOS_NEXT_USE_ENVELOPE_MAX + 1];
+    ssize_t n;
+    int fd;
+
+    if (!out)
+        return CHAOS_NEXT_USE_NULL_ARGUMENT;
+    memset(out, 0, sizeof *out);
+    if (dir < 0)
+        return CHAOS_NEXT_USE_OUTPUT;
+    fd = private_file(dir, "next_use-envelope.json", O_RDONLY);
+    if (fd < 0)
+        return CHAOS_NEXT_USE_OUTPUT;
+    n = full_read(fd, buf, sizeof buf);
+    close(fd);
+    if (n < 1 || n > CHAOS_NEXT_USE_ENVELOPE_MAX)
+        return CHAOS_NEXT_USE_LIMIT;
+    if (memchr(buf, 0, (size_t)n))
+        return CHAOS_NEXT_USE_UTF8;
+    return chaos_next_use_parse_envelope(buf, (size_t)n, out);
 }
