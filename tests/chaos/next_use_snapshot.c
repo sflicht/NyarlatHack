@@ -237,10 +237,12 @@ static void print_snap(const char *tag, int ok,
                        const struct chaos_next_use_snapshot *snap)
 {
     printf("{\"tag\":\"%s\",\"ok\":%d,\"program_id\":%d,\"slot_w\":%d,"
-           "\"slot_f\":%d,\"state\":%d,\"source_len\":%zu,\"sha\":\"%.16s\"}\n",
+           "\"slot_f\":%d,\"state\":%d,\"source_len\":%zu,\"sha\":\"%.16s\","
+           "\"armed_m_id\":%u}\n",
            tag, ok, snap ? snap->program_id : 0, snap ? snap->slot_w : -1,
            snap ? snap->slot_f : -1, snap ? snap->state : -1,
-           snap ? snap->source_length : 0, snap ? snap->source_sha256 : "");
+           snap ? snap->source_length : 0, snap ? snap->source_sha256 : "",
+           snap ? snap->armed_m_id : 0);
 }
 
 int main(int argc, char **argv)
@@ -538,6 +540,32 @@ int main(int argc, char **argv)
                && admitted == CHAOS_NEXT_USE_ADMISSION_NOT_OPEN
                && !last.admitted
                && live.slot_w == CHAOS_SLOT_W_PENDING ? 0 : 1;
+    }
+    if (!strcmp(mode, "restore_armed")) {
+        FILE *fp;
+        int fd, restored;
+        struct chaos_fountain_token token;
+
+        chaos_next_use_runtime_reset();
+        installed = install_lua(attention_lua);
+        monstermoves = 40;
+        memset(&token, 0, sizeof token);
+        chaos_next_use_on_action(CHAOS_NEXT_USE_FAMILY_W, 10, &token);
+        chaos_next_use_capture_whistle(10, 7, 40);
+        fp = tmpfile();
+        if (!fp) return 1;
+        fd = fileno(fp);
+        chaos_next_use_save(fd);
+        chaos_next_use_runtime_reset();
+        if (fseek(fp, 0, SEEK_SET)) return 1;
+        restored = chaos_next_use_restore(fd);
+        fclose(fp);
+        chaos_next_use_capture_whistle(10, 8, 40);
+        exported = chaos_next_use_snapshot_export(&live);
+        print_snap("after_rebind", restored && exported, &live);
+        return installed && restored && exported
+               && live.slot_w == CHAOS_SLOT_W_CONSUMED_ARMED
+               && live.armed_m_id == 7 ? 0 : 1;
     }
     return 2;
 }

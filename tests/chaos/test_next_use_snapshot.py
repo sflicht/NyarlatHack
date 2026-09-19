@@ -172,6 +172,13 @@ class NextUseSnapshotTests(unittest.TestCase):
         self.assertEqual(after["safe_admitted"], 0)
         self.assertEqual(after["slot_w"], 1)
 
+    def test_restore_armed_does_not_rebind_companion(self):
+        rows = self.run_mode("restore_armed")
+        after = next(row for row in rows if row["tag"] == "after_rebind")
+        self.assertEqual(after["ok"], 1)
+        self.assertEqual(after["slot_w"], 2)
+        self.assertEqual(after["armed_m_id"], 7)
+
 
 if __name__ == "__main__":
     unittest.main()
