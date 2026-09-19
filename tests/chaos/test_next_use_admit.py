@@ -73,3 +73,105 @@ class NextUseAdmitTests(unittest.TestCase):
         self.assertEqual(row["admit"], 4)  # BUDGET
         self.assertEqual(row["spent"], 12)
         self.assertEqual(row["out_spent"], 0)
+
+    def test_f_only_admit_install_price_is_one(self):
+        row = self.run_mode("f-ok")
+        self.assertEqual(row["admit"], 0)
+        self.assertEqual(row["spent"], 1)
+        self.assertEqual(row["cost"], 1)
+        self.assertEqual(row["install"], 1)
+        self.assertEqual(row["slot_w"], 0)
+        self.assertEqual(row["slot_f"], 1)
+        self.assertEqual(row["phase"], 3)
+
+    def test_wf_admit_install_price_is_operation_count(self):
+        row = self.run_mode("wf-ok")
+        self.assertEqual(row["admit"], 0)
+        self.assertEqual(row["spent"], 2)
+        self.assertEqual(row["cost"], 2)
+        self.assertEqual(row["ops"], 2)
+        self.assertEqual(row["install"], 1)
+        self.assertEqual(row["slot_w"], 1)
+        self.assertEqual(row["slot_f"], 1)
+
+    def test_install_failure_after_commit_does_not_rewind(self):
+        row = self.run_mode("install-fail")
+        self.assertEqual(row["admit"], 0)
+        self.assertEqual(row["spent"], 1)
+        self.assertEqual(row["install"], 0)
+        self.assertEqual(row["phase"], 3)
+        self.assertEqual(row["seq"], 3)
+        self.assertEqual(row["private"], 0)
+
+    def test_failed_install_does_not_overwrite_active_runtime(self):
+        row = self.run_mode("preserve-runtime")
+        self.assertEqual(row["first_admit"], 0)
+        self.assertEqual(row["first_install"], 1)
+        self.assertEqual(row["second_admit"], 0)
+        self.assertEqual(row["second_install"], 0)
+        self.assertGreater(row["private_before"], 0)
+        self.assertEqual(row["private_after"], row["private_before"])
+        self.assertEqual(row["first_spent"], 1)
+        self.assertEqual(row["second_spent"], 1)
+
+    def test_private_carrier_capacity_rejects_unchanged(self):
+        row = self.run_mode("carrier")
+        self.assertEqual(row["admit"], 3)  # PRIVATE_CARRIER_RESERVE
+        self.assertEqual(row["spent"], 0)
+        self.assertEqual(row["out_spent"], 0)
+        self.assertEqual(row["count"], 0)
+
+    def test_duplicate_operations_fail_at_parse(self):
+        row = self.run_mode("parse-dup")
+        self.assertNotEqual(row["parse"], 0)
+
+    def test_malformed_origin_fails_at_parse(self):
+        row = self.run_mode("parse-malformed")
+        self.assertNotEqual(row["parse"], 0)
+
+    def _compile_mutant(self, old, new):
+        import shutil
+
+        folder = Path(tempfile.mkdtemp(prefix="nyarl-admit-mutant-"))
+        source = folder / "chaos_next_use_admission.c"
+        shutil.copy(ROOT / "src/chaos_next_use_admission.c", source)
+        text = source.read_text()
+        self.assertIn(old, text)
+        source.write_text(text.replace(old, new, 1))
+        exe = folder / "admit"
+        command = [
+            "/usr/bin/gcc",
+            "-DCHAOS",
+            "-ffunction-sections",
+            "-fdata-sections",
+            "-Wall",
+            "-Wextra",
+            "-Werror",
+            "-Wno-misleading-indentation",
+            "-isystem",
+            str(ROOT / "include"),
+            str(ROOT / "tests/chaos/next_use_admit.c"),
+            str(ROOT / "src/chaos_next_use.c"),
+            str(source),
+            str(ROOT / "src/chaos_next_use_runtime.c"),
+            str(ROOT / "src/chaos_protocol.c"),
+            "-Wl,--gc-sections",
+            "-lm",
+            "-o",
+            str(exe),
+        ]
+        result = subprocess.run(command, capture_output=True, timeout=30)
+        self.assertEqual(result.returncode, 0, result.stderr.decode())
+        return exe
+
+    def test_debit_bypass_fails_price_oracle(self):
+        exe = self._compile_mutant(
+            "commit.budget_state.spent += cost;",
+            "/* bypass debit */",
+        )
+        p = subprocess.run(
+            [str(exe), "wf-ok"], capture_output=True, text=True, timeout=5
+        )
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        row = json.loads(p.stdout)
+        self.assertNotEqual(row["spent"], 2)
