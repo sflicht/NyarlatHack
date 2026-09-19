@@ -129,6 +129,13 @@ class NextUseAdmitTests(unittest.TestCase):
         row = self.run_mode("parse-malformed")
         self.assertNotEqual(row["parse"], 0)
 
+    def test_public_bound_rejects_without_overflow(self):
+        row = self.run_mode("public-bound")
+        self.assertEqual(row["admit"], 0)
+        self.assertEqual(row["install"], 1)
+        self.assertEqual(row["public"], 0)
+        self.assertLessEqual(row["public"], 1)
+
     def _compile_mutant(self, old, new):
         import shutil
 

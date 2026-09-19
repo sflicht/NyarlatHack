@@ -1033,7 +1033,7 @@ void chaos_next_use_on_manifestation(
         || !witness->displaced || witness->invalid)
         return;
     if (runtime.public_count >= CHAOS_RUNTIME_PUBLIC_MAX)
-        panic("next-use public carrier capacity");
+        return;
     memset(&public_record, 0, sizeof public_record);
     public_record.next_use_public_v = 2;
     public_record.family = CHAOS_NEXT_USE_FAMILY_W;
