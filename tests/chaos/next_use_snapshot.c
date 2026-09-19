@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 long moves;
 long monstermoves;
@@ -104,6 +105,52 @@ static int install_pending(void)
                                           1, 1, 10, 110, 0, 0, 0, 1, 0);
 }
 
+static int install_pending_f(void)
+{
+    struct chaos_next_use_envelope envelope;
+    struct chaos_next_use_admission source, admitted;
+    struct chaos_next_use_attempt_gate gate;
+    char canonical[CHAOS_NEXT_USE_ENVELOPE_MAX + 1];
+    char source_sha[65], raw[CHAOS_NEXT_USE_ENVELOPE_MAX + 1];
+    unsigned char digest[32];
+    size_t canonical_length = 0;
+    int n;
+
+    memset(&source, 0, sizeof source);
+    memset(&admitted, 0, sizeof admitted);
+    chaos_state_init(&source.budget_state);
+    source.program.phase = CHAOS_ATTEMPT_OPEN;
+    gate.phase = CHAOS_ATTEMPT_OPEN;
+    gate.reason = 0;
+    if (chaos_next_use_sha256(source_text, sizeof source_text - 1, digest)
+        != CHAOS_NEXT_USE_OK)
+        return 0;
+    digest_hex(digest, source_sha);
+    n = snprintf(raw, sizeof raw,
+        "{\"at\":7,\"cost\":1,\"id\":1,\"next_use_program_v\":2,"
+        "\"operations\":[\"F\"],\"origin_refs\":[{\"end_seq\":12,"
+        "\"fact\":\"water_refreshed\",\"family\":\"F\",\"level_dlevel\":1,"
+        "\"level_dnum\":0,\"move\":10,\"notice_seq\":11,\"root\":10,"
+        "\"run\":\"%s\"}],\"source\":\"%s\",\"source_sha256\":\"%s\","
+        "\"telegraph\":\"next-use-v2-F\",\"ttl\":100,\"variant\":0}",
+        run_hex, source_text, source_sha);
+    if (n < 1 || (size_t)n >= sizeof raw) return 0;
+    if (chaos_next_use_jcs(raw, (size_t)n, canonical,
+                           CHAOS_NEXT_USE_ENVELOPE_MAX + 1, &canonical_length)
+        != CHAOS_NEXT_USE_OK)
+        return 0;
+    if (chaos_next_use_parse_envelope(canonical, canonical_length, &envelope)
+        != CHAOS_NEXT_USE_OK)
+        return 0;
+    if (chaos_next_use_admit(&admitted, &source, &gate, &envelope, canonical,
+                             canonical_length, 0, 40, 1, receipt_ok, NULL)
+        != CHAOS_NEXT_USE_ADMISSION_OK)
+        return 0;
+    return chaos_next_use_runtime_install(&admitted, source_text,
+                                          sizeof source_text - 1, source_sha,
+                                          1, 1, 0, 0, 10, 110, 0, 0, 1);
+}
+
 static void print_snap(const char *tag, int ok,
                        const struct chaos_next_use_snapshot *snap)
 {
@@ -156,6 +203,60 @@ int main(int argc, char **argv)
                "\"live_program\":%d}\n", validated, imported, live.program_id);
         return installed && !validated && !imported && exported
                && live.program_id == 1 ? 0 : 1;
+    }
+    if (!strcmp(mode, "consumed_invalid")) {
+        struct chaos_fountain_token token;
+        int acted;
+
+        monstermoves = 40;
+        memset(&token, 0, sizeof token);
+        acted = chaos_next_use_on_action(CHAOS_NEXT_USE_FAMILY_W, 10, &token);
+        exported = chaos_next_use_snapshot_export(&snap);
+        print_snap("after_invalid", exported, &snap);
+        chaos_next_use_runtime_reset();
+        imported = chaos_next_use_snapshot_import(&snap);
+        exported = chaos_next_use_snapshot_export(&live);
+        print_snap("imported_invalid", imported && exported, &live);
+        snap.slot_w = CHAOS_SLOT_W_PENDING;
+        validated = chaos_next_use_snapshot_validate(&snap);
+        printf("{\"tag\":\"resurrect\",\"validated\":%d,\"acted\":%d}\n",
+               validated, acted);
+        return installed && imported && exported
+               && live.slot_w == CHAOS_SLOT_W_CONSUMED_INVALID
+               && live.slot_w != CHAOS_SLOT_W_PENDING
+               && !validated ? 0 : 1;
+    }
+    if (!strcmp(mode, "roundtrip_f")) {
+        chaos_next_use_runtime_reset();
+        installed = install_pending_f();
+        exported = chaos_next_use_snapshot_export(&snap);
+        print_snap("after_install_f", exported, &snap);
+        chaos_next_use_runtime_reset();
+        imported = chaos_next_use_snapshot_import(&snap);
+        exported = chaos_next_use_snapshot_export(&live);
+        print_snap("after_import_f", imported && exported, &live);
+        return installed && imported && exported
+               && live.slot_w == CHAOS_SLOT_W_UNDECLARED
+               && live.slot_f == CHAOS_SLOT_F_PENDING ? 0 : 1;
+    }
+    if (!strcmp(mode, "file")) {
+        FILE *fp;
+        int fd, wrote, loaded;
+
+        fp = tmpfile();
+        if (!fp) return 1;
+        fd = fileno(fp);
+        wrote = chaos_next_use_snapshot_write(fd, &snap);
+        if (fseek(fp, 0, SEEK_SET)) return 1;
+        loaded = chaos_next_use_snapshot_read(fd, &live);
+        fclose(fp);
+        chaos_next_use_runtime_reset();
+        imported = chaos_next_use_snapshot_import(&live);
+        exported = chaos_next_use_snapshot_export(&live);
+        print_snap("after_file", wrote && loaded && imported && exported, &live);
+        return installed && wrote && loaded && imported && exported
+               && live.slot_w == snap.slot_w
+               && live.program_id == snap.program_id ? 0 : 1;
     }
     return 2;
 }
