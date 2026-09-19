@@ -912,3 +912,15 @@ int chaos_next_use_sha256(const void *data,size_t length,unsigned char digest[32
     struct sha256_state state;static const uint32_t initial[8]={0x6a09e667U,0xbb67ae85U,0x3c6ef372U,0xa54ff53aU,0x510e527fU,0x9b05688cU,0x1f83d9abU,0x5be0cd19U};
     if((!data&&length)||!digest)return CHAOS_NEXT_USE_NULL_ARGUMENT;memset(&state,0,sizeof state);memcpy(state.h,initial,sizeof initial);sha256_update(&state,(const unsigned char*)data,length);sha256_final(&state,digest);memset(&state,0,sizeof state);return CHAOS_NEXT_USE_OK;
 }
+
+const char *chaos_next_use_player_warning(const char *identifier)
+{
+    if (!identifier) return 0;
+    if (!strcmp(identifier, "next-use-v2-W"))
+        return "The next whistle may call unusual attention.";
+    if (!strcmp(identifier, "next-use-v2-F"))
+        return "The next fountain drink may take a different course.";
+    if (!strcmp(identifier, "next-use-v2-WF"))
+        return "The next whistle or fountain drink may not behave as usual.";
+    return 0;
+}
