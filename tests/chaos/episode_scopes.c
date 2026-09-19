@@ -18,6 +18,11 @@ int multi;
 static int shadow, write_count, sync_count, fail_write, fail_sync;
 int chaos_shadow_active(void) { return shadow; }
 void chaos_curio_safe(int dir) { (void)dir; }
+const char *chaos_next_use_player_warning(const char *identifier)
+{
+    (void)identifier;
+    return 0;
+}
 #include <stdarg.h>
 
 void pline(const char *fmt, ...) {

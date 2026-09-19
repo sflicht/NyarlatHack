@@ -15,6 +15,12 @@ int main(int argc, char **argv)
     char run[65];
     int dir, rc;
 
+    if (argc == 3 && !strcmp(argv[1], "warn")) {
+        const char *line = chaos_next_use_player_warning(argv[2]);
+        if (!line) return 1;
+        printf("%s\n", line);
+        return 0;
+    }
     if (argc != 2 && argc != 3) return 2;
     if (argc == 3 && !strcmp(argv[2], "logical")) {
         char id[CHAOS_NEXT_USE_LOGICAL_HEX + 1];

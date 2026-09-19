@@ -125,5 +125,26 @@ int main(int argc, char **argv)
         printf("{\"status\":%d}\n", status);
         return 0;
     }
+    if (!strcmp(argv[1], "upvalue-counter")) {
+        const char *s = "local n=0 return {on_action=function(c) n=n+1 "
+                        "return {next_use_intent_v=2, op=\"quiet\", state=n} end}";
+        status = chaos_lua_next_use_on_action(s, strlen(s), &context, &intent);
+        print_intent(status, &intent);
+        status = chaos_lua_next_use_on_action(s, strlen(s), &context, &intent);
+        print_intent(status, &intent);
+        return 0;
+    }
+    if (!strcmp(argv[1], "returned-state")) {
+        const char *s = "return {on_action=function(c) "
+                        "return {next_use_intent_v=2, op=\"quiet\", "
+                        "state=(c.state<3) and (c.state+1) or 3} end}";
+        context.state = 0;
+        status = chaos_lua_next_use_on_action(s, strlen(s), &context, &intent);
+        print_intent(status, &intent);
+        context.state = intent.state;
+        status = chaos_lua_next_use_on_action(s, strlen(s), &context, &intent);
+        print_intent(status, &intent);
+        return 0;
+    }
     return 2;
 }

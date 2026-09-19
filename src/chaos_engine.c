@@ -49,12 +49,20 @@ static int food_metabolism(void) {
 static struct {
     int ready, pending;
     int root, notice, end, fact, operation, dnum, dlevel, move;
-} next_use_origin;
+} next_use_origin[2];
+static int next_use_slot_for_operation(int operation)
+{
+    if (operation == CHAOS_OBS_OP_FOUNTAIN_DRINK) return 1;
+    if (operation == CHAOS_OBS_OP_WHISTLING) return 0;
+    return -1;
+}
 static int next_use_warn(void *unused, const char *text)
 {
+    const char *line;
     (void)unused;
-    if (!text || !text[0]) return 0;
-    pline("%s", text);
+    line = chaos_next_use_player_warning(text);
+    if (!line) return 0;
+    pline("%s", line);
     return 1;
 }
 static const char *next_use_engine_fact(int operation, int fact)
@@ -74,6 +82,7 @@ static void next_use_bind_owned(void)
     struct stat st;
     char run[65];
     const char *fact;
+    int slot;
     if (io.dir < 0 || fstat(io.dir, &st)) return;
     if (snprintf(run, sizeof run, "%016llx%016llx%016llx%016llx",
                  (unsigned long long)st.st_dev,
@@ -85,22 +94,26 @@ static void next_use_bind_owned(void)
         chaos_next_use_safe_bind_run(run);
     if (chaos_next_use_safe_bind_telegraph)
         chaos_next_use_safe_bind_telegraph(next_use_warn, 0);
-    if (!chaos_next_use_safe_bind_origin || !next_use_origin.ready)
+    if (!chaos_next_use_safe_bind_origin)
         return;
-    fact = next_use_engine_fact(next_use_origin.operation, next_use_origin.fact);
-    if (!fact) return;
-    memset(&origin, 0, sizeof origin);
-    origin.end_seq = next_use_origin.end;
-    strncpy(origin.fact, fact, sizeof origin.fact - 1);
-    origin.family = next_use_origin.operation == CHAOS_OBS_OP_FOUNTAIN_DRINK
-                    ? CHAOS_NEXT_USE_FAMILY_F : CHAOS_NEXT_USE_FAMILY_W;
-    origin.level_dlevel = next_use_origin.dlevel;
-    origin.level_dnum = next_use_origin.dnum;
-    origin.move = next_use_origin.move;
-    origin.notice_seq = next_use_origin.notice;
-    origin.root = next_use_origin.root;
-    memcpy(origin.run, run, 65);
-    chaos_next_use_safe_bind_origin(&origin, 1);
+    for (slot = 0; slot < 2; ++slot) {
+        if (!next_use_origin[slot].ready) continue;
+        fact = next_use_engine_fact(next_use_origin[slot].operation,
+                                    next_use_origin[slot].fact);
+        if (!fact) continue;
+        memset(&origin, 0, sizeof origin);
+        origin.end_seq = next_use_origin[slot].end;
+        strncpy(origin.fact, fact, sizeof origin.fact - 1);
+        origin.family = slot == 1 ? CHAOS_NEXT_USE_FAMILY_F
+                                  : CHAOS_NEXT_USE_FAMILY_W;
+        origin.level_dlevel = next_use_origin[slot].dlevel;
+        origin.level_dnum = next_use_origin[slot].dnum;
+        origin.move = next_use_origin[slot].move;
+        origin.notice_seq = next_use_origin[slot].notice;
+        origin.root = next_use_origin[slot].root;
+        memcpy(origin.run, run, 65);
+        chaos_next_use_safe_bind_origin(&origin, 1);
+    }
 }
 static struct chaos_context context(void) {
     struct chaos_context c;
@@ -273,12 +286,16 @@ void chaos_observation_end(long root) {
         (void)chaos_io_observation(&io, &u.chaos, &c, observation_operation,
             observation_blocked ? CHAOS_OBS_STAGE_BLOCKED : CHAOS_OBS_STAGE_COMPLETED,
             root, CHAOS_OBS_FACT_NONE);
-        if (!observation_blocked && next_use_origin.pending
-            && next_use_origin.root == (int)root
-            && next_use_engine_fact(observation_operation, next_use_origin.fact)) {
-            next_use_origin.end = u.chaos.seq;
-            next_use_origin.ready = 1;
-            next_use_origin.pending = 0;
+        if (!observation_blocked) {
+            int slot = next_use_slot_for_operation(observation_operation);
+            if (slot >= 0 && next_use_origin[slot].pending
+                && next_use_origin[slot].root == (int)root
+                && next_use_engine_fact(observation_operation,
+                                        next_use_origin[slot].fact)) {
+                next_use_origin[slot].end = u.chaos.seq;
+                next_use_origin[slot].ready = 1;
+                next_use_origin[slot].pending = 0;
+            }
         }
     }
     observation_clear();
@@ -322,16 +339,19 @@ static void observation_notice(const struct chaos_obs_fact_info *fact) {
         CHAOS_OBS_STAGE_NOTICE, observation_root, fact->id);
     if (next_use_engine_fact(observation_operation, fact->id)
         && monstermoves >= 0L && monstermoves <= 2147483547L) {
-        next_use_origin.pending = 1;
-        next_use_origin.ready = 0;
-        next_use_origin.root = (int)observation_root;
-        next_use_origin.notice = u.chaos.seq;
-        next_use_origin.end = 0;
-        next_use_origin.fact = fact->id;
-        next_use_origin.operation = observation_operation;
-        next_use_origin.dnum = (int)u.uz.dnum;
-        next_use_origin.dlevel = (int)u.uz.dlevel;
-        next_use_origin.move = (int)monstermoves;
+        int slot = next_use_slot_for_operation(observation_operation);
+        if (slot >= 0) {
+            next_use_origin[slot].pending = 1;
+            next_use_origin[slot].ready = 0;
+            next_use_origin[slot].root = (int)observation_root;
+            next_use_origin[slot].notice = u.chaos.seq;
+            next_use_origin[slot].end = 0;
+            next_use_origin[slot].fact = fact->id;
+            next_use_origin[slot].operation = observation_operation;
+            next_use_origin[slot].dnum = (int)u.uz.dnum;
+            next_use_origin[slot].dlevel = (int)u.uz.dlevel;
+            next_use_origin[slot].move = (int)monstermoves;
+        }
     }
 }
 static void observation_deliver(struct chaos_observation_token token, int channel) {

@@ -153,6 +153,34 @@ class EnvelopePublishTests(unittest.TestCase):
             self.assertNotEqual(first, owned)
             self.assertEqual(len(owned), 64)
 
+    def test_player_warning_maps_supported_ids(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            binary = Path(tmp) / "next_use_envelope"
+            _compile(binary)
+            cases = {
+                "next-use-v2-W": "The next whistle may call unusual attention.",
+                "next-use-v2-F": "The next fountain drink may take a different course.",
+                "next-use-v2-WF": "The next whistle or fountain drink may not behave as usual.",
+            }
+            for identifier, prose in cases.items():
+                out = subprocess.check_output(
+                    [str(binary), "warn", identifier], text=True
+                )
+                self.assertEqual(out.strip(), prose)
+                self.assertNotIn(identifier, out)
+
+    def test_player_warning_rejects_unknown_id(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            binary = Path(tmp) / "next_use_envelope"
+            _compile(binary)
+            proc = subprocess.run(
+                [str(binary), "warn", "next-use-v2-X"],
+                capture_output=True,
+                text=True,
+            )
+            self.assertNotEqual(proc.returncode, 0)
+            self.assertEqual(proc.stdout, "")
+
 
 if __name__ == "__main__":
     unittest.main()

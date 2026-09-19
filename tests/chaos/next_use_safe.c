@@ -59,17 +59,18 @@ static int receipt_fail(void *opaque, const struct chaos_next_use_private_record
 }
 
 static void bind_origin(const char *run, int qualifying, const char *fact,
-                        int root, int dlevel, int origin_move)
+                        int root, int dlevel, int origin_move, int family,
+                        int notice, int end)
 {
     struct chaos_next_use_origin_ref origin;
     memset(&origin, 0, sizeof origin);
-    origin.end_seq = 12;
+    origin.end_seq = end;
     strncpy(origin.fact, fact, sizeof origin.fact - 1);
-    origin.family = CHAOS_NEXT_USE_FAMILY_W;
+    origin.family = family;
     origin.level_dlevel = dlevel;
     origin.level_dnum = 0;
     origin.move = origin_move;
-    origin.notice_seq = 11;
+    origin.notice_seq = notice;
     origin.root = root;
     strncpy(origin.run, run && strcmp(run, "none") ? run : "",
             CHAOS_NEXT_USE_RUN_HEX);
@@ -126,19 +127,44 @@ int main(int argc, char **argv)
         budget.spent = 3;
     }
     if (!strcmp(evidence_mode, "valid"))
-        bind_origin(run, 1, "ordinary_whistle", 10, 1, origin_move);
+        bind_origin(run, 1, "ordinary_whistle", 10, 1, origin_move,
+                    CHAOS_NEXT_USE_FAMILY_W, 11, 12);
     else if (!strcmp(evidence_mode, "missing"))
         ; /* leave unbound */
     else if (!strcmp(evidence_mode, "incomplete"))
-        bind_origin(run, 0, "ordinary_whistle", 10, 1, origin_move);
+        bind_origin(run, 0, "ordinary_whistle", 10, 1, origin_move,
+                    CHAOS_NEXT_USE_FAMILY_W, 11, 12);
     else if (!strcmp(evidence_mode, "stale"))
-        bind_origin(run, 1, "ordinary_whistle", 9, 1, origin_move);
+        bind_origin(run, 1, "ordinary_whistle", 9, 1, origin_move,
+                    CHAOS_NEXT_USE_FAMILY_W, 11, 12);
     else if (!strcmp(evidence_mode, "wrong_run"))
-        bind_origin("cd", 1, "ordinary_whistle", 10, 1, origin_move);
+        bind_origin("cd", 1, "ordinary_whistle", 10, 1, origin_move,
+                    CHAOS_NEXT_USE_FAMILY_W, 11, 12);
     else if (!strcmp(evidence_mode, "wrong_level"))
-        bind_origin(run, 1, "ordinary_whistle", 10, 2, origin_move);
+        bind_origin(run, 1, "ordinary_whistle", 10, 2, origin_move,
+                    CHAOS_NEXT_USE_FAMILY_W, 11, 12);
     else if (!strcmp(evidence_mode, "wrong_fact"))
-        bind_origin(run, 1, "water_refreshed", 10, 1, origin_move);
+        bind_origin(run, 1, "water_refreshed", 10, 1, origin_move,
+                    CHAOS_NEXT_USE_FAMILY_W, 11, 12);
+    else if (!strcmp(evidence_mode, "valid_f"))
+        bind_origin(run, 1, "water_refreshed", 10, 1, origin_move,
+                    CHAOS_NEXT_USE_FAMILY_F, 11, 12);
+    else if (!strcmp(evidence_mode, "wf")) {
+        bind_origin(run, 1, "ordinary_whistle", 10, 1, origin_move,
+                    CHAOS_NEXT_USE_FAMILY_W, 11, 12);
+        bind_origin(run, 1, "water_refreshed", 13, 1, origin_move,
+                    CHAOS_NEXT_USE_FAMILY_F, 14, 15);
+    } else if (!strcmp(evidence_mode, "fw")) {
+        bind_origin(run, 1, "water_refreshed", 13, 1, origin_move,
+                    CHAOS_NEXT_USE_FAMILY_F, 14, 15);
+        bind_origin(run, 1, "ordinary_whistle", 10, 1, origin_move,
+                    CHAOS_NEXT_USE_FAMILY_W, 11, 12);
+    } else if (!strcmp(evidence_mode, "wf_wrong_f")) {
+        bind_origin(run, 1, "ordinary_whistle", 10, 1, origin_move,
+                    CHAOS_NEXT_USE_FAMILY_W, 11, 12);
+        bind_origin(run, 1, "water_refreshed", 20, 1, origin_move,
+                    CHAOS_NEXT_USE_FAMILY_F, 21, 22);
+    }
     if (on_safe) {
         if (strcmp(run, "none"))
             chaos_next_use_safe_bind_run(run);

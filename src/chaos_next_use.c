@@ -922,3 +922,15 @@ int chaos_next_use_format_logical_id(unsigned long long birthday,
         return 0;
     return 1;
 }
+
+const char *chaos_next_use_player_warning(const char *identifier)
+{
+    if (!identifier) return 0;
+    if (!strcmp(identifier, "next-use-v2-W"))
+        return "The next whistle may call unusual attention.";
+    if (!strcmp(identifier, "next-use-v2-F"))
+        return "The next fountain drink may take a different course.";
+    if (!strcmp(identifier, "next-use-v2-WF"))
+        return "The next whistle or fountain drink may not behave as usual.";
+    return 0;
+}
