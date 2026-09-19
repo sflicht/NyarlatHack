@@ -322,7 +322,8 @@ static void observation_notice(const struct chaos_obs_fact_info *fact) {
     if (fact->implies_blocked) observation_blocked = 1;
     (void)chaos_io_observation(&io, &u.chaos, &c, observation_operation,
         CHAOS_OBS_STAGE_NOTICE, observation_root, fact->id);
-    if (next_use_engine_fact(observation_operation, fact->id)) {
+    if (next_use_engine_fact(observation_operation, fact->id)
+        && monstermoves >= 0L && monstermoves <= 2147483547L) {
         next_use_origin.pending = 1;
         next_use_origin.ready = 0;
         next_use_origin.root = (int)observation_root;
@@ -332,8 +333,7 @@ static void observation_notice(const struct chaos_obs_fact_info *fact) {
         next_use_origin.operation = observation_operation;
         next_use_origin.dnum = (int)u.uz.dnum;
         next_use_origin.dlevel = (int)u.uz.dlevel;
-        next_use_origin.move = moves > 2147483647L ? 2147483647
-                               : moves < 0L ? 0 : (int)moves;
+        next_use_origin.move = (int)monstermoves;
     }
 }
 static void observation_deliver(struct chaos_observation_token token, int channel) {

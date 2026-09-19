@@ -69,10 +69,12 @@ class NextUseSafeAdmitTests(unittest.TestCase):
         if result.returncode:
             raise RuntimeError(result.stderr.decode())
 
-    def publish(self):
+    def publish(self, move=40):
         folder = tempfile.mkdtemp(prefix="nyarl-next-use-safe-run-")
         os.chmod(folder, 0o700)
-        publish_envelope(folder, ROW, HOST)
+        host = dict(HOST)
+        host["move"] = move
+        publish_envelope(folder, ROW, host)
         return folder
 
     def run_case(
@@ -90,6 +92,7 @@ class NextUseSafeAdmitTests(unittest.TestCase):
         budget="valid",
         receipt="ok",
         evidence="valid",
+        clock="native",
     ):
         if run is None:
             run = HOST["run"]
@@ -109,6 +112,7 @@ class NextUseSafeAdmitTests(unittest.TestCase):
                 budget,
                 receipt,
                 evidence,
+                clock,
             ],
             capture_output=True,
             text=True,
@@ -298,6 +302,102 @@ class NextUseSafeAdmitTests(unittest.TestCase):
         self.assertEqual(row["hunger_expires"], 100)
         self.assertEqual(row["budget_valid"], 1)
         self.assertEqual(row["second_caller_spent"], 4)
+
+    def test_production_negative_native_clock_rejects(self):
+        row = self.run_case(self.publish(), wrapper="on_safe", clock="negative")
+        self.assertEqual(row["admitted"], 0)
+        self.assertEqual(row["caller_spent"], 0)
+        self.assertEqual(row["rejected"], 1)
+
+    def test_production_overflow_native_clock_rejects(self):
+        row = self.run_case(
+            self.publish(move=2147483497), wrapper="on_safe", clock="overflow"
+        )
+        self.assertEqual(row["admitted"], 0)
+        self.assertEqual(row["caller_spent"], 0)
+        self.assertEqual(row["rejected"], 1)
+
+    def test_saturating_native_clock_is_detected(self):
+        import shutil
+
+        folder = Path(tempfile.mkdtemp(prefix="nyarl-safe-mutant-"))
+        source = folder / "chaos_next_use_safe.c"
+        shutil.copy(ROOT / "src/chaos_next_use_safe.c", source)
+        text = source.read_text()
+        old = (
+            "    if (at_safe < 0 || at_safe > 2147483647L\n"
+            "        || monstermoves < 0 || monstermoves > 2147483547L) {\n"
+            "        res.rejected = 1;\n"
+            "        return finish(&res, CHAOS_NEXT_USE_ADMISSION_SCHEMA);\n"
+            "    }\n"
+        )
+        self.assertIn(old, text)
+        source.write_text(text.replace(old, "", 1))
+        text = source.read_text()
+        old_move = "    req.at_move = (int)monstermoves;\n"
+        new_move = (
+            "    req.at_move = monstermoves > 2147483547L ? 2147483547\n"
+            "                  : monstermoves < 0L ? 0 : (int)monstermoves;\n"
+        )
+        self.assertIn(old_move, text)
+        source.write_text(text.replace(old_move, new_move, 1))
+        flags = subprocess.check_output(
+            ["pkg-config", "--cflags", "--libs", "lua5.4"], text=True
+        ).split()
+        exe = folder / "next-use-safe"
+        command = [
+            "/usr/bin/gcc",
+            "-DCHAOS",
+            "-ffunction-sections",
+            "-fdata-sections",
+            "-Wall",
+            "-Wextra",
+            "-Werror",
+            "-Wno-misleading-indentation",
+            "-isystem",
+            str(ROOT / "include"),
+            str(ROOT / "tests/chaos/next_use_safe.c"),
+            str(ROOT / "src/chaos_next_use.c"),
+            str(ROOT / "src/chaos_next_use_admission.c"),
+            str(ROOT / "src/chaos_next_use_runtime.c"),
+            str(ROOT / "src/chaos_next_use_io.c"),
+            str(source),
+            str(ROOT / "src/chaos_protocol.c"),
+            str(ROOT / "src/chaos_lua.c"),
+            "-Wl,--gc-sections",
+            *flags,
+            "-lm",
+            "-o",
+            str(exe),
+        ]
+        result = subprocess.run(command, capture_output=True, timeout=30)
+        self.assertEqual(result.returncode, 0, result.stderr.decode())
+        run = self.publish()
+        p = subprocess.run(
+            [
+                str(exe),
+                run,
+                "7",
+                "40",
+                "0",
+                "1",
+                HOST["run"],
+                "2",
+                "1",
+                "on_safe",
+                "ok",
+                "valid",
+                "ok",
+                "valid",
+                "negative",
+            ],
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        row = json.loads(p.stdout)
+        self.assertEqual(row["admitted"], 1)
 
 
 if __name__ == "__main__":
