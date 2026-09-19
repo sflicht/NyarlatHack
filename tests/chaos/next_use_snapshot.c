@@ -39,6 +39,8 @@ static const char quiet_lua[] =
     "return {on_action=function(c) return {next_use_intent_v=2, op=\"quiet\", state=0} end}";
 static const char delay_lua[] =
     "return {on_action=function(c) return {next_use_intent_v=2, op=\"delay\", state=0} end}";
+static const char attention_lua[] =
+    "return {on_action=function(c) return {next_use_intent_v=2, op=\"whistle_attention\", state=0} end}";
 static const char run_hex[] =
     "0000000000000000000000000000000000000000000000000000000000000000";
 
@@ -370,6 +372,23 @@ int main(int argc, char **argv)
         print_snap("imported_delay", imported && exported, &live);
         return installed && imported && exported
                && live.slot_w == CHAOS_SLOT_W_CONSUMED_DELAY ? 0 : 1;
+    }
+    if (!strcmp(mode, "armed")) {
+        struct chaos_fountain_token token;
+
+        chaos_next_use_runtime_reset();
+        installed = install_lua(attention_lua);
+        monstermoves = 40;
+        memset(&token, 0, sizeof token);
+        chaos_next_use_on_action(CHAOS_NEXT_USE_FAMILY_W, 10, &token);
+        exported = chaos_next_use_snapshot_export(&snap);
+        print_snap("after_armed", exported, &snap);
+        chaos_next_use_runtime_reset();
+        imported = chaos_next_use_snapshot_import(&snap);
+        exported = chaos_next_use_snapshot_export(&live);
+        print_snap("imported_armed", imported && exported, &live);
+        return installed && imported && exported
+               && live.slot_w == CHAOS_SLOT_W_CONSUMED_ARMED ? 0 : 1;
     }
     if (!strcmp(mode, "expired")) {
         chaos_next_use_expire(CHAOS_END_PROGRAM_EXPIRED);

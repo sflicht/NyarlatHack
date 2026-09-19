@@ -113,6 +113,12 @@ class NextUseSnapshotTests(unittest.TestCase):
         self.assertEqual(after["ok"], 1)
         self.assertEqual(after["slot_w"], 4)
 
+    def test_armed_roundtrip(self):
+        rows = self.run_mode("armed")
+        after = next(row for row in rows if row["tag"] == "imported_armed")
+        self.assertEqual(after["ok"], 1)
+        self.assertEqual(after["slot_w"], 2)
+
     def test_expired_roundtrip(self):
         rows = self.run_mode("expired")
         after = next(row for row in rows if row["tag"] == "imported_expiry")
