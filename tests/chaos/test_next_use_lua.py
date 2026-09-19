@@ -81,3 +81,8 @@ class NextUseLuaTests(unittest.TestCase):
         self.assertEqual(rows[0]["op"], 0)
         self.assertEqual(rows[1]["recovery"], 0)
         self.assertEqual(rows[1]["op"], 0)
+
+    def test_context_does_not_expose_fate(self):
+        row = self.run_case("hidden-fate")[0]
+        self.assertEqual(row["status"], 0)
+        self.assertEqual(row["op"], 0)
