@@ -101,5 +101,6 @@ int chaos_next_use_parse_intent(const char *, size_t,
 int chaos_next_use_jcs(const char *, size_t, char *, size_t, size_t *);
 int chaos_next_use_sha256(const void *, size_t,
                           unsigned char [CHAOS_NEXT_USE_SHA256_BYTES]);
+const char *chaos_next_use_player_warning(const char *identifier);
 
 #endif

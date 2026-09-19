@@ -52,9 +52,11 @@ static struct {
 } next_use_origin;
 static int next_use_warn(void *unused, const char *text)
 {
+    const char *line;
     (void)unused;
-    if (!text || !text[0]) return 0;
-    pline("%s", text);
+    line = chaos_next_use_player_warning(text);
+    if (!line) return 0;
+    pline("%s", line);
     return 1;
 }
 static const char *next_use_engine_fact(int operation, int fact)
