@@ -216,6 +216,8 @@ static int run_case(const char *name, const char *dirpath)
             u.chaos.safe = 6;
         }
         chaos_safe("level_enter");
+        if (!strcmp(name, "safehit") && u.chaos.spent == 1)
+            chaos_safe("level_enter");
         if (!strcmp(name, "safehit") && u.chaos.spent == 1) {
             int acted = chaos_next_use_on_action(CHAOS_NEXT_USE_FAMILY_W, 10, 0);
             if (acted)
