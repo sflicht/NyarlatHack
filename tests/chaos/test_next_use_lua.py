@@ -86,3 +86,17 @@ class NextUseLuaTests(unittest.TestCase):
         row = self.run_case("hidden-fate")[0]
         self.assertEqual(row["status"], 0)
         self.assertEqual(row["op"], 0)
+
+    def test_upvalue_does_not_persist_across_fresh_calls(self):
+        first, second = self.run_case("upvalue-counter")
+        self.assertEqual(first["status"], 0)
+        self.assertEqual(second["status"], 0)
+        self.assertEqual(first["state"], 1)
+        self.assertEqual(second["state"], 1)
+
+    def test_returned_state_can_drive_a_later_call(self):
+        first, second = self.run_case("returned-state")
+        self.assertEqual(first["status"], 0)
+        self.assertEqual(first["state"], 1)
+        self.assertEqual(second["status"], 0)
+        self.assertEqual(second["state"], 2)
