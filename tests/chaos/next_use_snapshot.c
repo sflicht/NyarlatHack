@@ -455,5 +455,23 @@ int main(int argc, char **argv)
         return installed && restored && exported
                && live.slot_w == CHAOS_SLOT_W_TERMINATED_LEVEL ? 0 : 1;
     }
+    if (!strcmp(mode, "restore_origin")) {
+        FILE *fp;
+        int fd, restored;
+
+        fp = tmpfile();
+        if (!fp) return 1;
+        fd = fileno(fp);
+        chaos_next_use_save(fd);
+        chaos_next_use_runtime_reset();
+        if (fseek(fp, 0, SEEK_SET)) return 1;
+        restored = chaos_next_use_restore(fd);
+        fclose(fp);
+        chaos_next_use_runtime_boundary(1, 1, 0, 0, 1, 0);
+        exported = chaos_next_use_snapshot_export(&live);
+        print_snap("after_origin", restored && exported, &live);
+        return installed && restored && exported
+               && live.slot_w == CHAOS_SLOT_W_TERMINATED_EXPIRY ? 0 : 1;
+    }
     return 2;
 }
