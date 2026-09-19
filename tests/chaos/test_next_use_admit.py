@@ -113,6 +113,11 @@ class NextUseAdmitTests(unittest.TestCase):
         self.assertFalse(row["ready"])
         self.assertEqual(row["remap"], 0)
 
+    def test_run_reset_does_not_inherit_slot(self):
+        row = self.run_mode("run-reset")
+        self.assertEqual(row["install"], 1)
+        self.assertFalse(row["ready"])
+
     def test_expired_w_slot_is_not_ready(self):
         row = self.run_mode("expire-w")
         self.assertEqual(row["admit"], 0)
