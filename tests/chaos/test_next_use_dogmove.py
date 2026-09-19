@@ -94,11 +94,12 @@ class NextUseDogMoveTests(unittest.TestCase):
         if result.returncode:
             raise RuntimeError(result.stderr.decode())
 
-    def run_case(self, name, row=ROW):
+    def run_case(self, name, row=ROW, move=40):
         folder = Path(tempfile.mkdtemp(prefix="nyarl-next-use-dogmove-run-"))
         os.chmod(folder, 0o700)
         host = dict(HOST)
         host["run"] = engine_run_hex(folder)
+        host["move"] = move
         publish_envelope(folder, row, host)
         env = dict(os.environ)
         env["NYARLATHACK_RUN_DIR"] = str(folder)
@@ -205,6 +206,11 @@ class NextUseDogMoveTests(unittest.TestCase):
         self.assertEqual(row["spent"], 1)
         self.assertEqual(row["arm"], 2)
         self.assertEqual(row["ready_before"], 1)
+
+    def test_unequal_moves_uses_monstermoves_origin_clock(self):
+        row = self.run_case("unequalclock", move=200)
+        self.assertEqual(row["spent"], 1)
+        self.assertEqual(row["arm"], 2)
 
 
 if __name__ == "__main__":
