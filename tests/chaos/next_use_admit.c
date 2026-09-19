@@ -1,6 +1,7 @@
 /* ENGINE-UNIT: real next-use admission and runtime install clocks.
  * Host globals satisfy hack.h; this is not linked-game gameplay. */
 #include "hack.h"
+#include "chaos.h"
 #include "chaos_next_use_admission.h"
 #include "chaos_next_use_runtime.h"
 
@@ -454,6 +455,25 @@ int main(int argc, char **argv)
             run_hex, source_text, source_sha);
         rc = chaos_next_use_parse_envelope(raw, (size_t)n, &envelope);
         printf("{\"parse\":%d}\n", rc);
+        return 0;
+    }
+    if (argc >= 2 && !strcmp(argv[1], "public-bound")) {
+        struct chaos_whistle_witness witness;
+        memset(&first, 0, sizeof first);
+        chaos_next_use_runtime_reset();
+        admit_rc = admit_kind("W", 123, 0, &first, canonical, &canonical_length,
+                              receipt_ok);
+        installed = install_kind(&first, 123, 0);
+        memset(&witness, 0, sizeof witness);
+        witness.root = 10;
+        witness.notice_seq = 11;
+        witness.manifestation_delivered = 1;
+        witness.displaced = 1;
+        chaos_next_use_on_manifestation(&witness, 12);
+        chaos_next_use_on_manifestation(&witness, 12);
+        printf("{\"admit\":%d,\"install\":%d,\"public\":%zu,\"private\":%zu}\n",
+               admit_rc, installed, chaos_next_use_runtime_public_count(),
+               chaos_next_use_runtime_private_count());
         return 0;
     }
     if (argc < 6) return 2;
