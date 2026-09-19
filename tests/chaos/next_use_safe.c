@@ -59,7 +59,7 @@ static int receipt_fail(void *opaque, const struct chaos_next_use_private_record
 }
 
 static void bind_origin(const char *run, int qualifying, const char *fact,
-                        int root, int dlevel)
+                        int root, int dlevel, int origin_move)
 {
     struct chaos_next_use_origin_ref origin;
     memset(&origin, 0, sizeof origin);
@@ -68,7 +68,7 @@ static void bind_origin(const char *run, int qualifying, const char *fact,
     origin.family = CHAOS_NEXT_USE_FAMILY_W;
     origin.level_dlevel = dlevel;
     origin.level_dnum = 0;
-    origin.move = 40;
+    origin.move = origin_move;
     origin.notice_seq = 11;
     origin.root = root;
     strncpy(origin.run, run && strcmp(run, "none") ? run : "",
@@ -83,9 +83,9 @@ int main(int argc, char **argv)
     struct chaos_next_use_safe_result first, second;
     struct chaos_state budget;
     const char *wrapper, *telegraph_mode, *budget_mode, *receipt_mode;
-    const char *evidence_mode, *run;
+    const char *evidence_mode, *run, *clock_mode;
     int dir, polls, telegraphs = 0, before, second_caller;
-    int at_safe, at_move, dnum, dlevel, on_safe;
+    int at_safe, at_move, dnum, dlevel, on_safe, origin_move;
 
     if (argc < 9) return 2;
     dir = open(argv[1], O_RDONLY | O_DIRECTORY);
@@ -103,8 +103,15 @@ int main(int argc, char **argv)
     budget_mode = argc > 11 ? argv[11] : "valid";
     receipt_mode = argc > 12 ? argv[12] : "ok";
     evidence_mode = argc > 13 ? argv[13] : "valid";
+    clock_mode = argc > 14 ? argv[14] : "native";
     on_safe = !strcmp(wrapper, "on_safe");
+    moves = 1;
     monstermoves = at_move;
+    if (!strcmp(clock_mode, "negative"))
+        monstermoves = -5;
+    else if (!strcmp(clock_mode, "overflow"))
+        monstermoves = 3000000000L;
+    origin_move = !strcmp(clock_mode, "overflow") ? 2147483497 : 40;
     budget_watch = &budget;
     spent_at_telegraph = -1;
     if (!strcmp(budget_mode, "invalid"))
@@ -119,19 +126,19 @@ int main(int argc, char **argv)
         budget.spent = 3;
     }
     if (!strcmp(evidence_mode, "valid"))
-        bind_origin(run, 1, "ordinary_whistle", 10, 1);
+        bind_origin(run, 1, "ordinary_whistle", 10, 1, origin_move);
     else if (!strcmp(evidence_mode, "missing"))
         ; /* leave unbound */
     else if (!strcmp(evidence_mode, "incomplete"))
-        bind_origin(run, 0, "ordinary_whistle", 10, 1);
+        bind_origin(run, 0, "ordinary_whistle", 10, 1, origin_move);
     else if (!strcmp(evidence_mode, "stale"))
-        bind_origin(run, 1, "ordinary_whistle", 9, 1);
+        bind_origin(run, 1, "ordinary_whistle", 9, 1, origin_move);
     else if (!strcmp(evidence_mode, "wrong_run"))
-        bind_origin("cd", 1, "ordinary_whistle", 10, 1);
+        bind_origin("cd", 1, "ordinary_whistle", 10, 1, origin_move);
     else if (!strcmp(evidence_mode, "wrong_level"))
-        bind_origin(run, 1, "ordinary_whistle", 10, 2);
+        bind_origin(run, 1, "ordinary_whistle", 10, 2, origin_move);
     else if (!strcmp(evidence_mode, "wrong_fact"))
-        bind_origin(run, 1, "water_refreshed", 10, 1);
+        bind_origin(run, 1, "water_refreshed", 10, 1, origin_move);
     if (on_safe) {
         if (strcmp(run, "none"))
             chaos_next_use_safe_bind_run(run);

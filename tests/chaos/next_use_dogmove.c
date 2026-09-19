@@ -199,14 +199,18 @@ static int run_case(const char *name, const char *dirpath)
     arm = 0;
     if (strcmp(name, "none") && strcmp(name, "bypass")
         && strcmp(name, "safemiss") && strcmp(name, "safehit")
-        && strcmp(name, "obsorigin")) {
+        && strcmp(name, "obsorigin") && strcmp(name, "unequalclock")) {
         arm = admit_and_act(dirpath, &pet, &telegraphs,
                             strcmp(name, "nonepet") != 0);
         if (arm < 0) return 2;
     }
-    if (!strcmp(name, "obsorigin")) {
+    if (!strcmp(name, "obsorigin") || !strcmp(name, "unequalclock")) {
         long root;
 
+        if (!strcmp(name, "unequalclock")) {
+            moves = 1;
+            monstermoves = 200;
+        }
         u.chaos.seq = 9;
         root = chaos_observation_begin(CHAOS_OBS_OP_WHISTLING);
         chaos_observation_arm(CHAOS_OBS_OP_WHISTLING, CHAOS_OBS_FACT_SOUND_HIGH);
@@ -219,7 +223,7 @@ static int run_case(const char *name, const char *dirpath)
         if (u.chaos.spent == 1) {
             int acted = chaos_next_use_on_action(CHAOS_NEXT_USE_FAMILY_W, 10, 0);
             if (acted)
-                chaos_next_use_capture_whistle(10, pet.m_id, 40);
+                chaos_next_use_capture_whistle(10, pet.m_id, monstermoves);
             arm = acted ? 2 : 1;
         }
     }

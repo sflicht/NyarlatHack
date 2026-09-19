@@ -46,15 +46,24 @@ not by substitution.
 
 ### Native clocks
 
-`envelope.at` is the safe-point scheduling index. It is not the program lifetime
-clock. Admission records the native move (`monstermoves` at the existing whistle
-capture seam in `src/chaos_engine.c`, and the same `at_move` argument on
-debit/admit) and sets `program_expiry = at_move + ttl` with the allowed TTL of
-100. Runtime install keeps `envelope.at` bound to `at_safe`, checks attempt and
-admission move records agree, and derives expiry and callback age from that
-recorded native move. Origin deadlines also compare against `monstermoves`.
-Do not treat a later observation sequence, the safe index, or `moves` as a
-substitute for that native admission move.
+`envelope.at` is the **safe index**: scheduling only, not program lifetime.
+
+Observation sequence (`root` / `notice_seq` / `end_seq` from `u.chaos.seq`)
+is a separate counter. Do not use it as a move clock.
+
+**Origin time** is `monstermoves` captured at the delivered observation
+notice. **Admission / program time** is `monstermoves` at the safe point.
+**W attention window** is `monstermoves` at capture (`activation_monstermoves`).
+`moves` is the calendar/player-turn clock; it is not origin freshness and
+not program age. Do not assume `moves == monstermoves` or a constant offset.
+
+Admission records `at_move` from that native clock and sets
+`program_expiry = at_move + ttl` with TTL 100. Origin freshness is
+`at_move > origin.move + 100` (exclusive after the inclusive deadline
+`origin.move + 100`). Unrepresentable clocks (`monstermoves < 0` or
+`> 2147483547`) reject without retiming to 0 or INT_MAX. Origin capture
+is skipped when the native clock cannot be stored. Do not treat a later
+observation sequence, the safe index, or `moves` as a substitute.
 
 ### Intent hash compatibility
 
