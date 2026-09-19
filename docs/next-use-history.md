@@ -102,7 +102,7 @@ mismatched source digest is not repaired.
 `chaos_next_use_on_safe` is the production wrapper; `chaos_next_use_safe_try`
 is the lower-level seam. The path is opt-in (`NYARLATHACK_NEXT_USE_ADMIT=1`)
 and is not enabled merely because `next_use.lua` exists. The wrapper supplies
-engine-owned 64-hex run identity, a telegraph callback, and a receipt writer.
+engine-owned 64-hex run identity (`engine_run_hex()` / `st_dev`+`st_ino`), a telegraph callback, and a receipt writer.
 Admission revalidates the referenced origin against bounded retained
 observation evidence. Telegraph is mandatory and happens before debit; a NULL
 callback is rejection, not permission to skip. Successful debit is published
@@ -111,8 +111,9 @@ budget is rejected unchanged rather than reinitialized. A matching envelope
 admits and installs once; later polls do not repeat warning or spend. Future
 `envelope.at` stays pending; late, wrong-run, wrong-level, stale/missing
 origin, Lua-invalid, missing/failed telegraph, receipt failure, and
-tampered-source candidates reject without an effect. This PR does not claim
-native whistle/fountain effect, save/restore, or replay.
+tampered-source candidates reject without an effect. Linked `dog_move` now
+proves extra-attention consume, TTY publication, and live `chaos_safe` admit.
+This slice does not claim save/restore or replay.
 
 Empty menus and rejected intents leave stock behavior unchanged.
 
