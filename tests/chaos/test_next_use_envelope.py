@@ -129,6 +129,10 @@ class EnvelopePublishTests(unittest.TestCase):
             self.assertEqual(engine_run_hex(tmp), owned)
             self.assertEqual(len(owned), 64)
 
+    def test_engine_run_hex_differs_across_directories(self):
+        with tempfile.TemporaryDirectory() as a, tempfile.TemporaryDirectory() as b:
+            self.assertNotEqual(engine_run_hex(a), engine_run_hex(b))
+
 
 if __name__ == "__main__":
     unittest.main()
