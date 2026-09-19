@@ -106,6 +106,13 @@ class NextUseAdmitTests(unittest.TestCase):
         self.assertFalse(row["second_ready"])
         self.assertFalse(row["second"])
 
+    def test_wrong_family_intent_does_not_act(self):
+        row = self.run_mode("wrong-family")
+        self.assertEqual(row["install"], 1)
+        self.assertFalse(row["acted"])
+        self.assertFalse(row["ready"])
+        self.assertEqual(row["remap"], 0)
+
     def test_expired_w_slot_is_not_ready(self):
         row = self.run_mode("expire-w")
         self.assertEqual(row["admit"], 0)

@@ -530,6 +530,57 @@ int main(int argc, char **argv)
                admit_rc, installed, first_act, second_ready, second_act);
         return 0;
     }
+    if (argc >= 2 && !strcmp(argv[1], "wrong-family")) {
+        static const char src[] =
+            "return {on_action=function(c) return {next_use_intent_v=2, op=[[fountain_refresh]], state=0} end}";
+        struct chaos_next_use_envelope envelope;
+        struct chaos_next_use_admission source, admitted;
+        struct chaos_next_use_attempt_gate gate;
+        struct chaos_fountain_token token;
+        unsigned char digest[32];
+        char source_sha[65], origin[320], raw[CHAOS_NEXT_USE_ENVELOPE_MAX + 1];
+        int n, installed, acted, ready;
+
+        memset(&source, 0, sizeof source);
+        memset(&admitted, 0, sizeof admitted);
+        chaos_next_use_runtime_reset();
+        chaos_state_init(&source.budget_state);
+        source.program.phase = CHAOS_ATTEMPT_OPEN;
+        gate.phase = CHAOS_ATTEMPT_OPEN;
+        gate.reason = 0;
+        if (chaos_next_use_sha256(src, sizeof src - 1, digest) != CHAOS_NEXT_USE_OK)
+            return 1;
+        digest_hex(digest, source_sha);
+        if (origin_json(origin, sizeof origin, 123, "W", "ordinary_whistle") < 1)
+            return 1;
+        n = snprintf(raw, sizeof raw,
+            "{\"at\":7,\"cost\":1,\"id\":1,\"next_use_program_v\":2,"
+            "\"operations\":[\"W\"],\"origin_refs\":[%s],\"source\":\"%s\","
+            "\"source_sha256\":\"%s\",\"telegraph\":\"next-use-v2-W\",\"ttl\":100,"
+            "\"variant\":0}",
+            origin, src, source_sha);
+        if (n < 1 || (size_t)n >= sizeof raw)
+            return 1;
+        if (chaos_next_use_jcs(raw, (size_t)n, canonical, sizeof canonical,
+                               &canonical_length) != CHAOS_NEXT_USE_OK)
+            return 1;
+        if (chaos_next_use_parse_envelope(canonical, canonical_length, &envelope)
+            != CHAOS_NEXT_USE_OK)
+            return 1;
+        admit_rc = chaos_next_use_admit(&admitted, &source, &gate, &envelope,
+                                        canonical, canonical_length, 0, 40, 1,
+                                        receipt_ok, NULL);
+        installed = chaos_next_use_runtime_install(
+            &admitted, src, sizeof src - 1, source_sha, 1, 1, 123, 100000, 0, 0,
+            0, 1, 0);
+        monstermoves = 40;
+        memset(&token, 0, sizeof token);
+        acted = chaos_next_use_on_action(CHAOS_NEXT_USE_FAMILY_W, 123, &token);
+        ready = chaos_next_use_action_preflight(CHAOS_NEXT_USE_FAMILY_W, 123);
+        printf("{\"admit\":%d,\"install\":%d,\"acted\":%d,\"ready\":%d,\"remap\":%d}\n",
+               admit_rc, installed, acted, ready, token.remap);
+        return 0;
+    }
     if (argc >= 2 && !strcmp(argv[1], "expire-w")) {
         static const char src[] =
             "return {on_action=function(c) return {next_use_intent_v=2, op=[[quiet]], state=0} end}";
