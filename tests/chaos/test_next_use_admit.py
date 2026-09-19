@@ -139,6 +139,27 @@ class NextUseAdmitTests(unittest.TestCase):
         self.assertEqual(row["install"], 1)
         self.assertFalse(row["ready"])
 
+    def test_missing_companion_suppresses_w_without_f(self):
+        row = self.run_mode("missing-companion")
+        self.assertEqual(row["install"], 1)
+        self.assertTrue(row["acted"])
+        self.assertFalse(row["ready"])
+        self.assertEqual(row["public"], 0)
+        self.assertEqual(row["effect_family"], 1)
+        self.assertNotEqual(row["effect_outcome"], 0)
+
+    def test_identity_unsafe_blocks_attention(self):
+        row = self.run_mode("identity-unsafe")
+        self.assertEqual(row["install"], 1)
+        self.assertFalse(row["attention"])
+
+    def test_w_and_f_effects_do_not_cross_families(self):
+        row = self.run_mode("wf-families")
+        self.assertEqual(row["install"], 1)
+        self.assertEqual(row["public"], 0)
+        self.assertGreaterEqual(row["w_effects"], 1)
+        self.assertGreaterEqual(row["f_effects"], 1)
+
     def test_expired_w_slot_is_not_ready(self):
         row = self.run_mode("expire-w")
         self.assertEqual(row["admit"], 0)
