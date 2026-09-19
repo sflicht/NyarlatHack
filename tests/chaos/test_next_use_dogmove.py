@@ -21,6 +21,16 @@ ROW = {
         "fact": "sound_high",
     },
 }
+QUIET = {
+    "family": "W",
+    "op": "quiet",
+    "origin": {
+        "root_seq": 10,
+        "notice_seq": 11,
+        "end_seq": 12,
+        "fact": "sound_high",
+    },
+}
 HOST = {
     "at": 7,
     "id": 1,
@@ -84,10 +94,10 @@ class NextUseDogMoveTests(unittest.TestCase):
         if result.returncode:
             raise RuntimeError(result.stderr.decode())
 
-    def run_case(self, name):
+    def run_case(self, name, row=ROW):
         folder = Path(tempfile.mkdtemp(prefix="nyarl-next-use-dogmove-run-"))
         os.chmod(folder, 0o700)
-        publish_envelope(folder, ROW, HOST)
+        publish_envelope(folder, row, HOST)
         env = dict(os.environ)
         env["NYARLATHACK_RUN_DIR"] = str(folder)
         env["NYARLATHACK_OBSERVATIONS"] = "1"
@@ -108,16 +118,39 @@ class NextUseDogMoveTests(unittest.TestCase):
         bypass = self.run_case("bypass")
         self.assertEqual(control["ready_before"], 0)
         self.assertEqual(bypass["ready_before"], 0)
-        self.assertEqual(positive["admitted"], 1)
+        self.assertEqual(positive["arm"], 2)
         self.assertEqual(positive["telegraph"], 1)
         self.assertEqual(positive["ready_before"], 1)
         self.assertEqual(positive["ready_after"], 0)
+        self.assertEqual(positive["public"], 0)
         self.assertEqual((control["mx"], control["my"]), (bypass["mx"], bypass["my"]))
 
     def test_late_window_does_not_take_extra_attention(self):
         late = self.run_case("late")
         self.assertEqual(late["ready_before"], 0)
         self.assertEqual(late["ready_after"], 0)
+
+    def test_quiet_intent_does_not_arm_attention(self):
+        quiet = self.run_case("quiet", QUIET)
+        self.assertEqual(quiet["arm"], 1)
+        self.assertEqual(quiet["ready_before"], 0)
+        self.assertEqual(quiet["ready_after"], 0)
+
+    def test_dead_companion_does_not_publish_witness(self):
+        dead = self.run_case("dead")
+        self.assertEqual(dead["public"], 0)
+
+    def test_wrong_id_does_not_rebind(self):
+        row = self.run_case("wrongid")
+        self.assertEqual(row["ready_before"], 0)
+        self.assertEqual(row["orig_ready_after"], 1)
+
+    def test_no_production_is_a_w_effect_bypass(self):
+        """If extra_attention no longer requires witness.production, this fails."""
+        row = self.run_case("noprod")
+        self.assertEqual(row["ready_before"], 1)
+        self.assertEqual(row["ready_after"], 1)
+        self.assertEqual(row["public"], 0)
 
 
 if __name__ == "__main__":

@@ -86,15 +86,45 @@ static int telegraph_ok(void *opaque, const char *text)
     return 1;
 }
 
+static int admit_and_act(const char *dirpath, struct monst *pet, int *telegraphs)
+{
+    struct chaos_next_use_safe_request req;
+    struct chaos_next_use_safe_result admitted;
+    struct chaos_state budget;
+    const char *run = "abababababababababababababababababababababababababababababababab";
+    int dir, acted;
+
+    dir = open(dirpath, O_RDONLY | O_DIRECTORY);
+    if (dir < 0) return -1;
+    chaos_next_use_safe_reset_for_test();
+    chaos_state_init(&budget);
+    memset(&req, 0, sizeof req);
+    req.dir = dir;
+    req.enabled = 1;
+    req.at_safe = 7;
+    req.at_move = 40;
+    req.level_dnum = 0;
+    req.level_dlevel = 1;
+    req.run_hex = run;
+    req.sanity = 50;
+    req.budget = &budget;
+    req.telegraph = telegraph_ok;
+    req.telegraph_opaque = telegraphs;
+    chaos_next_use_safe_try(&req, &admitted);
+    close(dir);
+    if (!admitted.active) return 0;
+    acted = chaos_next_use_on_action(CHAOS_NEXT_USE_FAMILY_W, 10, 0);
+    if (acted)
+        chaos_next_use_capture_whistle(10, pet->m_id, 40);
+    return admitted.active ? (acted ? 2 : 1) : 0;
+}
+
 static int run_case(const char *name, const char *dirpath)
 {
     struct monst pet;
     struct chaos_whistle_witness witness;
-    struct chaos_next_use_safe_request req;
-    struct chaos_next_use_safe_result admitted;
-    struct chaos_state budget;
-    int dir, telegraphs = 0, rc, ox, oy, ready, exclusive;
-    const char *run = "abababababababababababababababababababababababababababababababab";
+    int telegraphs = 0, rc, ox, oy, ready, arm, public_n;
+    unsigned orig_id;
 
     test_rng_control();
     test_rng_reset();
@@ -104,51 +134,31 @@ static int run_case(const char *name, const char *dirpath)
     chaos_start();
     ox = pet.mx;
     oy = pet.my;
+    orig_id = pet.m_id;
     memset(&witness, 0, sizeof witness);
-    witness.production = TRUE;
-    dir = -1;
-    memset(&admitted, 0, sizeof admitted);
-    if (!strcmp(name, "admit") || !strcmp(name, "late") || !strcmp(name, "dead")) {
-        dir = open(dirpath, O_RDONLY | O_DIRECTORY);
-        if (dir < 0) return 2;
-        chaos_next_use_safe_reset_for_test();
-        chaos_state_init(&budget);
-        memset(&req, 0, sizeof req);
-        req.dir = dir;
-        req.enabled = 1;
-        req.at_safe = 7;
-        req.at_move = 40;
-        req.level_dnum = 0;
-        req.level_dlevel = 1;
-        req.run_hex = run;
-        req.sanity = 50;
-        req.budget = &budget;
-        req.telegraph = telegraph_ok;
-        req.telegraph_opaque = &telegraphs;
-        chaos_next_use_safe_try(&req, &admitted);
-        close(dir);
-        if (!admitted.active
-            || !chaos_next_use_on_action(CHAOS_NEXT_USE_FAMILY_W, 10, 0)) {
-            printf("{\"case\":\"%s\",\"admitted\":%d,\"on_action\":0}\n",
-                   name, admitted.active);
-            return 0;
-        }
-        chaos_next_use_capture_whistle(10, pet.m_id, 40);
-        monstermoves = 45;
-        if (!strcmp(name, "late"))
-            monstermoves = 50;
-        if (!strcmp(name, "dead"))
-            pet.mhp = 0;
-    } else
-        monstermoves = 45;
+    witness.production = strcmp(name, "noprod") != 0;
+    arm = 0;
+    if (strcmp(name, "none") && strcmp(name, "bypass")) {
+        arm = admit_and_act(dirpath, &pet, &telegraphs);
+        if (arm < 0) return 2;
+    }
+    monstermoves = 45;
+    if (!strcmp(name, "late"))
+        monstermoves = 50;
+    if (!strcmp(name, "dead"))
+        pet.mhp = 0;
+    if (!strcmp(name, "wrongid"))
+        pet.m_id = 8;
     ready = chaos_next_use_whistle_decision_ready(pet.m_id);
     rc = dog_move(&pet, 0, &witness);
+    public_n = (int)chaos_next_use_runtime_public_count();
     printf("{\"case\":\"%s\",\"ox\":%d,\"oy\":%d,\"mx\":%d,\"my\":%d,\"rc\":%d,"
-           "\"admitted\":%d,\"telegraph\":%d,\"ready_before\":%d,\"ready_after\":%d,"
-           "\"m_id\":%u}\n",
-           name, ox, oy, pet.mx, pet.my, rc,
-           admitted.active, telegraphs, ready,
-           chaos_next_use_whistle_decision_ready(pet.m_id), pet.m_id);
+           "\"arm\":%d,\"telegraph\":%d,\"ready_before\":%d,\"ready_after\":%d,"
+           "\"orig_ready_after\":%d,\"public\":%d,\"m_id\":%u}\n",
+           name, ox, oy, pet.mx, pet.my, rc, arm, telegraphs, ready,
+           chaos_next_use_whistle_decision_ready(pet.m_id),
+           chaos_next_use_whistle_decision_ready(orig_id),
+           public_n, pet.m_id);
     return 0;
 }
 
