@@ -218,7 +218,7 @@ def _offline_loop(box, backend, reader, state, args, ready):
     known_pending = None
     first = True
     while time.monotonic() < deadline or first:
-        for event in reader.read():
+        for event in reader.read(allow_observations=getattr(args, "next_use", False)):
             if event.get("v") in (2, 4) and event.get("event") == "observation":
                 continue
             state.ingest(event)

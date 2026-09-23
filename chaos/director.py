@@ -64,7 +64,7 @@ class EventReader:
         self.identity = None
         self.digest = hashlib.sha256(b"").digest()
 
-    def read(self):
+    def read(self, allow_observations=False):
         from .episodes import parse_episode_event
 
         try:
@@ -105,7 +105,10 @@ class EventReader:
                 if len(tail) > EVENT_CAP:
                     raise ValueError("event line exceeds byte cap")
                 for line in parts:
-                    records.append(parse_episode_event(line))
+                    if allow_observations:
+                        records.append(parse_episode_event(line))
+                    else:
+                        records.append(parse_event(line))
                     if self.count + len(records) > self.max_events:
                         raise ValueError("event count cap exceeded")
             self.tail, self.offset, self.digest, self.identity = (
