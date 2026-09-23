@@ -1,6 +1,7 @@
 /* NetHack General Public License. No event path draws engine RNG. */
 #include "hack.h"
 #include "chaos.h"
+#include "chaos_next_use_schedule.h"
 #include "chaos_io.h"
 #include "chaos_haunt.h"
 #include "chaos_curio.h"
@@ -295,6 +296,14 @@ void chaos_observation_end(long root) {
                 next_use_origin[slot].end = u.chaos.seq;
                 next_use_origin[slot].ready = 1;
                 next_use_origin[slot].pending = 0;
+                (void)chaos_next_use_note_origin(
+                    io.dir, slot == 0 ? "W" : "F",
+                    next_use_origin[slot].move,
+                    next_use_origin[slot].dnum,
+                    next_use_origin[slot].dlevel,
+                    next_use_origin[slot].root,
+                    next_use_origin[slot].notice,
+                    next_use_origin[slot].end);
             }
         }
     }
