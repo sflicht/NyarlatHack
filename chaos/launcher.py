@@ -219,6 +219,8 @@ def _offline_loop(box, backend, reader, state, args, ready):
     first = True
     while time.monotonic() < deadline or first:
         for event in reader.read():
+            if event.get("v") in (2, 4) and event.get("event") == "observation":
+                continue
             state.ingest(event)
         if getattr(args, "next_use", False):
             from .next_use_schedule import consider_next_use

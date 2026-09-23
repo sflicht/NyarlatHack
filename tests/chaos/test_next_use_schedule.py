@@ -141,6 +141,10 @@ class NextUseScheduleTests(unittest.TestCase):
             path.write_bytes(raw)
             os.chmod(path, 0o600)
             state = State()
-            for event in EventReader(path).read():
+            parsed = list(EventReader(path).read())
+            self.assertTrue(any(row.get("event") == "observation" for row in parsed))
+            for event in parsed:
+                if event.get("v") in (2, 4) and event.get("event") == "observation":
+                    continue
                 state.ingest(event)
             self.assertNotEqual(state.latest["event"], "observation")

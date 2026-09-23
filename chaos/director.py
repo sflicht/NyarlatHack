@@ -129,12 +129,6 @@ class State:
         self.ended = False
 
     def ingest(self, event):
-        if (
-            type(event) is dict
-            and event.get("v") in (2, 4)
-            and event.get("event") == "observation"
-        ):
-            return
         e = parse_event(json.dumps(event).encode())
         p = self.latest
         if p and (
