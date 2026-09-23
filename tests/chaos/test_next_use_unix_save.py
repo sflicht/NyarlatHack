@@ -37,6 +37,19 @@ class NextUseUnixSaveTests(unittest.TestCase):
         )
 
     def test_save_exit_restore_does_not_readmit(self):
+        saved = {
+            key: os.environ.get(key)
+            for key in ("NYARLATHACK_NEXT_USE_ADMIT", "NYARLATHACK_OBSERVATIONS")
+        }
+
+        def restore_env():
+            for key, value in saved.items():
+                if value is None:
+                    os.environ.pop(key, None)
+                else:
+                    os.environ[key] = value
+
+        self.addCleanup(restore_env)
         os.environ["NYARLATHACK_NEXT_USE_ADMIT"] = "1"
         os.environ["NYARLATHACK_OBSERVATIONS"] = "1"
         game = Game(
