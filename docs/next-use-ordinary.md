@@ -4,7 +4,7 @@ This is host-built selection, not authored composition and not a claim that a pl
 
 ## What was demonstrated
 
-One ordinary nonwizard Bard, fixed test clock, no wizard flag and no seed search, applied the starting tin whistle. `play --ordinary --next-use` published one quiet envelope from the origin schedule. The next prayer safe point admitted it once and showed the engine warning. Fountain did not occur in that start. Do not treat this as authored composition or as a recurring haunting.
+One ordinary nonwizard Bard, fixed test clock, no wizard flag and no seed search, applied the starting tin whistle. `play --ordinary --next-use` published one quiet envelope from the origin schedule. The next prayer safe point admitted it once and showed the engine warning. Saving and restoring that game did not admit it again. Fountain did not occur in that start. Do not treat this as authored composition or as a recurring haunting.
 
 ## What is connected
 
