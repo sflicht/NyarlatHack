@@ -1,0 +1,23 @@
+Next-use author contract (trusted instructions; not a live-call authorization)
+Fresh evaluation: each on_action runs in a new Lua 5.4 VM. Locals, upvalues,
+globals, and closures do not persist. The host validates the returned table and
+stores only state, an integer 0..3. Do not write assignment text to restore
+state. Do not assume a previous call's local is still there.
+
+Callback: return a table whose only function field is on_action. on_action
+receives a copied context and returns exactly next_use_intent_v=2, op, and
+state. No extra fields. Legal ops: quiet, delay, whistle_attention,
+fountain_refresh. C rejects a whistle op on an F trigger and a fountain op on
+a W trigger before any native effect.
+
+Context is public and host-owned. own_witnessed is "W" only after a delivered
+manifestation record, otherwise "none". Admitted or applied is not witnessed.
+trigger is "W" or "F". state is the last accepted host state. There is no fate,
+rng, map, or hidden target field.
+
+Not available: standard libraries, package, require, I/O, game RNG, nh, des,
+or any function that mutates the game. A candidate computes a typed proposal.
+C admits and applies.
+
+This file is not wired to a provider. Handwritten fixtures are not model
+authorship. Ordinary play and live evaluation stay gated.
