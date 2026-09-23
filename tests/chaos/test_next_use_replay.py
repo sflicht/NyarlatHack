@@ -112,6 +112,16 @@ class NextUseReplayTests(unittest.TestCase):
         self.assertEqual(row["status"], 1)
         self.assertEqual(row["second"], 1)
 
+    def test_replay_both_effects_after_checkpoint(self):
+        row = self.run_mode("both_effects")[0]
+        self.assertEqual(row["restored"], 1)
+        self.assertEqual(row["live_w"], row["restore_w"])
+        self.assertEqual(row["live_f"], row["restore_f"])
+        self.assertNotEqual(row["live_w"], 1)
+        self.assertNotEqual(row["live_f"], 1)
+        self.assertEqual(row["w"], 0)
+        self.assertEqual(row["f"], 0)
+
 
 if __name__ == "__main__":
     unittest.main()

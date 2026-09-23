@@ -261,10 +261,17 @@ static int capture_action(struct chaos_next_use_replay_input *record, int family
         record->slot_w = CHAOS_SLOT_W_CONSUMED_QUIET;
     else
         record->slot_w = snap.slot_w;
-    if (family == CHAOS_NEXT_USE_FAMILY_F)
-        record->slot_f = snap.slot_f;
-    else
-        record->slot_f = snap.slot_f;
+    record->slot_f = snap.slot_f;
+    {
+        struct chaos_next_use_snapshot after;
+        if (chaos_next_use_snapshot_export(&after)) {
+            record->callback_ordinal = after.callback_ordinal;
+            record->state = after.state;
+            record->slot_w = after.slot_w;
+            record->slot_f = after.slot_f;
+            record->w_runtime = after.w_runtime;
+        }
+    }
     (void)acted;
     return copy_new_privates(before, record);
 }
@@ -438,6 +445,76 @@ int main(int argc, char **argv)
         return status == CHAOS_REPLAY_APPLIED
                && second == CHAOS_REPLAY_BLOCKED_REPLAY
                && sha[0] ? 0 : 1;
+    }
+    if (!strcmp(mode, "both_effects")) {
+        struct chaos_next_use_replay_input first, second_rec, replay_f;
+        char origin_w[320], origin_f[320], origins[700];
+        struct chaos_next_use_snapshot after_live, after_restore;
+        FILE *fp;
+        int fd, restored, w_status, f_status;
+
+        if (snprintf(origin_w, sizeof origin_w,
+                "{\"end_seq\":12,\"fact\":\"ordinary_whistle\",\"family\":\"W\","
+                "\"level_dlevel\":1,\"level_dnum\":0,\"move\":10,"
+                "\"notice_seq\":11,\"root\":10,\"run\":\"%s\"}", run_hex) < 1)
+            return 1;
+        if (snprintf(origin_f, sizeof origin_f,
+                "{\"end_seq\":22,\"fact\":\"water_refreshed\",\"family\":\"F\","
+                "\"level_dlevel\":1,\"level_dnum\":0,\"move\":10,"
+                "\"notice_seq\":21,\"root\":20,\"run\":\"%s\"}", run_hex) < 1)
+            return 1;
+        if (snprintf(origins, sizeof origins, "%s,%s", origin_w, origin_f) < 1)
+            return 1;
+        chaos_next_use_runtime_reset();
+        if (!install_ops(wf_lua, "[\"W\",\"F\"]", origins, 2,
+                         "next-use-v2-WF", 10, 20, 1, 1))
+            return 1;
+        if (!capture_action(&first, CHAOS_NEXT_USE_FAMILY_W, 10))
+            return 1;
+        fp = tmpfile();
+        if (!fp) return 1;
+        fd = fileno(fp);
+        chaos_next_use_save(fd);
+        if (!capture_action(&second_rec, CHAOS_NEXT_USE_FAMILY_F, 20))
+            return 1;
+        second_rec.cursor = 2;
+        second_rec.callback_ordinal = 2;
+        replay_f = second_rec;
+        chaos_next_use_fountain_result(&second_rec.expected_token,
+                                       CHAOS_FOUNTAIN_NATURAL);
+        if (!chaos_next_use_snapshot_export(&after_live))
+            return 1;
+        chaos_next_use_runtime_reset();
+        if (fseek(fp, 0, SEEK_SET)) return 1;
+        restored = chaos_next_use_restore(fd);
+        fclose(fp);
+        if (!restored) return 1;
+        if (!capture_action(&second_rec, CHAOS_NEXT_USE_FAMILY_F, 20))
+            return 1;
+        second_rec.cursor = 2;
+        second_rec.callback_ordinal = 2;
+        chaos_next_use_fountain_result(&second_rec.expected_token,
+                                       CHAOS_FOUNTAIN_NATURAL);
+        if (!chaos_next_use_snapshot_export(&after_restore))
+            return 1;
+        chaos_next_use_runtime_reset();
+        if (!install_ops(wf_lua, "[\"W\",\"F\"]", origins, 2,
+                         "next-use-v2-WF", 10, 20, 1, 1))
+            return 1;
+        monstermoves = 40;
+        w_status = chaos_next_use_replay_record(&first);
+        f_status = chaos_next_use_replay_record(&replay_f);
+        printf("{\"tag\":\"both_effects\",\"restored\":%d,\"w\":%d,\"f\":%d,"
+               "\"live_w\":%d,\"live_f\":%d,\"restore_w\":%d,\"restore_f\":%d}\n",
+               restored, w_status, f_status, after_live.slot_w, after_live.slot_f,
+               after_restore.slot_w, after_restore.slot_f);
+        return restored
+               && after_live.slot_w == after_restore.slot_w
+               && after_live.slot_f == after_restore.slot_f
+               && after_live.slot_w != CHAOS_SLOT_W_PENDING
+               && after_live.slot_f != CHAOS_SLOT_F_PENDING
+               && w_status == CHAOS_REPLAY_APPLIED
+               && f_status == CHAOS_REPLAY_APPLIED ? 0 : 1;
     }
     return 2;
 }
