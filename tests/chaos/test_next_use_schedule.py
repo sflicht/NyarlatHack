@@ -19,7 +19,6 @@ class NextUseScheduleTests(unittest.TestCase):
                 "-Wextra",
                 "-Werror",
                 "-I" + str(ROOT / "include"),
-                str(ROOT / "src/chaos_next_use_schedule.c"),
                 str(ROOT / "tests/chaos/next_use_schedule.c"),
                 "-o",
                 str(exe),
