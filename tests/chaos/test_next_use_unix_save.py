@@ -37,6 +37,20 @@ class NextUseUnixSaveTests(unittest.TestCase):
         )
 
     def test_save_exit_restore_does_not_readmit(self):
+        self._exercise_save_exit_restore(save_before_origin=False)
+
+    def test_empty_save_does_not_spend_the_unused_admission_opportunity(self):
+        self._exercise_save_exit_restore(save_before_origin=True)
+
+    def test_pending_departure_save_exit_restore(self):
+        self._exercise_save_exit_restore(save_before_origin=False, departure="pending")
+
+    def test_completed_departure_save_exit_restore(self):
+        self._exercise_save_exit_restore(
+            save_before_origin=False, departure="completed"
+        )
+
+    def _exercise_save_exit_restore(self, *, save_before_origin, departure=None):
         saved = {
             key: os.environ.get(key)
             for key in ("NYARLATHACK_NEXT_USE_ADMIT", "NYARLATHACK_OBSERVATIONS")
@@ -57,10 +71,14 @@ class NextUseUnixSaveTests(unittest.TestCase):
             self.clock,
             observe=True,
             wizard=True,
-            root=self.artifacts / "save",
+            root=self.artifacts
+            / (departure or ("empty-first" if save_before_origin else "save")),
         )
         self.addCleanup(game.close)
         game.start()
+        if save_before_origin:
+            self.assertEqual(game.save(), 0)
+            game.start()
         text = game.send("#wish\n")
         self.assertIn(b"For what do you wish?", text)
         text = game.more(game.send("uncursed tin whistle\n"))
@@ -121,6 +139,12 @@ class NextUseUnixSaveTests(unittest.TestCase):
         envelope = game.run / "next_use-envelope.json"
         self.assertTrue(envelope.is_file())
         envelope.unlink()
+        if departure == "completed":
+            self.assertIn(b"apply", game.send("a").lower())
+            self.assertIn(b"whistling sound", game.more(game.send(slot)))
+        if departure:
+            self.assertIn(b"To what level", game.send("#levelport\n"))
+            self.assertIn(b"Dlvl:2", game.more(game.send("2\n")))
         self.assertEqual(game.save(), 0)
         self.assertTrue(list((game.game / "save").iterdir()))
         game.start()
@@ -129,8 +153,8 @@ class NextUseUnixSaveTests(unittest.TestCase):
             for event in game.events()
             if event.get("event") == "session" and event.get("detail") == "restore"
         ]
-        self.assertEqual(len(restored), 1)
-        self.assertEqual(restored[0]["spent"], spent)
+        self.assertEqual(len(restored), 2 if save_before_origin else 1)
+        self.assertEqual(restored[-1]["spent"], spent)
         text = game.sanity(80)
         self.assertNotIn(b"The next whistle may call unusual attention.", text)
         self.assertEqual(game.events()[-1]["spent"], spent)

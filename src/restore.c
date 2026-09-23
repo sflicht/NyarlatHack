@@ -3,6 +3,8 @@
 /* NetHack may be freely redistributed.  See license for details. */
 
 #include "hack.h"
+#include "chaos.h"
+#include "chaos_next_use.h"
 #include "lev.h"
 #include "hashmap.h"
 #include "tcap.h" /* for TERMLIB and ASCIIGRAPH */
@@ -471,8 +473,11 @@ restgamestate(int fd, unsigned int *stuckid, unsigned int *steedid, unsigned int
 #ifdef CHAOS
 	if (!chaos_state_valid(&u.chaos) || !chaos_haunt_valid(&u.haunt)
             || !chaos_curio_valid(&u.curio)) return chaos_restore_reject(fd);
-	if (!chaos_next_use_restore(fd)) return chaos_restore_reject(fd);
-	chaos_next_use_safe_mark_restored();
+	if (!chaos_next_use_restore_bound(fd, u.chaos_game_token,
+	        chaos_next_use_pack_level(u.uz.dnum, u.uz.dlevel)))
+	    return chaos_restore_reject(fd);
+	if (!chaos_next_use_safe_restore_attempted(u.chaos_next_use_attempted))
+	    return chaos_restore_reject(fd);
 #endif
 	mread(fd, (genericptr_t) &youmonst, sizeof(struct monst));
 	if (youmonst.light)

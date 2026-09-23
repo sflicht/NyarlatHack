@@ -51,6 +51,7 @@ static void setup_level(void)
     u.uz.dnum = 0;
     u.uz.dlevel = 1;
     u.ubirthday = 1750000001;
+    u.chaos_game_token = 1750000001L;
     moves = 40;
     monstermoves = 40;
     flags.ident = 1;

@@ -331,7 +331,7 @@ int main(int argc, char **argv)
         chaos_next_use_save(fd);
         chaos_next_use_runtime_reset();
         if (fseek(fp, 0, SEEK_SET)) return 1;
-        restored = chaos_next_use_restore(fd);
+        restored = chaos_next_use_restore_bound(fd, 1, 1);
         fclose(fp);
         fill_replay(&record, &snap, 2);
         status = chaos_next_use_replay_record(&record);
@@ -388,13 +388,13 @@ int main(int argc, char **argv)
                 chaos_next_use_save(fd);
                 chaos_next_use_runtime_reset();
                 if (fseek(fp, 0, SEEK_SET)) return 1;
-                restored = chaos_next_use_restore(fd);
+                restored = chaos_next_use_restore_bound(fd, 1, 1);
                 if (!restored) return 1;
                 if (!capture_action(&recorded, CHAOS_NEXT_USE_FAMILY_W, 10))
                     return 1;
                 chaos_next_use_runtime_reset();
                 if (fseek(fp, 0, SEEK_SET)) return 1;
-                restored = chaos_next_use_restore(fd);
+                restored = chaos_next_use_restore_bound(fd, 1, 1);
                 fclose(fp);
                 if (!restored) return 1;
             } else if (!capture_action(&recorded, CHAOS_NEXT_USE_FAMILY_W, 10))

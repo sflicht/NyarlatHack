@@ -221,7 +221,7 @@ long chaos_next_use_fountain_completed_root(void);
 void chaos_next_use_fountain_result(const struct chaos_fountain_token *token,
                                     int outcome);
 
-#define CHAOS_NEXT_USE_SNAPSHOT_V 3
+#define CHAOS_NEXT_USE_SNAPSHOT_V 4
 
 struct chaos_next_use_snapshot {
     int snapshot_v;
@@ -230,6 +230,9 @@ struct chaos_next_use_snapshot {
     int slot_w, slot_f, w_runtime;
     int state, delay_used, callback_ordinal;
     int witnessed, attention_claimed, whistle_count, fountain_count;
+    int next_seq, termination_emitted, identity_unsafe;
+    int callback_w, callback_f;
+    long last_root;
     int admission_move, program_expiry, delay_until, variant;
     int origin_w_live, origin_f_live;
     unsigned armed_m_id;
@@ -240,6 +243,7 @@ struct chaos_next_use_snapshot {
     long activation_monstermoves, armed_root;
     size_t source_length;
     char source_sha256[65];
+    char binding_sha256[65];
     char source[CHAOS_NEXT_USE_SOURCE_MAX + 1];
 };
 
@@ -249,7 +253,9 @@ int chaos_next_use_snapshot_import(const struct chaos_next_use_snapshot *);
 long chaos_next_use_runtime_run_token(void);
 int chaos_next_use_snapshot_write(int fd, const struct chaos_next_use_snapshot *);
 int chaos_next_use_snapshot_read(int fd, struct chaos_next_use_snapshot *);
-void chaos_next_use_save(int fd);
+int chaos_next_use_save_status(void);
+int chaos_next_use_save(int fd);
 int chaos_next_use_restore(int fd);
+int chaos_next_use_restore_bound(int fd, long run_token, long level_token);
 
 #endif

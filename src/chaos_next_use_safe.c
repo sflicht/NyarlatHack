@@ -91,6 +91,20 @@ void chaos_next_use_safe_bind_origin(const struct chaos_next_use_origin_ref *ori
     origin_evidence[slot].qualifying = qualifying ? 1 : 0;
 }
 
+int chaos_next_use_safe_attempted(void)
+{
+    return settled;
+}
+
+int chaos_next_use_safe_restore_attempted(int attempted)
+{
+    if ((attempted != 0 && attempted != 1)
+        || (!attempted && chaos_next_use_runtime_run_token() > 0))
+        return 0;
+    settled = attempted;
+    return 1;
+}
+
 void chaos_next_use_safe_mark_restored(void)
 {
     settled = 1;
@@ -268,6 +282,8 @@ int chaos_next_use_safe_try(const struct chaos_next_use_safe_request *request,
     }
     settled = 1;
     if (envelope.at != request->at_safe
+        || logical_run <= 0
+        || chaos_next_use_pack_level(request->level_dnum, request->level_dlevel) <= 0
         || !request->budget
         || !chaos_state_valid(request->budget)
         || !envelope_origins_ok(&envelope, request)

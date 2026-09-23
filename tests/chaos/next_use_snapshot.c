@@ -5,6 +5,8 @@
 #include "chaos_next_use_safe.h"
 
 #include <stdarg.h>
+#include <stdint.h>
+#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -108,7 +110,7 @@ static int build_envelope(char canonical[CHAOS_NEXT_USE_ENVELOPE_MAX + 1],
         == CHAOS_NEXT_USE_OK;
 }
 
-static int install_pending(void)
+static int install_pending_token(long run_token)
 {
     struct chaos_next_use_envelope envelope;
     struct chaos_next_use_admission source, admitted;
@@ -136,7 +138,12 @@ static int install_pending(void)
     digest_hex(digest, source_sha);
     return chaos_next_use_runtime_install(&admitted, source_text,
                                           sizeof source_text - 1, source_sha,
-                                          1, 1, 10, 110, 0, 0, 0, 1, 0);
+                                          run_token, 1, 10, 110, 0, 0, 0, 1, 0);
+}
+
+static int install_pending(void)
+{
+    return install_pending_token(1);
 }
 
 static int install_pending_f(void)
@@ -302,9 +309,301 @@ int main(int argc, char **argv)
 
     mode = argc > 1 ? argv[1] : "roundtrip";
     chaos_next_use_runtime_reset();
+    if (!strcmp(mode, "legacy_no_invented_witness")) {
+        /* Literal historical v2 layout: progress but no persisted witness.
+         * The missing information is not recoverable from callback count. */
+        int32_t header[26] = {2, 1, CHAOS_ATTEMPT_TERMINATED,
+            CHAOS_SLOT_W_CONSUMED_QUIET, CHAOS_SLOT_F_UNDECLARED,
+            CHAOS_W_RUNTIME_INACTIVE, 0, 0, 1, 40, 140, 0, 0,
+            sizeof source_text - 1, 1, 0, 10, 0, 110, 0, 0, 0, 1, 1, 0, 0};
+        FILE *fp = tmpfile();
+        char hash[65];
+        unsigned char digest[32];
+        int read_ok;
+        if (!fp) return 1;
+        chaos_next_use_sha256(source_text, sizeof source_text - 1, digest);
+        digest_hex(digest, hash);
+        bwrite(fileno(fp), header, sizeof header);
+        bwrite(fileno(fp), hash, sizeof hash);
+        bwrite(fileno(fp), (void *)source_text, sizeof source_text - 1);
+        rewind(fp);
+        memset(&snap, 0x5a, sizeof snap);
+        live = snap;
+        read_ok = chaos_next_use_snapshot_read(fileno(fp), &snap);
+        fclose(fp);
+        printf("{\"tag\":\"legacy\",\"read\":%d,\"unchanged\":%d}\n",
+               read_ok, !memcmp(&snap, &live, sizeof snap));
+        return !read_ok && !memcmp(&snap, &live, sizeof snap) ? 0 : 1;
+    }
+    if (!strcmp(mode, "restore_error_is_atomic")) {
+        FILE *fp = tmpfile();
+        int present = -1, restored;
+        if (!fp || !install_pending()) return 1;
+        if (!chaos_next_use_snapshot_export(&snap)) return 1;
+        bwrite(fileno(fp), (void *)"NUS1", 4);
+        bwrite(fileno(fp), &present, sizeof present);
+        rewind(fp);
+        restored = chaos_next_use_restore(fileno(fp));
+        fclose(fp);
+        exported = chaos_next_use_snapshot_export(&live);
+        printf("{\"tag\":\"atomic\",\"restored\":%d,\"exported\":%d,\"unchanged\":%d}\n",
+               restored, exported, !memcmp(&snap, &live, sizeof snap));
+        return !restored && exported && !memcmp(&snap, &live, sizeof snap) ? 0 : 1;
+    }
+    if (!strcmp(mode, "inflight_save_refuses_before_write")) {
+        struct chaos_fountain_token token;
+        FILE *fp = tmpfile();
+        char bytes[8];
+        if (!fp || !install_lua(attention_lua)) return 1;
+        monstermoves = 40;
+        memset(&token, 0, sizeof token);
+        if (!chaos_next_use_on_action(CHAOS_NEXT_USE_FAMILY_W, 10, &token)) return 1;
+        bwrite(fileno(fp), (void *)"previous", 8);
+        rewind(fp);
+        chaos_next_use_save(fileno(fp));
+        rewind(fp);
+        mread(fileno(fp), bytes, sizeof bytes);
+        fclose(fp);
+        printf("{\"preserved\":%d}\n", !memcmp(bytes, "previous", 8));
+        return !memcmp(bytes, "previous", 8) ? 0 : 1;
+    }
+    if (!strcmp(mode, "unbound_import_cannot_execute")) {
+        struct chaos_fountain_token token;
+        if (!install_lua(quiet_lua)) return 1;
+        if (!chaos_next_use_snapshot_export(&snap)
+            || !chaos_next_use_snapshot_import(&snap)) return 1;
+        monstermoves = 40;
+        memset(&token, 0, sizeof token);
+        chaos_next_use_on_action(CHAOS_NEXT_USE_FAMILY_W, 10, &token);
+        if (!chaos_next_use_snapshot_export(&live)) return 1;
+        printf("{\"unchanged\":%d}\n", !memcmp(&snap, &live, sizeof snap));
+        return !memcmp(&snap, &live, sizeof snap) ? 0 : 1;
+    }
+    if (!strcmp(mode, "wrong_trusted_restore_identity")) {
+        FILE *fp = tmpfile();
+        int restored;
+        if (!fp || !install_pending()) return 1;
+        if (!chaos_next_use_snapshot_export(&snap)
+            || !chaos_next_use_save(fileno(fp))) return 1;
+        rewind(fp);
+        restored = chaos_next_use_restore_bound(fileno(fp), 999, 1);
+        fclose(fp);
+        if (!chaos_next_use_snapshot_export(&live)) return 1;
+        printf("{\"rejected\":%d,\"unchanged\":%d}\n",
+               !restored, !memcmp(&snap, &live, sizeof snap));
+        return !restored && !memcmp(&snap, &live, sizeof snap) ? 0 : 1;
+    }
+    if (!strcmp(mode, "departure_roundtrip")) {
+        struct chaos_fountain_token token;
+        FILE *fp = tmpfile();
+        int restored, rejected = 0, unchanged = 1, i;
+        long wrong_runs[] = {0, -1, 10, 9};
+        long wrong_levels[] = {5, 5, 5, 0};
+        if (argc != 3 || !fp
+            || !install_wf(!strcmp(argv[2], "armed") ? attention_lua : quiet_lua))
+            return 1;
+        monstermoves = 40;
+        memset(&token, 0, sizeof token);
+        if (!strcmp(argv[2], "armed")) {
+            if (!chaos_next_use_on_action(CHAOS_NEXT_USE_FAMILY_W, 30, &token)) return 1;
+            chaos_next_use_capture_whistle(30, 7, 40);
+        } else if (!strcmp(argv[2], "completed")) {
+            chaos_next_use_on_action(CHAOS_NEXT_USE_FAMILY_W, 30, &token);
+            chaos_next_use_on_action(CHAOS_NEXT_USE_FAMILY_F, 40, &token);
+        }
+        chaos_next_use_runtime_boundary(9, 5, 1, 1, 1, 1);
+        if (!chaos_next_use_snapshot_export(&snap)
+            || snap.phase != CHAOS_ATTEMPT_TERMINATED
+            || !chaos_next_use_save(fileno(fp))) return 1;
+        /* Terminal history still requires positive, matching game identity. */
+        for (i = 0; i < 4; ++i) {
+            rewind(fp);
+            rejected += !chaos_next_use_restore_bound(fileno(fp), wrong_runs[i], wrong_levels[i]);
+            unchanged &= chaos_next_use_snapshot_export(&live)
+                && !memcmp(&snap, &live, sizeof snap);
+        }
+        chaos_next_use_runtime_reset();
+        rewind(fp);
+        restored = chaos_next_use_restore_bound(fileno(fp), 9, 5);
+        fclose(fp);
+        exported = chaos_next_use_snapshot_export(&live);
+        unchanged &= exported && !memcmp(&snap, &live, sizeof snap);
+        chaos_next_use_on_action(CHAOS_NEXT_USE_FAMILY_W, 50, &token);
+        chaos_next_use_on_action(CHAOS_NEXT_USE_FAMILY_F, 60, &token);
+        unchanged &= chaos_next_use_snapshot_export(&live)
+            && !memcmp(&snap, &live, sizeof snap);
+        printf("{\"restored\":%d,\"unchanged\":%d,\"identity_rejections\":%d,\"records\":%zu}\n",
+               restored, unchanged, rejected, chaos_next_use_runtime_private_count());
+        return restored && unchanged && rejected == 4
+            && !chaos_next_use_whistle_decision_ready(7)
+            && !chaos_next_use_runtime_private_count() ? 0 : 1;
+    }
+    if (!strcmp(mode, "active_foreign_level")) {
+        FILE *fp = tmpfile();
+        int restored;
+        if (!fp || !install_pending()
+            || !chaos_next_use_snapshot_export(&snap)
+            || !chaos_next_use_save(fileno(fp))) return 1;
+        rewind(fp);
+        restored = chaos_next_use_restore_bound(fileno(fp), 1, 2);
+        fclose(fp);
+        exported = chaos_next_use_snapshot_export(&live);
+        printf("{\"rejected\":%d,\"unchanged\":%d}\n", !restored,
+               exported && !memcmp(&snap, &live, sizeof snap));
+        return !restored && exported && !memcmp(&snap, &live, sizeof snap) ? 0 : 1;
+    }
+    if (!strcmp(mode, "capture_metadata")) {
+        struct chaos_fountain_token token;
+        struct chaos_next_use_snapshot corrupt;
+        long root = 50;
+        int reason, rejected = 0, total = 0, unchanged = 1;
+        if (argc != 3 || !install_wf(attention_lua)) return 1;
+        reason = atoi(argv[2]);
+        monstermoves = 40;
+        memset(&token, 0, sizeof token);
+        if (!chaos_next_use_on_action(CHAOS_NEXT_USE_FAMILY_W, 30, &token)) return 1;
+        chaos_next_use_capture_whistle(30, 7, 40);
+        if (reason) chaos_next_use_end_w((enum chaos_next_use_end_reason)reason,
+            reason == CHAOS_END_INVALID_CALLBACK || reason == CHAOS_END_IDENTITY_UNSAFE
+                ? &root : NULL);
+        if (!chaos_next_use_snapshot_export(&snap)
+            || !chaos_next_use_snapshot_import(&snap)) return 1;
+#define REJECT_CAPTURE(field, value) do { \
+            corrupt = snap; corrupt.field = (value); ++total; \
+            validated = chaos_next_use_snapshot_validate(&corrupt); \
+            imported = chaos_next_use_snapshot_import(&corrupt); \
+            rejected += !validated && !imported; \
+            unchanged &= chaos_next_use_snapshot_export(&live) \
+                && !memcmp(&snap, &live, sizeof snap); \
+            if (!chaos_next_use_snapshot_import(&snap)) return 1; \
+        } while (0)
+        REJECT_CAPTURE(w_runtime, CHAOS_W_RUNTIME_INACTIVE);
+        REJECT_CAPTURE(armed_m_id, 0);
+        REJECT_CAPTURE(armed_root, 0);
+        REJECT_CAPTURE(activation_monstermoves, 39);
+        REJECT_CAPTURE(activation_monstermoves, 140);
+        REJECT_CAPTURE(slot_w, CHAOS_SLOT_W_CONSUMED_QUIET);
+#undef REJECT_CAPTURE
+        printf("{\"rejected\":%d,\"total\":%d,\"unchanged\":%d}\n", rejected, total, unchanged);
+        return rejected == total && unchanged ? 0 : 1;
+    }
+    if (!strcmp(mode, "family_progress_cannot_swap")) {
+        struct chaos_fountain_token token;
+        int valid;
+        if (!install_wf(quiet_lua)) return 1;
+        monstermoves = 40;
+        memset(&token, 0, sizeof token);
+        chaos_next_use_on_action(CHAOS_NEXT_USE_FAMILY_W, 10, &token);
+        if (!chaos_next_use_snapshot_export(&snap)) return 1;
+        snap.slot_w = CHAOS_SLOT_W_PENDING;
+        snap.slot_f = CHAOS_SLOT_F_CONSUMED_QUIET;
+        valid = chaos_next_use_snapshot_validate(&snap);
+        printf("{\"valid\":%d}\n", valid);
+        return !valid ? 0 : 1;
+    }
+    if (!strcmp(mode, "sequence_continuation")) {
+        struct chaos_fountain_token token;
+        int before_seq, after_seq;
+        size_t count;
+        if (!install_wf(quiet_lua)) return 1;
+        monstermoves = 40;
+        memset(&token, 0, sizeof token);
+        chaos_next_use_on_action(CHAOS_NEXT_USE_FAMILY_W, 10, &token);
+        count = chaos_next_use_runtime_private_count();
+        before_seq = chaos_next_use_runtime_private_at(count - 1)->seq;
+        if (!chaos_next_use_snapshot_export(&snap)
+            || !chaos_next_use_snapshot_import(&snap)) return 1;
+        chaos_next_use_runtime_boundary(9, 4, 1, 1, 1, 1);
+        chaos_next_use_on_action(CHAOS_NEXT_USE_FAMILY_F, 20, &token);
+        after_seq = chaos_next_use_runtime_private_at(0)->seq;
+        printf("{\"before_seq\":%d,\"after_seq\":%d}\n", before_seq, after_seq);
+        return after_seq == before_seq + 1 ? 0 : 1;
+    }
+    if (!strcmp(mode, "claimed_roundtrip")) {
+        struct chaos_fountain_token token;
+        if (!install_lua(attention_lua)) return 1;
+        monstermoves = 40;
+        memset(&token, 0, sizeof token);
+        if (!chaos_next_use_on_action(CHAOS_NEXT_USE_FAMILY_W, 10, &token)) return 1;
+        chaos_next_use_capture_whistle(10, 7, 40);
+        monstermoves = 45;
+        chaos_next_use_whistle_no_root(7);
+        if (!chaos_next_use_snapshot_export(&snap)
+            || !chaos_next_use_snapshot_import(&snap)) return 1;
+        chaos_next_use_runtime_boundary(1, 1, 1, 0, 1, 0);
+        printf("{\"claimed\":%d,\"ready\":%d,\"witnessed\":%d}\n",
+               snap.attention_claimed, chaos_next_use_whistle_decision_ready(7),
+               snap.witnessed);
+        return snap.attention_claimed == 1 && !snap.witnessed
+               && !chaos_next_use_whistle_decision_ready(7) ? 0 : 1;
+    }
     installed = install_pending();
     exported = chaos_next_use_snapshot_export(&snap);
     print_snap("after_install", exported, &snap);
+    if (!strcmp(mode, "binding_digest")) {
+        printf("{\"binding_sha256\":\"%s\"}\n", snap.binding_sha256);
+        return 0;
+    }
+    if (!strcmp(mode, "wide_identity_roundtrip")) {
+        FILE *fp = tmpfile();
+        int ok;
+        if (!fp) return 1;
+        chaos_next_use_runtime_reset();
+        if (!install_pending_token(LONG_MAX - 17)
+            || !chaos_next_use_snapshot_export(&snap)) return 1;
+        ok = chaos_next_use_snapshot_write(fileno(fp), &snap);
+        if (ok) {
+            rewind(fp);
+            ok = chaos_next_use_snapshot_read(fileno(fp), &live);
+        }
+        fclose(fp);
+        printf("{\"wide_identity_preserved\":%d}\n", ok && live.run_token == snap.run_token);
+        return ok && live.run_token == snap.run_token ? 0 : 1;
+    }
+    if (!strcmp(mode, "snapshot_change")) {
+        struct chaos_next_use_snapshot changed;
+        int matched = 0, unchanged;
+        if (argc != 5) return 2;
+        changed = snap;
+#define CHANGE_FIELD(field) if (!strcmp(argv[2], #field)) { \
+            changed.field = strtol(argv[3], NULL, 10); matched = 1; \
+        }
+        CHANGE_FIELD(phase)
+        CHANGE_FIELD(origin_w_live)
+        CHANGE_FIELD(origin_f_live)
+        CHANGE_FIELD(run_token)
+        CHANGE_FIELD(level_token)
+        CHANGE_FIELD(program_expiry)
+        CHANGE_FIELD(origin_w)
+        CHANGE_FIELD(origin_w_deadline)
+        CHANGE_FIELD(activation_monstermoves)
+        CHANGE_FIELD(armed_root)
+        CHANGE_FIELD(replay_cursor)
+        CHANGE_FIELD(next_seq)
+        CHANGE_FIELD(termination_emitted)
+        CHANGE_FIELD(identity_unsafe)
+        CHANGE_FIELD(last_root)
+        CHANGE_FIELD(witnessed)
+        CHANGE_FIELD(attention_claimed)
+        CHANGE_FIELD(delay_until)
+        CHANGE_FIELD(origin_f)
+        CHANGE_FIELD(slot_w)
+#undef CHANGE_FIELD
+        if (!matched) return 2;
+        /* Python supplies its independently recomputed binding for semantic
+         * tests. Integrity tests deliberately retain the original binding. */
+        if (strcmp(argv[4], "original")) {
+            if (strlen(argv[4]) != 64) return 2;
+            memcpy(changed.binding_sha256, argv[4], 65);
+        }
+        validated = chaos_next_use_snapshot_validate(&changed);
+        imported = chaos_next_use_snapshot_import(&changed);
+        unchanged = chaos_next_use_snapshot_export(&live)
+            && !memcmp(&snap, &live, sizeof snap);
+        printf("{\"validated\":%d,\"imported\":%d,\"unchanged\":%d}\n",
+               validated, imported, unchanged);
+        return 0;
+    }
     if (!strcmp(mode, "roundtrip")) {
         chaos_next_use_runtime_reset();
         exported = chaos_next_use_snapshot_export(&live);
@@ -673,6 +972,7 @@ int main(int argc, char **argv)
         if (fseek(fp, 0, SEEK_SET)) return 1;
         restored = chaos_next_use_restore(fd);
         fclose(fp);
+        chaos_next_use_runtime_boundary(1, 1, 1, 0, 1, 0);
         chaos_next_use_capture_whistle(10, 8, 40);
         monstermoves = 45;
         exported = chaos_next_use_snapshot_export(&live);

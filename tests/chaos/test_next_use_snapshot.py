@@ -1,5 +1,6 @@
 """ENGINE-UNIT: bounded next-use snapshot. Not save/restore."""
 
+import hashlib
 import json
 from pathlib import Path
 import subprocess
@@ -47,12 +48,165 @@ class NextUseSnapshotTests(unittest.TestCase):
         if result.returncode:
             raise RuntimeError(result.stderr.decode())
 
-    def run_mode(self, mode):
+    def run_mode(self, mode, *args):
         result = subprocess.run(
-            [str(self.binary), mode], capture_output=True, text=True, timeout=5
+            [str(self.binary), mode, *map(str, args)],
+            capture_output=True,
+            text=True,
+            timeout=5,
         )
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         return [json.loads(line) for line in result.stdout.splitlines() if line]
+
+    def test_legacy_snapshot_cannot_invent_a_witness(self):
+        row = self.run_mode("legacy_no_invented_witness")[0]
+        self.assertEqual(row, {"tag": "legacy", "read": 0, "unchanged": 1})
+
+    def test_failed_restore_preserves_live_program(self):
+        row = self.run_mode("restore_error_is_atomic")[0]
+        self.assertEqual(row["restored"], 0)
+        self.assertEqual(row["exported"], 1)
+        self.assertEqual(row["unchanged"], 1)
+
+    def test_binding_digest_has_independent_literal_encoding(self):
+        source_hash = hashlib.sha256(b"return 0").hexdigest()
+        literal = f"next-use-bind-v1|1|{source_hash}|40|140|0|1|1|10|110|0|0".encode()
+        self.assertEqual(
+            self.run_mode("binding_digest")[-1]["binding_sha256"],
+            hashlib.sha256(literal).hexdigest(),
+        )
+
+    def test_unbound_import_does_not_execute_a_callback(self):
+        self.assertEqual(
+            self.run_mode("unbound_import_cannot_execute")[0]["unchanged"], 1
+        )
+
+    def test_restore_checks_independent_game_identity_before_publication(self):
+        row = self.run_mode("wrong_trusted_restore_identity")[0]
+        self.assertEqual(row, {"rejected": 1, "unchanged": 1})
+
+    def test_wide_identity_roundtrip_without_narrowing(self):
+        self.assertEqual(
+            self.run_mode("wide_identity_roundtrip")[-1]["wide_identity_preserved"], 1
+        )
+
+    def test_consumed_family_cannot_be_swapped_to_resurrect_it(self):
+        self.assertEqual(self.run_mode("family_progress_cannot_swap")[0]["valid"], 0)
+
+    def test_inflight_save_does_not_overwrite_previous_bytes(self):
+        row = self.run_mode("inflight_save_refuses_before_write")[0]
+        self.assertEqual(row["preserved"], 1)
+
+    @staticmethod
+    def binding_digest(**changes):
+        # Independent wire grammar, never call the engine binding helper.
+        values = dict(
+            program_id=1,
+            source_sha256=hashlib.sha256(b"return 0").hexdigest(),
+            admission_move=40,
+            program_expiry=140,
+            variant=0,
+            run_token=1,
+            level_token=1,
+            origin_w=10,
+            origin_w_deadline=110,
+            origin_f=0,
+            origin_f_deadline=0,
+        )
+        values.update({key: value for key, value in changes.items() if key in values})
+        literal = "next-use-bind-v1|" + "|".join(map(str, values.values()))
+        return hashlib.sha256(literal.encode()).hexdigest()
+
+    def test_invalid_phase_boolean_clock_and_width_semantics(self):
+        cases = [
+            ("phase", 0),
+            ("phase", 99),
+            ("phase", 4),
+            ("origin_w_live", 2),
+            ("origin_f_live", -1),
+            ("run_token", 0),
+            ("level_token", -1),
+            ("program_expiry", 139),
+            ("program_expiry", 141),
+            ("origin_w", 2147483648),
+            ("origin_w_deadline", 2147483648),
+            ("activation_monstermoves", 2147483648),
+            ("armed_root", 2147483648),
+            ("replay_cursor", 2147483648),
+            ("next_seq", 0),
+            ("termination_emitted", 1),
+            ("identity_unsafe", 2),
+            ("last_root", -1),
+            ("witnessed", 1),
+            ("attention_claimed", 1),
+            ("delay_until", -1),
+            ("origin_f", 20),
+            ("slot_w", 0),
+        ]
+        for field, value in cases:
+            with self.subTest(field=field, value=value):
+                row = self.run_mode(
+                    "snapshot_change",
+                    field,
+                    value,
+                    self.binding_digest(**{field: value}),
+                )[-1]
+                self.assertEqual(row, {"validated": 0, "imported": 0, "unchanged": 1})
+
+    def test_binding_integrity_is_separate_from_valid_value_semantics(self):
+        for field, value in (
+            ("origin_w", 11),
+            ("origin_w_deadline", 111),
+            ("run_token", 2),
+            ("level_token", 2),
+        ):
+            with self.subTest(field=field):
+                row = self.run_mode("snapshot_change", field, value, "original")[-1]
+                self.assertEqual(row, {"validated": 0, "imported": 0, "unchanged": 1})
+                # Positive controls prove the independent digest is accepted;
+                # these values are legal in a differently bound snapshot.
+                row = self.run_mode(
+                    "snapshot_change",
+                    field,
+                    value,
+                    self.binding_digest(**{field: value}),
+                )[-1]
+                self.assertEqual(row, {"validated": 1, "imported": 1, "unchanged": 0})
+
+    def test_terminal_history_restores_after_departure(self):
+        for state in ("pending", "armed", "completed"):
+            with self.subTest(state=state):
+                self.assertEqual(
+                    self.run_mode("departure_roundtrip", state)[0],
+                    {
+                        "restored": 1,
+                        "unchanged": 1,
+                        "identity_rejections": 4,
+                        "records": 0,
+                    },
+                )
+
+    def test_active_foreign_level_restore_is_atomic_rejection(self):
+        self.assertEqual(
+            self.run_mode("active_foreign_level")[0], {"rejected": 1, "unchanged": 1}
+        )
+
+    def test_armed_and_ended_capture_metadata_cannot_be_erased(self):
+        # 0 is still armed; 1..7 exercise every native end reason.
+        for reason in range(8):
+            with self.subTest(reason=reason):
+                self.assertEqual(
+                    self.run_mode("capture_metadata", reason)[0],
+                    {"rejected": 6, "total": 6, "unchanged": 1},
+                )
+
+    def test_continuation_does_not_restart_private_sequence(self):
+        row = self.run_mode("sequence_continuation")[0]
+        self.assertEqual(row["after_seq"], row["before_seq"] + 1)
+
+    def test_claimed_undelivered_attention_is_not_regained(self):
+        row = self.run_mode("claimed_roundtrip")[0]
+        self.assertEqual(row, {"claimed": 1, "ready": 0, "witnessed": 0})
 
     def test_roundtrip_pending_does_not_readmit(self):
         rows = self.run_mode("roundtrip")

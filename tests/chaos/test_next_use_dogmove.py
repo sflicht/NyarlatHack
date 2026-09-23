@@ -137,6 +137,15 @@ class NextUseDogMoveTests(unittest.TestCase):
         self.assertEqual(control["rng_next"], bypass["rng_next"])
         self.assertEqual(control["reseed"], bypass["reseed"])
 
+    def test_same_companion_id_cannot_cross_game_or_level_lifetime(self):
+        for name in ("level_lifetime", "game_lifetime"):
+            with self.subTest(name=name):
+                row = self.run_case(name)
+                self.assertEqual(row["arm"], 2)
+                self.assertEqual(row["ready_before"], 0)
+                self.assertEqual(row["public"], 0)
+                self.assertEqual(row["delivered"], 0)
+
     def test_late_window_does_not_take_extra_attention(self):
         late = self.run_case("late")
         self.assertEqual(late["ready_before"], 0)

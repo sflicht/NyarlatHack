@@ -50,6 +50,7 @@ static void setup_level(struct monst *pet)
     u.uz.dnum = 0;
     u.uz.dlevel = 1;
     u.ubirthday = 1750000001;
+    u.chaos_game_token = 1750000001L;
     moves = 40;
     monstermoves = 40;
     flags.ident = 1;
@@ -197,7 +198,8 @@ static int persist_and_restore(const char *dirpath)
         close(fd);
         return 0;
     }
-    restored = chaos_next_use_restore(fd);
+    restored = chaos_next_use_restore_bound(fd, u.chaos_game_token,
+        chaos_next_use_pack_level(u.uz.dnum, u.uz.dlevel));
     close(fd);
     if (restored)
         chaos_next_use_safe_mark_restored();
@@ -316,6 +318,14 @@ static int run_case(const char *name, const char *dirpath)
         f_action = chaos_next_use_on_action(CHAOS_NEXT_USE_FAMILY_F, 10, 0);
     if (!strcmp(name, "hidden") && WIN_MAP != WIN_ERR && wins[WIN_MAP])
         wins[WIN_MAP]->flags |= WIN_CANCELLED;
+    if (!strcmp(name, "level_lifetime")) {
+        u.uz.dlevel = 2;
+        chaos_observe();
+    }
+    if (!strcmp(name, "game_lifetime")) {
+        u.chaos_game_token++;
+        chaos_observe();
+    }
     ready = chaos_next_use_whistle_decision_ready(pet.m_id);
     {
         int glyph = glyph_at(pet.mx, pet.my);

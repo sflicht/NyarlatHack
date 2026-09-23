@@ -3,6 +3,7 @@
 /* NetHack may be freely redistributed.  See license for details. */
 
 #include "hack.h"
+#include "chaos.h"
 #include "lev.h"
 #include "quest.h"
 
@@ -131,6 +132,13 @@ dosave0()
 
 	if (!SAVEF[0])
 		return 0;
+#ifdef CHAOS
+	/* Validate before opening/truncating an existing recoverable save. */
+	if (chaos_next_use_save_status() == CHAOS_SNAPSHOT_ERROR) {
+		HUP pline("Cannot save during an incomplete next-use action.");
+		return 0;
+	}
+#endif
 	
 	saving_game = TRUE; /*Some deeply buryied code calls curses redraw stuff that will crash.*/
 	
@@ -321,9 +329,12 @@ register int fd, mode;
 	bwrite(fd, (genericptr_t) &uid, sizeof uid);
 	flags.end_around = has_loaded_bones;
 	bwrite(fd, (genericptr_t) &flags, sizeof(struct flag));
+	#ifdef CHAOS
+	u.chaos_next_use_attempted = chaos_next_use_safe_attempted();
+	#endif
 	bwrite(fd, (genericptr_t) &u, sizeof(struct you));
 #ifdef CHAOS
-	chaos_next_use_save(fd);
+	if (!chaos_next_use_save(fd)) panic("next-use save state changed after preflight");
 #endif
 	bwrite(fd, (genericptr_t) &youmonst, sizeof(struct monst));
 	if (youmonst.light)

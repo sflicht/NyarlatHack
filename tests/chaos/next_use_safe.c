@@ -168,7 +168,8 @@ int main(int argc, char **argv)
                     CHAOS_NEXT_USE_FAMILY_F, 21, 22);
     }
     if (on_safe) {
-        chaos_next_use_safe_bind_logical(1750000001L);
+        chaos_next_use_safe_bind_logical(argc > 15 ? strtol(argv[15], NULL, 10)
+                                             : 1750000001L);
         if (strcmp(run, "none"))
             chaos_next_use_safe_bind_run(run);
         if (!strcmp(telegraph_mode, "ok"))
@@ -189,7 +190,8 @@ int main(int argc, char **argv)
     req.run_hex = strcmp(run, "none") ? run : NULL;
     req.sanity = 50;
     req.budget = &budget;
-    chaos_next_use_safe_bind_logical(1750000001L);
+    chaos_next_use_safe_bind_logical(argc > 15 ? strtol(argv[15], NULL, 10)
+                                             : 1750000001L);
     if (!strcmp(telegraph_mode, "ok")) {
         req.telegraph = telegraph_ok;
         req.telegraph_opaque = &telegraphs;

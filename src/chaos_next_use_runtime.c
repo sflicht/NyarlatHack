@@ -37,6 +37,7 @@ struct runtime_state {
     int phase;
     int slot_w, slot_f, w_runtime;
     int state, delay_used, callback_ordinal, program_id, program_expiry;
+    int callback_w, callback_f;
     int admission_move, variant, whistle_count, fountain_count;
     int delay_until;
     int origin_w_live, origin_f_live;
@@ -53,6 +54,7 @@ struct runtime_state {
     long origin_w_deadline, origin_f_deadline;
     long last_root;
     char source_sha256[65];
+    char binding_sha256[65];
     char source[4097];
     size_t source_length;
     struct chaos_next_use_runtime_private_record private_records[CHAOS_RUNTIME_PRIVATE_MAX];
@@ -71,6 +73,8 @@ static struct runtime_state *runtime_current(void)
 }
 #define runtime (*runtime_current())
 static int valid_hash_field(const char value[65]);
+static void snapshot_values(struct chaos_next_use_snapshot *out);
+static int snapshot_binding_hash(const struct chaos_next_use_snapshot *in, char out[65]);
 
 static void copy_hash(char target[65], const char *source)
 {
@@ -557,6 +561,14 @@ int chaos_next_use_runtime_install(
     memcpy(runtime.source, source, source_length);
     runtime.source[source_length] = '\0';
     copy_hash(runtime.source_sha256, source_sha256);
+    {
+        struct chaos_next_use_snapshot initial;
+        snapshot_values(&initial);
+        if (!snapshot_binding_hash(&initial, runtime.binding_sha256)) {
+            chaos_next_use_runtime_reset();
+            return 0;
+        }
+    }
     replay_runtime = live_runtime;
     return 1;
 }
@@ -599,6 +611,18 @@ void chaos_next_use_runtime_boundary(long run_token, long level_token,
     if (runtime.w_runtime == CHAOS_W_RUNTIME_ARMED
         && monstermoves >= runtime.activation_monstermoves + 10)
         chaos_next_use_end_w(CHAOS_END_WINDOW_A_PLUS_10, NULL);
+}
+
+void chaos_next_use_identity_boundary(long run_token, long level_token)
+{
+    if (runtime.phase != CHAOS_ATTEMPT_COMMITTED) return;
+    if (run_token <= 0 || level_token <= 0) {
+        chaos_next_use_expire(CHAOS_END_ORIGIN_EVICTED);
+        return;
+    }
+    chaos_next_use_runtime_boundary(run_token, level_token,
+        runtime.origin_w_live, runtime.origin_f_live,
+        runtime.whistle_count, runtime.fountain_count);
 }
 
 void chaos_next_use_mark_identity_unsafe(void)
@@ -701,6 +725,8 @@ void chaos_next_use_expire(enum chaos_next_use_end_reason reason)
 
 boolean chaos_next_use_action_preflight(int family, long completed_root)
 {
+    if (runtime.current_run_token <= 0 || runtime.current_level_token <= 0)
+        return FALSE;
     chaos_next_use_runtime_boundary(runtime.current_run_token,
         runtime.current_level_token, runtime.origin_w_live,
         runtime.origin_f_live, runtime.whistle_count, runtime.fountain_count);
@@ -749,6 +775,8 @@ boolean chaos_next_use_on_action(int family, long completed_root,
     runtime.last_root = effect_binding.root;
     state_before = runtime.state;
     runtime.callback_ordinal++;
+    if (family == CHAOS_NEXT_USE_FAMILY_W) runtime.callback_w = 1;
+    else runtime.callback_f = 1;
     status = chaos_lua_next_use_on_action(runtime.source, runtime.source_length,
                                           &context, &intent);
     private_common(&intent_record, CHAOS_RUNTIME_PRIVATE_INTENT);
@@ -891,6 +919,10 @@ void chaos_next_use_capture_whistle(long completed_root, unsigned m_id,
 
 boolean chaos_next_use_whistle_decision_ready(unsigned m_id)
 {
+    if (runtime.current_run_token <= 0 || runtime.current_level_token <= 0
+        || runtime.current_run_token != runtime.run_token
+        || runtime.current_level_token != runtime.level_token)
+        return FALSE;
     if (runtime.w_runtime != CHAOS_W_RUNTIME_ARMED
         || runtime.armed_m_id == 0 || m_id != runtime.armed_m_id)
         return FALSE;
@@ -1340,12 +1372,9 @@ int chaos_next_use_replay_record(
     return CHAOS_REPLAY_APPLIED;
 }
 
-int chaos_next_use_snapshot_export(struct chaos_next_use_snapshot *out)
+static void snapshot_values(struct chaos_next_use_snapshot *out)
 {
-    if (!out) return 0;
     memset(out, 0, sizeof *out);
-    if (runtime.program_id <= 0 || runtime.phase == 0)
-        return 0;
     out->snapshot_v = CHAOS_NEXT_USE_SNAPSHOT_V;
     out->program_id = runtime.program_id;
     out->phase = runtime.phase;
@@ -1359,6 +1388,12 @@ int chaos_next_use_snapshot_export(struct chaos_next_use_snapshot *out)
     out->attention_claimed = runtime.attention_claimed;
     out->whistle_count = runtime.whistle_count;
     out->fountain_count = runtime.fountain_count;
+    out->next_seq = runtime.next_seq;
+    out->callback_w = runtime.callback_w;
+    out->callback_f = runtime.callback_f;
+    out->termination_emitted = runtime.termination_emitted;
+    out->identity_unsafe = runtime.identity_unsafe;
+    out->last_root = runtime.last_root;
     out->admission_move = runtime.admission_move;
     out->program_expiry = runtime.program_expiry;
     out->delay_until = runtime.delay_until;
@@ -1377,10 +1412,32 @@ int chaos_next_use_snapshot_export(struct chaos_next_use_snapshot *out)
     out->level_token = runtime.level_token;
     out->source_length = runtime.source_length;
     copy_hash(out->source_sha256, runtime.source_sha256);
+    copy_hash(out->binding_sha256, runtime.binding_sha256);
     if (runtime.source_length > CHAOS_NEXT_USE_SOURCE_MAX)
-        return 0;
+        return;
     memcpy(out->source, runtime.source, runtime.source_length);
     out->source[runtime.source_length] = '\0';
+}
+
+static int snapshot_binding_hash(const struct chaos_next_use_snapshot *in, char out[65])
+{
+    char canonical[512];
+    int n = snprintf(canonical, sizeof canonical,
+        "next-use-bind-v1|%d|%s|%d|%d|%d|%ld|%ld|%ld|%ld|%ld|%ld",
+        in->program_id, in->source_sha256, in->admission_move,
+        in->program_expiry, in->variant, in->run_token, in->level_token,
+        in->origin_w, in->origin_w_deadline, in->origin_f, in->origin_f_deadline);
+    if (n < 1 || (size_t)n >= sizeof canonical) return 0;
+    chaos_next_use_sha256_hex((const unsigned char *)canonical, (size_t)n, out);
+    return 1;
+}
+
+int chaos_next_use_snapshot_export(struct chaos_next_use_snapshot *out)
+{
+    if (!out) return 0;
+    memset(out, 0, sizeof *out);
+    if (runtime.program_id <= 0 || runtime.phase == 0) return 0;
+    snapshot_values(out);
     return chaos_next_use_snapshot_validate(out);
 }
 
@@ -1388,7 +1445,7 @@ int chaos_next_use_snapshot_validate(const struct chaos_next_use_snapshot *in)
 {
     char actual[65];
 
-    if (!in || (in->snapshot_v != 2 && in->snapshot_v != 3))
+    if (!in || in->snapshot_v != CHAOS_NEXT_USE_SNAPSHOT_V)
         return 0;
     if (in->program_id <= 0 || in->source_length < 1
         || in->source_length > CHAOS_NEXT_USE_SOURCE_MAX)
@@ -1401,6 +1458,10 @@ int chaos_next_use_snapshot_validate(const struct chaos_next_use_snapshot *in)
                               in->source_length, actual);
     if (strcmp(actual, in->source_sha256) != 0)
         return 0;
+    if (!valid_hash_field(in->binding_sha256)
+        || !snapshot_binding_hash(in, actual)
+        || strcmp(actual, in->binding_sha256))
+        return 0;
     if (!replay_slot_w_valid(in->slot_w) || !replay_slot_f_valid(in->slot_f)
         || !replay_w_runtime_valid(in->w_runtime))
         return 0;
@@ -1408,33 +1469,86 @@ int chaos_next_use_snapshot_validate(const struct chaos_next_use_snapshot *in)
         || in->delay_used > 1 || in->callback_ordinal < 0
         || in->variant < 0 || in->variant > 2)
         return 0;
-    if (in->admission_move < 0 || in->program_expiry < 100)
+    /* Snapshot scalars must fit their wire representation before casting.
+     * TTL is fixed at 100 native moves by the envelope contract. */
+    if (in->admission_move < 0 || in->admission_move > INT32_MAX - 100
+        || in->program_expiry != in->admission_move + 100
+        || in->delay_until < 0
+        || (!in->delay_used && in->delay_until != 0)
+        || (in->delay_used && in->delay_until < in->admission_move + 10)
+        || in->run_token <= 0 || in->level_token <= 0
+        || in->origin_w < 0 || in->origin_w > INT32_MAX
+        || in->origin_f < 0 || in->origin_f > INT32_MAX
+        || in->origin_w_deadline < 0 || in->origin_w_deadline > INT32_MAX
+        || in->origin_f_deadline < 0 || in->origin_f_deadline > INT32_MAX
+        || in->activation_monstermoves < 0
+        || in->activation_monstermoves > INT32_MAX - 10
+        || in->armed_root < 0 || in->armed_root > INT32_MAX
+        || in->replay_cursor > INT32_MAX
+        || in->last_root < 0 || in->last_root > INT32_MAX
+        || in->next_seq < 3 || in->next_seq > CHAOS_RUNTIME_PRIVATE_MAX + 1
+        || (in->origin_w_live != 0 && in->origin_w_live != 1)
+        || (in->origin_f_live != 0 && in->origin_f_live != 1)
+        || (in->identity_unsafe != 0 && in->identity_unsafe != 1))
+        return 0;
+    if ((in->phase != CHAOS_ATTEMPT_COMMITTED
+         && in->phase != CHAOS_ATTEMPT_TERMINATED)
+        || in->termination_emitted != (in->phase == CHAOS_ATTEMPT_TERMINATED)
+        || (in->phase == CHAOS_ATTEMPT_TERMINATED)
+           != (in->slot_w != CHAOS_SLOT_W_PENDING
+               && in->slot_f != CHAOS_SLOT_F_PENDING
+               && in->w_runtime != CHAOS_W_RUNTIME_ARMED))
+        return 0;
+    if ((in->slot_w == CHAOS_SLOT_W_UNDECLARED
+         && (in->origin_w || in->origin_w_deadline || in->origin_w_live))
+        || (in->slot_f == CHAOS_SLOT_F_UNDECLARED
+            && (in->origin_f || in->origin_f_deadline || in->origin_f_live))
+        || (in->slot_w != CHAOS_SLOT_W_UNDECLARED && in->origin_w <= 0)
+        || (in->slot_f != CHAOS_SLOT_F_UNDECLARED && in->origin_f <= 0)
+        || (in->slot_w == CHAOS_SLOT_W_UNDECLARED
+            && in->slot_f == CHAOS_SLOT_F_UNDECLARED))
+        return 0;
+    if ((in->witnessed && !in->attention_claimed)
+        || (in->slot_w != CHAOS_SLOT_W_CONSUMED_ARMED
+            && (in->witnessed || in->attention_claimed
+                || in->w_runtime != CHAOS_W_RUNTIME_INACTIVE
+                || in->armed_m_id || in->armed_root
+                || in->activation_monstermoves)))
         return 0;
     if ((in->slot_w == CHAOS_SLOT_W_PENDING && in->origin_w <= 0)
         || (in->slot_f == CHAOS_SLOT_F_PENDING && in->origin_f <= 0))
         return 0;
-    {
-        int used = (in->slot_w != CHAOS_SLOT_W_PENDING
-                    && in->slot_w != CHAOS_SLOT_W_UNDECLARED)
-                 + (in->slot_f != CHAOS_SLOT_F_PENDING
-                    && in->slot_f != CHAOS_SLOT_F_UNDECLARED);
-        if (in->callback_ordinal > used)
-            return 0;
-    }
-    if (in->snapshot_v == 3) {
-        if (in->witnessed < 0 || in->witnessed > 1
-            || in->attention_claimed < 0 || in->attention_claimed > 1
-            || in->whistle_count < 0 || in->whistle_count > 3
-            || in->fountain_count < 0 || in->fountain_count > 2)
-            return 0;
-    } else if (in->witnessed || in->attention_claimed
-               || in->whistle_count || in->fountain_count)
+    /* One callback at most per declared family. Terminalizing the other
+     * pending slot on failure is not a callback for that family. */
+    if ((in->callback_w != 0 && in->callback_w != 1)
+        || (in->callback_f != 0 && in->callback_f != 1)
+        || in->callback_ordinal != in->callback_w + in->callback_f
+        || ((in->slot_w == CHAOS_SLOT_W_PENDING
+             || in->slot_w == CHAOS_SLOT_W_UNDECLARED) && in->callback_w)
+        || ((in->slot_f == CHAOS_SLOT_F_PENDING
+             || in->slot_f == CHAOS_SLOT_F_UNDECLARED) && in->callback_f)
+        || ((in->slot_w == CHAOS_SLOT_W_CONSUMED_ARMED
+             || in->slot_w == CHAOS_SLOT_W_CONSUMED_QUIET
+             || in->slot_w == CHAOS_SLOT_W_CONSUMED_DELAY) && !in->callback_w)
+        || ((in->slot_f == CHAOS_SLOT_F_CONSUMED_APPLIED
+             || in->slot_f == CHAOS_SLOT_F_CONSUMED_NONREMAPPABLE
+             || in->slot_f == CHAOS_SLOT_F_CONSUMED_QUIET
+             || in->slot_f == CHAOS_SLOT_F_CONSUMED_DELAY) && !in->callback_f))
         return 0;
-    if (in->run_token > 2147483647L || in->level_token > 2147483647L)
+    if (in->witnessed < 0 || in->witnessed > 1
+        || in->attention_claimed < 0 || in->attention_claimed > 1
+        || in->whistle_count < 0 || in->whistle_count > 3
+        || in->fountain_count < 0 || in->fountain_count > 2)
         return 0;
-    if (in->w_runtime == CHAOS_W_RUNTIME_ARMED
-        && (in->armed_m_id == 0 || in->activation_monstermoves < 0
-            || in->armed_root <= 0))
+    if (in->level_token > INT32_MAX)
+        return 0;
+    /* Capture metadata survives every window end. The consumed-armed slot
+     * cannot become inactive, nor can an ended window discard its capture. */
+    if (in->slot_w == CHAOS_SLOT_W_CONSUMED_ARMED
+        && (in->w_runtime == CHAOS_W_RUNTIME_INACTIVE
+            || in->armed_m_id == 0 || in->armed_root <= 0
+            || in->activation_monstermoves < in->admission_move
+            || in->activation_monstermoves >= in->program_expiry))
         return 0;
     return 1;
 }
@@ -1456,6 +1570,12 @@ int chaos_next_use_snapshot_import(const struct chaos_next_use_snapshot *in)
     live_runtime.attention_claimed = in->attention_claimed;
     live_runtime.whistle_count = in->whistle_count;
     live_runtime.fountain_count = in->fountain_count;
+    live_runtime.next_seq = in->next_seq;
+    live_runtime.callback_w = in->callback_w;
+    live_runtime.callback_f = in->callback_f;
+    live_runtime.termination_emitted = in->termination_emitted;
+    live_runtime.identity_unsafe = in->identity_unsafe;
+    live_runtime.last_root = in->last_root;
     live_runtime.admission_move = in->admission_move;
     live_runtime.program_expiry = in->program_expiry;
     live_runtime.delay_until = in->delay_until;
@@ -1476,6 +1596,7 @@ int chaos_next_use_snapshot_import(const struct chaos_next_use_snapshot *in)
     live_runtime.current_level_token = 0;
     live_runtime.source_length = in->source_length;
     copy_hash(live_runtime.source_sha256, in->source_sha256);
+    copy_hash(live_runtime.binding_sha256, in->binding_sha256);
     memcpy(live_runtime.source, in->source, in->source_length);
     live_runtime.source[in->source_length] = '\0';
     replay_runtime = live_runtime;
@@ -1498,7 +1619,7 @@ static int snapshot_io_all(int fd, void *buf, size_t n, int writing)
 
 int chaos_next_use_snapshot_write(int fd, const struct chaos_next_use_snapshot *in)
 {
-    int32_t header[30];
+    int32_t header[37];
 
     if (fd < 0 || !chaos_next_use_snapshot_validate(in))
         return 0;
@@ -1533,11 +1654,17 @@ int chaos_next_use_snapshot_write(int fd, const struct chaos_next_use_snapshot *
     header[27] = in->attention_claimed;
     header[28] = in->whistle_count;
     header[29] = in->fountain_count;
-    if (!snapshot_io_all(fd, header,
-                         in->snapshot_v == 3 ? sizeof header : 26 * sizeof (int32_t),
-                         1))
+    header[30] = in->next_seq;
+    header[31] = in->termination_emitted;
+    header[32] = in->identity_unsafe;
+    header[33] = (int32_t)in->last_root;
+    header[34] = in->callback_w;
+    header[35] = in->callback_f;
+    header[36] = (int32_t)((uint64_t)in->run_token >> 32);
+    if (!snapshot_io_all(fd, header, sizeof header, 1))
         return 0;
-    if (!snapshot_io_all(fd, (void *)in->source_sha256, 65, 1))
+    if (!snapshot_io_all(fd, (void *)in->source_sha256, 65, 1)
+        || !snapshot_io_all(fd, (void *)in->binding_sha256, 65, 1))
         return 0;
     if (!snapshot_io_all(fd, (void *)in->source, in->source_length, 1))
         return 0;
@@ -1552,7 +1679,10 @@ int chaos_next_use_snapshot_read(int fd, struct chaos_next_use_snapshot *out)
     if (fd < 0 || !out)
         return 0;
     memset(&snap, 0, sizeof snap);
-    if (!snapshot_io_all(fd, header, sizeof header, 0))
+    if (!snapshot_io_all(fd, header, sizeof header[0], 0)
+        || header[0] != CHAOS_NEXT_USE_SNAPSHOT_V)
+        return 0;
+    if (!snapshot_io_all(fd, header + 1, sizeof header - sizeof header[0], 0))
         return 0;
     snap.snapshot_v = header[0];
     snap.program_id = header[1];
@@ -1582,20 +1712,29 @@ int chaos_next_use_snapshot_read(int fd, struct chaos_next_use_snapshot *out)
     snap.level_token = header[23];
     snap.activation_monstermoves = header[24];
     snap.armed_root = header[25];
-    if (snap.snapshot_v == 3) {
-        int32_t extra[4];
+    {
+        int32_t extra[11];
         if (!snapshot_io_all(fd, extra, sizeof extra, 0))
             return 0;
         snap.witnessed = extra[0];
         snap.attention_claimed = extra[1];
         snap.whistle_count = extra[2];
         snap.fountain_count = extra[3];
-    } else if (snap.snapshot_v == 2 && snap.callback_ordinal > 0) {
-        snap.attention_claimed = 1;
-        snap.witnessed = 1;
-        snap.snapshot_v = 3;
+        snap.next_seq = extra[4];
+        snap.termination_emitted = extra[5];
+        snap.identity_unsafe = extra[6];
+        snap.last_root = extra[7];
+        snap.callback_w = extra[8];
+        snap.callback_f = extra[9];
+        {
+            uint64_t token = ((uint64_t)(uint32_t)extra[10] << 32)
+                             | (uint32_t)header[22];
+            if (extra[10] < 0 || token > (uint64_t)LONG_MAX) return 0;
+            snap.run_token = (long)token;
+        }
     }
-    if (!snapshot_io_all(fd, snap.source_sha256, 65, 0))
+    if (!snapshot_io_all(fd, snap.source_sha256, 65, 0)
+        || !snapshot_io_all(fd, snap.binding_sha256, 65, 0))
         return 0;
     if (!snapshot_io_all(fd, snap.source, snap.source_length, 0))
         return 0;
@@ -1606,25 +1745,38 @@ int chaos_next_use_snapshot_read(int fd, struct chaos_next_use_snapshot *out)
     return 1;
 }
 
-void chaos_next_use_save(int fd)
+int chaos_next_use_save_status(void)
+{
+    struct chaos_next_use_snapshot snap;
+    if (live_runtime.program_id == 0 && live_runtime.phase == 0)
+        return CHAOS_SNAPSHOT_ABSENT;
+    /* Native save may be interrupted into during an action. The action's
+     * temporary token/presentation handshake is not a persistent value. */
+    if (live_runtime.pending_w_capture || live_runtime.f_inflight
+        || live_runtime.defer_termination
+        || (live_runtime.expected_manifest_root && !live_runtime.witnessed))
+        return CHAOS_SNAPSHOT_ERROR;
+    return chaos_next_use_snapshot_export(&snap)
+        ? CHAOS_SNAPSHOT_VALID : CHAOS_SNAPSHOT_ERROR;
+}
+
+int chaos_next_use_save(int fd)
 {
     static const char magic[4] = { 'N', 'U', 'S', '1' };
     struct chaos_next_use_snapshot snap;
-    int present = 0;
+    int present = chaos_next_use_save_status();
 
+    if (fd < 0 || present == CHAOS_SNAPSHOT_ERROR)
+        return 0;
+    if (present == CHAOS_SNAPSHOT_VALID && !chaos_next_use_snapshot_export(&snap))
+        return 0;
     bwrite(fd, (genericptr_t)magic, 4);
-    if (live_runtime.program_id > 0 && live_runtime.phase != 0) {
-        if (chaos_next_use_snapshot_export(&snap))
-            present = 1;
-        else
-            present = -1;
-    }
     bwrite(fd, (genericptr_t)&present, sizeof present);
-    if (present == 1)
-        (void)chaos_next_use_snapshot_write(fd, &snap);
+    return present == CHAOS_SNAPSHOT_ABSENT
+        || chaos_next_use_snapshot_write(fd, &snap);
 }
 
-int chaos_next_use_restore(int fd)
+static int restore_snapshot(int fd, long run_token, long level_token, int bound)
 {
     char magic[4];
     int present = 0;
@@ -1634,15 +1786,41 @@ int chaos_next_use_restore(int fd)
     if (memcmp(magic, "NUS1", 4) != 0)
         return 0;
     mread(fd, (genericptr_t)&present, sizeof present);
-    chaos_next_use_runtime_reset();
-    if (present == 0)
+    if (present == 0) {
+        chaos_next_use_runtime_reset();
         return 1;
+    }
     if (present != 1)
         return 0;
     memset(&snap, 0, sizeof snap);
     if (!chaos_next_use_snapshot_read(fd, &snap))
         return 0;
-    return chaos_next_use_snapshot_import(&snap);
+    /* Admission level binds executable state, not terminal history carried
+     * by the same saved game after travelling elsewhere. Read validated the
+     * terminal phase/slots/window agreement before this identity check. */
+    if (bound && (run_token <= 0 || level_token <= 0
+                  || snap.run_token != run_token
+                  || (snap.phase != CHAOS_ATTEMPT_TERMINATED
+                      && snap.level_token != level_token)))
+        return 0;
+    if (!chaos_next_use_snapshot_import(&snap)) return 0;
+    if (bound) {
+        live_runtime.current_run_token = run_token;
+        live_runtime.current_level_token = level_token;
+        replay_runtime = live_runtime;
+    }
+    return 1;
+}
+
+int chaos_next_use_restore_bound(int fd, long run_token, long level_token)
+{
+    return restore_snapshot(fd, run_token, level_token, 1);
+}
+
+int chaos_next_use_restore(int fd)
+{
+    /* Data-only fixture API: requires an explicit boundary before action. */
+    return restore_snapshot(fd, 0, 0, 0);
 }
 
 #ifdef CHAOS_NEXT_USE_HASH_FIXTURE
