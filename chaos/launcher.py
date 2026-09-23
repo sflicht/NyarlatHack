@@ -112,6 +112,11 @@ def add_parser(sub):
         help="start a human Bard with no wizard mode; sets NETHACKOPTIONS if unset",
     )
     p.add_argument(
+        "--next-use",
+        action="store_true",
+        help="host-built next-use selection from a ready origin schedule; no model call",
+    )
+    p.add_argument(
         "game_args",
         nargs=argparse.REMAINDER,
         help="put game arguments after --; forwarded literally",
@@ -215,6 +220,10 @@ def _offline_loop(box, backend, reader, state, args, ready):
     while time.monotonic() < deadline or first:
         for event in reader.read():
             state.ingest(event)
+        if getattr(args, "next_use", False):
+            from .next_use_schedule import consider_next_use
+
+            consider_next_use(box.path)
         if first and reader.tail:
             raise ValueError("incomplete event history before game startup")
         if state.ended:

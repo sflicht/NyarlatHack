@@ -83,3 +83,58 @@ def publish_scheduled(directory, selected, run_hex, at, program_id):
     return publish_envelope(
         directory, selected, host_from_schedule(row, run_hex, at, program_id)
     )
+
+
+def consider_next_use(directory):
+    """Host-built quiet selection from one matching schedule. No model call.
+
+    Missing, extra, or unmatched schedules publish nothing. An existing
+    envelope is left alone. This does not admit.
+    """
+    from .history import HistoryState
+    from .next_use_envelope import engine_run_hex
+    from .next_use_history import next_use_menu
+
+    directory = Path(directory)
+    schedule_path = directory / "next_use-schedule.jsonl"
+    if not schedule_path.is_file() or (directory / "next_use-envelope.json").exists():
+        return None
+    events = directory / "events.jsonl"
+    if not events.is_file():
+        return None
+    try:
+        history = HistoryState(events.read_bytes())
+        schedules = [
+            parse_schedule_line(line)
+            for line in schedule_path.read_bytes().splitlines(keepends=True)
+        ]
+    except (OSError, ValueError):
+        return None
+    if (
+        len(schedules) != 1
+        or history.safe >= 2147483647
+        or history.last_id >= 2147483647
+    ):
+        return None
+    schedule = schedules[0]
+    quiet = [
+        row
+        for row in next_use_menu(history)
+        if row["family"] == schedule["family"]
+        and row["op"] == "quiet"
+        and row["origin"]["root_seq"] == schedule["root"]
+        and row["origin"]["notice_seq"] == schedule["notice_seq"]
+        and row["origin"]["end_seq"] == schedule["end_seq"]
+    ]
+    if len(quiet) != 1:
+        return None
+    try:
+        return publish_scheduled(
+            directory,
+            quiet[0],
+            engine_run_hex(directory),
+            history.safe + 1,
+            history.last_id + 1,
+        )
+    except (OSError, ValueError):
+        return None
