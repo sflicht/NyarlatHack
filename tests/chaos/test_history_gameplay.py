@@ -615,8 +615,9 @@ def native(args):
         "complete original production object receipt required",
     )
     require(
-        len(manifest["generated_headers"]) == 127
-        and "include/date.h" in manifest["generated_headers"],
+        len(manifest["generated_headers"]) == 128
+        and "include/date.h" in manifest["generated_headers"]
+        and "include/chaos_next_use_schedule.h" in manifest["generated_headers"],
         "complete frozen header receipt required",
     )
     protected = dict(manifest["generated_headers"], **manifest["objects"])
