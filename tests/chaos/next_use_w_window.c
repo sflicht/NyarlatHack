@@ -81,6 +81,7 @@ int main(int argc, char **argv)
     req.telegraph = telegraph_ok;
     req.receipt = receipt_ok;
     bind_origin(argv[4]);
+    chaos_next_use_safe_bind_logical(1750000001L);
     chaos_next_use_safe_try(&req, &admitted);
     monstermoves = at_move;
     if (!admitted.active

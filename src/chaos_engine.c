@@ -85,6 +85,12 @@ static void next_use_bind_owned(void)
     char run[65];
     const char *fact;
     int slot;
+    if (chaos_next_use_safe_bind_logical) {
+        long token = 0;
+        if (u.ubirthday > 0 && (unsigned long long)u.ubirthday <= 2147483647ULL)
+            token = (long)u.ubirthday;
+        chaos_next_use_safe_bind_logical(token);
+    }
     if (io.dir < 0 || fstat(io.dir, &st)) return;
     if (snprintf(run, sizeof run, "%016llx%016llx%016llx%016llx",
                  (unsigned long long)st.st_dev,
@@ -94,12 +100,6 @@ static void next_use_bind_owned(void)
         return;
     if (chaos_next_use_safe_bind_run)
         chaos_next_use_safe_bind_run(run);
-    if (chaos_next_use_safe_bind_logical) {
-        long token = 0;
-        if (u.ubirthday > 0 && (unsigned long long)u.ubirthday <= 2147483647ULL)
-            token = (long)u.ubirthday;
-        chaos_next_use_safe_bind_logical(token);
-    }
     if (chaos_next_use_safe_bind_telegraph)
         chaos_next_use_safe_bind_telegraph(next_use_warn, 0);
     if (!chaos_next_use_safe_bind_origin)

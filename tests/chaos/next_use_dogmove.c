@@ -49,6 +49,7 @@ static void setup_level(struct monst *pet)
     u.uy = 10;
     u.uz.dnum = 0;
     u.uz.dlevel = 1;
+    u.ubirthday = 1750000001;
     moves = 40;
     monstermoves = 40;
     flags.ident = 1;
@@ -168,6 +169,7 @@ static int admit_and_act(const char *dirpath, struct monst *pet, int *telegraphs
     req.telegraph_opaque = telegraphs;
     req.receipt = receipt_ok;
     bind_origin(run);
+    chaos_next_use_safe_bind_logical(1750000001L);
     chaos_next_use_safe_try(&req, &admitted);
     close(dir);
     if (!admitted.active) return 0;
