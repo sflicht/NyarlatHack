@@ -65,6 +65,8 @@ class EventReader:
         self.digest = hashlib.sha256(b"").digest()
 
     def read(self):
+        from .episodes import parse_episode_event
+
         try:
             fd = secure_open(self.path)
         except FileNotFoundError:
@@ -103,7 +105,7 @@ class EventReader:
                 if len(tail) > EVENT_CAP:
                     raise ValueError("event line exceeds byte cap")
                 for line in parts:
-                    records.append(parse_event(line))
+                    records.append(parse_episode_event(line))
                     if self.count + len(records) > self.max_events:
                         raise ValueError("event count cap exceeded")
             self.tail, self.offset, self.digest, self.identity = (
@@ -127,6 +129,12 @@ class State:
         self.ended = False
 
     def ingest(self, event):
+        if (
+            type(event) is dict
+            and event.get("v") in (2, 4)
+            and event.get("event") == "observation"
+        ):
+            return
         e = parse_event(json.dumps(event).encode())
         p = self.latest
         if p and (

@@ -57,7 +57,7 @@ def host_from_schedule(row, run_hex, at, program_id):
     }
 
 
-def publish_scheduled(directory, selected, run_hex, at, program_id):
+def publish_scheduled(directory, selected, run_hex, at, program_id, box=None):
     """Publish one envelope from a ready origin schedule. Never admits."""
     from .next_use_envelope import publish_envelope
 
@@ -81,15 +81,16 @@ def publish_scheduled(directory, selected, run_hex, at, program_id):
     ):
         raise ValueError("origin schedule mismatch")
     return publish_envelope(
-        directory, selected, host_from_schedule(row, run_hex, at, program_id)
+        directory, selected, host_from_schedule(row, run_hex, at, program_id), box
     )
 
 
-def consider_next_use(directory):
+def consider_next_use(directory, box=None):
     """Host-built quiet selection from one matching schedule. No model call.
 
     Missing, extra, or unmatched schedules publish nothing. An existing
-    envelope is left alone. This does not admit.
+    envelope is left alone. This does not admit. ``box`` is the lock the
+    caller already holds; opening a second mailbox would fail.
     """
     from .history import HistoryState
     from .next_use_envelope import engine_run_hex
@@ -135,6 +136,7 @@ def consider_next_use(directory):
             engine_run_hex(directory),
             history.safe + 1,
             history.last_id + 1,
+            box,
         )
     except (OSError, ValueError):
         return None

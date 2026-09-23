@@ -131,3 +131,17 @@ class NextUseScheduleTests(unittest.TestCase):
             result = consider_next_use(root)
             self.assertEqual(result["status"], "envelope_published_not_admitted")
             self.assertIsNone(consider_next_use(root))
+
+    def test_whisper_reader_keeps_observation_rows_out_of_whisper_state(self):
+        from chaos.director import EventReader, State
+
+        raw = wire(*rows(("whistling", "sound_high")))
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "events.jsonl"
+            path.write_bytes(raw)
+            os.chmod(path, 0o600)
+            state = State()
+            for event in EventReader(path).read():
+                state.ingest(event)
+            self.assertNotEqual(state.latest["event"], "observation")
+
