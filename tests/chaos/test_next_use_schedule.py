@@ -144,4 +144,3 @@ class NextUseScheduleTests(unittest.TestCase):
             for event in EventReader(path).read():
                 state.ingest(event)
             self.assertNotEqual(state.latest["event"], "observation")
-
