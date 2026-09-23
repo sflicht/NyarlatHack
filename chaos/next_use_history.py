@@ -18,29 +18,34 @@ _FAMILIES = (
 )
 
 
-def _origin(state, operation, facts):
+def _latest(state, operation, facts):
     if type(state) is not HistoryState:
         raise ValueError("checked history required")
     if not state.enabled:
         return None
-    for group in state.episodes.get("episodes", ()):
-        if group.get("operation") != operation:
-            continue
-        for row in group.get("evidence", ()):
-            if (
-                row.get("fact") in facts
-                and type(row.get("root_seq")) is int
-                and type(row.get("notice_seq")) is int
-                and type(row.get("end_seq")) is int
-            ):
-                return dict(
-                    root_seq=row["root_seq"],
-                    notice_seq=row["notice_seq"],
-                    end_seq=row["end_seq"],
-                    fact=row["fact"],
-                )
-        return None
+    # Native ownership changes on a qualifying notice, not on completion.
+    # An unfinished newer notice must suppress the previous completed origin.
+    for row in reversed(state._next_use_roots):
+        if row["operation"] == operation and row["fact"] in facts:
+            return row
     return None
+
+
+def _origin(state, operation, facts):
+    row = _latest(state, operation, facts)
+    if row is None or not row["completed"]:
+        return None
+    return {key: row[key] for key in ("root_seq", "notice_seq", "end_seq", "fact")}
+
+
+def pending_families(state):
+    """Qualifying notices whose exact origin has not completed or blocked."""
+    return tuple(
+        family
+        for family, operation, facts, _ops in _FAMILIES
+        if (row := _latest(state, operation, facts)) is not None
+        and row["end_seq"] is None
+    )
 
 
 def eligible_families(state):

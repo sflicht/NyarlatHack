@@ -21,6 +21,8 @@ void chaos_next_use_safe_bind_origin(const struct chaos_next_use_origin_ref *,
                                     int) __attribute__((weak));
 static struct chaos_io io = { -1, -1, -1, 0, 0 };
 static int started, oldsanity, oldinsight;
+/* Fail closed for this process; schedule failure must not break observations. */
+static int next_use_schedule_failed;
 static int observations;
 static long observation_root, observation_turn;
 static int observation_operation;
@@ -167,7 +169,8 @@ void chaos_safe(const char *why) {
                      && u.chaos.safe > before ? io.dir : -1);
     if (started && !io.failed && !io.busy && u.chaos.safe > before) {
         const char *flag = getenv("NYARLATHACK_NEXT_USE_ADMIT");
-        if (flag && !strcmp(flag, "1") && chaos_next_use_on_safe) {
+        if (flag && !strcmp(flag, "1") && chaos_next_use_on_safe
+            && !next_use_schedule_failed) {
             next_use_bind_owned();
             (void)chaos_next_use_on_safe(
                 io.dir, u.chaos.safe, u.usanity, &u.chaos,
@@ -294,9 +297,9 @@ void chaos_observation_end(long root) {
                 && next_use_engine_fact(observation_operation,
                                         next_use_origin[slot].fact)) {
                 next_use_origin[slot].end = u.chaos.seq;
-                next_use_origin[slot].ready = 1;
                 next_use_origin[slot].pending = 0;
-                (void)chaos_next_use_note_origin(
+                next_use_origin[slot].ready = !next_use_schedule_failed
+                    && !io.failed && chaos_next_use_note_origin(
                     io.dir, slot == 0 ? "W" : "F",
                     next_use_origin[slot].move,
                     next_use_origin[slot].dnum,
@@ -304,6 +307,7 @@ void chaos_observation_end(long root) {
                     next_use_origin[slot].root,
                     next_use_origin[slot].notice,
                     next_use_origin[slot].end);
+                if (!next_use_origin[slot].ready) next_use_schedule_failed = 1;
             }
         }
     }
