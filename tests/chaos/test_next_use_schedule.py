@@ -63,3 +63,29 @@ class NextUseScheduleTests(unittest.TestCase):
         self.assertEqual(parsed["move"], 1)
         with self.assertRaises(ValueError):
             parse_schedule_line(raw.replace(b"\n", b""))
+
+    def test_publish_uses_schedule_move_and_refuses_when_absent(self):
+        import os
+
+        from chaos.next_use_schedule import publish_scheduled
+
+        selected = {
+            "family": "W",
+            "op": "quiet",
+            "origin": {
+                "root_seq": 10,
+                "notice_seq": 11,
+                "end_seq": 12,
+                "fact": "sound_high",
+            },
+        }
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            os.chmod(root, 0o700)
+            with self.assertRaises(ValueError):
+                publish_scheduled(root, selected, "ab" * 32, 2, 1)
+            self.note(root)
+            result = publish_scheduled(root, selected, "ab" * 32, 2, 1)
+            self.assertEqual(result["status"], "envelope_published_not_admitted")
+            envelope = json.loads((root / "next_use-envelope.json").read_text())
+            self.assertEqual(envelope["origin_refs"][0]["move"], 40)
