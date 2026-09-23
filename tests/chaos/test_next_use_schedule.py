@@ -95,7 +95,7 @@ class NextUseScheduleTests(unittest.TestCase):
             envelope = json.loads((root / "next_use-envelope.json").read_text())
             self.assertEqual(envelope["origin_refs"][0]["move"], 40)
 
-    def test_consider_publishes_quiet_from_matching_schedule_only(self):
+    def test_consider_publishes_declared_selection_from_matching_schedule_only(self):
         parser = argparse.ArgumentParser()
         sub = parser.add_subparsers(dest="command", required=True)
         add_parser(sub)
@@ -131,6 +131,8 @@ class NextUseScheduleTests(unittest.TestCase):
             os.chmod(schedule, 0o600)
             result = consider_next_use(root)
             self.assertEqual(result["status"], "envelope_published_not_admitted")
+            envelope = json.loads((root / "next_use-envelope.json").read_text())
+            self.assertIn('op="whistle_attention"', envelope["source"])
             self.assertIsNone(consider_next_use(root))
 
     def test_two_records_before_poll_still_publish_one(self):

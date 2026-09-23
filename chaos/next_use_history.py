@@ -26,7 +26,8 @@ def _origin(state, operation, facts):
     for group in state.episodes.get("episodes", ()):
         if group.get("operation") != operation:
             continue
-        for row in group.get("evidence", ()):
+        # The engine owns only the latest qualifying origin for each family.
+        for row in reversed(group.get("evidence", ())):
             if (
                 row.get("fact") in facts
                 and type(row.get("root_seq")) is int
