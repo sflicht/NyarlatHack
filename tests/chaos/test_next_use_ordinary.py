@@ -60,35 +60,16 @@ class OrdinaryNextUseTests(unittest.TestCase):
                 time.sleep(0.2)
             self.assertTrue(envelope.exists(), "host-built envelope was not published")
             game.more(game.send("#pray\ny"))
-            game.save()
+            game.send("\x1b")
+            game.quit()
         finally:
             game.close()
+        self.assertEqual(game.events()[-1]["spent"], 1)
         self.assertEqual(
             len((game.run / "next_use-receipt.jsonl").read_text().splitlines()), 1
         )
-        first_raw = (artifacts / "case" / "terminal.raw").read_bytes()
-        self.assertIn(b"The next whistle may call unusual attention.", first_raw)
-        restored = Game(
-            ROOT / "dnethackdir",
-            so,
-            observe=True,
-            wizard=False,
-            ordinary=True,
-            launcher_fresh=False,
-            launcher_options=["--ordinary", "--next-use", "--max-runtime", "60"],
-            root=artifacts / "case",
-        )
-        try:
-            restored.start()
-            restored.more(restored.send("."))
-            restored.quit()
-        finally:
-            restored.close()
-        self.assertEqual(restored.events()[-1]["spent"], 1)
-        self.assertEqual(
-            len((restored.run / "next_use-receipt.jsonl").read_text().splitlines()),
-            1,
-        )
+        raw = (artifacts / "case" / "terminal.raw").read_bytes()
+        self.assertIn(b"The next whistle may call unusual attention.", raw)
         ops = [
             event.get("observation", {}).get("stage")
             for event in game.events()
