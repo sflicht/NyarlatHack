@@ -923,6 +923,13 @@ int chaos_next_use_format_logical_id(unsigned long long birthday,
     return 1;
 }
 
+long chaos_next_use_pack_level(int dnum, int dlevel)
+{
+    if (dnum < 0 || dlevel < 1 || dnum > 2000 || dlevel > 200)
+        return 0;
+    return ((long)dnum + 1) * 100000L + dlevel;
+}
+
 const char *chaos_next_use_player_warning(const char *identifier)
 {
     if (!identifier) return 0;

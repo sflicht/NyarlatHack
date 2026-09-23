@@ -25,12 +25,19 @@ static struct {
     int qualifying;
     struct chaos_next_use_origin_ref origin;
 } origin_evidence[2];
+static long logical_run;
 static struct chaos_next_use_safe_result last_result;
+
+void chaos_next_use_safe_bind_logical(long run_token)
+{
+    logical_run = run_token > 0 ? run_token : 0;
+}
 
 void chaos_next_use_safe_reset_for_test(void)
 {
     settled = 0;
     owned_run_set = 0;
+    logical_run = 0;
     owned_run[0] = '\0';
     owned_warn = 0;
     owned_warn_opaque = 0;
@@ -316,7 +323,11 @@ int chaos_next_use_safe_try(const struct chaos_next_use_safe_request *request,
         }
         if (!chaos_next_use_runtime_install(&admitted, envelope.source,
                                             envelope.source_length,
-                                            envelope.source_sha256, 1, 1,
+                                            envelope.source_sha256,
+                                            logical_run,
+                                            chaos_next_use_pack_level(
+                                                request->level_dnum,
+                                                request->level_dlevel),
                                             origin_w, origin_w_deadline,
                                             origin_f, origin_f_deadline,
                                             envelope.variant, 0, 0)) {

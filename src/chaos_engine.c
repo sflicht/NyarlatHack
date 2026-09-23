@@ -15,6 +15,7 @@
 int chaos_next_use_on_safe(int, long, int, struct chaos_state *, int, int)
     __attribute__((weak));
 void chaos_next_use_safe_bind_run(const char *) __attribute__((weak));
+void chaos_next_use_safe_bind_logical(long) __attribute__((weak));
 void chaos_next_use_safe_bind_telegraph(int (*)(void *, const char *), void *)
     __attribute__((weak));
 void chaos_next_use_safe_bind_origin(const struct chaos_next_use_origin_ref *,
@@ -93,6 +94,12 @@ static void next_use_bind_owned(void)
         return;
     if (chaos_next_use_safe_bind_run)
         chaos_next_use_safe_bind_run(run);
+    if (chaos_next_use_safe_bind_logical) {
+        long token = 0;
+        if (u.ubirthday > 0 && (unsigned long long)u.ubirthday <= 2147483647ULL)
+            token = (long)u.ubirthday;
+        chaos_next_use_safe_bind_logical(token);
+    }
     if (chaos_next_use_safe_bind_telegraph)
         chaos_next_use_safe_bind_telegraph(next_use_warn, 0);
     if (!chaos_next_use_safe_bind_origin)

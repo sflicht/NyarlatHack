@@ -1355,6 +1355,10 @@ int chaos_next_use_snapshot_export(struct chaos_next_use_snapshot *out)
     out->state = runtime.state;
     out->delay_used = runtime.delay_used;
     out->callback_ordinal = runtime.callback_ordinal;
+    out->witnessed = runtime.witnessed;
+    out->attention_claimed = runtime.attention_claimed;
+    out->whistle_count = runtime.whistle_count;
+    out->fountain_count = runtime.fountain_count;
     out->admission_move = runtime.admission_move;
     out->program_expiry = runtime.program_expiry;
     out->delay_until = runtime.delay_until;
@@ -1384,7 +1388,7 @@ int chaos_next_use_snapshot_validate(const struct chaos_next_use_snapshot *in)
 {
     char actual[65];
 
-    if (!in || in->snapshot_v != CHAOS_NEXT_USE_SNAPSHOT_V)
+    if (!in || (in->snapshot_v != 2 && in->snapshot_v != 3))
         return 0;
     if (in->program_id <= 0 || in->source_length < 1
         || in->source_length > CHAOS_NEXT_USE_SOURCE_MAX)
@@ -1409,9 +1413,24 @@ int chaos_next_use_snapshot_validate(const struct chaos_next_use_snapshot *in)
     if ((in->slot_w == CHAOS_SLOT_W_PENDING && in->origin_w <= 0)
         || (in->slot_f == CHAOS_SLOT_F_PENDING && in->origin_f <= 0))
         return 0;
-    if ((in->slot_w == CHAOS_SLOT_W_PENDING
-         || in->slot_f == CHAOS_SLOT_F_PENDING)
-        && in->callback_ordinal > 0)
+    {
+        int used = (in->slot_w != CHAOS_SLOT_W_PENDING
+                    && in->slot_w != CHAOS_SLOT_W_UNDECLARED)
+                 + (in->slot_f != CHAOS_SLOT_F_PENDING
+                    && in->slot_f != CHAOS_SLOT_F_UNDECLARED);
+        if (in->callback_ordinal > used)
+            return 0;
+    }
+    if (in->snapshot_v == 3) {
+        if (in->witnessed < 0 || in->witnessed > 1
+            || in->attention_claimed < 0 || in->attention_claimed > 1
+            || in->whistle_count < 0 || in->whistle_count > 3
+            || in->fountain_count < 0 || in->fountain_count > 2)
+            return 0;
+    } else if (in->witnessed || in->attention_claimed
+               || in->whistle_count || in->fountain_count)
+        return 0;
+    if (in->run_token > 2147483647L || in->level_token > 2147483647L)
         return 0;
     if (in->w_runtime == CHAOS_W_RUNTIME_ARMED
         && (in->armed_m_id == 0 || in->activation_monstermoves < 0
@@ -1433,6 +1452,10 @@ int chaos_next_use_snapshot_import(const struct chaos_next_use_snapshot *in)
     live_runtime.state = in->state;
     live_runtime.delay_used = in->delay_used;
     live_runtime.callback_ordinal = in->callback_ordinal;
+    live_runtime.witnessed = in->witnessed;
+    live_runtime.attention_claimed = in->attention_claimed;
+    live_runtime.whistle_count = in->whistle_count;
+    live_runtime.fountain_count = in->fountain_count;
     live_runtime.admission_move = in->admission_move;
     live_runtime.program_expiry = in->program_expiry;
     live_runtime.delay_until = in->delay_until;
@@ -1449,14 +1472,19 @@ int chaos_next_use_snapshot_import(const struct chaos_next_use_snapshot *in)
     live_runtime.origin_f_deadline = in->origin_f_deadline;
     live_runtime.run_token = in->run_token;
     live_runtime.level_token = in->level_token;
-    live_runtime.current_run_token = in->run_token;
-    live_runtime.current_level_token = in->level_token;
+    live_runtime.current_run_token = 0;
+    live_runtime.current_level_token = 0;
     live_runtime.source_length = in->source_length;
     copy_hash(live_runtime.source_sha256, in->source_sha256);
     memcpy(live_runtime.source, in->source, in->source_length);
     live_runtime.source[in->source_length] = '\0';
     replay_runtime = live_runtime;
     return 1;
+}
+
+long chaos_next_use_runtime_run_token(void)
+{
+    return live_runtime.run_token;
 }
 
 static int snapshot_io_all(int fd, void *buf, size_t n, int writing)
@@ -1470,12 +1498,12 @@ static int snapshot_io_all(int fd, void *buf, size_t n, int writing)
 
 int chaos_next_use_snapshot_write(int fd, const struct chaos_next_use_snapshot *in)
 {
-    int32_t header[26];
+    int32_t header[30];
 
     if (fd < 0 || !chaos_next_use_snapshot_validate(in))
         return 0;
     memset(header, 0, sizeof header);
-    header[0] = CHAOS_NEXT_USE_SNAPSHOT_V;
+    header[0] = in->snapshot_v;
     header[1] = in->program_id;
     header[2] = in->phase;
     header[3] = in->slot_w;
@@ -1501,7 +1529,13 @@ int chaos_next_use_snapshot_write(int fd, const struct chaos_next_use_snapshot *
     header[23] = (int32_t)in->level_token;
     header[24] = (int32_t)in->activation_monstermoves;
     header[25] = (int32_t)in->armed_root;
-    if (!snapshot_io_all(fd, header, sizeof header, 1))
+    header[26] = in->witnessed;
+    header[27] = in->attention_claimed;
+    header[28] = in->whistle_count;
+    header[29] = in->fountain_count;
+    if (!snapshot_io_all(fd, header,
+                         in->snapshot_v == 3 ? sizeof header : 26 * sizeof (int32_t),
+                         1))
         return 0;
     if (!snapshot_io_all(fd, (void *)in->source_sha256, 65, 1))
         return 0;
@@ -1548,6 +1582,19 @@ int chaos_next_use_snapshot_read(int fd, struct chaos_next_use_snapshot *out)
     snap.level_token = header[23];
     snap.activation_monstermoves = header[24];
     snap.armed_root = header[25];
+    if (snap.snapshot_v == 3) {
+        int32_t extra[4];
+        if (!snapshot_io_all(fd, extra, sizeof extra, 0))
+            return 0;
+        snap.witnessed = extra[0];
+        snap.attention_claimed = extra[1];
+        snap.whistle_count = extra[2];
+        snap.fountain_count = extra[3];
+    } else if (snap.snapshot_v == 2 && snap.callback_ordinal > 0) {
+        snap.attention_claimed = 1;
+        snap.witnessed = 1;
+        snap.snapshot_v = 3;
+    }
     if (!snapshot_io_all(fd, snap.source_sha256, 65, 0))
         return 0;
     if (!snapshot_io_all(fd, snap.source, snap.source_length, 0))
@@ -1566,10 +1613,14 @@ void chaos_next_use_save(int fd)
     int present = 0;
 
     bwrite(fd, (genericptr_t)magic, 4);
-    if (chaos_next_use_snapshot_export(&snap))
-        present = 1;
+    if (live_runtime.program_id > 0 && live_runtime.phase != 0) {
+        if (chaos_next_use_snapshot_export(&snap))
+            present = 1;
+        else
+            present = -1;
+    }
     bwrite(fd, (genericptr_t)&present, sizeof present);
-    if (present)
+    if (present == 1)
         (void)chaos_next_use_snapshot_write(fd, &snap);
 }
 

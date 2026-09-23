@@ -185,6 +185,55 @@ static int install_pending_f(void)
                                           1, 1, 0, 0, 10, 110, 0, 0, 1);
 }
 
+static int install_wf(const char *lua)
+{
+    struct chaos_next_use_envelope envelope;
+    struct chaos_next_use_admission source, admitted;
+    struct chaos_next_use_attempt_gate gate;
+    char canonical[CHAOS_NEXT_USE_ENVELOPE_MAX + 1];
+    char source_sha[65], raw[CHAOS_NEXT_USE_ENVELOPE_MAX + 1];
+    char escaped[CHAOS_NEXT_USE_SOURCE_MAX * 2];
+    unsigned char digest[32];
+    size_t canonical_length = 0, lua_len;
+    int n;
+
+    lua_len = strlen(lua);
+    memset(&source, 0, sizeof source);
+    memset(&admitted, 0, sizeof admitted);
+    chaos_state_init(&source.budget_state);
+    source.program.phase = CHAOS_ATTEMPT_OPEN;
+    gate.phase = CHAOS_ATTEMPT_OPEN;
+    gate.reason = 0;
+    if (!json_escape(lua, escaped, sizeof escaped))
+        return 0;
+    if (chaos_next_use_sha256(lua, lua_len, digest) != CHAOS_NEXT_USE_OK)
+        return 0;
+    digest_hex(digest, source_sha);
+    n = snprintf(raw, sizeof raw,
+        "{\"at\":7,\"cost\":2,\"id\":1,\"next_use_program_v\":2,"
+        "\"operations\":[\"W\",\"F\"],\"origin_refs\":["
+        "{\"end_seq\":12,\"fact\":\"ordinary_whistle\",\"family\":\"W\","
+        "\"level_dlevel\":1,\"level_dnum\":0,\"move\":10,"
+        "\"notice_seq\":11,\"root\":10,\"run\":\"%s\"},"
+        "{\"end_seq\":22,\"fact\":\"water_refreshed\",\"family\":\"F\","
+        "\"level_dlevel\":1,\"level_dnum\":0,\"move\":10,"
+        "\"notice_seq\":21,\"root\":20,\"run\":\"%s\"}],"
+        "\"source\":\"%s\",\"source_sha256\":\"%s\","
+        "\"telegraph\":\"next-use-v2-WF\",\"ttl\":100,\"variant\":0}",
+        run_hex, run_hex, escaped, source_sha);
+    if (n < 1 || (size_t)n >= sizeof raw) return 0;
+    if (chaos_next_use_jcs(raw, (size_t)n, canonical,
+                           CHAOS_NEXT_USE_ENVELOPE_MAX + 1, &canonical_length)
+        != CHAOS_NEXT_USE_OK) return 0;
+    if (chaos_next_use_parse_envelope(canonical, canonical_length, &envelope)
+        != CHAOS_NEXT_USE_OK) return 0;
+    if (chaos_next_use_admit(&admitted, &source, &gate, &envelope, canonical,
+                             canonical_length, 0, 40, 1, receipt_ok, NULL)
+        != CHAOS_NEXT_USE_ADMISSION_OK) return 0;
+    return chaos_next_use_runtime_install(&admitted, lua, lua_len, source_sha,
+                                          9, 4, 10, 110, 20, 120, 0, 1, 1);
+}
+
 static int install_lua(const char *lua)
 {
     struct chaos_next_use_envelope envelope;
@@ -638,6 +687,70 @@ int main(int argc, char **argv)
                && live.activation_monstermoves == 40
                && chaos_next_use_whistle_decision_ready(7)
                && !chaos_next_use_whistle_decision_ready(8) ? 0 : 1;
+    }
+    if (!strcmp(mode, "partial_wf")) {
+        struct chaos_fountain_token token;
+        FILE *fp;
+        int fd, restored;
+
+        chaos_next_use_runtime_reset();
+        installed = install_wf(quiet_lua);
+        monstermoves = 40;
+        memset(&token, 0, sizeof token);
+        chaos_next_use_on_action(CHAOS_NEXT_USE_FAMILY_W, 10, &token);
+        exported = chaos_next_use_snapshot_export(&snap);
+        print_snap("after_w_used", exported, &snap);
+        fp = tmpfile();
+        if (!fp) return 1;
+        fd = fileno(fp);
+        chaos_next_use_save(fd);
+        chaos_next_use_runtime_reset();
+        if (fseek(fp, 0, SEEK_SET)) return 1;
+        restored = chaos_next_use_restore(fd);
+        fclose(fp);
+        exported = chaos_next_use_snapshot_export(&live);
+        print_snap("after_partial_restore", restored && exported, &live);
+        printf("{\"tag\":\"partial_wf\",\"callback\":%d,\"run\":%ld,\"level\":%ld,"
+               "\"whistles\":%d,\"fountains\":%d,\"attention\":%d}\n",
+               live.callback_ordinal, live.run_token, live.level_token,
+               live.whistle_count, live.fountain_count, live.attention_claimed);
+        return installed && restored && exported
+               && live.slot_w == CHAOS_SLOT_W_CONSUMED_QUIET
+               && live.slot_f == CHAOS_SLOT_F_PENDING
+               && live.callback_ordinal == 1
+               && live.run_token == 9 && live.level_token == 4 ? 0 : 1;
+    }
+    if (!strcmp(mode, "partial_fw")) {
+        struct chaos_fountain_token token;
+        FILE *fp;
+        int fd, restored;
+
+        chaos_next_use_runtime_reset();
+        installed = install_wf(quiet_lua);
+        monstermoves = 40;
+        memset(&token, 0, sizeof token);
+        chaos_next_use_on_action(CHAOS_NEXT_USE_FAMILY_F, 20, &token);
+        exported = chaos_next_use_snapshot_export(&snap);
+        print_snap("after_w_used", exported, &snap);
+        fp = tmpfile();
+        if (!fp) return 1;
+        fd = fileno(fp);
+        chaos_next_use_save(fd);
+        chaos_next_use_runtime_reset();
+        if (fseek(fp, 0, SEEK_SET)) return 1;
+        restored = chaos_next_use_restore(fd);
+        fclose(fp);
+        exported = chaos_next_use_snapshot_export(&live);
+        print_snap("after_partial_restore", restored && exported, &live);
+        printf("{\"tag\":\"partial_fw\",\"callback\":%d,\"run\":%ld,\"level\":%ld,"
+               "\"whistles\":%d,\"fountains\":%d,\"attention\":%d}\n",
+               live.callback_ordinal, live.run_token, live.level_token,
+               live.whistle_count, live.fountain_count, live.attention_claimed);
+        return installed && restored && exported
+               && live.slot_f == CHAOS_SLOT_F_CONSUMED_QUIET
+               && live.slot_w == CHAOS_SLOT_W_PENDING
+               && live.callback_ordinal == 1
+               && live.run_token == 9 && live.level_token == 4 ? 0 : 1;
     }
     return 2;
 }

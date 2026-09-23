@@ -166,6 +166,10 @@ class NextUseSafeAdmitTests(unittest.TestCase):
         self.assertEqual(row["second_admitted"], 0)
         self.assertEqual(row["second_telegraph"], 0)
         self.assertEqual(row["second_spent"], 0)
+        self.assertEqual(row["run_token"], 1750000001)
+        self.assertEqual(row["level_token"], 100001)
+        self.assertNotEqual(row["run_token"], 1)
+        self.assertNotEqual(row["level_token"], 1)
 
     def test_disabled_does_not_load(self):
         row = self.run_case(self.publish(), enabled=0)

@@ -104,6 +104,7 @@ int chaos_next_use_sha256(const void *, size_t,
                           unsigned char [CHAOS_NEXT_USE_SHA256_BYTES]);
 int chaos_next_use_format_logical_id(unsigned long long,
                                      char [CHAOS_NEXT_USE_LOGICAL_HEX + 1]);
+long chaos_next_use_pack_level(int dnum, int dlevel);
 const char *chaos_next_use_player_warning(const char *identifier);
 
 #endif

@@ -201,6 +201,32 @@ class NextUseSnapshotTests(unittest.TestCase):
         self.assertEqual(window["wrong"], 0)
         self.assertEqual(window["activation"], 40)
 
+    def test_partial_wf_save_keeps_the_other_slot(self):
+        rows = self.run_mode("partial_wf")
+        after = next(row for row in rows if row["tag"] == "after_w_used")
+        restored = next(row for row in rows if row["tag"] == "after_partial_restore")
+        detail = next(row for row in rows if row["tag"] == "partial_wf")
+        self.assertEqual(after["ok"], 1)
+        self.assertEqual(after["slot_w"], 3)
+        self.assertEqual(after["slot_f"], 1)
+        self.assertEqual(restored["ok"], 1)
+        self.assertEqual(restored["slot_f"], 1)
+        self.assertEqual(detail["callback"], 1)
+        self.assertEqual(detail["run"], 9)
+        self.assertEqual(detail["level"], 4)
+        self.assertEqual(detail["whistles"], 1)
+        self.assertEqual(detail["fountains"], 1)
+        self.assertEqual(detail["attention"], 0)
+
+    def test_partial_fw_save_keeps_the_other_slot(self):
+        rows = self.run_mode("partial_fw")
+        restored = next(row for row in rows if row["tag"] == "after_partial_restore")
+        detail = next(row for row in rows if row["tag"] == "partial_fw")
+        self.assertEqual(restored["ok"], 1)
+        self.assertEqual(restored["slot_w"], 1)
+        self.assertEqual(restored["slot_f"], 4)
+        self.assertEqual(detail["callback"], 1)
+
 
 if __name__ == "__main__":
     unittest.main()

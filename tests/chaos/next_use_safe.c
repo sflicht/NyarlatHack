@@ -1,6 +1,8 @@
 /* ENGINE-UNIT: opt-in safe-point admission. Not linked-game gameplay. */
 #include "hack.h"
 #include "chaos_next_use_safe.h"
+#include "chaos_next_use_runtime.h"
+#include "chaos_next_use.h"
 
 #include <fcntl.h>
 #include <stdarg.h>
@@ -166,6 +168,7 @@ int main(int argc, char **argv)
                     CHAOS_NEXT_USE_FAMILY_F, 21, 22);
     }
     if (on_safe) {
+        chaos_next_use_safe_bind_logical(1750000001L);
         if (strcmp(run, "none"))
             chaos_next_use_safe_bind_run(run);
         if (!strcmp(telegraph_mode, "ok"))
@@ -186,6 +189,7 @@ int main(int argc, char **argv)
     req.run_hex = strcmp(run, "none") ? run : NULL;
     req.sanity = 50;
     req.budget = &budget;
+    chaos_next_use_safe_bind_logical(1750000001L);
     if (!strcmp(telegraph_mode, "ok")) {
         req.telegraph = telegraph_ok;
         req.telegraph_opaque = &telegraphs;
@@ -223,7 +227,8 @@ int main(int argc, char **argv)
            "\"caller_spent_before\":%d,\"caller_spent\":%d,"
            "\"second_caller_spent\":%d,\"telegraph_spent\":%d,"
            "\"budget_valid\":%d,\"reserved\":%d,\"hunger_value\":%d,"
-           "\"hunger_cost\":%d,\"hunger_expires\":%ld}\n",
+           "\"hunger_cost\":%d,\"hunger_expires\":%ld,\"run_token\":%ld,"
+           "\"level_token\":%ld}\n",
            first.loaded, first.rejected, first.admitted, first.active,
            first.pending, first.telegraph_count, first.spent,
            second.admitted, second.telegraph_count, second.spent,
@@ -231,6 +236,8 @@ int main(int argc, char **argv)
            chaos_state_valid(&budget), budget.reserved,
            budget.effects[CHAOS_HUNGER].value,
            budget.effects[CHAOS_HUNGER].cost,
-           budget.effects[CHAOS_HUNGER].expires);
+           budget.effects[CHAOS_HUNGER].expires,
+           chaos_next_use_runtime_run_token(),
+           chaos_next_use_pack_level(dnum, dlevel));
     return 0;
 }
