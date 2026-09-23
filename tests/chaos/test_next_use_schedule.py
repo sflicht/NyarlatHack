@@ -175,6 +175,66 @@ class NextUseScheduleTests(unittest.TestCase):
             envelope = json.loads((root / "next_use-envelope.json").read_text())
             self.assertEqual(envelope["origin_refs"][0]["root"], first["root"])
 
+    def test_incomplete_tail_does_not_block_the_complete_row(self):
+        raw = wire(*rows(("whistling", "sound_high")))
+        history = HistoryState(raw)
+        origin = next(
+            row["origin"] for row in next_use_menu(history) if row["op"] == "quiet"
+        )
+        payload = {
+            "next_use_schedule_v": 1,
+            "family": "W",
+            "move": 40,
+            "level_dnum": 0,
+            "level_dlevel": 1,
+            "root": origin["root_seq"],
+            "notice_seq": origin["notice_seq"],
+            "end_seq": origin["end_seq"],
+        }
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            os.chmod(root, 0o700)
+            events = root / "events.jsonl"
+            events.write_bytes(raw)
+            os.chmod(events, 0o600)
+            schedule = root / "next_use-schedule.jsonl"
+            schedule.write_bytes(
+                (json.dumps(payload, separators=(",", ":")) + "\n").encode()
+                + b'{"next_use_schedule_v":1,"family":"F"'
+            )
+            os.chmod(schedule, 0o600)
+            result = consider_next_use(root)
+            self.assertIsNotNone(result)
+            self.assertEqual(result["status"], "envelope_published_not_admitted")
+
+    def test_writer_refuses_a_fifo(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            os.chmod(root, 0o700)
+            exe = root / "note"
+            subprocess.run(
+                [
+                    "cc",
+                    "-Wall",
+                    "-Wextra",
+                    "-Werror",
+                    "-I" + str(ROOT / "include"),
+                    str(ROOT / "tests/chaos/next_use_schedule.c"),
+                    "-o",
+                    str(exe),
+                ],
+                check=True,
+                timeout=20,
+            )
+            result = subprocess.run(
+                [str(exe), str(root), "fifo"],
+                capture_output=True,
+                text=True,
+                timeout=5,
+            )
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(json.loads(result.stdout)["status"], 0)
+
     def test_whisper_reader_keeps_observation_rows_out_of_whisper_state(self):
         from chaos.director import EventReader, State
 
