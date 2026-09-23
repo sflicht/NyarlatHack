@@ -5,6 +5,7 @@ import os
 from pathlib import Path
 import subprocess
 import tempfile
+import time
 import unittest
 from unittest.mock import patch
 
@@ -338,6 +339,117 @@ class ScheduleProductionFlowTests(unittest.TestCase):
         return test_next_use_safe.NextUseSafeAdmitTests.run_case(
             self, str(root), **options
         )
+
+    def paused_producer(self, root, commands, lines):
+        env = {k: v for k, v in os.environ.items() if not k.startswith("NYARLATHACK_")}
+        env.update(
+            NYARLATHACK_RUN_DIR=str(root),
+            NYARLATHACK_OBSERVATIONS="1",
+            NYARLATHACK_NEXT_USE_ADMIT="1",
+        )
+        proc = subprocess.Popen(
+            [str(self.producer)],
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            env=env,
+        )
+
+        def cleanup():
+            if proc.poll() is None:
+                proc.kill()
+            proc.communicate(timeout=5)
+
+        self.addCleanup(cleanup)
+        proc.stdin.write("schedule start " + commands + "\n")
+        proc.stdin.flush()
+        path = root / "events.jsonl"
+        deadline = time.monotonic() + 5
+        while not path.exists() or path.read_bytes().count(b"\n") != lines:
+            if proc.poll() is not None or time.monotonic() >= deadline:
+                self.fail("real producer did not reach the expected prefix")
+            time.sleep(0.005)
+        return proc
+
+    def test_latest_qualifying_fountain_is_not_a_sampled_summary(self):
+        from chaos.next_use_compose import compose
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            commands = "begin 2 arm 2 6 take deliver end " * 3
+            commands += "begin 2 arm 2 7 take deliver end"
+            proc = self.paused_producer(root, commands, 16)
+            consumer = schedule.NextUseScheduler(root, seed=0)
+            self.assertEqual(
+                consumer.poll()["status"], "envelope_published_not_admitted"
+            )
+            payload = json.loads((root / "next_use-envelope.json").read_bytes())
+            ref = payload["origin_refs"][0]
+            self.assertEqual(
+                (ref["family"], ref["root"], ref["notice_seq"], ref["end_seq"]),
+                ("F", 11, 12, 13),
+            )
+            selected = next(
+                r
+                for r in next_use_menu(consumer.history)
+                if r["op"] == "fountain_refresh"
+            )
+            self.assertEqual(payload["source"], compose(selected)["source"])
+            # Native ownership is inspected independently, after publication.
+            out, err = proc.communicate("safe\n", timeout=5)
+            self.assertEqual((proc.returncode, err), (0, ""))
+            self.assertIn("owned 11 12 13 1", out)
+            result = self.admit(root, "fff")
+            self.assertEqual(
+                (result["admitted"], result["telegraph"], result["caller_spent"]),
+                (1, 1, 1),
+            )
+            self.assertEqual(
+                (
+                    result["second_admitted"],
+                    result["second_telegraph"],
+                    result["second_caller_spent"],
+                ),
+                (0, 0, 1),
+            )
+
+    def test_new_qualifying_notice_waits_for_its_own_completion(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            proc = self.paused_producer(
+                root, "begin 1 arm 1 1 take deliver end begin 1 arm 1 3 take deliver", 9
+            )
+            consumer = schedule.NextUseScheduler(root, seed=0)
+            self.assertEqual(consumer.poll()["status"], "pending")
+            self.assertFalse((root / "next_use-envelope.json").exists())
+            self.assertEqual(consumer.selector.attempts, 0)
+            proc.stdin.write("end\n")
+            proc.stdin.flush()
+            path = root / "events.jsonl"
+            deadline = time.monotonic() + 5
+            while (
+                path.read_bytes().count(b"\n") != 10
+                or (root / "next_use-schedule.jsonl").read_bytes().count(b"\n") != 2
+            ):
+                if time.monotonic() >= deadline:
+                    self.fail("real producer did not finish the pending origin")
+                time.sleep(0.005)
+            self.assertEqual(
+                consumer.poll()["status"], "envelope_published_not_admitted"
+            )
+            payload = json.loads((root / "next_use-envelope.json").read_bytes())
+            self.assertEqual(payload["origin_refs"][0]["root"], 8)
+            out, err = proc.communicate("safe\n", timeout=5)
+            self.assertEqual((proc.returncode, err), (0, ""))
+            self.assertIn("owned 8 9 10 1", out)
+            result = self.admit(root, "ww")
+            self.assertEqual(
+                (result["admitted"], result["telegraph"], result["caller_spent"]),
+                (1, 1, 1),
+            )
+            self.assertEqual(consumer.selector.attempts, 1)
+            self.assertEqual(consumer.poll()["status"], "already_published")
 
     def test_real_engine_multiple_origins_publish_and_admit_exactly_once(self):
         from chaos.next_use_compose import compose

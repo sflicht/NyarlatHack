@@ -8,7 +8,7 @@ from .director import EventReader, Mailbox
 from .episodes import parse_episode_event
 from .history import HistoryState, public_context
 from .history_choice import RandomHistoryBackend
-from .next_use_history import next_use_menu
+from .next_use_history import next_use_menu, pending_families
 from .protocol import strict_json
 
 _KEYS = frozenset(
@@ -260,7 +260,11 @@ class NextUseScheduler:
                 )
                 self.terminal = "already_published"
                 return result
-            return {"status": "pending" if self.schedule.tail else "no_eligible_origin"}
+            return {
+                "status": "pending"
+                if self.schedule.tail or pending_families(history)
+                else "no_eligible_origin"
+            }
 
 
 def consider_next_use(directory, box=None):
