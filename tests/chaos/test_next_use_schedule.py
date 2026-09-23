@@ -124,13 +124,56 @@ class NextUseScheduleTests(unittest.TestCase):
             root = Path(tmp)
             os.chmod(root, 0o700)
             (root / "events.jsonl").write_bytes(raw)
+            os.chmod(root / "events.jsonl", 0o600)
             self.assertIsNone(consider_next_use(root))
-            (root / "next_use-schedule.jsonl").write_text(
-                json.dumps(payload, separators=(",", ":")) + "\n"
-            )
+            schedule = root / "next_use-schedule.jsonl"
+            schedule.write_text(json.dumps(payload, separators=(",", ":")) + "\n")
+            os.chmod(schedule, 0o600)
             result = consider_next_use(root)
             self.assertEqual(result["status"], "envelope_published_not_admitted")
             self.assertIsNone(consider_next_use(root))
+
+    def test_two_records_before_poll_still_publish_one(self):
+        raw = wire(*rows(("whistling", "sound_high")))
+        history = HistoryState(raw)
+        origin = next(
+            row["origin"] for row in next_use_menu(history) if row["op"] == "quiet"
+        )
+        first = {
+            "next_use_schedule_v": 1,
+            "family": "W",
+            "move": 40,
+            "level_dnum": 0,
+            "level_dlevel": 1,
+            "root": origin["root_seq"],
+            "notice_seq": origin["notice_seq"],
+            "end_seq": origin["end_seq"],
+        }
+        extra = dict(
+            first,
+            root=origin["root_seq"] + 50,
+            notice_seq=origin["notice_seq"] + 50,
+            end_seq=origin["end_seq"] + 50,
+        )
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            os.chmod(root, 0o700)
+            events = root / "events.jsonl"
+            events.write_bytes(raw)
+            os.chmod(events, 0o600)
+            schedule = root / "next_use-schedule.jsonl"
+            schedule.write_text(
+                json.dumps(first, separators=(",", ":"))
+                + "\n"
+                + json.dumps(extra, separators=(",", ":"))
+                + "\n"
+            )
+            os.chmod(schedule, 0o600)
+            result = consider_next_use(root)
+            self.assertIsNotNone(result)
+            self.assertEqual(result["status"], "envelope_published_not_admitted")
+            envelope = json.loads((root / "next_use-envelope.json").read_text())
+            self.assertEqual(envelope["origin_refs"][0]["root"], first["root"])
 
     def test_whisper_reader_keeps_observation_rows_out_of_whisper_state(self):
         from chaos.director import EventReader, State

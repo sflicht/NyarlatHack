@@ -7,6 +7,7 @@
 #include <fcntl.h>
 #include <stdio.h>
 #include <string.h>
+#include <sys/stat.h>
 #include <unistd.h>
 
 static inline int chaos_next_use_note_origin(int dir, const char *family,
@@ -30,8 +31,17 @@ static inline int chaos_next_use_note_origin(int dir, const char *family,
                  family, move, dnum, dlevel, root, notice, end);
     if (n < 1 || (size_t)n >= sizeof line) return 0;
     fd = openat(dir, "next_use-schedule.jsonl",
-                O_WRONLY | O_CREAT | O_APPEND | O_NOFOLLOW | O_CLOEXEC, 0600);
+                O_WRONLY | O_CREAT | O_APPEND | O_NOFOLLOW | O_NONBLOCK | O_CLOEXEC,
+                0600);
     if (fd < 0) return 0;
+    {
+        struct stat st;
+        if (fstat(fd, &st) || !S_ISREG(st.st_mode) || st.st_nlink != 1
+            || st.st_size > 16384) {
+            close(fd);
+            return 0;
+        }
+    }
     wrote = write(fd, line, (size_t)n);
     if (wrote != n || fsync(fd)) {
         close(fd);

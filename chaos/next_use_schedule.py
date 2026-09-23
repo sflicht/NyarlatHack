@@ -1,6 +1,7 @@
 """Read a bounded next-use origin schedule. Not an observation event."""
 
 import json
+import os
 from pathlib import Path
 
 _KEYS = frozenset(
@@ -15,6 +16,9 @@ _KEYS = frozenset(
         "end_seq",
     )
 )
+_MAX_BYTES = 16384
+_MAX_LINE = 256
+_MAX_RECORDS = 32
 
 
 def parse_schedule_line(raw):
@@ -38,6 +42,36 @@ def parse_schedule_line(raw):
     ):
         raise ValueError("schedule bounds")
     return row
+
+
+def read_schedule_rows(path):
+    """Private bounded schedule lines. An incomplete tail is not a row."""
+    from .director import secure_open
+
+    fd = secure_open(path)
+    with os.fdopen(fd, "rb") as handle:
+        size = os.fstat(handle.fileno()).st_size
+        if size > _MAX_BYTES:
+            raise ValueError("schedule byte cap")
+        raw = handle.read(size + 1)
+    if len(raw) != size:
+        raise ValueError("schedule changed while reading")
+    if raw and not raw.endswith(b"\n"):
+        tail = raw.rsplit(b"\n", 1)[-1]
+        if len(tail) > _MAX_LINE:
+            raise ValueError("schedule tail")
+        raw = raw[: len(raw) - len(tail)]
+    lines = raw.splitlines(keepends=True) if raw else []
+    if len(lines) > _MAX_RECORDS:
+        raise ValueError("schedule record cap")
+    rows = [parse_schedule_line(line) for line in lines]
+    seen = set()
+    for row in rows:
+        identity = (row["family"], row["root"], row["notice_seq"], row["end_seq"])
+        if identity in seen:
+            raise ValueError("schedule duplicate")
+        seen.add(identity)
+    return rows
 
 
 def host_from_schedule(row, run_hex, at, program_id):
@@ -66,31 +100,30 @@ def publish_scheduled(directory, selected, run_hex, at, program_id, box=None):
         raise ValueError("origin schedule missing")
     family = selected.get("family") if type(selected) is dict else None
     origin = selected.get("origin") if type(selected) is dict else None
-    matches = []
-    for line in path.read_bytes().splitlines(keepends=True):
-        row = parse_schedule_line(line)
-        if row["family"] == family:
-            matches.append(row)
-    if len(matches) != 1 or type(origin) is not dict:
+    if type(origin) is not dict:
+        raise ValueError("origin schedule mismatch")
+    matches = [
+        row
+        for row in read_schedule_rows(path)
+        if row["family"] == family
+        and row["root"] == origin.get("root_seq")
+        and row["notice_seq"] == origin.get("notice_seq")
+        and row["end_seq"] == origin.get("end_seq")
+    ]
+    if len(matches) != 1:
         raise ValueError("origin schedule mismatch")
     row = matches[0]
-    if (
-        row["root"] != origin.get("root_seq")
-        or row["notice_seq"] != origin.get("notice_seq")
-        or row["end_seq"] != origin.get("end_seq")
-    ):
-        raise ValueError("origin schedule mismatch")
     return publish_envelope(
         directory, selected, host_from_schedule(row, run_hex, at, program_id), box
     )
 
 
 def consider_next_use(directory, box=None):
-    """Host-built quiet selection from one matching schedule. No model call.
+    """Publish one envelope from the earliest matching origin. No model call.
 
-    Missing, extra, or unmatched schedules publish nothing. An existing
-    envelope is left alone. This does not admit. ``box`` is the lock the
-    caller already holds; opening a second mailbox would fail.
+    Extra unmatched records do not block publication. A duplicate identity,
+    a malformed complete line, or an existing envelope publishes nothing.
+    ``box`` is the lock the caller already holds.
     """
     from .history import HistoryState, public_context
     from .history_choice import RandomHistoryBackend
@@ -106,19 +139,25 @@ def consider_next_use(directory, box=None):
         return None
     try:
         history = HistoryState(events.read_bytes())
-        schedules = [
-            parse_schedule_line(line)
-            for line in schedule_path.read_bytes().splitlines(keepends=True)
-        ]
+        schedules = read_schedule_rows(schedule_path)
     except (OSError, ValueError):
         return None
-    if (
-        len(schedules) != 1
-        or history.safe >= 2147483647
-        or history.last_id >= 2147483647
-    ):
+    if history.safe >= 2147483647 or history.last_id >= 2147483647 or not schedules:
         return None
-    schedule = schedules[0]
+    menu_rows = list(next_use_menu(history))
+    schedule = None
+    for candidate in schedules:
+        if any(
+            row["family"] == candidate["family"]
+            and row["origin"]["root_seq"] == candidate["root"]
+            and row["origin"]["notice_seq"] == candidate["notice_seq"]
+            and row["origin"]["end_seq"] == candidate["end_seq"]
+            for row in menu_rows
+        ):
+            schedule = candidate
+            break
+    if schedule is None:
+        return None
     menu = [
         row
         for row in next_use_menu(history)
