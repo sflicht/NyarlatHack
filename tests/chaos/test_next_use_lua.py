@@ -100,3 +100,10 @@ class NextUseLuaTests(unittest.TestCase):
         self.assertEqual(first["state"], 1)
         self.assertEqual(second["status"], 0)
         self.assertEqual(second["state"], 2)
+
+    def test_two_fixtures_branch_without_a_c_edit(self):
+        rows = {row["tag"]: row for row in self.run_case("branch-fixtures")}
+        self.assertEqual(rows["trigger_w"], {"tag": "trigger_w", "status": 0, "op": 0})
+        self.assertEqual(rows["trigger_f"], {"tag": "trigger_f", "status": 0, "op": 3})
+        self.assertEqual(rows["state_0"], {"tag": "state_0", "status": 0, "op": 2})
+        self.assertEqual(rows["state_2"], {"tag": "state_2", "status": 0, "op": 0})

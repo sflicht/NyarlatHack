@@ -146,5 +146,36 @@ int main(int argc, char **argv)
         print_intent(status, &intent);
         return 0;
     }
+    if (!strcmp(argv[1], "branch-fixtures")) {
+        const char *by_trigger =
+            "return {on_action=function(c) "
+            "if c.trigger==[[W]] then "
+            "return {next_use_intent_v=2, op=[[quiet]], state=0} end "
+            "return {next_use_intent_v=2, op=[[fountain_refresh]], state=0} end}";
+        const char *by_state =
+            "return {on_action=function(c) "
+            "if c.state==0 then "
+            "return {next_use_intent_v=2, op=[[whistle_attention]], state=0} end "
+            "return {next_use_intent_v=2, op=[[quiet]], state=c.state} end}";
+        context.trigger = CHAOS_NEXT_USE_FAMILY_W;
+        context.state = 0;
+        status = chaos_lua_next_use_on_action(by_trigger, strlen(by_trigger),
+                                              &context, &intent);
+        printf("{\"tag\":\"trigger_w\",\"status\":%d,\"op\":%d}\n", status, intent.op);
+        context.trigger = CHAOS_NEXT_USE_FAMILY_F;
+        status = chaos_lua_next_use_on_action(by_trigger, strlen(by_trigger),
+                                              &context, &intent);
+        printf("{\"tag\":\"trigger_f\",\"status\":%d,\"op\":%d}\n", status, intent.op);
+        context.trigger = CHAOS_NEXT_USE_FAMILY_W;
+        context.state = 0;
+        status = chaos_lua_next_use_on_action(by_state, strlen(by_state),
+                                              &context, &intent);
+        printf("{\"tag\":\"state_0\",\"status\":%d,\"op\":%d}\n", status, intent.op);
+        context.state = 2;
+        status = chaos_lua_next_use_on_action(by_state, strlen(by_state),
+                                              &context, &intent);
+        printf("{\"tag\":\"state_2\",\"status\":%d,\"op\":%d}\n", status, intent.op);
+        return status == 0 ? 0 : 1;
+    }
     return 2;
 }
