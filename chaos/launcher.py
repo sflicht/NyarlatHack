@@ -114,7 +114,7 @@ def add_parser(sub):
     p.add_argument(
         "--next-use",
         action="store_true",
-        help="host-built next-use selection from a ready origin schedule; no model call",
+        help="host-built next-use selection from a ready origin schedule; RandomHistoryBackend seed 0; no model call",
     )
     p.add_argument(
         "game_args",

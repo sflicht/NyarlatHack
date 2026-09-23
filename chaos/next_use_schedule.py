@@ -92,7 +92,8 @@ def consider_next_use(directory, box=None):
     envelope is left alone. This does not admit. ``box`` is the lock the
     caller already holds; opening a second mailbox would fail.
     """
-    from .history import HistoryState
+    from .history import HistoryState, public_context
+    from .history_choice import RandomHistoryBackend
     from .next_use_envelope import engine_run_hex
     from .next_use_history import next_use_menu
 
@@ -118,21 +119,23 @@ def consider_next_use(directory, box=None):
     ):
         return None
     schedule = schedules[0]
-    quiet = [
+    menu = [
         row
         for row in next_use_menu(history)
         if row["family"] == schedule["family"]
-        and row["op"] == "quiet"
         and row["origin"]["root_seq"] == schedule["root"]
         and row["origin"]["notice_seq"] == schedule["notice_seq"]
         and row["origin"]["end_seq"] == schedule["end_seq"]
     ]
-    if len(quiet) != 1:
+    if not menu:
+        return None
+    selected = RandomHistoryBackend(0).choose_next_use(public_context(history), menu)
+    if selected is None:
         return None
     try:
         return publish_scheduled(
             directory,
-            quiet[0],
+            selected,
             engine_run_hex(directory),
             history.safe + 1,
             history.last_id + 1,
