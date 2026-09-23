@@ -104,16 +104,17 @@ def envelope_from_selection(selected, host):
     return envelope, encoded
 
 
-def publish_envelope(directory, selected, host):
+def publish_envelope(directory, selected, host, box=None):
     """Write one complete envelope artifact. Never admits."""
     envelope, encoded = envelope_from_selection(selected, host)
-    with Mailbox(directory) as box:
-        target = box.path / _ENVELOPE_NAME
+
+    def write(held):
+        target = held.path / _ENVELOPE_NAME
         if os.path.lexists(target):
             raise ValueError(
                 "a next-use envelope already exists; use a fresh game directory"
             )
-        fd, tmp = tempfile.mkstemp(prefix=".next-use-envelope-", dir=box.path)
+        fd, tmp = tempfile.mkstemp(prefix=".next-use-envelope-", dir=held.path)
         try:
             with os.fdopen(fd, "wb") as f:
                 f.write(encoded)
@@ -122,7 +123,7 @@ def publish_envelope(directory, selected, host):
             os.link(tmp, target)
         finally:
             os.unlink(tmp)
-        dfd = os.open(box.path, os.O_DIRECTORY | os.O_RDONLY | os.O_NOFOLLOW)
+        dfd = os.open(held.path, os.O_DIRECTORY | os.O_RDONLY | os.O_NOFOLLOW)
         try:
             os.fsync(dfd)
         finally:
@@ -131,6 +132,12 @@ def publish_envelope(directory, selected, host):
         if not stat.S_ISREG(mode):
             raise ValueError("regular next-use envelope required")
         os.chmod(target, 0o600)
+
+    if box is None:
+        with Mailbox(directory) as held:
+            write(held)
+    else:
+        write(box)
     return {
         "status": "envelope_published_not_admitted",
         "path": _ENVELOPE_NAME,

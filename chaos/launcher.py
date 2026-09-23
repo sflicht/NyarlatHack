@@ -112,6 +112,11 @@ def add_parser(sub):
         help="start a human Bard with no wizard mode; sets NETHACKOPTIONS if unset",
     )
     p.add_argument(
+        "--next-use",
+        action="store_true",
+        help="host-built next-use selection from a ready origin schedule; RandomHistoryBackend seed 0; no model call",
+    )
+    p.add_argument(
         "game_args",
         nargs=argparse.REMAINDER,
         help="put game arguments after --; forwarded literally",
@@ -213,8 +218,14 @@ def _offline_loop(box, backend, reader, state, args, ready):
     known_pending = None
     first = True
     while time.monotonic() < deadline or first:
-        for event in reader.read():
+        for event in reader.read(allow_observations=getattr(args, "next_use", False)):
+            if event.get("v") in (2, 4) and event.get("event") == "observation":
+                continue
             state.ingest(event)
+        if getattr(args, "next_use", False):
+            from .next_use_schedule import consider_next_use
+
+            consider_next_use(box.path, box)
         if first and reader.tail:
             raise ValueError("incomplete event history before game startup")
         if state.ended:
@@ -228,7 +239,7 @@ def _offline_loop(box, backend, reader, state, args, ready):
             request = None
             if isinstance(backend, ScheduleBackend):
                 request = backend.next(state)
-                done = request is None
+                done = request is None and not getattr(args, "next_use", False)
             elif (
                 state.latest
                 and last_choice != state.safe
@@ -406,6 +417,9 @@ def play(args):
 
                     reject_wizard_args(game_args)
                     env.setdefault("NETHACKOPTIONS", OPTIONS)
+                if args.next_use:
+                    env["NYARLATHACK_OBSERVATIONS"] = "1"
+                    env["NYARLATHACK_NEXT_USE_ADMIT"] = "1"
                 game = subprocess.Popen(
                     [str(executable), *game_args],
                     cwd=root,
