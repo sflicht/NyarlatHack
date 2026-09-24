@@ -25,10 +25,10 @@ ARCHIVED_HASHES = {
     "license": "93a3ae2cb8dee482daddfaebe53bcffe5b114b603def19b4dca21621cbc5a747",
 }
 DRIVER_HASH = "9d341b28a4ab3f4453b09e4f49a2e8701a7c78345184f487e2f0b32d70db7270"
-# Source mode alone pins the explicitly reviewed EOF/reaping + send-deadline
-# helper correction. DRIVER_HASH above remains the frozen historical identity;
+# Source mode alone pins the reviewed helper, including optional private
+# per-suite asset reuse. DRIVER_HASH above remains the frozen historical identity;
 # this is not an archive refresh or a substitute for exact-source calibration.
-SOURCE_DRIVER_HASH = "c8ce2c50eefbf21be17d64eb24274e9c8ee39a012ce7f285168fc81c8c419ad2"
+SOURCE_DRIVER_HASH = "f426720738d8946b7bf26d41fc341aae4064578f93168c4b87e588efb6588949"
 ORACLE_SOURCES = (
     "tests/chaos/gameplay_support.py",
     "tests/chaos/replay_clock.c",
