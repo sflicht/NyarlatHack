@@ -135,6 +135,25 @@ class HistoryBuildInventoryTests(unittest.TestCase):
         ):
             self.preflight(self.manifest)
 
+    def test_presentation_inputs_cannot_be_replaced_at_same_count(self):
+        for field, name, message in (
+            (
+                "objects",
+                "src/chaos_presentation.o",
+                "complete original production object receipt",
+            ),
+            (
+                "generated_headers",
+                "include/chaos_presentation.h",
+                "complete frozen header receipt",
+            ),
+        ):
+            with self.subTest(name=name):
+                manifest = copy.deepcopy(self.manifest)
+                manifest[field]["unreviewed-input"] = manifest[field].pop(name)
+                with self.assertRaisesRegex(ValueError, message):
+                    self.preflight(manifest)
+
     def test_missing_or_extra_header_rejected(self):
         for missing in sorted(self.headers):
             manifest = copy.deepcopy(self.manifest)
