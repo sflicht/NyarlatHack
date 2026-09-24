@@ -19,5 +19,34 @@ Not available: standard libraries, package, require, I/O, game RNG, nh, des,
 or any function that mutates the game. A candidate computes a typed proposal.
 C admits and applies.
 
-This file is not wired to a provider. Handwritten fixtures are not model
-authorship. Ordinary play and live evaluation stay gated.
+Handwritten fixture: reset counter
+```lua
+local n = 0
+return {on_action = function(context)
+  n = n + 1
+  return {next_use_intent_v=2, op="quiet", state=n}
+end}
+```
+The top-level local is an upvalue of on_action. Reloading the source in each
+fresh VM resets n: successive eligible calls each propose state=1, not 1 then 2.
+
+Handwritten fixture: explicit state
+```lua
+return {on_action = function(context)
+  local next_state = context.state
+  if next_state < 3 then next_state = next_state + 1 end
+  return {next_use_intent_v=2, op="quiet", state=next_state}
+end}
+```
+Given accepted context.state in 0..3, proposed transitions are
+0->1, 1->2, 2->3, 3->3. Only the returned, validated state continues; changing
+a local (or the copied context) alone does not update host state.
+
+These teach callback memory, not recurrence or new privileges:
+quiet consumes the triggering slot. Each declared family has at most one
+callback, so the transition list is a boundary example, not four game uses.
+Author plans and proposed state are not observed history or witness facts.
+
+This contract is wired to offline authoring through the existing fake transport,
+not a live provider. Handwritten fixtures are not model authorship.
+Ordinary play and live evaluation stay gated.
