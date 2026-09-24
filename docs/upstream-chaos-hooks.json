@@ -1432,6 +1432,11 @@
           ",",
           "unsigned"
         ]
+      },
+      {
+        "symbol": "chaos_next_use_mread",
+        "start": ["chaos_next_use_mread", "(", "int", "fd", ",", "void", "*", "buf", ",", "unsigned", "int", "len", ")"],
+        "end": []
       }
     ],
     "src/shk.c": [
@@ -3375,9 +3380,9 @@
         "chaos_curio_state",
         "curio",
         ";",
-        "#",
-        "endif",
-        "xchar"
+        "long",
+        "chaos_game_token",
+        ";"
       ],
       "guards": [
         "ifndef YOU_H",
@@ -10201,15 +10206,26 @@
       "file": "src/restore.c",
       "symbol": "<file>",
       "kind": "directive",
-      "purpose": "#2: compile private non-destructive rejection helper only with CHAOS",
+      "purpose": "#2/#64: compile private save-preserving rejection helper and checked snapshot reader only with CHAOS (two file-scope guards)",
       "signature": [
         "#",
         "ifdef",
         "CHAOS"
       ],
       "guards": [],
+      "count": 2,
+      "chaos0": "Both helper and checked snapshot reader are omitted when CHAOS is undefined."
+    },
+    {
+      "id": "issue64-checked-snapshot-reader",
+      "file": "src/restore.c",
+      "symbol": "chaos_next_use_mread",
+      "kind": "call-or-declaration",
+      "purpose": "#64: fail nonfatally on incomplete next-use snapshot reads using native ZEROCOMP decoder state, before runtime publication or save deletion",
+      "signature": ["endif", "#", "ifdef", "CHAOS", "int", "chaos_next_use_mread", "(", "int", "fd", ",", "void", "*", "buf", ",", "unsigned", "int", "len", ")"],
+      "guards": ["ifdef CHAOS"],
       "count": 1,
-      "chaos0": "Omitted when CHAOS is undefined; stock restore rejection remains unchanged."
+      "chaos0": "Checked snapshot entry point omitted; shared ZEROCOMP decoder still rejects signed read errors and missing zero-run counts."
     },
     {
       "id": "issue2-restore-helper",
@@ -12509,12 +12525,29 @@
         "if",
         "(",
         "!",
-        "chaos_next_use_restore",
+        "chaos_next_use_restore_bound",
         "(",
         "fd",
+        ",",
+        "u",
+        ".",
+        "chaos_game_token",
+        ",",
+        "chaos_next_use_pack_level",
+        "(",
+        "u",
+        ".",
+        "uz",
+        ".",
+        "dnum",
+        ",",
+        "u",
+        ".",
+        "uz",
+        ".",
+        "dlevel",
         ")",
-        ")",
-        "return"
+        ")"
       ],
       "guards": [
         "ifdef CHAOS"
@@ -12529,8 +12562,8 @@
       "kind": "call-or-declaration",
       "purpose": "restgamestate: invalid next-use snapshot preserves save",
       "signature": [
-        "(",
-        "fd",
+        "dlevel",
+        ")",
         ")",
         ")",
         "return",
@@ -12539,7 +12572,7 @@
         "fd",
         ")",
         ";",
-        "chaos_next_use_safe_mark_restored"
+        "if"
       ],
       "guards": [
         "ifdef CHAOS"
@@ -12552,19 +12585,19 @@
       "file": "src/restore.c",
       "symbol": "restgamestate",
       "kind": "call-or-declaration",
-      "purpose": "restgamestate: restored program settles candidate latch",
+      "purpose": "Validate and restore the saved admission latch, preserving an unused opportunity in empty saves.",
       "signature": [
-        "chaos_restore_reject",
-        "(",
-        "fd",
         ")",
         ";",
-        "chaos_next_use_safe_mark_restored",
+        "if",
         "(",
-        ")",
-        ";",
-        "#",
-        "endif"
+        "!",
+        "chaos_next_use_safe_restore_attempted",
+        "(",
+        "u",
+        ".",
+        "chaos_next_use_attempted",
+        ")"
       ],
       "guards": [
         "ifdef CHAOS"
@@ -12577,14 +12610,14 @@
       "file": "src/save.c",
       "symbol": "<file>",
       "kind": "directive",
-      "purpose": "<file>: compile next-use save hook only with CHAOS",
+      "purpose": "Compile the snapshot writer and pre-truncation save preflight only with CHAOS.",
       "signature": [
         "#",
         "ifdef",
         "CHAOS"
       ],
       "guards": [],
-      "count": 1,
+      "count": 3,
       "chaos0": "Omitted when CHAOS is undefined; stock save layout remains unchanged."
     },
     {
@@ -12592,14 +12625,269 @@
       "file": "src/save.c",
       "symbol": "<file>",
       "kind": "call-or-declaration",
-      "purpose": "<file>: write next-use snapshot after struct you",
+      "purpose": "Write validated snapshot after struct you; abort if state unexpectedly changes after preflight.",
       "signature": [
+        "ifdef",
+        "CHAOS",
+        "if",
+        "(",
+        "!",
+        "chaos_next_use_save",
+        "(",
+        "fd",
         ")",
-        ";",
+        ")",
+        "panic"
+      ],
+      "guards": [
+        "ifdef CHAOS"
+      ],
+      "count": 1,
+      "chaos0": "Compiled out by enclosing CHAOS condition (with any additional guards retained in guards)."
+    },
+    {
+      "id": "next-use-save-preflight-1",
+      "file": "src/save.c",
+      "symbol": "<file>",
+      "kind": "call-or-declaration",
+      "purpose": "Refuse invalid/in-flight program before create_savefile may truncate prior save.",
+      "signature": [
         "#",
         "ifdef",
         "CHAOS",
-        "chaos_next_use_save",
+        "if",
+        "(",
+        "chaos_next_use_save_status",
+        "(",
+        ")",
+        "=",
+        "=",
+        "CHAOS_SNAPSHOT_ERROR"
+      ],
+      "guards": [
+        "ifdef CHAOS"
+      ],
+      "count": 1,
+      "chaos0": "Omitted when CHAOS is undefined; stock save path is unchanged."
+    },
+    {
+      "id": "next-use-save-preflight-2",
+      "file": "src/save.c",
+      "symbol": "<file>",
+      "kind": "identifier",
+      "purpose": "Explicit save-status error branch leaves the prior save untouched.",
+      "signature": [
+        "chaos_next_use_save_status",
+        "(",
+        ")",
+        "=",
+        "=",
+        "CHAOS_SNAPSHOT_ERROR",
+        ")",
+        "{",
+        "HUP",
+        "pline",
+        "("
+      ],
+      "guards": [
+        "ifdef CHAOS"
+      ],
+      "count": 1,
+      "chaos0": "Omitted when CHAOS is undefined; stock save path is unchanged."
+    },
+    {
+      "id": "next-use-game-token",
+      "file": "include/you.h",
+      "symbol": "<file>",
+      "kind": "identifier",
+      "purpose": "Persist host-owned game lifetime token independently of candidate/snapshot.",
+      "signature": [
+        "struct",
+        "chaos_curio_state",
+        "curio",
+        ";",
+        "long",
+        "chaos_game_token",
+        ";",
+        "int",
+        "chaos_next_use_attempted",
+        ";",
+        "#"
+      ],
+      "guards": [
+        "ifndef YOU_H",
+        "ifdef CHAOS"
+      ],
+      "count": 1,
+      "chaos0": "No next-use save behavior when CHAOS is undefined; declarations only remain for unconditional includes."
+    },
+    {
+      "id": "next-use-save-header",
+      "file": "src/save.c",
+      "symbol": "<file>",
+      "kind": "directive",
+      "purpose": "Declare save preflight and checked snapshot writer.",
+      "signature": [
+        "#",
+        "include",
+        "\"chaos.h\""
+      ],
+      "guards": [],
+      "count": 1,
+      "chaos0": "No next-use save behavior when CHAOS is undefined; declarations only remain for unconditional includes."
+    },
+    {
+      "id": "next-use-restore-header",
+      "file": "src/restore.c",
+      "symbol": "<file>",
+      "kind": "directive",
+      "purpose": "Declare checked native snapshot restore.",
+      "signature": [
+        "#",
+        "include",
+        "\"chaos.h\""
+      ],
+      "guards": [],
+      "count": 1,
+      "chaos0": "No next-use save behavior when CHAOS is undefined; declarations only remain for unconditional includes."
+    },
+    {
+      "id": "next-use-restore-identity-header",
+      "file": "src/restore.c",
+      "symbol": "<file>",
+      "kind": "directive",
+      "purpose": "Declare bounded native level identity mapping.",
+      "signature": [
+        "#",
+        "include",
+        "\"chaos_next_use.h\""
+      ],
+      "guards": [],
+      "count": 1,
+      "chaos0": "No next-use save behavior when CHAOS is undefined; declarations only remain for unconditional includes."
+    },
+    {
+      "id": "next-use-restore-game-token",
+      "file": "src/restore.c",
+      "symbol": "restgamestate",
+      "kind": "identifier",
+      "purpose": "Bind runtime against the separately restored player game token.",
+      "signature": [
+        "(",
+        "fd",
+        ",",
+        "u",
+        ".",
+        "chaos_game_token",
+        ",",
+        "chaos_next_use_pack_level",
+        "(",
+        "u",
+        "."
+      ],
+      "guards": [
+        "ifdef CHAOS"
+      ],
+      "count": 1,
+      "chaos0": "No next-use save behavior when CHAOS is undefined; declarations only remain for unconditional includes."
+    },
+    {
+      "id": "next-use-restore-level-token",
+      "file": "src/restore.c",
+      "symbol": "restgamestate",
+      "kind": "call-or-declaration",
+      "purpose": "Bind runtime against the separately restored player level before publication.",
+      "signature": [
+        ",",
+        "u",
+        ".",
+        "chaos_game_token",
+        ",",
+        "chaos_next_use_pack_level",
+        "(",
+        "u",
+        ".",
+        "uz",
+        ".",
+        "dnum",
+        ",",
+        "u",
+        ".",
+        "uz",
+        ".",
+        "dlevel",
+        ")"
+      ],
+      "guards": [
+        "ifdef CHAOS"
+      ],
+      "count": 1,
+      "chaos0": "No next-use save behavior when CHAOS is undefined; declarations only remain for unconditional includes."
+    },
+    {
+      "id": "next-use-attempt-player",
+      "file": "include/you.h",
+      "symbol": "<file>",
+      "kind": "identifier",
+      "purpose": "Store the attempt latch even when no program was admitted.",
+      "signature": [
+        ";",
+        "long",
+        "chaos_game_token",
+        ";",
+        "int",
+        "chaos_next_use_attempted",
+        ";",
+        "#",
+        "endif",
+        "xchar",
+        "ux"
+      ],
+      "guards": [
+        "ifndef YOU_H",
+        "ifdef CHAOS"
+      ],
+      "count": 1,
+      "chaos0": "Omitted when CHAOS is undefined."
+    },
+    {
+      "id": "next-use-attempt-restore-value",
+      "file": "src/restore.c",
+      "symbol": "restgamestate",
+      "kind": "identifier",
+      "purpose": "Use the trusted restored player latch, not presence of a program.",
+      "signature": [
+        "!",
+        "chaos_next_use_safe_restore_attempted",
+        "(",
+        "u",
+        ".",
+        "chaos_next_use_attempted",
+        ")",
+        ")",
+        "return",
+        "chaos_restore_reject",
+        "("
+      ],
+      "guards": [
+        "ifdef CHAOS"
+      ],
+      "count": 1,
+      "chaos0": "Omitted when CHAOS is undefined."
+    },
+    {
+      "id": "next-use-attempt-reject",
+      "file": "src/restore.c",
+      "symbol": "restgamestate",
+      "kind": "call-or-declaration",
+      "purpose": "Reject malformed or inconsistent attempt latch without deleting the save.",
+      "signature": [
+        ".",
+        "chaos_next_use_attempted",
+        ")",
+        ")",
+        "return",
+        "chaos_restore_reject",
         "(",
         "fd",
         ")",
@@ -12610,7 +12898,57 @@
         "ifdef CHAOS"
       ],
       "count": 1,
-      "chaos0": "Compiled out by enclosing CHAOS condition (with any additional guards retained in guards)."
+      "chaos0": "Omitted when CHAOS is undefined."
+    },
+    {
+      "id": "next-use-attempt-save-value",
+      "file": "src/save.c",
+      "symbol": "<file>",
+      "kind": "identifier",
+      "purpose": "Copy the current native attempt latch before serializing the player.",
+      "signature": [
+        "#",
+        "ifdef",
+        "CHAOS",
+        "u",
+        ".",
+        "chaos_next_use_attempted",
+        "=",
+        "chaos_next_use_safe_attempted",
+        "(",
+        ")",
+        ";"
+      ],
+      "guards": [
+        "ifdef CHAOS"
+      ],
+      "count": 1,
+      "chaos0": "Omitted when CHAOS is undefined."
+    },
+    {
+      "id": "next-use-attempt-save-query",
+      "file": "src/save.c",
+      "symbol": "<file>",
+      "kind": "call-or-declaration",
+      "purpose": "Read the native attempt latch for save.",
+      "signature": [
+        "CHAOS",
+        "u",
+        ".",
+        "chaos_next_use_attempted",
+        "=",
+        "chaos_next_use_safe_attempted",
+        "(",
+        ")",
+        ";",
+        "#",
+        "endif"
+      ],
+      "guards": [
+        "ifdef CHAOS"
+      ],
+      "count": 1,
+      "chaos0": "Omitted when CHAOS is undefined."
     }
   ],
   "build_blocks": [

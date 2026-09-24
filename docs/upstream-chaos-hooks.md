@@ -55,11 +55,14 @@ blocks are checked separately from C tokens. Pre-existing `chaos_dnum`,
 `chaos_dvariant`, `chaos_montype`, `CHAOS_S`, and `CHAOS_SKILL` have separate exact
 per-file counts, not a blanket prefix exemption.
 
-There is **no added hook in `src/save.c`**. Existing raw player/object writes
-serialize the extended structures; field layout and feature bits therefore
-remain save compatibility dependencies. Internal initial-level safe points,
-Sanity thresholds and haunt ticks live in owned engine files, not invented
-upstream rows.
+`src/save.c` has narrow next-use seams: preflight before opening an existing
+save, copying the admission latch into player state, and writing a validated
+value snapshot after the raw player structure. `src/restore.c` binds it against
+the separately restored player game/level identity and restores the saved
+attempt latch rather than consuming every empty save's opportunity. The
+player-only token/latch are excluded from CHAOS-off structures and bones.
+Internal initial-level safe points, Sanity thresholds and haunt ticks remain
+in owned engine files.
 
 ## Extending an authorized seam (#1 / #25)
 

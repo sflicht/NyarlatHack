@@ -1,6 +1,12 @@
 #ifndef CHAOS_NEXT_USE_CONTRACT_H
 #define CHAOS_NEXT_USE_CONTRACT_H
 
+enum chaos_next_use_snapshot_status {
+    CHAOS_SNAPSHOT_ERROR = -1,
+    CHAOS_SNAPSHOT_ABSENT = 0,
+    CHAOS_SNAPSHOT_VALID = 1
+};
+
 struct chaos_fountain_token {
     long root;
     int active;

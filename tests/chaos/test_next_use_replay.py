@@ -53,6 +53,21 @@ class NextUseReplayTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         return [json.loads(line) for line in result.stdout.splitlines() if line]
 
+    def test_zero_delta_records_use_persisted_sequence_not_carrier_buffer(self):
+        for mode in (
+            "zero_delta_live",
+            "zero_delta_restored_boundary",
+            "zero_delta_restored_decision",
+        ):
+            with self.subTest(mode=mode):
+                row = self.run_mode(mode)[0]
+                self.assertEqual(row["restored"], int(mode != "zero_delta_live"))
+                self.assertEqual(row["status"], 0)
+                self.assertEqual(
+                    (row["past"], row["future"], row["duplicate"]), (1, 1, 1)
+                )
+                self.assertEqual(row["unchanged"], 1)
+
     def test_skipped_cursor_does_not_consume(self):
         row = self.run_mode("skip")[0]
         self.assertEqual(row["status"], 1)
