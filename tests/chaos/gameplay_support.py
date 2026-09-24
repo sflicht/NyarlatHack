@@ -11,6 +11,7 @@ import re
 import select
 import shutil
 import signal
+import stat
 import struct
 import sys
 import tempfile
@@ -19,6 +20,88 @@ import time
 
 ROOT = Path(__file__).resolve().parents[2]
 ANSI = re.compile(rb"\x1b\[[0-?]*[ -/]*[@-~]")
+
+
+# Only the explicit suite pool owns shared inodes, never mutable build outputs.
+_LINK_FALLBACK = {
+    errno.EXDEV,
+    errno.EPERM,
+    errno.EOPNOTSUPP,
+    errno.ENOSYS,
+    errno.EMLINK,
+}
+
+
+def _asset_identity(path, *, readonly=False):
+    """Hash regular files without following links or blocking on special files."""
+    fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
+    with os.fdopen(fd, "rb") as stream:
+        before = os.fstat(stream.fileno())
+        mode = stat.S_IMODE(before.st_mode)
+        if not stat.S_ISREG(before.st_mode) or mode & 0o7000:
+            raise ValueError(f"not an ordinary asset: {path}")
+        if readonly and mode & 0o222:
+            raise ValueError(f"writable pool asset: {path}")
+        digest = hashlib.file_digest(stream, "sha256").hexdigest()
+        after = os.fstat(stream.fileno())
+        if (before.st_size, before.st_mtime_ns, before.st_ctime_ns) != (
+            after.st_size,
+            after.st_mtime_ns,
+            after.st_ctime_ns,
+        ):
+            raise ValueError(f"asset changed while hashing: {path}")
+    return digest, before.st_mtime_ns, mode & ~0o222
+
+
+def _install_asset(source, destination, pool):
+    """Install via rename, never write/chmod through an existing case inode.
+
+    Normal storage is one immutable snapshot per (bytes, mtime, read/exec mode)
+    per suite. A filesystem without hardlinks falls back to private readonly
+    copies (correctness preserved, but no per-build storage bound there).
+    The pool lives under a trusted, private suite directory; it is not a global
+    cache. Its assets must not be modified, including by chmod as their owner.
+    """
+    with tempfile.TemporaryDirectory(prefix=".asset-", dir=destination.parent) as stage:
+        staged = Path(stage) / "asset"
+        if pool is None:
+            shutil.copy2(source, staged)
+        else:
+            pool.mkdir(parents=True, exist_ok=True, mode=0o700)
+            if not stat.S_ISDIR(pool.lstat().st_mode):
+                raise ValueError(f"not a real asset pool directory: {pool}")
+            identity = _asset_identity(source)
+            digest, mtime, mode = identity
+            cached = pool / f"{digest}-{mtime}-{mode:o}"
+            # Temporary publication candidates are always private copies. No
+            # chmod or content writes occur after any hardlink is created.
+            with tempfile.TemporaryDirectory(prefix=".asset-", dir=pool) as pending:
+                snapshot = cached
+                if not os.path.lexists(cached):
+                    candidate = Path(pending) / "asset"
+                    shutil.copy2(source, candidate)
+                    candidate.chmod(mode)
+                    if _asset_identity(candidate, readonly=True) != identity:
+                        raise ValueError(f"asset changed while copying: {source}")
+                    try:
+                        os.link(candidate, cached, follow_symlinks=False)
+                    except FileExistsError:
+                        pass  # A concurrent publisher won: validate, never clobber.
+                    except OSError as exc:
+                        if exc.errno not in _LINK_FALLBACK:
+                            raise
+                        snapshot = candidate  # No atomic link publication available.
+                if _asset_identity(snapshot, readonly=True) != identity:
+                    raise ValueError(f"corrupt pool asset: {snapshot}")
+                try:
+                    os.link(snapshot, staged, follow_symlinks=False)
+                except OSError as exc:
+                    if exc.errno not in _LINK_FALLBACK:
+                        raise
+                    shutil.copy2(snapshot, staged)
+                if _asset_identity(staged, readonly=True) != identity:
+                    raise ValueError(f"asset changed while installing: {snapshot}")
+        os.replace(staged, destination)
 
 
 class Game:
@@ -33,14 +116,22 @@ class Game:
         launcher_options=None,
         launcher_fresh=False,
         ordinary=False,
+        *,
+        asset_pool=None,
+        executable=None,
     ):
         """Leave run absent for fresh launch; explicitly set launcher_fresh=False
         before a later reuse start. Never infer the mode from path existence.
         Existing run paths reject fresh construction; the launcher checks them
         again at start. Default construction and startup retain legacy reuse.
+        asset_pool opts into immutable dnethack/nhdat snapshots in a private
+        suite-owned directory. Use install_executable(), never overwrite those
+        linked files. executable selects the initial binary without first
+        copying production dnethack; existing game directories remain untouched.
         """
         if launcher_fresh and launcher_options is None:
             raise ValueError("launcher_fresh requires launcher_options")
+        self.asset_pool = Path(asset_pool) if asset_pool is not None else None
         self.root = Path(root or tempfile.mkdtemp(prefix="nyarlathack-game-test-"))
         self.game = self.root / "game"
         self.run = self.root / "run"
@@ -51,7 +142,15 @@ class Game:
             if not launcher_fresh:
                 self.run.mkdir(mode=0o700)
             for name in ("dnethack", "nhdat", "license"):
-                shutil.copy2(Path(source) / name, self.game / name)
+                original = (
+                    Path(executable)
+                    if name == "dnethack" and executable is not None
+                    else Path(source) / name
+                )
+                if self.asset_pool is not None and name != "license":
+                    _install_asset(original, self.game / name, self.asset_pool)
+                else:
+                    shutil.copy2(original, self.game / name)
             for name in ("perm", "record", "logfile", "xlogfile", "livelog"):
                 (self.game / name).touch()
             for name in ("save", "dumplog"):
@@ -72,6 +171,10 @@ class Game:
         self.sessions = []
         self._reader_pid = None
         self._input_checkpoint = None
+
+    def install_executable(self, executable):
+        """Atomically replace this case's binary, never mutate a shared inode."""
+        _install_asset(Path(executable), self.game / "dnethack", self.asset_pool)
 
     @staticmethod
     def _read_count(pid):
