@@ -74,6 +74,10 @@ static void state(void)
             monstermoves, s.activation_monstermoves);
         assert(!fclose(f));
     }
+    f = file("identity.json", "w");
+    fprintf(f, "{\"birthday\":%ld,\"game_token\":%ld}\n",
+        (long)u.ubirthday, u.chaos_game_token);
+    assert(!fclose(f));
 }
 
 int __wrap_chaos_next_use_save(int fd)

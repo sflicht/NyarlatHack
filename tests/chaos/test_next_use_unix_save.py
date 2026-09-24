@@ -216,6 +216,217 @@ class NextUseUnixSaveTests(unittest.TestCase):
     def test_drop_program_on_save_loses_remaining_native_f_effect(self):
         self._two_family_order("WF", boundary="drop-program")
 
+    def test_new_game_reusing_old_transport_has_no_admission_authority(self):
+        self._new_game_reusing_old_transport()
+
+    def test_new_game_reusing_old_transport_stays_foreign_after_restore(self):
+        self._new_game_reusing_old_transport(checkpoint=True)
+
+    def test_new_game_reusing_old_transport_cannot_repair_missing_owner(self):
+        self._new_game_reusing_old_transport(missing_owner=True, checkpoint=True)
+
+    def _new_game_reusing_old_transport(self, *, checkpoint=False, missing_owner=False):
+        """Actual new native game, same inode/clock/seed, not forged identity."""
+        self._build_two_family_game()
+        saved = {
+            key: os.environ.get(key)
+            for key in ("NYARLATHACK_NEXT_USE_ADMIT", "NYARLATHACK_OBSERVATIONS")
+        }
+
+        def restore_env():
+            for key, value in saved.items():
+                if value is None:
+                    os.environ.pop(key, None)
+                else:
+                    os.environ[key] = value
+
+        self.addCleanup(restore_env)
+        os.environ.update({key: "1" for key in saved})
+
+        suffix = ("-checkpoint" if checkpoint else "") + (
+            "-missing" if missing_owner else ""
+        )
+
+        def new_game(name):
+            game = Game(
+                ROOT / "dnethackdir",
+                self.clock,
+                wizard=True,
+                asset_pool=self.asset_pool,
+                executable=self.two_family_exe,
+                root=self.artifacts / (name + suffix),
+            )
+            self.addCleanup(game.close)
+            return game
+
+        def state(game, name="state.json"):
+            return json.loads((game.game / name).read_text())
+
+        def whistle(game):
+            slot = state(game, "fixture.json")["letter"]
+            self.assertIn(b"apply", game.send("a").lower())
+            game.more(game.send(slot))
+
+        def fountain(game):
+            self.assertIn(b"fountain", game.send("q").lower())
+            game.more(game.send("y"))
+
+        old = new_game("reuse-old")
+        old.start()
+        if checkpoint:
+            # Both lifetimes take the same native empty-save path so their
+            # later real root/notice/end references still collide exactly.
+            self.assertEqual(old.save(), 0)
+            old.start()
+        whistle(old)
+        fountain(old)
+        # Real author publication from the real delivered origin history. Never
+        # patch its ID, time, origins, source or receipt for the fresh game.
+        source = fixture_sources()[1]
+        authored = author.author_offline(
+            old.run,
+            transport=author.FakeAuthorTransport(response(source)),
+            validator=self.validator,
+        )
+        self.assertEqual(authored["status"], "envelope_published_not_admitted")
+        envelope = old.run / "next_use-envelope.json"
+        encoded = envelope.read_bytes()
+        payload = json.loads(encoded)
+        old.sanity(60)
+        self.assertEqual(state(old)["spent"], 2)
+        self.assertEqual(state(old)["valid"], 1)
+        old_identity = state(old, "identity.json")
+        self.assertGreater(old_identity["game_token"], 0)
+        self.assertEqual(old.save(), 0)
+        self.assertTrue(list((old.game / "save").iterdir()))
+        # Retain old native save and all evidence in place; second Game has an
+        # empty save directory, so main must create another logical lifetime.
+        protected = {p.name: p.read_bytes() for p in old.run.iterdir() if p.is_file()}
+        (old.root / "transport-baseline.json").write_text(
+            json.dumps(
+                {
+                    name: {"bytes": len(raw), "sha256": hashlib.sha256(raw).hexdigest()}
+                    for name, raw in protected.items()
+                },
+                indent=2,
+            )
+        )
+        history = protected["events.jsonl"]
+        receipt = protected["next_use-receipt.jsonl"]
+        self.assertEqual(len(receipt.splitlines()), 1)
+        owner = old.run / "next_use-owner"
+        self.assertEqual(owner.read_text(), f"NUO1:{old_identity['game_token']:016x}\n")
+        if missing_owner:
+            # Remove only the transport binding; preserve its original bytes
+            # outside the mailbox, and keep candidate/receipt/history untouched.
+            (old.root / "removed-next_use-owner").write_bytes(owner.read_bytes())
+            owner.unlink()
+        transport = (old.run.stat().st_dev, old.run.stat().st_ino)
+        fresh = new_game("reuse-new")
+        self.assertFalse(list((fresh.game / "save").iterdir()))
+        fresh.run = old.run
+        fresh.start()
+        fresh_identity = state(fresh, "identity.json")
+        self.assertEqual(fresh_identity["birthday"], old_identity["birthday"])
+        self.assertNotEqual(fresh_identity["game_token"], old_identity["game_token"])
+        self.assertGreater(fresh_identity["game_token"], 0)
+        self.assertEqual(state(fresh, "fixture.json"), state(old, "fixture.json"))
+        if checkpoint:
+            self.assertEqual(fresh.save(), 0)
+            saves = list((fresh.game / "save").iterdir())
+            self.assertTrue(saves)
+            for save in saves:
+                shutil.copy2(save, fresh.root / ("saved-" + save.name))
+            fresh.start()
+            self.assertEqual(state(fresh, "identity.json"), fresh_identity)
+        whistle(fresh)
+        fountain(fresh)
+        # Deliberately prove the dangerous collision: actual new observations
+        # repeat every candidate reference, including root/notice/end and move.
+        new_events = [
+            json.loads(row)
+            for row in (fresh.run / "events.jsonl")
+            .read_bytes()[len(history) :]
+            .splitlines()
+        ]
+        self.assertEqual(
+            [e["detail"] for e in new_events if e["event"] == "session"],
+            ["new", "restore"] if checkpoint else ["new"],
+        )
+        for ref in payload["origin_refs"]:
+            operation = "whistling" if ref["family"] == "W" else "fountain_drink"
+            for stage, seq in (
+                ("started", ref["root"]),
+                ("notice", ref["notice_seq"]),
+                ("completed", ref["end_seq"]),
+            ):
+                matching = [e for e in new_events if e["seq"] == seq]
+                self.assertEqual(len(matching), 1)
+                event = matching[0]
+                self.assertEqual(event["turn"], ref["move"])
+                self.assertEqual(event["observation"]["operation"], operation)
+                self.assertEqual(event["observation"]["stage"], stage)
+                self.assertEqual(
+                    event["observation"]["root_seq"],
+                    0 if stage == "started" else ref["root"],
+                )
+                if stage == "notice":
+                    self.assertEqual(
+                        event["observation"]["fact"],
+                        "sound_high" if ref["family"] == "W" else ref["fact"],
+                    )
+            self.assertEqual(ref["run"], engine_run_hex(fresh.run))
+            self.assertEqual(
+                (ref["level_dnum"], ref["level_dlevel"]),
+                (state(fresh)["dnum"], state(fresh)["dlevel"]),
+            )
+        self.assertEqual(state(fresh)["safe"] + 1, payload["at"])
+        fresh.sanity(60)
+        at_safe = state(fresh)
+        # Continue far enough to expose both effects if stale admission occurs.
+        whistle(fresh)
+        fresh.wait_turns(7)
+        fountain(fresh)
+        final = state(fresh)
+        trace = [
+            json.loads(row)
+            for row in (fresh.game / "native.jsonl").read_text().splitlines()
+        ]
+        evidence = dict(
+            old_identity=old_identity,
+            new_identity=fresh_identity,
+            transport=transport,
+            at_safe=at_safe,
+            final=final,
+            native_trace=trace,
+            candidate=payload,
+        )
+        (fresh.root / "reuse-evidence.json").write_text(json.dumps(evidence, indent=2))
+        self.assertEqual(fresh.quit(), 0)
+        self.assertEqual(transport, (fresh.run.stat().st_dev, fresh.run.stat().st_ino))
+        self.assertEqual(envelope.read_bytes(), encoded)
+        self.assertTrue((fresh.run / "events.jsonl").read_bytes().startswith(history))
+        # These are admission/effect assertions, not rejection by changed refs.
+        self.assertEqual(at_safe["spent"], 0, evidence)
+        self.assertEqual(at_safe["valid"], 0)
+        self.assertEqual(final["callback_ordinal"], 0)
+        self.assertNotIn(b"The next whistle", fresh.raw)
+        self.assertFalse([r for r in trace if r["kind"] == "witness"])
+        self.assertEqual(
+            [r["outcome"] for r in trace if r["kind"] == "fountain"], [1, 1]
+        )
+        for name, raw in protected.items():
+            if name in ("events.jsonl", "next_use-schedule.jsonl"):
+                # Native observation/schedule history may append, never reset.
+                self.assertTrue((fresh.run / name).read_bytes().startswith(raw), name)
+            elif name == "next_use-owner" and missing_owner:
+                self.assertFalse(owner.exists())
+                self.assertEqual(
+                    (old.root / "removed-next_use-owner").read_bytes(), raw
+                )
+            else:
+                self.assertEqual((fresh.run / name).read_bytes(), raw, name)
+
     def _two_family_order(
         self, order, *, boundary="unchanged", program=None, unpublished=False
     ):
