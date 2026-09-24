@@ -1,7 +1,8 @@
 """R1: controlled Unix-fixture playback, not ordinary play or saved-RNG replay.
 
-Fake author bootstrap is a labelled fixture, not an intelligence claim. Typed C
-semantic preflight and rehashed tamper/matrix coverage remain a later stage.
+Fake author bootstrap is a labelled fixture, not an intelligence claim. The
+value-only typed C preflight is separate from physical execution; broader native
+matrix coverage and general replay remain outside this bounded test.
 """
 
 import hashlib
@@ -85,7 +86,14 @@ class NativePlaybackTests(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         # Only this suite's completed compiled copies; retain saves and evidence.
-        for pattern in ("*.o", "*.so", "dnethack", "*/game/dnethack", "*/game/nhdat"):
+        for pattern in (
+            "*.o",
+            "*.so",
+            "dnethack",
+            "semantic-preflight",
+            "*/game/dnethack",
+            "*/game/nhdat",
+        ):
             for path in cls.artifacts.glob(pattern):
                 path.unlink()
         shutil.rmtree(cls.asset_pool, ignore_errors=True)
@@ -264,6 +272,14 @@ class NativePlaybackTests(unittest.TestCase):
             "clock_policy": ROOT / "tests/chaos/replay_clock.c",
             "schema": ROOT / "chaos/next_use_journal.py",
             "driver": ROOT / "tests/chaos/test_next_use_native_playback.py",
+            "semantic_bridge": ROOT / "tests/chaos/next_use_semantic_preflight.py",
+            "semantic_c": ROOT / "tests/chaos/next_use_semantic_preflight.c",
+            "semantic_runtime": ROOT / "src/chaos_next_use_runtime.c",
+            "semantic_runtime_header": ROOT / "include/chaos_next_use_runtime.h",
+            "semantic_vm": ROOT / "src/chaos_next_use.c",
+            "semantic_lua": ROOT / "src/chaos_lua.c",
+            "semantic_admission": ROOT / "src/chaos_next_use_admission.c",
+            "semantic_protocol": ROOT / "src/chaos_protocol.c",
             "game_driver": ROOT / "tests/chaos/gameplay_support.py",
             "build_commands": self.artifacts / "build-commands.json",
             "compiled_inputs": self.artifacts / "compiled-inputs.json",
@@ -318,6 +334,19 @@ class NativePlaybackTests(unittest.TestCase):
         decoded = preflight(
             *args
         )  # Before playback Game.start (including all auto bytes).
+        from next_use_semantic_preflight import validate_bundle, exercise_negatives
+
+        semantic = validate_bundle(decoded, files, self.artifacts)
+        self.assertEqual(semantic["accepted"], 51)
+        self.assertEqual(semantic["checkpoints"], 1)
+        self.assertEqual(semantic["terminal"], 1)
+        with patch.object(
+            Game,
+            "start",
+            side_effect=AssertionError("negative launched native playback"),
+        ) as start:
+            exercise_negatives(self, decoded, files, self.artifacts)
+            start.assert_not_called()
         playback = clone("playback")
         for original in bootstrap.run.iterdir():
             if original.is_file():
@@ -388,7 +417,8 @@ class NativePlaybackTests(unittest.TestCase):
                     "transitions": len(decoded["records"]) - 2,
                     "input_chunks": len(tape.expected),
                     "initial_cursor": initial["replay_cursor"],
-                    "typed_c_preflight": False,
+                    "typed_c_preflight": semantic,
+                    "validator_negative_count": 4,
                     "ordinary_play": False,
                 },
                 indent=2,
