@@ -20,6 +20,7 @@
 int chaos_next_use_on_safe(int, long, int, struct chaos_state *, int, int)
     __attribute__((weak));
 void chaos_next_use_safe_bind_run(const char *) __attribute__((weak));
+void chaos_next_use_safe_resume(int) __attribute__((weak));
 void chaos_next_use_safe_bind_logical(long) __attribute__((weak));
 void chaos_next_use_identity_boundary(long, long) __attribute__((weak));
 long chaos_next_use_pack_level(int, int) __attribute__((weak));
@@ -274,6 +275,8 @@ void chaos_start(void) {
     oldsanity = u.usanity; oldinsight = u.uinsight;
     started = 1;
     (void)chaos_io_open(&io, getenv("NYARLATHACK_RUN_DIR"));
+    if (chaos_next_use_safe_resume)
+        chaos_next_use_safe_resume(io.failed ? -1 : io.dir);
     flag = getenv("NYARLATHACK_NEXT_USE_ADMIT");
     if (fresh && flag && !strcmp(flag, "1") && io.dir >= 0 && !io.failed)
         (void)next_use_transport_owned(chaos_next_use_game_identity(), 1);

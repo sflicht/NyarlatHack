@@ -44,6 +44,8 @@ void chaos_next_use_safe_bind_origin(const struct chaos_next_use_origin_ref *,
 void chaos_next_use_safe_mark_restored(void);
 int chaos_next_use_safe_attempted(void);
 int chaos_next_use_safe_restore_attempted(int attempted);
+/* Startup only: resolve the restored recorder before observation boundaries. */
+void chaos_next_use_safe_resume(int dir);
 int chaos_next_use_safe_last(struct chaos_next_use_safe_result *);
 
 #endif

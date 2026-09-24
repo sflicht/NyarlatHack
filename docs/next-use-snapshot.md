@@ -57,10 +57,31 @@ The initial header explicitly carries v5 NONE/zero bytes/empty hash/incomplete=0
 so it does not circularly hash its own anchor. The outer journal and replay-input
 formats remain v1; the exact inner header schema is explicitly v5.
 
-This stage does **not** reopen journals or implement recording continuation.
-The existing native restore-unsupported policy still latches failure, retaining
-imported anchors and failed status. Secure prefix scanning and the startup
-resume hook remain a later stage; no full native resume/replay claim is made.
+Native restore now stages recording continuation until `chaos_start` opens the
+validated transport, before observation/session startup and captured boundaries.
+The existing file must be a private, owned, single-link regular file reached
+without following a symlink in a private owned directory. It is never created,
+truncated or repaired during restore. The bounded scanner checks exact writer
+framing, consecutive outer/inner cursors, source/binding positions, payload
+hashes and their chain, and exact saved length/tip/cursor. Append uses that same
+validated descriptor after a stability recheck. A copied transport is permitted
+for the same saved game without rewriting original origins or envelope identity.
+
+OPEN resumes recording; COMPLETE validates and closes without writing. NONE
+never adopts a journal, and FAILED never becomes healthy. Missing, disabled or
+rejected transport fails capture but permits restored gameplay; rejection writes
+no failure marker and retains the saved anchor/cursor. The runtime-owned volatile
+journal transaction guard also covers reopening, so a signal-triggered save
+cannot publish a partially validated recorder. Terminal status retains a closed
+subscriber for honest acknowledgement reporting, not a writable descriptor.
+
+Controlled real Unix WF/FW save/exit/new-process tests now check native effects,
+prefix preservation and a single strictly read, acknowledged-complete journal.
+Corrupted, fully rehashed, truncated, extra and missing prefixes are rejected
+without cursor advancement or changed input bytes, including a subsequent failed
+capture save/restore. This is checkpointed recording continuation, **not physical
+playback**. Header-only resume and the wider hostile-file/race matrix still need
+focused execution; author-conditioned cases require reviewed source-guide repins.
 
 ## Stable-state invariants
 

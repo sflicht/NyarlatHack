@@ -13,6 +13,7 @@ import unittest
 
 from chaos import next_use_author as author
 from chaos.next_use_envelope import engine_run_hex, publish_envelope
+from chaos.next_use_journal import read_journal
 from gameplay_support import Game, ROOT
 from native_rng import controlled_rng_objects
 from test_next_use_offline_author import fixture_sources, response
@@ -179,6 +180,15 @@ class NextUseUnixSaveTests(unittest.TestCase):
 
     def test_w_save_exit_restore_f_matches_uninterrupted(self):
         self._two_family_order("WF")
+
+    @unittest.skipIf(os.geteuid() == 0, "0400 permission denial requires non-root")
+    def test_complete_readonly_journal_restore_remains_acknowledged(self):
+        self._two_family_order("WF", readonly_complete=True)
+
+    def test_resume_rejects_damaged_prefix_without_changing_gameplay(self):
+        for damage in ("tamper", "truncated", "extra", "missing", "rehashed"):
+            with self.subTest(damage=damage):
+                self._two_family_order("WF", journal_damage=damage)
 
     def test_f_save_exit_restore_w_matches_uninterrupted(self):
         self._two_family_order("FW")
@@ -428,7 +438,14 @@ class NextUseUnixSaveTests(unittest.TestCase):
                 self.assertEqual((fresh.run / name).read_bytes(), raw, name)
 
     def _two_family_order(
-        self, order, *, boundary="unchanged", program=None, unpublished=False
+        self,
+        order,
+        *,
+        boundary="unchanged",
+        program=None,
+        unpublished=False,
+        journal_damage=None,
+        readonly_complete=False,
     ):
         """Controlled wizard geometry/RNG; NOT ordinary play or #66 evidence."""
         self.assertIn(
@@ -490,6 +507,8 @@ class NextUseUnixSaveTests(unittest.TestCase):
                     + "-"
                     + boundary
                     + ("-" + program if program else "")
+                    + ("-" + journal_damage if journal_damage else "")
+                    + ("-readonly-complete" if readonly_complete else "")
                     + ("-unpublished" if unpublished else "")
                     + ("-restore" if interrupted else "-continuous")
                 ),
@@ -754,6 +773,8 @@ class NextUseUnixSaveTests(unittest.TestCase):
                 )
                 self.assertFalse([r for r in native_trace() if r["kind"] == "witness"])
             (game.root / "checkpoint.json").write_text(json.dumps(checkpoint, indent=2))
+            prefix = (game.run / "next_use-journal.jsonl").read_bytes()
+            damaged = None
             if interrupted:
                 if mutant:
                     (game.game / "drop-program-on-save").touch()
@@ -871,8 +892,54 @@ class NextUseUnixSaveTests(unittest.TestCase):
                     envelope = game.run / "next_use-envelope.json"
                     self.assertNotEqual(engine_run_hex(game.run), original_run_hex)
                     self.assertEqual(envelope.read_bytes(), encoded)
+                if journal_damage:
+                    journal_path = game.run / "next_use-journal.jsonl"
+                    damaged = prefix
+                    if journal_damage == "tamper":
+                        damaged = prefix.replace(
+                            b'"snapshot_v":5', b'"snapshot_v":4', 1
+                        )
+                    elif journal_damage == "truncated":
+                        damaged = prefix[:-1]
+                    elif journal_damage == "extra":
+                        damaged = prefix + b"\n"
+                    elif journal_damage == "rehashed":
+                        rows = [json.loads(line) for line in prefix.splitlines()]
+                        rows[0]["payload"]["data"]["snapshot"]["state"] = 1
+                        previous = "0" * 64
+                        rebuilt = []
+                        for row in rows:
+                            row["payload"]["prev"] = previous
+                            payload_bytes = json.dumps(
+                                row["payload"], separators=(",", ":")
+                            ).encode()
+                            previous = hashlib.sha256(payload_bytes).hexdigest()
+                            rebuilt.append(
+                                b'{"payload":'
+                                + payload_bytes
+                                + b',"sha256":"'
+                                + previous.encode()
+                                + b'"}\n'
+                            )
+                        damaged = b"".join(rebuilt)
+                        self.assertEqual(len(damaged), len(prefix))
+                    if journal_damage == "missing":
+                        journal_path.unlink()
+                    else:
+                        journal_path.write_bytes(damaged)
+                    (game.root / "damaged-prefix.bin").write_bytes(damaged)
                 game.start()
                 restored = state()
+                if journal_damage:
+                    self.assertEqual(restored["journal_state"], 3)
+                    for key in ("journal_bytes", "journal_sha256", "replay_cursor"):
+                        self.assertEqual(restored[key], checkpoint[key], key)
+                    self.assertEqual(
+                        json.loads((game.game / "capture.json").read_text())[
+                            "incomplete"
+                        ],
+                        1,
+                    )
                 if mutant:
                     self._lost_program_control(
                         game,
@@ -930,7 +997,6 @@ class NextUseUnixSaveTests(unittest.TestCase):
                     "origin_f_live",
                     "identity_unsafe",
                     "termination_emitted",
-                    "replay_cursor",
                     "source_length",
                 ):
                     self.assertEqual(restored[key], checkpoint[key], key)
@@ -964,6 +1030,22 @@ class NextUseUnixSaveTests(unittest.TestCase):
                         fixture,
                     )
                 )
+                # W-only has no F callback to finish the recorder: its native
+                # window ending must complete the resumed journal itself.
+                journal_path = game.run / "next_use-journal.jsonl"
+                raw = journal_path.read_bytes()
+                self.assertTrue(raw.startswith(prefix))
+                capture = json.loads((game.game / "capture.json").read_text())
+                self.assertEqual(
+                    read_journal(journal_path, capture_status=capture)["status"],
+                    "acknowledged_complete",
+                )
+                self.assertEqual(state()["journal_state"], 2)
+                rows = [json.loads(line)["payload"] for line in raw.splitlines()]
+                self.assertEqual(sum(r["kind"] == "header" for r in rows), 1)
+                self.assertEqual(sum(r["kind"] == "end" for r in rows), 1)
+                first = json.loads(raw[len(prefix) :].splitlines()[0])["payload"]
+                self.assertEqual(first["cursor"], checkpoint["replay_cursor"] + 1)
                 self.assertEqual(game.quit(), 0)
                 continue
             if armed_checkpoint:
@@ -1016,6 +1098,85 @@ class NextUseUnixSaveTests(unittest.TestCase):
                     original_transport,
                 )
                 self.assertEqual(final["run_token"], checkpoint["run_token"])
+            if not mutant and not (interrupted and journal_damage):
+                journal_path = game.run / "next_use-journal.jsonl"
+                raw = journal_path.read_bytes()
+                self.assertTrue(raw.startswith(prefix))
+                capture = json.loads((game.game / "capture.json").read_text())
+                journal_result = read_journal(journal_path, capture_status=capture)
+                self.assertEqual(journal_result["status"], "acknowledged_complete")
+                self.assertEqual(final["journal_state"], 2)
+                rows = [json.loads(line)["payload"] for line in raw.splitlines()]
+                self.assertEqual(sum(r["kind"] == "header" for r in rows), 1)
+                self.assertEqual(sum(r["kind"] == "end" for r in rows), 1)
+                first = json.loads(raw[len(prefix) :].splitlines()[0])["payload"]
+                self.assertEqual(first["cursor"], checkpoint["replay_cursor"] + 1)
+                if interrupted:
+                    # A COMPLETE checkpoint validates but never appends/resurrects.
+                    self.assertEqual(game.save(), 0)
+                    if readonly_complete:
+                        journal_path.chmod(0o400)
+                        st = journal_path.stat()
+                        self.assertEqual(st.st_mode & 0o777, 0o400)
+                        self.assertEqual(st.st_uid, os.getuid())
+                        self.assertEqual(st.st_nlink, 1)
+                        self.assertEqual(journal_path.read_bytes(), raw)
+                        with self.assertRaises(PermissionError):
+                            with journal_path.open("r+b"):
+                                pass
+                        print(
+                            f"COMPLETE_READONLY uid={os.getuid()} "
+                            f"euid={os.geteuid()} mode=0400 nlink=1 "
+                            f"read=ok write=denied path={journal_path}",
+                            flush=True,
+                        )
+                    terminal_trace = native_trace()
+                    game.start()
+                    terminal_state = state()
+                    terminal_capture = json.loads(
+                        (game.game / "capture.json").read_text()
+                    )
+                    (game.root / "terminal-restored.json").write_text(
+                        json.dumps(terminal_state, indent=2)
+                    )
+                    self.assertEqual(journal_path.read_bytes(), raw)
+                    self.assertEqual(native_trace(), terminal_trace)
+                    for key in (
+                        "journal_bytes",
+                        "journal_sha256",
+                        "replay_cursor",
+                        "slot_w",
+                        "slot_f",
+                        "witnessed",
+                        "attention_claimed",
+                        "callback_ordinal",
+                        "spent",
+                        "source_sha256",
+                    ):
+                        self.assertEqual(terminal_state[key], final[key], key)
+                    self.assertEqual(
+                        read_journal(journal_path, capture_status=terminal_capture)[
+                            "status"
+                        ],
+                        "acknowledged_complete",
+                    )
+                    self.assertEqual(terminal_state["journal_state"], 2)
+            if interrupted and journal_damage:
+                journal_path = game.run / "next_use-journal.jsonl"
+                self.assertEqual(final["replay_cursor"], checkpoint["replay_cursor"])
+                self.assertEqual(game.save(), 0)
+                game.start()
+                self.assertEqual(state()["journal_state"], 3)
+                for key in ("journal_bytes", "journal_sha256", "replay_cursor"):
+                    self.assertEqual(state()[key], checkpoint[key], key)
+                self.assertEqual(
+                    json.loads((game.game / "capture.json").read_text())["incomplete"],
+                    1,
+                )
+                if journal_damage == "missing":
+                    self.assertFalse(journal_path.exists())
+                else:
+                    self.assertEqual(journal_path.read_bytes(), damaged)
             trace = native_trace()
             witnesses = [r for r in trace if r["kind"] == "witness" and r["delivered"]]
             attempts = [r for r in trace if r["kind"] == "witness"]
