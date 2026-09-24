@@ -64,6 +64,10 @@ static void state(void)
         s.identity_unsafe, s.termination_emitted, s.replay_cursor,
         (unsigned long)s.source_length);
     assert(!fclose(f));
+    f = file("identity.json", "w");
+    fprintf(f, "{\"birthday\":%ld,\"game_token\":%ld}\n",
+        (long)u.ubirthday, u.chaos_game_token);
+    assert(!fclose(f));
 }
 
 void __wrap_chaos_start(void)
