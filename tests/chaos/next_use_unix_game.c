@@ -1,6 +1,7 @@
 /* NGPL. Controlled wizard fixture, NOT ordinary play or #66 acceptance.
  * Real Unix main, commands, turn loop, dog_move, fountain, tty and save/restore.
- * No runtime imports, fake reads, manual witnesses or outcome assignments.
+ * No runtime imports, fake reads, live witness setters or outcome assignments.
+ * Explicit fault markers below are test-only; save loss affects a copied value.
  */
 #include "hack.h"
 #include "chaos.h"
@@ -110,6 +111,34 @@ static void state(void)
 int __wrap_chaos_next_use_save(int fd)
 {
     int result, drop = access("drop-program-on-save", F_OK) == 0;
+    if (access("lose-witness-on-save", F_OK) == 0) {
+        /* TEST ONLY, explicit middle full Save. Do not import into the live
+         * runtime: serialize a copied VALID snapshot via the real codec. */
+        struct chaos_next_use_snapshot before, copy, after;
+        int present = chaos_next_use_save_status();
+        FILE *f;
+        assert(!drop && present == CHAOS_SNAPSHOT_VALID);
+        memset(&before, 0, sizeof before);
+        assert(chaos_next_use_snapshot_export(&before));
+        assert(before.witnessed == 1 && before.attention_claimed == 1);
+        copy = before;
+        copy.witnessed = 0;
+        assert(chaos_next_use_snapshot_validate(&copy));
+        bwrite(fd, (genericptr_t)"NUS1", 4);
+        bwrite(fd, (genericptr_t)&present, sizeof present);
+        result = chaos_next_use_snapshot_write(fd, &copy);
+        memset(&after, 0, sizeof after);
+        assert(chaos_next_use_snapshot_export(&after));
+        assert(!memcmp(&before, &after, sizeof before));
+        copy.witnessed = before.witnessed;
+        assert(!memcmp(&before, &copy, sizeof before));
+        f = file("native.jsonl", "a");
+        fprintf(f, "{\"kind\":\"witness-loss-save\",\"serializer_result\":%d,"
+            "\"runtime_witnessed\":%d,\"saved_witnessed\":0,\"source_sha256\":\"%s\"}\n",
+            result, after.witnessed, after.source_sha256);
+        assert(!fclose(f));
+        return result;
+    }
     if (drop) {
         /* TEST ONLY: player state/latch has already been serialized by save.c.
          * Drop only the runtime, then let the REAL serializer write ABSENT. */
@@ -207,6 +236,23 @@ int __wrap_dog_move(struct monst *pet, int after, struct chaos_whistle_witness *
         flush_screen(1);
         test_rng_reset();
         rng_observation("dog-reset");
+        if (access("bypass-w-native", F_OK) == 0) {
+            /* TEST ONLY: inhibit the actual eligible native decision, never
+             * assign a witness or claim this setup displacement as an effect. */
+            struct chaos_next_use_snapshot s;
+            int bx = pet->mx, by = pet->my;
+            FILE *f;
+            memset(&s, 0, sizeof s);
+            assert(chaos_next_use_snapshot_export(&s));
+            assert(s.callback_w == 1 && u.chaos.spent == 2);
+            f = file("physical.jsonl", "a");
+            fprintf(f, "{\"kind\":\"W-bypass\",\"before\":[%d,%d],"
+                "\"after\":[%d,%d],\"witnessed\":%d,\"spent\":%d,"
+                "\"monstermoves\":%ld}\n", bx, by, pet->mx, pet->my,
+                s.witnessed, u.chaos.spent, monstermoves);
+            assert(!fclose(f));
+            return 0;
+        }
     }
     return __real_dog_move(pet, after, w);
 }
@@ -261,7 +307,8 @@ void __wrap_chaos_whistle_witness_finalize(struct monst *pet, struct chaos_whist
 
 void __wrap_chaos_next_use_fountain_result(const struct chaos_fountain_token *token, int outcome)
 {
-    /* Record the real fountain callback; never synthesize its result. */
+    /* Record the real callback's token-origin root (not this action's root);
+     * never synthesize a result. */
     fountain_outcome = outcome;
     fountain_root = token ? token->root : 0;
     __real_chaos_next_use_fountain_result(token, outcome);
@@ -282,6 +329,7 @@ void __wrap_drinkfountain(void)
     rng_observation("fountain-reset");
     if (!admitted) for (i = 0; i < 3; ++i) (void)rn2(30);
     fountain_outcome = -1;
+    fountain_root = 0; /* Do not carry a previous callback's diagnostic root. */
     __real_drinkfountain();
     f = file("native.jsonl", "a");
     fprintf(f, "{\"kind\":\"fountain\",\"outcome\":%d,\"hunger_delta\":%d,"
