@@ -179,9 +179,9 @@ static int load_snapshot(const char *name, struct chaos_next_use_snapshot *s) {
     close(fd); return ok;
 }
 /* Compare every persistent gameplay value against the ACCEPTED replay prefix.
- * The actual saved OPEN journal anchor is separately checked against its exact
- * trusted prefix before this process starts; the validator has no writer.
- * Import uses that original anchor verbatim, not a fabricated NONE/COMPLETE.
+ * The actual saved OPEN/COMPLETE anchor is checked against its exact trusted
+ * prefix before this process starts; the validator has no writer.
+ * Import uses that original anchor verbatim, never a fabricated journal state.
  */
 static int checkpoint_equal(const struct chaos_next_use_snapshot *s) {
     if (s->program_id != replay_runtime.program_id) { fprintf(stderr, "checkpoint program_id\n"); return 0; }
@@ -224,7 +224,10 @@ static int checkpoint_equal(const struct chaos_next_use_snapshot *s) {
         && !memcmp(s->source, replay_runtime.source, s->source_length)
         && !replay_runtime.pending_w_capture && !replay_runtime.f_inflight
         && !replay_runtime.defer_termination
-        && s->journal_state == CHAOS_JOURNAL_OPEN && !s->capture_incomplete;
+        && (s->journal_state == CHAOS_JOURNAL_OPEN
+            || (s->journal_state == CHAOS_JOURNAL_COMPLETE
+                && s->phase == CHAOS_ATTEMPT_TERMINATED
+                && s->termination_emitted)) && !s->capture_incomplete;
 }
 int main(int argc, char **argv) {
     struct chaos_next_use_snapshot initial, middle;

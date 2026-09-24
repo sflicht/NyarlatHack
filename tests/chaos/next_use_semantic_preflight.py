@@ -68,9 +68,13 @@ def native_snapshot(save, source, destination, prefix, exported):
     prefix_bytes = prefix.read_bytes()
     lines = prefix_bytes.splitlines(keepends=True)
     parsed = read_journal(prefix)
-    assert parsed["status"] == "incomplete"
-    assert values["replay_cursor"] == len(parsed["records"]) - 1
-    assert values["journal_state"] == 1 and values["capture_incomplete"] == 0
+    # An actual terminal save includes the end row, which consumes no cursor.
+    # Preserve its COMPLETE anchor verbatim; never normalize it to OPEN.
+    complete = parsed["status"] == "structurally_complete"
+    assert parsed["status"] in ("incomplete", "structurally_complete")
+    assert values["replay_cursor"] == len(parsed["records"]) - (2 if complete else 1)
+    assert values["journal_state"] == (2 if complete else 1)
+    assert values["capture_incomplete"] == 0
     assert values["journal_bytes"] == sum(map(len, lines))
     assert values["journal_sha256"] == json.loads(lines[-1])["sha256"]
     destination.write_bytes(codec)
