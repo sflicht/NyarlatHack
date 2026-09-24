@@ -86,6 +86,7 @@ class NextUseUnixSaveTests(unittest.TestCase):
         exe = cls.artifacts / "dnethack"
         wraps = (
             "chaos_start",
+            "chaos_next_use_save",
             "chaos_observe",
             "rhack",
             "dog_move",
@@ -205,6 +206,15 @@ class NextUseUnixSaveTests(unittest.TestCase):
 
     def test_author_unpublished_checkpoint_does_not_invent_witness_for_f(self):
         self._two_family_order("WF", program="witness", unpublished=True)
+
+    def test_w_only_claimed_witness_survives_inside_window(self):
+        self._two_family_order("W")
+
+    def test_w_only_claimed_undelivered_survives_inside_window(self):
+        self._two_family_order("W", unpublished=True)
+
+    def test_drop_program_on_save_loses_remaining_native_f_effect(self):
+        self._two_family_order("WF", boundary="drop-program")
 
     def test_new_game_reusing_old_transport_has_no_admission_authority(self):
         self._new_game_reusing_old_transport()
@@ -430,8 +440,11 @@ class NextUseUnixSaveTests(unittest.TestCase):
                 "relocated-transport",
                 "armed-whistle",
                 "corrupt-save",
+                "drop-program",
             ),
         )
+        w_only = order == "W"
+        mutant = boundary == "drop-program"
         armed_checkpoint = boundary == "armed-whistle"
         if armed_checkpoint:
             self.assertEqual(order, "WF")
@@ -458,7 +471,7 @@ class NextUseUnixSaveTests(unittest.TestCase):
             self.assertIn(program, ("state", "witness"))
             self.assertEqual((order, boundary), ("WF", "unchanged"))
             source = fixture_sources()[0 if program == "state" else 1].decode("ascii")
-        if unpublished:
+        if unpublished and not w_only:
             self.assertEqual(program, "witness")
         refresh = program is None or (program == "witness" and not unpublished)
         sha = hashlib.sha256(source.encode("ascii")).hexdigest()
@@ -508,12 +521,15 @@ class NextUseUnixSaveTests(unittest.TestCase):
                 game.more(game.send("y"))
 
             whistle()
-            fountain()
+            if not w_only:
+                fountain()
             origins = []
             for family, operation, fact in (
                 ("W", "whistling", "ordinary_whistle"),
                 ("F", "fountain_drink", "water_refreshed"),
             ):
+                if w_only and family == "F":
+                    continue
                 notices = [
                     e
                     for e in game.events()
@@ -574,7 +590,36 @@ class NextUseUnixSaveTests(unittest.TestCase):
             ).encode()
             envelope = game.run / "next_use-envelope.json"
             author_evidence = {}
-            if program is None:
+            if w_only:
+                origin = origins[0]
+                publish_envelope(
+                    game.run,
+                    dict(
+                        family="W",
+                        op="whistle_attention",
+                        origin=dict(
+                            root_seq=origin["root"],
+                            notice_seq=origin["notice_seq"],
+                            end_seq=origin["end_seq"],
+                            fact="sound_high",
+                        ),
+                    ),
+                    dict(
+                        at=state()["safe"] + 1,
+                        id=1,
+                        variant=0,
+                        level_dnum=origin["level_dnum"],
+                        level_dlevel=origin["level_dlevel"],
+                        move=origin["move"],
+                        run=origin["run"],
+                    ),
+                )
+                encoded = envelope.read_bytes()
+                payload = json.loads(encoded)
+                self.assertEqual(payload["operations"], ["W"])
+                source = payload["source"]
+                sha = payload["source_sha256"]
+            elif program is None:
                 envelope.write_bytes(encoded)
                 envelope.chmod(0o600)
             else:
@@ -616,8 +661,12 @@ class NextUseUnixSaveTests(unittest.TestCase):
             spent_before = state()["spent"]
             game.sanity(60)
             admitted = state()
-            self.assertEqual(admitted["spent"], spent_before + 2, admitted)
-            self.assertEqual((admitted["slot_w"], admitted["slot_f"]), (1, 1))
+            self.assertEqual(
+                admitted["spent"], spent_before + (1 if w_only else 2), admitted
+            )
+            self.assertEqual(
+                (admitted["slot_w"], admitted["slot_f"]), (1, 0) if w_only else (1, 1)
+            )
             self.assertEqual(admitted["source_sha256"], sha)
             receipt = (game.run / "next_use-receipt.jsonl").read_bytes()
             admissions = [json.loads(line) for line in receipt.splitlines()]
@@ -648,6 +697,28 @@ class NextUseUnixSaveTests(unittest.TestCase):
                 effect(order[0])
             checkpoint = state()
             self.assertEqual(checkpoint["valid"], 1)
+            if w_only:
+                self.assertEqual(checkpoint["slot_w"], 2)
+                self.assertEqual(checkpoint["w_runtime"], 1)
+                self.assertEqual(checkpoint["callback_ordinal"], 1)
+                self.assertEqual(checkpoint["callback_w"], 1)
+                self.assertEqual(checkpoint["attempted"], 1)
+                self.assertEqual(
+                    len([r for r in native_trace() if r["kind"] == "witness"]), 1
+                )
+                self.assertEqual(checkpoint["slot_f"], 0)  # UNDECLARED, not pending
+                self.assertEqual(checkpoint["callback_f"], 0)
+                self.assertEqual(checkpoint["attention_claimed"], 1)
+                self.assertEqual(checkpoint["witnessed"], int(not unpublished))
+                self.assertEqual(checkpoint["armed_m_id"], fixture["pet_id"])
+                self.assertGreaterEqual(
+                    checkpoint["monstermoves"],
+                    checkpoint["activation_monstermoves"] + 5,
+                )
+                self.assertLess(
+                    checkpoint["monstermoves"],
+                    checkpoint["activation_monstermoves"] + 10,
+                )
             if program:
                 self.assertEqual(checkpoint["state"], int(program == "state"))
                 self.assertEqual(checkpoint["witnessed"], int(not unpublished))
@@ -684,13 +755,22 @@ class NextUseUnixSaveTests(unittest.TestCase):
                 self.assertFalse([r for r in native_trace() if r["kind"] == "witness"])
             (game.root / "checkpoint.json").write_text(json.dumps(checkpoint, indent=2))
             if interrupted:
+                if mutant:
+                    (game.game / "drop-program-on-save").touch()
                 self.assertEqual(game.save(), 0)
+                if mutant:
+                    # Never re-enable the seam for restore-time insurance writes.
+                    (game.game / "drop-program-on-save").unlink()
                 saves = list((game.game / "save").iterdir())
                 self.assertTrue(saves)
                 for save in saves:
                     retained = game.root / ("saved-" + save.name)
                     shutil.copy2(save, retained)
                     retained.chmod(0o400)
+                    if w_only:
+                        self.assertEqual(
+                            retained.read_bytes().count(source.encode("ascii")), 1
+                        )
                 if boundary == "corrupt-save":
                     # Disposable current uncompressed native save, with a used W
                     # and pending F. Preserve the readonly original as evidence.
@@ -793,10 +873,23 @@ class NextUseUnixSaveTests(unittest.TestCase):
                     self.assertEqual(envelope.read_bytes(), encoded)
                 game.start()
                 restored = state()
+                if mutant:
+                    self._lost_program_control(
+                        game,
+                        checkpoint,
+                        restored,
+                        fountain,
+                        whistle,
+                        state,
+                        native_trace,
+                        receipt,
+                    )
+                    continue
                 self.assertEqual(restored["valid"], 1)
                 (game.root / "restored.json").write_text(json.dumps(restored, indent=2))
                 # Read-only exported fields, never imported/assigned by the test.
                 for key in (
+                    "attempted",
                     "moves",
                     "monstermoves",
                     "safe",
@@ -856,6 +949,23 @@ class NextUseUnixSaveTests(unittest.TestCase):
                     ),
                     1,
                 )
+            if w_only:
+                results.append(
+                    self._claimed_w_continuation(
+                        game,
+                        checkpoint,
+                        state,
+                        native_trace,
+                        whistle,
+                        receipt,
+                        encoded,
+                        sha,
+                        unpublished,
+                        fixture,
+                    )
+                )
+                self.assertEqual(game.quit(), 0)
+                continue
             if armed_checkpoint:
                 await_attention()
             effect(order[1])
@@ -949,9 +1059,7 @@ class NextUseUnixSaveTests(unittest.TestCase):
             drinks = [r for r in trace if r["kind"] == "fountain"]
             self.assertEqual(len(drinks), 3)
             # Native contract enum: natural, remapped, default without intent.
-            self.assertEqual(
-                [drink["outcome"] for drink in drinks], [1, 6 if refresh else 4, 4]
-            )
+            self._assert_fountain_continuation(drinks, refresh)
             self.assertEqual(
                 [drink["hunger_delta"] for drink in drinks], [4, 4 if refresh else 0, 0]
             )
@@ -1030,7 +1138,193 @@ class NextUseUnixSaveTests(unittest.TestCase):
             (game.root / "assertions.json").write_text(json.dumps(summary, indent=2))
             results.append(summary)
             self.assertEqual(game.quit(), 0)
-        self.assertEqual(results[0], results[1])
+        if not mutant:
+            self.assertEqual(results[0], results[1])
+
+    def _assert_fountain_continuation(self, drinks, refresh):
+        self.assertEqual(
+            [drink["outcome"] for drink in drinks],
+            [1, 6 if refresh else 4, 4],
+            "remaining native F effect lost",
+        )
+
+    def _lost_program_control(
+        self,
+        game,
+        checkpoint,
+        restored,
+        fountain,
+        whistle,
+        state,
+        native_trace,
+        receipt,
+    ):
+        # A successful native restoration is prerequisite, not the mutant oracle.
+        self.assertEqual(
+            sum(
+                e.get("event") == "session" and e.get("detail") == "restore"
+                for e in game.events()
+            ),
+            1,
+        )
+        self.assertEqual(restored["valid"], 0)
+        self.assertEqual(checkpoint["slot_f"], 1)
+        dropped = [r for r in native_trace() if r["kind"] == "drop-program-save"]
+        self.assertEqual(
+            dropped,
+            [
+                dict(
+                    kind="drop-program-save",
+                    serializer_result=1,
+                    spent=checkpoint["spent"],
+                    attempted=1,
+                )
+            ],
+        )
+        self.assertNotEqual(restored["source_sha256"], checkpoint["source_sha256"])
+        for key in ("moves", "monstermoves", "safe", "spent", "attempted"):
+            self.assertEqual(restored[key], checkpoint[key], key)
+        self.assertEqual(restored["attempted"], 1)
+        (game.root / "restored.json").write_text(json.dumps(restored, indent=2))
+        fountain()
+        game.sanity(40)
+        whistle()
+        game.wait_turns(10)
+        fountain()
+        drinks = [r for r in native_trace() if r["kind"] == "fountain"]
+        self.assertEqual(len(drinks), 3)
+        self.assertEqual([r["hunger_delta"] for r in drinks], [4, 0, 0])
+        self.assertEqual([r["outcome"] for r in drinks], [1, 4, 4])
+        with self.assertRaisesRegex(
+            AssertionError, "remaining native F effect lost"
+        ) as caught:
+            self._assert_fountain_continuation(drinks, True)
+        self.assertEqual(state()["spent"], checkpoint["spent"])
+        self.assertEqual((game.run / "next_use-receipt.jsonl").read_bytes(), receipt)
+        self.assertEqual(game.quit(), 0)
+        (game.root / "negative-control.json").write_text(
+            json.dumps(
+                dict(
+                    oracle_failure=str(caught.exception),
+                    drinks=drinks,
+                    save_exit=0,
+                    restored_session_count=1,
+                    final_exit=game.exitcode,
+                ),
+                indent=2,
+            )
+        )
+
+    def _claimed_w_continuation(
+        self,
+        game,
+        checkpoint,
+        state,
+        native_trace,
+        whistle,
+        receipt,
+        encoded,
+        sha,
+        unpublished,
+        fixture,
+    ):
+        # Sample every native turn through the ORIGINAL deadline, not a restarted
+        # ten-turn window. No witness/claimed fields are imported or assigned.
+        deadline = checkpoint["activation_monstermoves"] + 10
+        samples = []
+        while state()["monstermoves"] <= deadline:
+            current = state()
+            # Command-boundary clock has advanced past the preceding observe.
+            self.assertEqual(current["w_runtime"], 1)
+            samples.append(current)
+            game.wait_turns(1)
+        ended = state()
+        self.assertEqual(ended["w_runtime"], 2)
+        self.assertEqual(ended["monstermoves"], deadline + 1)
+        window_end = json.loads((game.game / "window-ended.json").read_text())
+        self.assertEqual(
+            window_end,
+            dict(monstermoves=deadline, activation_monstermoves=deadline - 10),
+        )
+        game.sanity(40)
+        whistle()
+        game.wait_turns(10)
+        final = state()
+        for key in (
+            "slot_w",
+            "slot_f",
+            "witnessed",
+            "attention_claimed",
+            "callback_ordinal",
+            "callback_w",
+            "callback_f",
+            "spent",
+            "source_sha256",
+            "activation_monstermoves",
+            "armed_m_id",
+            "attempted",
+        ):
+            self.assertEqual(final[key], checkpoint[key], key)
+        self.assertEqual(final["source_sha256"], sha)
+        self.assertEqual(final["slot_f"], 0)
+        self.assertEqual((game.run / "next_use-envelope.json").read_bytes(), encoded)
+        self.assertEqual((game.root / "published-envelope.json").read_bytes(), encoded)
+        self.assertEqual((game.run / "next_use-receipt.jsonl").read_bytes(), receipt)
+        attempts = [r for r in native_trace() if r["kind"] == "witness"]
+        self.assertEqual(len(attempts), 1)
+        attempt = attempts[0]
+        self.assertEqual(attempt["displaced"], 1)
+        self.assertEqual(attempt["classifier"], 1)
+        self.assertEqual(attempt["delivered"], int(not unpublished))
+        self.assertEqual(attempt["pet_id"], fixture["pet_id"])
+        self.assertGreaterEqual(attempt["monstermoves"], deadline - 5)
+        self.assertLess(attempt["monstermoves"], deadline)
+        attention = [
+            e["observation"]
+            for e in game.events()
+            if e.get("observation", {}).get("operation") == "whistle_attention"
+        ]
+        self.assertEqual(
+            [e["stage"] for e in attention],
+            ["started", "blocked"]
+            if unpublished
+            else ["started", "notice", "completed"],
+        )
+        if not unpublished:
+            self.assertEqual(attention[1]["fact"], "attention")
+        summary = dict(
+            samples=[
+                {
+                    k: s[k]
+                    for k in (
+                        "monstermoves",
+                        "w_runtime",
+                        "attention_claimed",
+                        "witnessed",
+                    )
+                }
+                for s in samples
+            ],
+            window_end=window_end,
+            attempts=attempts,
+            final={
+                k: final[k]
+                for k in (
+                    "slot_w",
+                    "slot_f",
+                    "w_runtime",
+                    "witnessed",
+                    "attention_claimed",
+                    "callback_ordinal",
+                    "spent",
+                    "source_sha256",
+                    "moves",
+                    "monstermoves",
+                )
+            },
+        )
+        (game.root / "assertions.json").write_text(json.dumps(summary, indent=2))
+        return summary
 
     def _exercise_save_exit_restore(self, *, save_before_origin, departure=None):
         saved = {
