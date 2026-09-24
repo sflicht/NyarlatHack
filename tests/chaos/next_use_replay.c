@@ -286,6 +286,56 @@ int main(int argc, char **argv)
     installed = install_pending();
     if (!chaos_next_use_snapshot_export(&snap))
         return 1;
+    if (!strncmp(mode, "zero_delta_", 11)) {
+        struct chaos_next_use_replay_input bad;
+        int past, future, duplicate, restored = 0, unchanged;
+        int restore_first = strcmp(mode, "zero_delta_live") != 0;
+        int decision = !strcmp(mode, "zero_delta_restored_decision");
+        FILE *fp;
+        monstermoves = 40;
+        if (!installed) return 1;
+        if (restore_first) {
+            fp = tmpfile();
+            if (!fp || !chaos_next_use_save(fileno(fp))) return 1;
+            chaos_next_use_runtime_reset();
+            rewind(fp);
+            restored = chaos_next_use_restore_bound(fileno(fp), 1, 1);
+            fclose(fp);
+            if (!restored || chaos_next_use_runtime_private_count() != 0)
+                return 1;
+        }
+        if (!chaos_next_use_snapshot_export(&snap)) return 1;
+        fill_replay(&record, &snap, snap.replay_cursor + 1);
+        record.operation = decision ? CHAOS_REPLAY_W_DECISION : CHAOS_REPLAY_BOUNDARY;
+        record.root = snap.last_root;
+        record.seq = snap.next_seq - 1;
+        record.callback_ordinal = snap.callback_ordinal;
+        record.state = snap.state;
+        record.run_token = 1;
+        record.level_token = 1;
+        record.origin_w_live = 1;
+        record.origin_f_live = 0;
+        record.whistle_count = snap.whistle_count;
+        record.fountain_count = snap.fountain_count;
+        record.m_id = 7;
+        record.decision_root = 30;
+        /* No attention is eligible while W is still pending. These boundary
+         * and decision records legitimately generate no private carrier. */
+        bad = record;
+        --bad.seq;
+        past = chaos_next_use_replay_record(&bad);
+        bad = record;
+        ++bad.seq;
+        future = chaos_next_use_replay_record(&bad);
+        status = chaos_next_use_replay_record(&record);
+        duplicate = chaos_next_use_replay_record(&record);
+        unchanged = chaos_next_use_snapshot_export(&live)
+            && memcmp(&snap, &live, sizeof snap) == 0;
+        printf("{\"status\":%d,\"past\":%d,\"future\":%d,"
+               "\"duplicate\":%d,\"restored\":%d,\"unchanged\":%d}\n",
+               status, past, future, duplicate, restored, unchanged);
+        return 0;
+    }
     if (!strcmp(mode, "skip")) {
         fill_replay(&record, &snap, 2);
         status = chaos_next_use_replay_record(&record);

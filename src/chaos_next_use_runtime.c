@@ -1362,10 +1362,11 @@ int chaos_next_use_replay_record(
         && staged_runtime.private_records[staged_runtime.private_count - 1].seq
            != record->seq)
         return CHAOS_REPLAY_BLOCKED_REPLAY;
+    /* Restored checkpoints retain sequence identity, not old carrier arrays.
+     * A no-output transition must match that authoritative preceding sequence. */
     if (record->private_count == 0
-        && (staged_runtime.private_count < 1
-            || staged_runtime.private_records[
-                 staged_runtime.private_count - 1].seq != record->seq))
+        && (staged_runtime.next_seq < 1
+            || staged_runtime.next_seq - 1 != record->seq))
         return CHAOS_REPLAY_BLOCKED_REPLAY;
     staged_runtime.replay_cursor = record->cursor;
     replay_runtime = staged_runtime;
