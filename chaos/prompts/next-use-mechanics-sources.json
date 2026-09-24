@@ -8,11 +8,11 @@
     "src/attrib.c": "cef325e4e78bb1ccafa5004b8241418194c44fe3ab9c7ccb9d00032f70205acd",
     "src/chaos_lua.c": "62a68112a8155aa10622bd124c00400b9aad9127f48e18dd5fbcdc240f52042f",
     "src/chaos_next_use.c": "0e2e4c81577612035b221bfdd35fdb8f227b8e006a05988907d9bd8094b96a8c",
-    "src/chaos_next_use_runtime.c": "6d2dbe1f23b674264df28f8ba51d7f71b34f3dff937c7524a27bd01c8118cfd7",
+    "src/chaos_next_use_runtime.c": "d9b2b90d8268cd535be0934ecf27d4542388ac6ed1850efa5749009690727e22",
     "src/chaos_next_use_safe.c": "66d8e4ef0be4416f27fb07808f6fc7ff01e7c0b5e6cf1e3de2e7c3f50351a50d",
     "src/dogmove.c": "184e52d3f6098bfd256cea32a11e094bc678e65553738a185c933b4067253baa",
     "src/fountain.c": "418d5bddeb8a22ad427e18b97b88560f08071dc0ddc051a00ba6e34e85f41f86",
     "src/u_init.c": "9c9a4788d2c3ceffc91d18ed9c7168556571781d99ea3fe44ed95fbd01e5db68"
   },
-  "revision": "483c7c1b071008386b742cbc697dbd7e45c8133b"
+  "revision": "fd885c482c6eb0307b9278ef2a4e6827be4477ec"
 }

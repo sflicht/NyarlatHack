@@ -536,19 +536,11 @@ void chaos_whistle_witness_finalize(struct monst *mtmp,
         stage = published ? CHAOS_OBS_STAGE_COMPLETED
                           : CHAOS_OBS_STAGE_BLOCKED;
         if (!chaos_observation_finish(witness->root, stage, &end_seq)) {
-            chaos_next_use_manifestation_end(witness->root,
-                witness->notice_seq, 0, FALSE);
             witness->invalid = TRUE;
+            chaos_next_use_manifestation_complete(witness, 0, FALSE);
             return;
         }
-        chaos_next_use_manifestation_end(witness->root,
-            witness->notice_seq, end_seq, published);
-        if (published && witness->manifestation_delivered
-            && witness->displaced && witness->pre_public
-            && !witness->invalid
-            && witness->root < witness->notice_seq
-            && witness->notice_seq < end_seq)
-            chaos_next_use_on_manifestation(witness, end_seq);
+        chaos_next_use_manifestation_complete(witness, end_seq, published);
     }
 }
 

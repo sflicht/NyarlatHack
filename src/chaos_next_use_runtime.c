@@ -83,6 +83,157 @@ static void copy_hash(char target[65], const char *source)
     if (length == 64) memcpy(target, source, 64);
 }
 
+/* One borrowed carrier, never an event database. Staged replay is not capture. */
+static struct chaos_next_use_replay_input capture_record;
+static chaos_next_use_capture_sink capture_sink;
+static void *capture_opaque;
+static int capture_depth, capture_incomplete, capture_delivering;
+static int capture_private_before, capture_public_before, capture_manifest_open;
+
+void chaos_next_use_capture_set_sink(chaos_next_use_capture_sink sink, void *opaque)
+{
+    if (capture_depth || capture_delivering) {
+        capture_incomplete = 1;
+        return;
+    }
+    capture_sink = sink;
+    capture_opaque = opaque;
+}
+
+void chaos_next_use_capture_status(struct chaos_next_use_capture_status *out)
+{
+    if (!out) return;
+    out->sink_connected = capture_sink != NULL;
+    out->incomplete = capture_incomplete;
+    out->transaction_open = capture_depth != 0 || capture_delivering;
+    out->acknowledged_cursor = live_runtime.replay_cursor;
+}
+
+static void replay_post_values(struct chaos_next_use_replay_poststate *out,
+                               const struct runtime_state *in)
+{
+    out->phase = in->phase;
+    out->delay_used = in->delay_used;
+    out->delay_until = in->delay_until;
+    out->termination_emitted = in->termination_emitted;
+    out->identity_unsafe = in->identity_unsafe;
+    out->pending_w_capture = in->pending_w_capture;
+    out->f_inflight = in->f_inflight;
+    out->witnessed = in->witnessed;
+    out->attention_claimed = in->attention_claimed;
+    out->callback_w = in->callback_w;
+    out->callback_f = in->callback_f;
+    out->whistle_count = in->whistle_count;
+    out->fountain_count = in->fountain_count;
+    out->origin_w_live = in->origin_w_live;
+    out->origin_f_live = in->origin_f_live;
+    out->manifest_success = in->manifest_success;
+    out->armed_m_id = in->armed_m_id;
+    out->expected_manifest_m_id = in->expected_manifest_m_id;
+    out->activation_monstermoves = in->activation_monstermoves;
+    out->armed_root = in->armed_root;
+    out->pending_w_root = in->pending_w_root;
+    out->f_root = in->f_root;
+    out->current_run_token = in->current_run_token;
+    out->current_level_token = in->current_level_token;
+    out->expected_manifest_root = in->expected_manifest_root;
+    out->expected_notice_seq = in->expected_notice_seq;
+    out->expected_end_seq = in->expected_end_seq;
+}
+
+static int replay_post_equal(const struct chaos_next_use_replay_poststate *out,
+                             const struct runtime_state *in)
+{
+    return out->phase == in->phase
+        && out->delay_used == in->delay_used
+        && out->delay_until == in->delay_until
+        && out->termination_emitted == in->termination_emitted
+        && out->identity_unsafe == in->identity_unsafe
+        && out->pending_w_capture == in->pending_w_capture
+        && out->f_inflight == in->f_inflight
+        && out->witnessed == in->witnessed
+        && out->attention_claimed == in->attention_claimed
+        && out->callback_w == in->callback_w
+        && out->callback_f == in->callback_f
+        && out->whistle_count == in->whistle_count
+        && out->fountain_count == in->fountain_count
+        && out->origin_w_live == in->origin_w_live
+        && out->origin_f_live == in->origin_f_live
+        && out->manifest_success == in->manifest_success
+        && out->armed_m_id == in->armed_m_id
+        && out->expected_manifest_m_id == in->expected_manifest_m_id
+        && out->activation_monstermoves == in->activation_monstermoves
+        && out->armed_root == in->armed_root
+        && out->pending_w_root == in->pending_w_root
+        && out->f_root == in->f_root
+        && out->current_run_token == in->current_run_token
+        && out->current_level_token == in->current_level_token
+        && out->expected_manifest_root == in->expected_manifest_root
+        && out->expected_notice_seq == in->expected_notice_seq
+        && out->expected_end_seq == in->expected_end_seq;
+}
+
+/* Every wrapper pairs enter/leave, including nested ACTION -> boundary ->
+ * expiry. Only the outer call owns arguments and emits; even zero-delta calls
+ * retain ordering. Missing subscribers are trace gaps, not gameplay failures. */
+static int capture_enter(int operation)
+{
+    if (runtime_staging) return 0;
+    if (capture_delivering) {
+        capture_incomplete = 1;
+        return 0;
+    }
+    if (capture_depth) { ++capture_depth; return 1; }
+    if (runtime.phase != CHAOS_ATTEMPT_COMMITTED || capture_incomplete) return 0;
+    if (!capture_sink || live_runtime.replay_cursor >= INT32_MAX) {
+        capture_incomplete = 1;
+        return 0;
+    }
+    capture_depth = 1;
+    memset(&capture_record, 0, sizeof capture_record);
+    capture_record.replay_input_v = CHAOS_NEXT_USE_REPLAY_INPUT_V;
+    capture_record.operation = operation;
+    capture_record.at_move = monstermoves;
+    copy_hash(capture_record.source_sha256, runtime.source_sha256);
+    capture_record.cursor = runtime.replay_cursor + 1;
+    capture_private_before = runtime.private_count;
+    capture_public_before = runtime.public_count;
+    return 1;
+}
+
+static void capture_leave(int entered)
+{
+    int i, acknowledged;
+    if (!entered || --capture_depth) return;
+    if (capture_incomplete) return;
+    capture_record.expected_last_root = runtime.last_root;
+    capture_record.callback_ordinal = runtime.callback_ordinal;
+    capture_record.state = runtime.state;
+    capture_record.seq = runtime.next_seq - 1;
+    capture_record.slot_w = runtime.slot_w;
+    capture_record.slot_f = runtime.slot_f;
+    capture_record.w_runtime = runtime.w_runtime;
+    replay_post_values(&capture_record.post, &live_runtime);
+    capture_record.private_count = runtime.private_count - capture_private_before;
+    capture_record.public_count = runtime.public_count - capture_public_before;
+    if (capture_record.private_count < 0 || capture_record.private_count > 4
+        || capture_record.public_count < 0 || capture_record.public_count > 1) {
+        capture_incomplete = 1;
+        return;
+    }
+    for (i = 0; i < capture_record.private_count; ++i)
+        capture_record.private_records[i] = runtime.private_records[capture_private_before + i];
+    for (i = 0; i < capture_record.public_count; ++i)
+        capture_record.public_records[i] = runtime.public_records[capture_public_before + i];
+    capture_delivering = 1;
+    acknowledged = capture_sink(capture_opaque, &capture_record);
+    capture_delivering = 0;
+    if (acknowledged && !capture_incomplete)
+        live_runtime.replay_cursor = capture_record.cursor;
+    else
+        capture_incomplete = 1;
+}
+
 static void chaos_next_use_sha256_hex(const unsigned char *data, size_t length,
                                       char digest[65])
 {
@@ -240,6 +391,7 @@ static void clear_action_token(struct chaos_fountain_token *token)
 void chaos_next_use_runtime_reset(void)
 {
     runtime_staging = 0;
+    capture_depth = capture_manifest_open = capture_incomplete = 0;
     memset(&live_runtime, 0, sizeof live_runtime);
     memset(&replay_runtime, 0, sizeof replay_runtime);
     memset(&staged_runtime, 0, sizeof staged_runtime);
@@ -573,7 +725,7 @@ int chaos_next_use_runtime_install(
     return 1;
 }
 
-void chaos_next_use_runtime_boundary(long run_token, long level_token,
+static void runtime_runtime_boundary_impl(long run_token, long level_token,
                                      int origin_w_live, int origin_f_live,
                                      int whistle_count, int fountain_count)
 {
@@ -625,13 +777,13 @@ void chaos_next_use_identity_boundary(long run_token, long level_token)
         runtime.whistle_count, runtime.fountain_count);
 }
 
-void chaos_next_use_mark_identity_unsafe(void)
+static void runtime_mark_identity_unsafe_impl(void)
 {
     if (runtime.phase == CHAOS_ATTEMPT_COMMITTED)
         runtime.identity_unsafe = 1;
 }
 
-int chaos_next_use_take_identity_unsafe(void)
+static int runtime_take_identity_unsafe_impl(void)
 {
     int unsafe;
     if (runtime.phase != CHAOS_ATTEMPT_COMMITTED) return 0;
@@ -640,7 +792,7 @@ int chaos_next_use_take_identity_unsafe(void)
     return unsafe;
 }
 
-void chaos_next_use_end_w(enum chaos_next_use_end_reason reason,
+static void runtime_end_w_impl(enum chaos_next_use_end_reason reason,
                           const long *current_root_or_null)
 {
     int outcome = 0;
@@ -705,7 +857,7 @@ void chaos_next_use_end_w(enum chaos_next_use_end_reason reason,
     maybe_append_termination(reason, 0);
 }
 
-void chaos_next_use_expire(enum chaos_next_use_end_reason reason)
+static void runtime_expire_impl(enum chaos_next_use_end_reason reason)
 {
     if (runtime.phase != CHAOS_ATTEMPT_COMMITTED) return;
     if (reason == CHAOS_END_LEVEL_DEPARTURE)
@@ -741,7 +893,7 @@ boolean chaos_next_use_action_preflight(int family, long completed_root)
     return FALSE;
 }
 
-boolean chaos_next_use_on_action(int family, long completed_root,
+static boolean runtime_on_action_impl(int family, long completed_root,
                                  struct chaos_fountain_token *token_out)
 {
     struct chaos_next_use_context context;
@@ -882,7 +1034,7 @@ boolean chaos_next_use_on_action(int family, long completed_root,
     return FALSE;
 }
 
-void chaos_next_use_whistle_unavailable(long completed_root)
+static void runtime_whistle_unavailable_impl(long completed_root)
 {
     if (runtime.phase != CHAOS_ATTEMPT_COMMITTED
         || runtime.slot_w != CHAOS_SLOT_W_PENDING || completed_root <= 0)
@@ -894,7 +1046,7 @@ void chaos_next_use_whistle_unavailable(long completed_root)
     maybe_append_termination(RUNTIME_TERMINATION_COMPLETED, 0);
 }
 
-void chaos_next_use_capture_whistle(long completed_root, unsigned m_id,
+static void runtime_capture_whistle_impl(long completed_root, unsigned m_id,
                                     long at_move)
 {
     if (!runtime.pending_w_capture
@@ -917,7 +1069,7 @@ void chaos_next_use_capture_whistle(long completed_root, unsigned m_id,
                   completed_root);
 }
 
-boolean chaos_next_use_whistle_decision_ready(unsigned m_id)
+static boolean runtime_whistle_decision_ready_impl(unsigned m_id)
 {
     if (runtime.current_run_token <= 0 || runtime.current_level_token <= 0
         || runtime.current_run_token != runtime.run_token
@@ -935,7 +1087,7 @@ boolean chaos_next_use_whistle_decision_ready(unsigned m_id)
         && monstermoves >= runtime.activation_monstermoves + 5;
 }
 
-void chaos_next_use_whistle_no_root(unsigned m_id)
+static void runtime_whistle_no_root_impl(unsigned m_id)
 {
     if (runtime.w_runtime == CHAOS_W_RUNTIME_ARMED
         && runtime.armed_m_id != 0 && m_id == runtime.armed_m_id
@@ -945,7 +1097,7 @@ void chaos_next_use_whistle_no_root(unsigned m_id)
         runtime.attention_claimed = 1;
 }
 
-boolean chaos_next_use_whistle_attention(unsigned m_id, long decision_root)
+static boolean runtime_whistle_attention_impl(unsigned m_id, long decision_root)
 {
     if (decision_root <= 0 || !chaos_next_use_whistle_decision_ready(m_id))
         return FALSE;
@@ -959,7 +1111,7 @@ boolean chaos_next_use_whistle_attention(unsigned m_id, long decision_root)
     return TRUE;
 }
 
-boolean chaos_next_use_manifestation_begin(unsigned m_id, long root)
+static boolean runtime_manifestation_begin_impl(unsigned m_id, long root)
 {
     if (runtime.w_runtime != CHAOS_W_RUNTIME_ARMED
         || !runtime.attention_claimed || runtime.witnessed
@@ -975,6 +1127,10 @@ boolean chaos_next_use_manifestation_begin(unsigned m_id, long root)
 
 void chaos_next_use_manifestation_notice(long root, long notice_seq)
 {
+    if (!runtime_staging && capture_manifest_open && capture_depth == 1) {
+        capture_record.notice_root = root;
+        capture_record.notice_seq = notice_seq;
+    }
     if (runtime.expected_manifest_root == root
         && notice_seq > root && runtime.expected_notice_seq == 0)
         runtime.expected_notice_seq = (int) notice_seq;
@@ -1015,7 +1171,7 @@ long chaos_next_use_fountain_completed_root(void)
         && runtime.slot_f == CHAOS_SLOT_F_PENDING ? runtime.origin_f : 0;
 }
 
-void chaos_next_use_fountain_result(const struct chaos_fountain_token *token,
+static void runtime_fountain_result_impl(const struct chaos_fountain_token *token,
                                     int outcome)
 {
     int effect = 0;
@@ -1094,6 +1250,205 @@ void chaos_next_use_on_manifestation(
     runtime.expected_manifest_root = 0;
     runtime.expected_notice_seq = 0;
     runtime.expected_end_seq = 0;
+}
+
+/* Capture wrappers leave gameplay implementations above unchanged. */
+void chaos_next_use_runtime_boundary(long run_token, long level_token,
+                                     int origin_w_live, int origin_f_live,
+                                     int whistle_count, int fountain_count)
+{
+    int entered = capture_enter(CHAOS_REPLAY_BOUNDARY);
+    if (entered && capture_depth == 1) {
+        capture_record.run_token = run_token;
+        capture_record.level_token = level_token;
+        capture_record.origin_w_live = origin_w_live;
+        capture_record.origin_f_live = origin_f_live;
+        capture_record.whistle_count = whistle_count;
+        capture_record.fountain_count = fountain_count;
+    }
+    runtime_runtime_boundary_impl(run_token, level_token, origin_w_live, origin_f_live, whistle_count, fountain_count);
+    capture_leave(entered);
+}
+
+void chaos_next_use_mark_identity_unsafe(void)
+{
+    int entered = capture_enter(CHAOS_REPLAY_IDENTITY_MARK);
+    runtime_mark_identity_unsafe_impl();
+    capture_leave(entered);
+}
+
+int chaos_next_use_take_identity_unsafe(void)
+{
+    int entered = capture_enter(CHAOS_REPLAY_IDENTITY_TAKE);
+    int result;
+    result = runtime_take_identity_unsafe_impl();
+    if (entered && capture_depth == 1)
+        capture_record.expected_result = result;
+    capture_leave(entered);
+    return result;
+}
+
+void chaos_next_use_end_w(enum chaos_next_use_end_reason reason,
+                          const long *current_root_or_null)
+{
+    int entered = capture_enter(CHAOS_REPLAY_END_W);
+    if (entered && capture_depth == 1) {
+        capture_record.end_reason = reason;
+        capture_record.root_present = current_root_or_null != NULL;
+        if (current_root_or_null) capture_record.root = *current_root_or_null;
+    }
+    runtime_end_w_impl(reason, current_root_or_null);
+    capture_leave(entered);
+}
+
+void chaos_next_use_expire(enum chaos_next_use_end_reason reason)
+{
+    int entered = capture_enter(CHAOS_REPLAY_EXPIRE);
+    if (entered && capture_depth == 1) {
+        capture_record.end_reason = reason;
+    }
+    runtime_expire_impl(reason);
+    capture_leave(entered);
+}
+
+boolean chaos_next_use_on_action(int family, long completed_root,
+                                 struct chaos_fountain_token *token_out)
+{
+    int entered = capture_enter(CHAOS_REPLAY_ACTION);
+    boolean result;
+    if (entered && capture_depth == 1) {
+        capture_record.family = family;
+        capture_record.root = completed_root;
+        capture_record.token_present = token_out != NULL;
+    }
+    result = runtime_on_action_impl(family, completed_root, token_out);
+    if (entered && capture_depth == 1)
+        capture_record.expected_result = result;
+    /* OUT storage is undefined on rejected preflight. Never read it before
+     * the call or on failure, and do not change the caller's native storage. */
+    if (entered && capture_depth == 1 && result && token_out)
+        capture_record.expected_token = *token_out;
+    capture_leave(entered);
+    return result;
+}
+
+void chaos_next_use_whistle_unavailable(long completed_root)
+{
+    int entered = capture_enter(CHAOS_REPLAY_W_UNAVAILABLE);
+    if (entered && capture_depth == 1) {
+        capture_record.root = completed_root;
+    }
+    runtime_whistle_unavailable_impl(completed_root);
+    capture_leave(entered);
+}
+
+void chaos_next_use_capture_whistle(long completed_root, unsigned m_id, long at_move)
+{
+    int entered = capture_enter(CHAOS_REPLAY_W_CAPTURE);
+    if (entered && capture_depth == 1) {
+        capture_record.m_id = m_id;
+        capture_record.root = completed_root;
+        capture_record.activation_move = at_move;
+    }
+    runtime_capture_whistle_impl(completed_root, m_id, at_move);
+    capture_leave(entered);
+}
+
+boolean chaos_next_use_whistle_decision_ready(unsigned m_id)
+{
+    int entered = capture_enter(CHAOS_REPLAY_W_READY);
+    boolean result;
+    if (entered && capture_depth == 1) {
+        capture_record.m_id = m_id;
+    }
+    result = runtime_whistle_decision_ready_impl(m_id);
+    if (entered && capture_depth == 1)
+        capture_record.expected_result = result;
+    capture_leave(entered);
+    return result;
+}
+
+void chaos_next_use_whistle_no_root(unsigned m_id)
+{
+    int entered = capture_enter(CHAOS_REPLAY_W_NO_ROOT);
+    if (entered && capture_depth == 1) {
+        capture_record.m_id = m_id;
+    }
+    runtime_whistle_no_root_impl(m_id);
+    capture_leave(entered);
+}
+
+boolean chaos_next_use_whistle_attention(unsigned m_id, long decision_root)
+{
+    int entered = capture_enter(CHAOS_REPLAY_W_DECISION);
+    boolean result;
+    if (entered && capture_depth == 1) {
+        capture_record.m_id = m_id;
+        capture_record.decision_root = decision_root;
+    }
+    result = runtime_whistle_attention_impl(m_id, decision_root);
+    if (entered && capture_depth == 1)
+        capture_record.expected_result = result;
+    if (entered && capture_depth == 1)
+        capture_record.expected_attention = result;
+    capture_leave(entered);
+    return result;
+}
+
+void chaos_next_use_fountain_result(const struct chaos_fountain_token *token, int outcome)
+{
+    int entered = capture_enter(CHAOS_REPLAY_F_RESULT);
+    if (entered && capture_depth == 1) {
+        capture_record.token_present = token != NULL;
+        if (token) capture_record.expected_token = *token;
+        capture_record.fountain_outcome = outcome;
+    }
+    runtime_fountain_result_impl(token, outcome);
+    capture_leave(entered);
+}
+
+/* A manifestation spans native movement/presentation, not just its last
+ * witness callback. Finish only after the real publication certificate and
+ * observation end are known, including unsuccessful delivery. */
+boolean chaos_next_use_manifestation_begin(unsigned m_id, long root)
+{
+    int entered = capture_enter(CHAOS_REPLAY_W_MANIFEST);
+    boolean result;
+    if (entered && capture_depth == 1) {
+        capture_record.m_id = m_id;
+        capture_record.manifest_root = root;
+    }
+    result = runtime_manifestation_begin_impl(m_id, root);
+    if (entered && capture_depth == 1) capture_record.expected_result = result;
+    if (!result) capture_leave(entered);
+    else if (!runtime_staging) capture_manifest_open = entered;
+    return result;
+}
+
+void chaos_next_use_manifestation_complete(
+    const struct chaos_whistle_witness *witness, long end_seq, int published)
+{
+    int entered = !runtime_staging && capture_manifest_open;
+    if (!witness) {
+        if (entered) capture_incomplete = 1;
+    } else {
+        if (entered && capture_depth == 1) {
+            capture_record.root = witness->root;
+            capture_record.witness_notice_seq = witness->notice_seq;
+            capture_record.end_seq = end_seq;
+            capture_record.published = !!published;
+            capture_record.pre_public = !!witness->pre_public;
+            capture_record.manifestation_delivered = !!witness->manifestation_delivered;
+            capture_record.displaced = !!witness->displaced;
+            capture_record.invalid = !!witness->invalid;
+        }
+        chaos_next_use_manifestation_end(witness->root, witness->notice_seq,
+                                          end_seq, published);
+        if (published && witness->pre_public)
+            chaos_next_use_on_manifestation(witness, end_seq);
+    }
+    if (!runtime_staging) capture_manifest_open = 0;
+    capture_leave(entered);
 }
 
 static int valid_hash_field(const char value[65])
@@ -1243,14 +1598,40 @@ static int replay_token_equal(const struct chaos_fountain_token *left,
         && left->remap == right->remap && left->consumed == right->consumed;
 }
 
-int chaos_next_use_replay_record(
-        const struct chaos_next_use_replay_input *record)
+/* The caller chooses semantics; an untrusted record cannot negotiate them. */
+static int replay_record_impl(
+        const struct chaos_next_use_replay_input *record, int legacy_fixture)
 {
     struct chaos_fountain_token token;
     struct chaos_whistle_witness witness;
     int private_before, public_before, index, attention = 0;
-    int applied = 1;
+    int applied = 1, result = 0;
     if (!record || !valid_hash_field(record->source_sha256))
+        return CHAOS_REPLAY_BLOCKED_REPLAY;
+    if (record->replay_input_v != (legacy_fixture ? 0 : CHAOS_NEXT_USE_REPLAY_INPUT_V)
+        || (legacy_fixture
+            && (record->operation == CHAOS_REPLAY_W_MANIFEST
+                || record->operation > CHAOS_REPLAY_EXPIRE)))
+        return CHAOS_REPLAY_BLOCKED_REPLAY;
+    if (!legacy_fixture &&
+        ((record->published != 0 && record->published != 1)
+         || (record->pre_public != 0 && record->pre_public != 1)
+         || (record->manifestation_delivered != 0 && record->manifestation_delivered != 1)
+         || (record->displaced != 0 && record->displaced != 1)
+         || (record->invalid != 0 && record->invalid != 1)
+         || (record->token_present != 0 && record->token_present != 1)
+         || (record->root_present != 0 && record->root_present != 1)
+         || (record->expected_result != 0 && record->expected_result != 1)
+         || (record->expected_attention != 0 && record->expected_attention != 1)
+         || (record->expected_token.active != 0 && record->expected_token.active != 1)
+         || (record->expected_token.consumed != 0 && record->expected_token.consumed != 1)
+         || (record->expected_token.remap != 0 && record->expected_token.remap != 1)
+         || (record->origin_w_live != 0 && record->origin_w_live != 1)
+         || (record->origin_f_live != 0 && record->origin_f_live != 1)
+         || (record->published && (!record->manifestation_delivered
+             || !record->displaced || !record->pre_public || record->invalid
+             || !(record->root < record->witness_notice_seq
+                  && record->witness_notice_seq < record->end_seq)))))
         return CHAOS_REPLAY_BLOCKED_REPLAY;
     if (replay_runtime.phase == CHAOS_ATTEMPT_TERMINATED
         || replay_runtime.replay_cursor == ULONG_MAX
@@ -1273,7 +1654,8 @@ int chaos_next_use_replay_record(
     memset(&witness, 0, sizeof witness);
     switch (record->operation) {
     case CHAOS_REPLAY_ACTION:
-        (void) chaos_next_use_on_action(record->family, record->root, &token);
+        result = chaos_next_use_on_action(record->family, record->root,
+            legacy_fixture || record->token_present ? &token : NULL);
         if (!replay_token_equal(&token, &record->expected_token)) applied = 0;
         break;
     case CHAOS_REPLAY_W_UNAVAILABLE:
@@ -1281,44 +1663,43 @@ int chaos_next_use_replay_record(
         break;
     case CHAOS_REPLAY_W_CAPTURE:
         chaos_next_use_capture_whistle(record->root, record->m_id,
-                                       record->at_move);
+                                       legacy_fixture
+                                           ? record->at_move : record->activation_move);
         break;
     case CHAOS_REPLAY_W_DECISION:
-        if (chaos_next_use_whistle_decision_ready(record->m_id)) {
+        if (!legacy_fixture) {
+            attention = chaos_next_use_whistle_attention(record->m_id,
+                                                          record->decision_root);
+        } else if (chaos_next_use_whistle_decision_ready(record->m_id)) {
             if (record->decision_root > 0)
                 attention = chaos_next_use_whistle_attention(
                     record->m_id, record->decision_root);
             else
                 chaos_next_use_whistle_no_root(record->m_id);
         }
-        if (attention != !!record->expected_attention) applied = 0;
+        result = attention;
+        if (attention != record->expected_attention) applied = 0;
         break;
     case CHAOS_REPLAY_W_MANIFEST:
-        witness.root = record->manifest_root;
-        witness.notice_seq = record->notice_seq;
+        witness.root = record->root;
+        witness.notice_seq = record->witness_notice_seq;
         witness.production = TRUE;
-        witness.pre_public = TRUE;
+        witness.pre_public = record->pre_public;
         witness.manifestation_delivered = !!record->manifestation_delivered;
         witness.displaced = !!record->displaced;
         witness.invalid = !!record->invalid;
-        if (!chaos_next_use_manifestation_begin(record->m_id,
-                                                record->manifest_root)) {
-            applied = 0;
-            break;
-        }
-        if (record->notice_seq > 0)
-            chaos_next_use_manifestation_notice(record->manifest_root,
+        result = chaos_next_use_manifestation_begin(record->m_id,
+                                                     record->manifest_root);
+        if (!result) break;
+        if (record->notice_root)
+            chaos_next_use_manifestation_notice(record->notice_root,
                                                  record->notice_seq);
-        chaos_next_use_manifestation_end(record->manifest_root,
-            record->notice_seq, record->end_seq,
-            record->manifestation_delivered && record->displaced
-                && !record->invalid);
-        if (record->manifestation_delivered && record->displaced
-            && !record->invalid)
-            chaos_next_use_on_manifestation(&witness, record->end_seq);
+        chaos_next_use_manifestation_complete(&witness, record->end_seq,
+                                               record->published);
         break;
     case CHAOS_REPLAY_F_RESULT:
-        chaos_next_use_fountain_result(&record->expected_token,
+        chaos_next_use_fountain_result(
+            legacy_fixture || record->token_present ? &record->expected_token : NULL,
                                        record->fountain_outcome);
         break;
     case CHAOS_REPLAY_BOUNDARY:
@@ -1331,17 +1712,36 @@ int chaos_next_use_replay_record(
         chaos_next_use_expire((enum chaos_next_use_end_reason)
                               record->end_reason);
         break;
+    case CHAOS_REPLAY_W_READY:
+        result = chaos_next_use_whistle_decision_ready(record->m_id);
+        break;
+    case CHAOS_REPLAY_W_NO_ROOT:
+        chaos_next_use_whistle_no_root(record->m_id);
+        break;
+    case CHAOS_REPLAY_IDENTITY_MARK:
+        chaos_next_use_mark_identity_unsafe();
+        break;
+    case CHAOS_REPLAY_IDENTITY_TAKE:
+        result = chaos_next_use_take_identity_unsafe();
+        break;
+    case CHAOS_REPLAY_END_W:
+        chaos_next_use_end_w((enum chaos_next_use_end_reason) record->end_reason,
+                             record->root_present ? &record->root : NULL);
+        break;
     default:
         applied = 0;
         break;
     }
     runtime_staging = 0;
     if (!applied
+        || (!legacy_fixture && (result != record->expected_result
+            || !replay_post_equal(&record->post, &staged_runtime)))
         || staged_runtime.private_count - private_before
            != record->private_count
         || staged_runtime.public_count - public_before
            != record->public_count
-        || staged_runtime.last_root != record->root
+        || staged_runtime.last_root != (legacy_fixture
+            ? record->root : record->expected_last_root)
         || staged_runtime.callback_ordinal != record->callback_ordinal
         || staged_runtime.state != record->state
         || staged_runtime.slot_w != record->slot_w
@@ -1372,6 +1772,21 @@ int chaos_next_use_replay_record(
     replay_runtime = staged_runtime;
     return CHAOS_REPLAY_APPLIED;
 }
+
+int chaos_next_use_replay_record(
+        const struct chaos_next_use_replay_input *record)
+{
+    return replay_record_impl(record, 0);
+}
+
+#ifdef CHAOS_NEXT_USE_TEST_LEGACY_REPLAY
+/* Historical component fixtures only; absent from production builds. */
+int chaos_next_use_replay_legacy_fixture(
+        const struct chaos_next_use_replay_input *record)
+{
+    return replay_record_impl(record, 1);
+}
+#endif
 
 static void snapshot_values(struct chaos_next_use_snapshot *out)
 {

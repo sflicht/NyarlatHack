@@ -98,7 +98,12 @@ enum chaos_next_use_replay_operation {
     CHAOS_REPLAY_W_MANIFEST = 5,
     CHAOS_REPLAY_F_RESULT = 6,
     CHAOS_REPLAY_BOUNDARY = 7,
-    CHAOS_REPLAY_EXPIRE = 8
+    CHAOS_REPLAY_EXPIRE = 8,
+    CHAOS_REPLAY_W_READY = 9,
+    CHAOS_REPLAY_W_NO_ROOT = 10,
+    CHAOS_REPLAY_IDENTITY_MARK = 11,
+    CHAOS_REPLAY_IDENTITY_TAKE = 12,
+    CHAOS_REPLAY_END_W = 13
 };
 
 enum chaos_next_use_replay_status {
@@ -147,7 +152,27 @@ struct chaos_next_use_termination {
     int w_runtime;
 };
 
+/* Production replay accepts v1 only: inputs, poststate and publication evidence.
+ * Historical v0 component fixtures require an explicit TEST-ONLY entry point.
+ * Neither version is a disk codec; never serialize these structs as raw bytes. */
+#define CHAOS_NEXT_USE_REPLAY_INPUT_V 1
+struct chaos_next_use_replay_poststate {
+    int phase, delay_used, delay_until, termination_emitted, identity_unsafe;
+    int pending_w_capture, f_inflight, witnessed, attention_claimed;
+    int callback_w, callback_f, whistle_count, fountain_count;
+    int origin_w_live, origin_f_live, manifest_success;
+    unsigned armed_m_id, expected_manifest_m_id;
+    long activation_monstermoves, armed_root, pending_w_root, f_root;
+    long current_run_token, current_level_token;
+    long expected_manifest_root, expected_notice_seq, expected_end_seq;
+};
+
 struct chaos_next_use_replay_input {
+    int replay_input_v;
+    long expected_last_root, activation_move, notice_root, witness_notice_seq;
+    int token_present, root_present, expected_result, published, pre_public;
+    /* ACTION token is output-only; absent/unsuccessful output is canonical zero. */
+    struct chaos_next_use_replay_poststate post;
     int operation;
     int family;
     long root;
@@ -177,6 +202,23 @@ struct chaos_next_use_replay_input {
     struct chaos_next_use_public_record public_records[1];
 };
 
+/* Synchronous borrowed record, valid only during the callback. A nonzero
+ * acknowledgement commits the cursor, NOT a promise of disk durability.
+ * Subscriber must not mutate the live runtime or retain the borrowed pointer.
+ * Configuration survives runtime reset; incompleteness latches until reset.
+ * Attaching after a missed transition cannot repair an incomplete prefix. */
+typedef int (*chaos_next_use_capture_sink)(
+    void *, const struct chaos_next_use_replay_input *);
+struct chaos_next_use_capture_status {
+    int sink_connected, incomplete, transaction_open;
+    unsigned long acknowledged_cursor;
+};
+void chaos_next_use_capture_set_sink(chaos_next_use_capture_sink, void *);
+void chaos_next_use_capture_status(struct chaos_next_use_capture_status *);
+/* Called by native finalization after observation finish, even on failure. */
+void chaos_next_use_manifestation_complete(const struct chaos_whistle_witness *,
+                                          long end_seq, int published);
+
 int chaos_next_use_runtime_install(const struct chaos_next_use_admission *admission,
                                    const char *source, size_t source_length,
                                    const char source_sha256[65], long run_token,
@@ -203,7 +245,12 @@ void chaos_next_use_end_w(enum chaos_next_use_end_reason reason,
 void chaos_next_use_on_manifestation(const struct chaos_whistle_witness *witness,
                                      long end_seq);
 void chaos_next_use_expire(enum chaos_next_use_end_reason reason);
+/* Strict v1; record-controlled version fallback is forbidden. */
 int chaos_next_use_replay_record(const struct chaos_next_use_replay_input *record);
+#ifdef CHAOS_NEXT_USE_TEST_LEGACY_REPLAY
+/* Only old in-memory component fixtures; rejects v1 and publication operations. */
+int chaos_next_use_replay_legacy_fixture(const struct chaos_next_use_replay_input *record);
+#endif
 void chaos_next_use_mark_identity_unsafe(void);
 int chaos_next_use_take_identity_unsafe(void);
 void chaos_next_use_whistle_unavailable(long completed_root);
