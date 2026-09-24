@@ -13,9 +13,6 @@
 #include <limits.h>
 #include <stdint.h>
 #include <unistd.h>
-#ifdef TTY_GRAPHICS
-#include "wintty.h"
-#endif
 
 int chaos_next_use_on_safe(int, long, int, struct chaos_state *, int, int)
     __attribute__((weak));
@@ -485,7 +482,6 @@ void chaos_observation_blocked(void) {
 
 boolean chaos_whistle_attention_message(struct chaos_whistle_witness *witness) {
     long before_seq;
-    boolean tty_supported = FALSE;
     if (!witness || !witness->active || witness->root <= 0
         || witness->manifestation_delivered) return FALSE;
     witness->message_token.root = witness->root;
@@ -493,11 +489,7 @@ boolean chaos_whistle_attention_message(struct chaos_whistle_witness *witness) {
     if (witness->message_token.root != witness->root
         || witness->message_token.fact != CHAOS_OBS_FACT_ATTENTION)
         return FALSE;
-#if defined(CHAOS) && defined(TTY_GRAPHICS)
-    tty_supported = iflags.window_inited
-        && windowprocs.win_putstr == tty_putstr;
-#endif
-    if (!tty_supported) return FALSE;
+    if (!chaos_presentation_message_supported()) return FALSE;
     before_seq = u.chaos.seq;
     chaos_observation_arm(CHAOS_OBS_OP_WHISTLE_ATTENTION,
                           CHAOS_OBS_FACT_ATTENTION);
@@ -528,14 +520,14 @@ void chaos_whistle_witness_finalize(struct monst *mtmp,
             witness->post_glyph = glyph_at(mtmp->mx, mtmp->my);
             witness->displaced = witness->oldx != witness->newx
                 || witness->oldy != witness->newy;
-#if defined(CHAOS) && defined(TTY_GRAPHICS)
             if (witness->manifestation_delivered && witness->displaced
                 && witness->pre_public && !Hallucination && !u.uswallow
                 && canseemon(mtmp))
-                published = chaos_tty_publication_certificate(
-                    mtmp->mx, mtmp->my, glyph_at(mtmp->mx, mtmp->my));
-#endif
+                published = chaos_presentation_publish(
+                    &witness->presentation, witness->root, mtmp)
+                    == CHAOS_PRESENTATION_DELIVERED;
         }
+        chaos_presentation_cancel(&witness->presentation);
         stage = published ? CHAOS_OBS_STAGE_COMPLETED
                           : CHAOS_OBS_STAGE_BLOCKED;
         if (!chaos_observation_finish(witness->root, stage, &end_seq)) {
@@ -552,7 +544,7 @@ void chaos_next_use_whistle_completed(struct obj *obj, long completed_root) {
     struct monst *mtmp, *candidate, *resident, *id_owner;
     boolean tool_member, valid_whistle, current_member, captured;
     unsigned captured_id;
-    int glyph, candidates, id_count;
+    int candidates, id_count;
 
     if (!obj || completed_root <= 0) return;
     tool_member = FALSE;
@@ -566,23 +558,16 @@ void chaos_next_use_whistle_completed(struct obj *obj, long completed_root) {
                                             completed_root)) {
         candidate = (struct monst *) 0;
         candidates = 0;
-#ifdef TTY_GRAPHICS
         if (!Hallucination && !u.uswallow)
             for (mtmp = fmon; mtmp; mtmp = mtmp->nmon) {
                 if (DEADMONSTER(mtmp) || !canseemon(mtmp)
                     || !isok(mtmp->mx, mtmp->my)) continue;
-                glyph = glyph_at(mtmp->mx, mtmp->my);
-                if (!Hallucination && !u.uswallow
-                    && !DEADMONSTER(mtmp) && canseemon(mtmp)
-                    && isok(mtmp->mx, mtmp->my)
-                    && glyph_is_monster(glyph)
-                    && glyph_to_mon(glyph) == PM_LITTLE_DOG
-                    && tty_snapshot_projectable(mtmp->mx, mtmp->my, glyph)) {
+                if (chaos_presentation_snapshot(mtmp->mx, mtmp->my,
+                                                 PM_LITTLE_DOG, 0)) {
                     candidate = mtmp;
                     ++candidates;
                 }
             }
-#endif
         if (candidates == 1
             && chaos_next_use_on_action(CHAOS_NEXT_USE_FAMILY_W,
                                         completed_root, 0)) {

@@ -1235,14 +1235,9 @@ dog_move(struct monst *mtmp, int after,
 	} else
 	    whappr = 0;
 
-#if defined(CHAOS) && defined(TTY_GRAPHICS)
 	pre_public = witness && witness->production
 	    && canseemon(mtmp) && !Hallucination && !u.uswallow
-	    && ((pre_glyph = glyph_at(omx, omy)), TRUE)
-	    && glyph_is_monster(pre_glyph)
-	    && glyph_to_mon(pre_glyph) == PM_LITTLE_DOG
-	    && tty_snapshot_projectable(omx, omy, pre_glyph);
-#endif
+	    && chaos_presentation_snapshot(omx, omy, PM_LITTLE_DOG, &pre_glyph);
 	if (witness && witness->production
 	    && chaos_next_use_whistle_decision_ready(mtmp->m_id)) {
 	    if (chaos_observation_begin_exclusive(
@@ -1260,20 +1255,19 @@ dog_move(struct monst *mtmp, int after,
 	    ? chaos_next_use_whistle_attention(mtmp->m_id, manifestation_root) : 0;
 	appr = dog_goal(mtmp, has_edog ? EDOG(mtmp) : (struct edog *)0,
 							after, udist, whappr || extra_attention);
-#if defined(CHAOS) && defined(TTY_GRAPHICS)
 	manifestation_classifier = whappr == 0 && extra_attention != 0
 	    && appr != -2 && gtyp == UNDEF && gx == u.ux && gy == u.uy
 	    && pre_public;
-#else
-	manifestation_classifier = FALSE;
-#endif
 	if (witness && witness->active) {
 	    if (manifestation_classifier) {
 		witness->classifier_ok = TRUE;
 		witness->pre_public = pre_public;
 		if (chaos_next_use_manifestation_begin(mtmp->m_id,
-		                                      manifestation_root))
+		                                      manifestation_root)) {
+		    (void) chaos_presentation_begin(&witness->presentation,
+		        manifestation_root, mtmp, pre_glyph);
 		    (void) chaos_whistle_attention_message(witness);
+		}
 	    } else {
 		if (chaos_observation_finish(manifestation_root,
 		        CHAOS_OBS_STAGE_BLOCKED, &decision_end_seq))

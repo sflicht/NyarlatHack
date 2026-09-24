@@ -363,6 +363,17 @@ static int run_case(const char *name, const char *dirpath)
         pre_glyph = glyph;
     }
     rc = dog_move(&pet, 0, &witness);
+    /* dog_move does not publish its new map cell. The production m_move
+     * postmov path updates both cells before witness finalization. */
+    if (rc == 1 && !DEADMONSTER(&pet)) {
+        newsym(ox, oy);
+        newsym(pet.mx, pet.my);
+    }
+    /* The native decision/message occurred; replace only finalization input. */
+    if (!strcmp(name, "postid")) pet.m_id++;
+    if (!strcmp(name, "postglyph"))
+        show_glyph(pet.mx, pet.my, cmap_to_glyph(S_litroom));
+    if (!strcmp(name, "postlevel")) u.uz.dlevel++;
     chaos_whistle_witness_finalize(&pet, &witness);
     public_n = (int)chaos_next_use_runtime_public_count();
     chaos_whistle_witness_finalize(&pet, &witness);

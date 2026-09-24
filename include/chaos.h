@@ -3,6 +3,7 @@
 #define CHAOS_H
 #include "chaos_protocol.h"
 #include "chaos_next_use_contract.h"
+#include "chaos_presentation.h"
 /* Transient, unsaved delivery identity; available in CHAOS-off callers too. */
 struct obj;
 struct monst;
@@ -10,6 +11,7 @@ struct chaos_observation_token { long root; int fact; };
 struct chaos_whistle_witness {
     long root, notice_seq;
     struct chaos_observation_token message_token;
+    struct chaos_presentation_request presentation;
     int oldx, oldy, newx, newy;
     int pre_glyph, post_glyph;
     int production, active, classifier_ok, pre_public;
