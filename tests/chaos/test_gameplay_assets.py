@@ -265,6 +265,9 @@ class GameAssetTests(unittest.TestCase):
         tree = ast.parse(
             Path(__file__).with_name("test_next_use_unix_save.py").read_text()
         )
+        self._assert_next_use_asset_wiring(tree)
+
+    def _assert_next_use_asset_wiring(self, tree):
         calls = [
             n
             for n in ast.walk(tree)
@@ -272,30 +275,63 @@ class GameAssetTests(unittest.TestCase):
             and isinstance(n.func, ast.Name)
             and n.func.id == "Game"
         ]
-        self.assertEqual(len(calls), 2)
+        # Ordinary case, two-family order, and fresh lifetime on old transport.
+        self.assertEqual(len(calls), 3)
         for node in calls:
             keywords = {kw.arg: ast.unparse(kw.value) for kw in node.keywords}
             self.assertEqual(keywords.get("asset_pool"), "self.asset_pool")
-        custom = next(
-            n
-            for n in ast.walk(tree)
-            if isinstance(n, ast.FunctionDef) and n.name == "_two_family_order"
-        )
-        call = next(
-            n for n in ast.walk(custom) if isinstance(n, ast.Call) and n in calls
-        )
-        self.assertEqual(
-            {kw.arg: ast.unparse(kw.value) for kw in call.keywords}.get("executable"),
-            "self.two_family_exe",
-        )
-        build = next(
-            n
-            for n in ast.walk(custom)
-            if isinstance(n, ast.Call)
-            and ast.unparse(n.func) == "self._build_two_family_game"
-        )
-        self.assertLess(build.lineno, call.lineno)
-        self.assertNotIn("shutil.copy2(self.two_family_exe", ast.unparse(custom))
+        for name in ("_two_family_order", "_new_game_reusing_old_transport"):
+            custom = [
+                n
+                for n in ast.walk(tree)
+                if isinstance(n, ast.FunctionDef) and n.name == name
+            ]
+            self.assertEqual(len(custom), 1, name)
+            custom = custom[0]
+            custom_calls = [
+                n for n in ast.walk(custom) if isinstance(n, ast.Call) and n in calls
+            ]
+            self.assertEqual(len(custom_calls), 1, name)
+            call = custom_calls[0]
+            keywords = {kw.arg: ast.unparse(kw.value) for kw in call.keywords}
+            self.assertEqual(keywords.get("executable"), "self.two_family_exe", name)
+            builds = [
+                n
+                for n in ast.walk(custom)
+                if isinstance(n, ast.Call)
+                and ast.unparse(n.func) == "self._build_two_family_game"
+            ]
+            self.assertEqual(len(builds), 1, name)
+            self.assertLess(builds[0].lineno, call.lineno, name)
+            self.assertNotIn(
+                "shutil.copy2(self.two_family_exe", ast.unparse(custom), name
+            )
+
+    def test_next_use_asset_guard_rejects_missing_fresh_game_keywords(self):
+        # Mutate only a fresh AST; never edit or execute the native fixture.
+        source = Path(__file__).with_name("test_next_use_unix_save.py").read_text()
+        for keyword, expected in (
+            ("asset_pool", "self.asset_pool"),
+            ("executable", "self.two_family_exe"),
+        ):
+            with self.subTest(keyword=keyword):
+                tree = ast.parse(source)
+                custom = next(
+                    n
+                    for n in ast.walk(tree)
+                    if isinstance(n, ast.FunctionDef)
+                    and n.name == "_new_game_reusing_old_transport"
+                )
+                call = next(
+                    n
+                    for n in ast.walk(custom)
+                    if isinstance(n, ast.Call)
+                    and isinstance(n.func, ast.Name)
+                    and n.func.id == "Game"
+                )
+                call.keywords = [kw for kw in call.keywords if kw.arg != keyword]
+                with self.assertRaisesRegex(AssertionError, expected):
+                    self._assert_next_use_asset_wiring(tree)
 
     def test_tiny_allocation_evidence(self):
         a, b = self.game("a"), self.game("b")
