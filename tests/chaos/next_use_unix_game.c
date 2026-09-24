@@ -7,12 +7,14 @@
 #include "chaos_next_use_runtime.h"
 #include "native_rng.h"
 #include <stdio.h>
+#include <unistd.h>
 
 int original_game_main(int, char **);
 void __real_chaos_start(void);
 void __real_chaos_observe(void);
 void __real_rhack(char *);
 int __real_dog_move(struct monst *, int, struct chaos_whistle_witness *);
+boolean __real_chaos_whistle_attention_message(struct chaos_whistle_witness *);
 void __real_chaos_whistle_witness_finalize(struct monst *, struct chaos_whistle_witness *);
 void __real_drinkfountain(void);
 void __real_chaos_next_use_fountain_result(const struct chaos_fountain_token *, int);
@@ -41,13 +43,26 @@ static void state(void)
         "\"armed_m_id\":%u,\"source_sha256\":\"%s\","
         "\"activation_monstermoves\":%ld,\"armed_root\":%ld,"
         "\"run_token\":%ld,\"level_token\":%ld,\"origin_w\":%ld,\"origin_f\":%ld,"
-        "\"origin_w_deadline\":%ld,\"origin_f_deadline\":%ld,\"program_expiry\":%d}\n",
+        "\"origin_w_deadline\":%ld,\"origin_f_deadline\":%ld,\"program_expiry\":%d",
         valid, moves, monstermoves, u.chaos.safe, u.chaos.spent,
         u.uz.dnum, u.uz.dlevel, s.slot_w, s.slot_f, s.w_runtime,
         s.witnessed, s.attention_claimed, s.callback_ordinal, s.state,
         s.armed_m_id, s.source_sha256, s.activation_monstermoves, s.armed_root,
         s.run_token, s.level_token, s.origin_w, s.origin_f,
         s.origin_w_deadline, s.origin_f_deadline, s.program_expiry);
+    fprintf(f, ",\"callback_w\":%d,\"callback_f\":%d,"
+        "\"whistle_count\":%d,\"fountain_count\":%d,\"next_seq\":%d,"
+        "\"last_root\":%ld,\"admission_move\":%d,\"delay_used\":%d,"
+        "\"delay_until\":%d,\"variant\":%d,\"binding_sha256\":\"%s\"",
+        s.callback_w, s.callback_f, s.whistle_count, s.fountain_count,
+        s.next_seq, s.last_root, s.admission_move, s.delay_used,
+        s.delay_until, s.variant, s.binding_sha256);
+    fprintf(f, ",\"snapshot_v\":%d,\"program_id\":%d,\"phase\":%d,"
+        "\"origin_w_live\":%d,\"origin_f_live\":%d,\"identity_unsafe\":%d,"
+        "\"termination_emitted\":%d,\"replay_cursor\":%lu,\"source_length\":%lu}\n",
+        s.snapshot_v, s.program_id, s.phase, s.origin_w_live, s.origin_f_live,
+        s.identity_unsafe, s.termination_emitted, s.replay_cursor,
+        (unsigned long)s.source_length);
     assert(!fclose(f));
 }
 
@@ -132,6 +147,24 @@ int __wrap_dog_move(struct monst *pet, int after, struct chaos_whistle_witness *
         test_rng_reset();
     }
     return __real_dog_move(pet, after, w);
+}
+
+static void unsupported_message(winid window, int attr, const char *text)
+{
+    (void)window; (void)attr; (void)text;
+}
+
+boolean __wrap_chaos_whistle_attention_message(struct chaos_whistle_witness *w)
+{
+    void (*saved)(winid, int, const char *) = windowprocs.win_putstr;
+    boolean result;
+    /* Exercise the real unsupported-message route, without setting a witness
+     * field. Restore presentation immediately; F and later UI remain native. */
+    if (access("deny-w-message", F_OK) == 0)
+        windowprocs.win_putstr = unsupported_message;
+    result = __real_chaos_whistle_attention_message(w);
+    windowprocs.win_putstr = saved;
+    return result;
 }
 
 void __wrap_chaos_whistle_witness_finalize(struct monst *pet, struct chaos_whistle_witness *w)
