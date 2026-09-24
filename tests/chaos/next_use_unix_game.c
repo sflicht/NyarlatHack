@@ -19,13 +19,28 @@ boolean __real_chaos_whistle_attention_message(struct chaos_whistle_witness *);
 void __real_chaos_whistle_witness_finalize(struct monst *, struct chaos_whistle_witness *);
 void __real_drinkfountain(void);
 void __real_chaos_next_use_fountain_result(const struct chaos_fountain_token *, int);
-static int started, fountain_outcome;
+static int started, fountain_outcome, reset_ordinal;
+static long fountain_root;
 
 static FILE *file(const char *name, const char *mode)
 {
     FILE *f = fopen(name, mode);
     assert(f);
     return f;
+}
+
+/* Opt-in observations only; preserve native.jsonl's older parity contract.
+ * Ordinals are process-local reset-site counts, NOT a persisted RNG stream. */
+static void rng_observation(const char *site)
+{
+    FILE *f;
+    ++reset_ordinal;
+    if (access("detailed-native", F_OK) != 0) return;
+    f = file("physical.jsonl", "a");
+    fprintf(f, "{\"kind\":\"rng\",\"site\":\"%s\",\"ordinal\":%d,"
+        "\"count\":%d,\"moves\":%ld,\"monstermoves\":%ld}\n",
+        site, reset_ordinal, reseed_count, moves, monstermoves);
+    assert(!fclose(f));
 }
 
 static void state(void)
@@ -117,6 +132,7 @@ void __wrap_chaos_start(void)
     __real_chaos_start();
     started = 1;
     test_rng_control();
+    rng_observation("startup-control-complete");
     if (fresh) {
         struct monst *pet;
         struct obj *whistle;
@@ -190,6 +206,7 @@ int __wrap_dog_move(struct monst *pet, int after, struct chaos_whistle_witness *
         docrt();
         flush_screen(1);
         test_rng_reset();
+        rng_observation("dog-reset");
     }
     return __real_dog_move(pet, after, w);
 }
@@ -223,6 +240,22 @@ void __wrap_chaos_whistle_witness_finalize(struct monst *pet, struct chaos_whist
             w->displaced, w->manifestation_delivered, w->classifier_ok,
             w->root, w->notice_seq, pet->m_id, monstermoves);
         assert(!fclose(f));
+        if (access("detailed-native", F_OK) == 0) {
+            struct chaos_next_use_snapshot s;
+            memset(&s, 0, sizeof s);
+            assert(chaos_next_use_snapshot_export(&s));
+            f = file("physical.jsonl", "a");
+            fprintf(f, "{\"kind\":\"W\",\"before\":[%d,%d],\"after\":[%d,%d],"
+                "\"actual\":[%d,%d],\"delivered\":%d,\"witnessed\":%d,"
+                "\"displaced\":%d,\"root\":%ld,\"notice\":%ld,\"event_seq\":%ld,"
+                "\"pet_id\":%u,\"moves\":%ld,\"monstermoves\":%ld,"
+                "\"pre_glyph\":%d,\"post_glyph\":%d,\"rng_count\":%d,\"reset_ordinal\":%d}\n",
+                w->oldx, w->oldy, w->newx, w->newy, pet->mx, pet->my,
+                w->manifestation_delivered, s.witnessed, w->displaced,
+                w->root, w->notice_seq, u.chaos.seq, pet->m_id, moves, monstermoves,
+                w->pre_glyph, w->post_glyph, reseed_count, reset_ordinal);
+            assert(!fclose(f));
+        }
     }
 }
 
@@ -230,6 +263,7 @@ void __wrap_chaos_next_use_fountain_result(const struct chaos_fountain_token *to
 {
     /* Record the real fountain callback; never synthesize its result. */
     fountain_outcome = outcome;
+    fountain_root = token ? token->root : 0;
     __real_chaos_next_use_fountain_result(token, outcome);
 }
 
@@ -245,6 +279,7 @@ void __wrap_drinkfountain(void)
      * three native warmup draws give the origin refresh; zero gives effect 11.
      * Native drinkfountain computes the fate and owns all effects/results. */
     test_rng_reset();
+    rng_observation("fountain-reset");
     if (!admitted) for (i = 0; i < 3; ++i) (void)rn2(30);
     fountain_outcome = -1;
     __real_drinkfountain();
@@ -252,6 +287,15 @@ void __wrap_drinkfountain(void)
     fprintf(f, "{\"kind\":\"fountain\",\"outcome\":%d,\"hunger_delta\":%d,"
         "\"rng_count\":%d}\n", fountain_outcome, u.uhunger - hunger, reseed_count);
     assert(!fclose(f));
+    if (access("detailed-native", F_OK) == 0) {
+        f = file("physical.jsonl", "a");
+        fprintf(f, "{\"kind\":\"F\",\"hunger_before\":%d,\"hunger_after\":%d,"
+            "\"hunger_delta\":%d,\"outcome\":%d,\"root\":%ld,\"event_seq\":%ld,"
+            "\"moves\":%ld,\"monstermoves\":%ld,\"rng_count\":%d,\"reset_ordinal\":%d}\n",
+            hunger, u.uhunger, u.uhunger - hunger, fountain_outcome,
+            fountain_root, u.chaos.seq, moves, monstermoves, reseed_count, reset_ordinal);
+        assert(!fclose(f));
+    }
 }
 
 int main(int argc, char **argv)
