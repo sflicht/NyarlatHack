@@ -8,6 +8,11 @@
 #include "chaos_next_use.h"
 #include "chaos_next_use_io.h"
 #include <sys/stat.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <limits.h>
+#include <stdint.h>
+#include <unistd.h>
 #ifdef TTY_GRAPHICS
 #include "wintty.h"
 #endif
@@ -15,6 +20,9 @@
 int chaos_next_use_on_safe(int, long, int, struct chaos_state *, int, int)
     __attribute__((weak));
 void chaos_next_use_safe_bind_run(const char *) __attribute__((weak));
+void chaos_next_use_safe_bind_logical(long) __attribute__((weak));
+void chaos_next_use_identity_boundary(long, long) __attribute__((weak));
+long chaos_next_use_pack_level(int, int) __attribute__((weak));
 void chaos_next_use_safe_bind_telegraph(int (*)(void *, const char *), void *)
     __attribute__((weak));
 void chaos_next_use_safe_bind_origin(const struct chaos_next_use_origin_ref *,
@@ -79,6 +87,30 @@ static const char *next_use_engine_fact(int operation, int fact)
         return "water_refreshed";
     return 0;
 }
+long chaos_next_use_game_identity(void)
+{
+    uint64_t value = 0;
+    size_t offset = 0;
+    int fd, attempts = 0;
+    if (u.chaos_game_token > 0) return u.chaos_game_token;
+    if (u.chaos_game_token < 0 || sizeof(long) < sizeof(value)) return 0;
+    /* Infrastructure entropy only: do not consume the game's RNG or its
+     * fopen-based reseeding stream. A failed read disables admission. */
+    fd = open("/dev/urandom", O_RDONLY | O_NOFOLLOW | O_NONBLOCK | O_CLOEXEC);
+    if (fd < 0) return 0;
+    while (offset < sizeof value && attempts++ < 4) {
+        ssize_t n = read(fd, (char *)&value + offset, sizeof value - offset);
+        if (n < 0 && errno == EINTR) continue;
+        if (n <= 0) break;
+        offset += (size_t)n;
+    }
+    if (close(fd) || offset != sizeof value) return 0;
+    value &= (uint64_t)LONG_MAX;
+    if (!value) return 0;
+    u.chaos_game_token = (long)value;
+    return u.chaos_game_token;
+}
+
 static void next_use_bind_owned(void)
 {
     struct chaos_next_use_origin_ref origin;
@@ -86,6 +118,8 @@ static void next_use_bind_owned(void)
     char run[65];
     const char *fact;
     int slot;
+    if (chaos_next_use_safe_bind_logical)
+        chaos_next_use_safe_bind_logical(chaos_next_use_game_identity());
     if (io.dir < 0 || fstat(io.dir, &st)) return;
     if (snprintf(run, sizeof run, "%016llx%016llx%016llx%016llx",
                  (unsigned long long)st.st_dev,
@@ -207,6 +241,9 @@ void chaos_observe(void) {
     struct chaos_context c;
     int threshold;
     if (!started || chaos_shadow_active()) return;
+    if (chaos_next_use_identity_boundary && chaos_next_use_pack_level)
+        chaos_next_use_identity_boundary(u.chaos_game_token,
+            chaos_next_use_pack_level(u.uz.dnum, u.uz.dlevel));
     c = context();
     chaos_io_expire(&io, &u.chaos, &c);
     threshold = oldsanity / 20 != u.usanity / 20;

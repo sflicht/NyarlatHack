@@ -25,12 +25,19 @@ static struct {
     int qualifying;
     struct chaos_next_use_origin_ref origin;
 } origin_evidence[2];
+static long logical_run;
 static struct chaos_next_use_safe_result last_result;
+
+void chaos_next_use_safe_bind_logical(long run_token)
+{
+    logical_run = run_token > 0 ? run_token : 0;
+}
 
 void chaos_next_use_safe_reset_for_test(void)
 {
     settled = 0;
     owned_run_set = 0;
+    logical_run = 0;
     owned_run[0] = '\0';
     owned_warn = 0;
     owned_warn_opaque = 0;
@@ -82,6 +89,20 @@ void chaos_next_use_safe_bind_origin(const struct chaos_next_use_origin_ref *ori
     origin_evidence[slot].origin = *origin;
     origin_evidence[slot].bound = 1;
     origin_evidence[slot].qualifying = qualifying ? 1 : 0;
+}
+
+int chaos_next_use_safe_attempted(void)
+{
+    return settled;
+}
+
+int chaos_next_use_safe_restore_attempted(int attempted)
+{
+    if ((attempted != 0 && attempted != 1)
+        || (!attempted && chaos_next_use_runtime_run_token() > 0))
+        return 0;
+    settled = attempted;
+    return 1;
 }
 
 void chaos_next_use_safe_mark_restored(void)
@@ -261,6 +282,8 @@ int chaos_next_use_safe_try(const struct chaos_next_use_safe_request *request,
     }
     settled = 1;
     if (envelope.at != request->at_safe
+        || logical_run <= 0
+        || chaos_next_use_pack_level(request->level_dnum, request->level_dlevel) <= 0
         || !request->budget
         || !chaos_state_valid(request->budget)
         || !envelope_origins_ok(&envelope, request)
@@ -316,7 +339,11 @@ int chaos_next_use_safe_try(const struct chaos_next_use_safe_request *request,
         }
         if (!chaos_next_use_runtime_install(&admitted, envelope.source,
                                             envelope.source_length,
-                                            envelope.source_sha256, 1, 1,
+                                            envelope.source_sha256,
+                                            logical_run,
+                                            chaos_next_use_pack_level(
+                                                request->level_dnum,
+                                                request->level_dlevel),
                                             origin_w, origin_w_deadline,
                                             origin_f, origin_f_deadline,
                                             envelope.variant, 0, 0)) {

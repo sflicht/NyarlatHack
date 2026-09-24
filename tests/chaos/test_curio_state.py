@@ -197,6 +197,46 @@ class CurioStateTests(unittest.TestCase):
                         path.read_bytes(), contents, "other session must survive"
                     )
 
+    def test_truncated_next_use_marker_preserved_without_resumption(self):
+        # Actual game writer/restore path, disposable copies only. The reviewed
+        # Linux build is uncompressed; compressed decoding is covered separately
+        # by the native-reader snapshot fixture, not by raw offsets here.
+        original = self.game("short-snapshot-source", ROOT / "dnethackdir")
+        original.start()
+        self.assertEqual(original.save(), 0)
+        saves = list((original.game / "save").iterdir())
+        self.assertEqual(len(saves), 1)
+        before = saves[0].read_bytes()
+        self.assertEqual(before.count(b"NUS1"), 1)
+        offset = before.index(b"NUS1")
+        marker_size = 4 + struct.calcsize("i")
+        self.assertEqual(before[offset + 4 : offset + marker_size], struct.pack("i", 0))
+        (original.root / "native.savefile").write_bytes(before)
+        positive = self.game("short-snapshot-positive", ROOT / "dnethackdir")
+        shutil.copy2(saves[0], positive.game / "save" / saves[0].name)
+        positive.start()
+        self.assertTrue(
+            any(
+                e["event"] == "session" and e["detail"] == "restore"
+                for e in positive.events()
+            )
+        )
+        self.assertEqual(positive.quit(), 0)
+        for count in range(marker_size):
+            with self.subTest(marker_bytes=count):
+                rejected = self.game(f"short-snapshot-{count}", ROOT / "dnethackdir")
+                target = rejected.game / "save" / saves[0].name
+                truncated = before[: offset + count]
+                target.write_bytes(truncated)
+                text = rejected.start()
+                self.assertEqual(rejected.finish(text), 1)
+                self.assertIn(b"save file preserved", rejected.raw)
+                self.assertFalse(rejected.events(), "no resumed/new gameplay")
+                self.assertEqual(target.read_bytes(), truncated)
+                self.assertTrue(target.stat().st_mode & 0o400)
+                self.assertEqual(saves[0].read_bytes(), before)
+                self.assertFalse(list(rejected.game.glob(f"{os.getuid()}wizard.*")))
+
     def test_real_nonempty_save_roundtrip(self):
         g = self.game("nonempty-roundtrip", ROOT / "dnethackdir")
         # Only this test executable seeds the record at native save entry.

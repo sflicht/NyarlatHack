@@ -401,6 +401,8 @@ struct you {
     struct chaos_state chaos;
     struct chaos_haunt_state haunt;
     struct chaos_curio_state curio;
+    long chaos_game_token; /* Host entropy, saved game identity; never gameplay RNG. */
+    int chaos_next_use_attempted; /* Admission latch, also meaningful without a program. */
 #endif
 	xchar ux, uy;
 	schar dx, dy, dz;	/* direction of move (or zap or ... ) */

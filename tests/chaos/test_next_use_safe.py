@@ -128,6 +128,7 @@ class NextUseSafeAdmitTests(unittest.TestCase):
         receipt="ok",
         evidence="valid",
         clock="native",
+        identity=1750000001,
     ):
         if run is None:
             run = HOST["run"]
@@ -148,6 +149,7 @@ class NextUseSafeAdmitTests(unittest.TestCase):
                 receipt,
                 evidence,
                 clock,
+                str(identity),
             ],
             capture_output=True,
             text=True,
@@ -155,6 +157,13 @@ class NextUseSafeAdmitTests(unittest.TestCase):
         )
         self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
         return json.loads(p.stdout)
+
+    def test_missing_game_identity_rejects_before_telegraph_or_debit(self):
+        row = self.run_case(self.publish(), identity=0)
+        self.assertEqual(row["active"], 0)
+        self.assertEqual(row["admitted"], 0)
+        self.assertEqual(row["telegraph"], 0)
+        self.assertEqual(row["caller_spent"], row["caller_spent_before"])
 
     def test_admits_once_and_second_poll_is_idle(self):
         row = self.run_case(self.publish())
@@ -166,6 +175,10 @@ class NextUseSafeAdmitTests(unittest.TestCase):
         self.assertEqual(row["second_admitted"], 0)
         self.assertEqual(row["second_telegraph"], 0)
         self.assertEqual(row["second_spent"], 0)
+        self.assertEqual(row["run_token"], 1750000001)
+        self.assertEqual(row["level_token"], 100001)
+        self.assertNotEqual(row["run_token"], 1)
+        self.assertNotEqual(row["level_token"], 1)
 
     def test_disabled_does_not_load(self):
         row = self.run_case(self.publish(), enabled=0)

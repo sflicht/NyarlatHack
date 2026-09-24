@@ -51,13 +51,30 @@ class RestoreSafetyTests(unittest.TestCase):
 static jmp_buf stop;
 static int closed, unlocked, exited, mode, restoring;
 static struct { int panicking, something_worth_saving; } program_state;
-static struct { struct chaos_state chaos; int haunt, curio; } u;
+static struct {
+    struct chaos_state chaos;
+    int haunt, curio, chaos_next_use_attempted;
+    long chaos_game_token;
+    struct { int dnum, dlevel; } uz;
+} u;
 static long moves;
 static int chaos_haunt_valid(int *v) { return !*v; }
 static int chaos_curio_valid(int *v) { return !*v; }
-static int next_use_restore_ok = 1;
-static int chaos_next_use_restore(int fd) { (void)fd; return next_use_restore_ok; }
-static void chaos_next_use_safe_mark_restored(void) {}
+static int next_use_restore_ok = 1, bound_calls, latch_calls, restored_latch;
+static long chaos_next_use_pack_level(int dnum, int dlevel) {
+    return ((long)dnum + 1) * 100000L + dlevel;
+}
+static int chaos_next_use_restore_bound(int fd, long game, long level) {
+    assert(fd == 42);
+    bound_calls++;
+    return next_use_restore_ok && game == 1234567L && level == 300004L;
+}
+static int chaos_next_use_safe_restore_attempted(int attempted) {
+    latch_calls++;
+    if (attempted != 0 && attempted != 1) return 0;
+    restored_latch = attempted;
+    return 1;
+}
 static int close(int fd) { assert(fd == 42); closed++; return 0; }
 static const char *fqname(const char *s, int p, int n) { (void)p; (void)n; return s; }
 static int chmod(const char *s, int m) { (void)s; mode = m; return 0; }
@@ -77,6 +94,8 @@ static void terminate(int status) { assert(status == EXIT_FAILURE); longjmp(stop
 static void probe(int bad) {
     int result;
     closed = unlocked = exited = mode = 0;
+    bound_calls = latch_calls = 0;
+    restored_latch = -1;
     restoring = 1;
     program_state.panicking = 0;
     program_state.something_worth_saving = 0;
@@ -84,12 +103,15 @@ static void probe(int bad) {
         result = attempt(42);
         assert(!bad && result == 1);
         assert(!closed && !unlocked && !exited);
+        assert(bound_calls == 1 && latch_calls == 1);
+        assert(restored_latch == u.chaos_next_use_attempted);
     } else {
         assert(bad && closed == 1 && unlocked == 1 && exited == 1);
         assert(mode == FCMASK && !restoring && program_state.panicking);
     }
 }
 int main(void) {
+    u.chaos_game_token = 1234567L; u.uz.dnum = 2; u.uz.dlevel = 4;
     chaos_state_init(&u.chaos); moves = 0; probe(0);
     u.chaos.cosmetic_seen = 1; probe(0); /* valid first delivery at turn 0 */
     u.chaos.cosmetic_last_turn = 1; probe(1); /* future */
@@ -102,14 +124,24 @@ int main(void) {
     u.haunt = 0; u.curio = 1; probe(1);
     u.curio = 0; probe(0);
     next_use_restore_ok = 0; probe(1);
+    assert(bound_calls == 1 && !latch_calls);
     next_use_restore_ok = 1; probe(0);
+    u.chaos_game_token++; probe(1); assert(!latch_calls);
+    u.chaos_game_token--; u.uz.dnum++; probe(1); assert(!latch_calls);
+    u.uz.dnum--; u.uz.dlevel++; probe(1); assert(!latch_calls);
+    u.uz.dlevel--; u.chaos_next_use_attempted = 1; probe(0);
+    u.chaos_next_use_attempted = 2; probe(1);
+    assert(latch_calls == 1 && restored_latch == -1);
+    u.chaos_next_use_attempted = -1; probe(1);
+    assert(latch_calls == 1 && restored_latch == -1);
+    u.chaos_next_use_attempted = 0; probe(0);
     return 0;
 }
 """
         with tempfile.TemporaryDirectory(prefix="restore-branch-") as temporary:
             path = Path(temporary)
             (path / "probe.c").write_text(code)
-            subprocess.run(
+            compiled = subprocess.run(
                 [
                     "cc",
                     "-std=c99",
@@ -122,11 +154,12 @@ int main(void) {
                     "-o",
                     str(path / "probe"),
                 ],
-                check=True,
+                check=False,
                 capture_output=True,
                 text=True,
                 timeout=30,
             )
+            self.assertEqual(compiled.returncode, 0, compiled.stderr)
             subprocess.run([str(path / "probe")], check=True, timeout=10)
 
 

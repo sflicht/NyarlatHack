@@ -50,6 +50,8 @@ static void setup_level(void)
     u.uy = 10;
     u.uz.dnum = 0;
     u.uz.dlevel = 1;
+    u.ubirthday = 1750000001;
+    u.chaos_game_token = 1750000001L;
     moves = 40;
     monstermoves = 40;
     flags.ident = 1;
@@ -155,6 +157,7 @@ static int admit_f(const char *dirpath, int *telegraphs)
     req.telegraph_opaque = telegraphs;
     req.receipt = receipt_ok;
     bind_origin(run);
+    chaos_next_use_safe_bind_logical(1750000001L);
     chaos_next_use_safe_try(&req, &admitted);
     close(dir);
     return admitted.active ? 1 : 0;
