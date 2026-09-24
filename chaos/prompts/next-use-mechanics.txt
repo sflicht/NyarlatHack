@@ -1,5 +1,5 @@
 Next-use mechanics guide v1 (trusted instructions, not public history)
-SOURCE revision: 17a02610838a1ba1ad35d31488d6929e599872f7.
+SOURCE revision: 483c7c1b071008386b742cbc697dbd7e45c8133b.
 Exact referenced file hashes: next-use-mechanics-sources.json. The builder checks
 these before transport; source drift requires review, not a silently newer guide.
 LEGAL means representation bounds; SOURCE means native semantics; MEASURED and
@@ -31,6 +31,10 @@ monstermoves minus admission_move, counts from host runtime, and last accepted
 state. These counts are host-bounded inputs, not callback invocation counters.
 Only a delivered W manifestation establishes own_witnessed=W
 (chaos_next_use_on_manifestation). Admission or private application is not witness.
+Production currently supplies both counts as zero at installation
+(src/chaos_next_use_safe.c:chaos_next_use_safe_try); they are not current-game
+observation totals. Do not infer observed frequencies from them. Nonzero count
+inputs in component fixtures are not evidence of nonzero production history.
 
 SOURCE: schema_envelope in src/chaos_next_use.c fixes TTL=100 and cost=number
 of admitted families (one each, WF costs two); canonical operation order is W,F.
@@ -59,8 +63,11 @@ public manifestation. Source cannot choose the companion or hidden identity.
 F fountain_refresh: SOURCE src/fountain.c:drinkfountain remaps the selected
 ordinary fate 10..18 branch once; fate 9 remains natural, 19..30 native. Native
 reachability and other exclusions still apply. Source never sees or sets fate.
-MEASURED: no native outcomes measured by this offline authoring slice. The two
-handwritten test sources are unit inputs, not measured dog_move/drinkfountain.
+MEASURED: the original two handwritten sources were unit inputs. The separate
+controlled linked-native composition tests now run those exact sources through
+native dog_move/presentation and drinkfountain: state after W selects quiet F;
+delivered W selects refresh F; applied but unpublished W selects quiet F. These
+are fixed geometry/RNG measurements, NOT ordinary gameplay distributions.
 UNKNOWN: ordinary qualification/delivery rates or usefulness of these branches.
 
 Sandbox: SOURCE src/chaos_lua.c:next_use_vm, next_root_exact,

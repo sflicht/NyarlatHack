@@ -194,6 +194,8 @@ class NativeAuthorCompositionTests(unittest.TestCase):
         # Native suffix only: synthetic origins cannot satisfy these assertions.
         row["events"] = events[len(rows) :]
         row["folder"] = str(folder)
+        # Pending siblings are valid in snapshot v4; an F bypass is in-flight.
+        self.assertEqual(row["snapshot_valid"], int(mode != "f_bypass"))
         self.assertEqual((row["admitted"], row["spent"], row["telegraph"]), (1, 2, 1))
         self.assertEqual(row["source_sha256"], receipt["source_sha256"])
         self.assertEqual(row["envelope_sha256"], receipt["envelope_sha256"])

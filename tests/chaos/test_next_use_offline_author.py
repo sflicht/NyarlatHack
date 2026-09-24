@@ -187,7 +187,7 @@ class OfflineAuthorTests(unittest.TestCase):
             "SOURCE",
             "MEASURED",
             "UNKNOWN",
-            "17a02610838a1ba1ad35d31488d6929e599872f7",
+            "483c7c1b071008386b742cbc697dbd7e45c8133b",
             "do not persist",
             "not available in on_action",
             "not typical",
@@ -495,7 +495,7 @@ class OfflineAuthorTests(unittest.TestCase):
             (ROOT / "chaos/prompts/next-use-mechanics-sources.json").read_bytes()
         )
         self.assertEqual(
-            manifest["revision"], "17a02610838a1ba1ad35d31488d6929e599872f7"
+            manifest["revision"], "483c7c1b071008386b742cbc697dbd7e45c8133b"
         )
         for name, digest in manifest["files"].items():
             self.assertEqual(
@@ -503,6 +503,11 @@ class OfflineAuthorTests(unittest.TestCase):
             )
         self.assertIn("src/attrib.c", manifest["files"])
         self.assertIn("src/chaos_next_use_runtime.c", manifest["files"])
+        self.assertIn("src/chaos_next_use_safe.c", manifest["files"])
+        self.assertIn(
+            "Production currently supplies both counts as zero",
+            (ROOT / "chaos/prompts/next-use-mechanics.txt").read_text(),
+        )
         with (
             patch.object(api, "SOURCE_REVISION", "0" * 40),
             self.assertRaises(ValueError),

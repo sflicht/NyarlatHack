@@ -21,7 +21,7 @@ from .protocol import strict_json
 
 ROOT = Path(__file__).resolve().parents[1]
 PROMPTS = ROOT / "chaos/prompts"
-SOURCE_REVISION = "17a02610838a1ba1ad35d31488d6929e599872f7"
+SOURCE_REVISION = "483c7c1b071008386b742cbc697dbd7e45c8133b"
 PROMPT_VERSION = "next-use-offline-author-v1"
 MAX_PROMPT_BYTES = 12288
 MAX_RESPONSE_BYTES = 8192
@@ -36,6 +36,7 @@ _SOURCE_FILES = {
     "include/chaos_next_use.h",
     "src/chaos_next_use.c",
     "src/chaos_next_use_runtime.c",
+    "src/chaos_next_use_safe.c",
     "src/chaos_lua.c",
     "src/attrib.c",
     "src/u_init.c",

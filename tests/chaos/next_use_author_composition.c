@@ -38,6 +38,8 @@ static int admit_composition(const char *dirpath, int *telegraphs)
     if (dir < 0) return 0;
     assert(!dir_run_hex(dir, run));
     chaos_next_use_safe_reset_for_test();
+    /* Reset discarded the owned binding, not the controlled engine identity. */
+    chaos_next_use_safe_bind_logical(chaos_next_use_game_identity());
     /* Same synthetic origins as the author-history fixture. These are not
      * ordinary-play observations; never used to manufacture a W witness. */
     for (i = 0; i < 2; ++i) {
@@ -149,9 +151,9 @@ int main(int argc, char **argv)
     drinkfountain();
     chaos_observation_end(observation);
     chaos_bind_drinkfountain_token(0);
-    /* This base's snapshot-v2 validation rejects a pending sibling after a
-     * callback (#144). Export fills diagnostics before validating; retain its
-     * status honestly. This fixture never imports/saves/replays that snapshot. */
+    /* Snapshot v4 supports pending siblings after callbacks. The F bypass
+     * deliberately leaves a token in flight and is not a valid checkpoint.
+     * This fixture only exports diagnostics; Unix tests exercise real saves. */
     snapshot_valid = chaos_next_use_snapshot_export(&snapshot);
     for (i = 0; i < (int)chaos_next_use_runtime_private_count(); ++i) {
         rec = chaos_next_use_runtime_private_at((size_t)i);

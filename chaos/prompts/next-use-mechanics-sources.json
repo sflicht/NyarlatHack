@@ -4,14 +4,15 @@
     "chaos/next_use_envelope.py": "8c8944d570a4da9125e2af944de3c976b60ed07d35960220f23a58c362691b4c",
     "chaos/next_use_history.py": "f29742c761501071761dc0e3d4432203fc0bb74c18ae097fc28b4fbec56e1670",
     "chaos/next_use_schedule.py": "5427ffad022d84d8a7acae480129d26330d8eac633d68a301f16ca61c84f31e4",
-    "include/chaos_next_use.h": "b2848332c4dd107e904ef4382c526c3807bc1df2888f30433a445895c8250924",
+    "include/chaos_next_use.h": "eece583adaeea6db5af8fdac8b427cde9d0c9c4aa40225ddd06dc89c50748f77",
     "src/attrib.c": "cef325e4e78bb1ccafa5004b8241418194c44fe3ab9c7ccb9d00032f70205acd",
     "src/chaos_lua.c": "62a68112a8155aa10622bd124c00400b9aad9127f48e18dd5fbcdc240f52042f",
-    "src/chaos_next_use.c": "79e74335ea216d66d159881cf61a42afd8a501dd7b93526bceb1c1f3244a4a06",
-    "src/chaos_next_use_runtime.c": "43c3cd8846a84b7fff1ec5af131068a3469e71a6e18f4a5c41290f35ed3d574b",
+    "src/chaos_next_use.c": "0e2e4c81577612035b221bfdd35fdb8f227b8e006a05988907d9bd8094b96a8c",
+    "src/chaos_next_use_runtime.c": "6d2dbe1f23b674264df28f8ba51d7f71b34f3dff937c7524a27bd01c8118cfd7",
+    "src/chaos_next_use_safe.c": "66d8e4ef0be4416f27fb07808f6fc7ff01e7c0b5e6cf1e3de2e7c3f50351a50d",
     "src/dogmove.c": "184e52d3f6098bfd256cea32a11e094bc678e65553738a185c933b4067253baa",
     "src/fountain.c": "418d5bddeb8a22ad427e18b97b88560f08071dc0ddc051a00ba6e34e85f41f86",
     "src/u_init.c": "9c9a4788d2c3ceffc91d18ed9c7168556571781d99ea3fe44ed95fbd01e5db68"
   },
-  "revision": "17a02610838a1ba1ad35d31488d6929e599872f7"
+  "revision": "483c7c1b071008386b742cbc697dbd7e45c8133b"
 }

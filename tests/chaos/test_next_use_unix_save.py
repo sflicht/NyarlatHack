@@ -11,9 +11,11 @@ import subprocess
 import tempfile
 import unittest
 
+from chaos import next_use_author as author
 from chaos.next_use_envelope import engine_run_hex, publish_envelope
 from gameplay_support import Game, ROOT
 from native_rng import controlled_rng_objects
+from test_next_use_offline_author import fixture_sources, response
 
 
 @unittest.skipUnless(
@@ -84,6 +86,7 @@ class NextUseUnixSaveTests(unittest.TestCase):
             "chaos_observe",
             "rhack",
             "dog_move",
+            "chaos_whistle_attention_message",
             "chaos_whistle_witness_finalize",
             "drinkfountain",
             "chaos_next_use_fountain_result",
@@ -109,6 +112,31 @@ class NextUseUnixSaveTests(unittest.TestCase):
             str(exe),
         ]
         commands.append(command)
+        library = cls.artifacts / "author.so"
+        validator_command = [
+            "/usr/bin/cc",
+            "-shared",
+            "-fPIC",
+            "-Wall",
+            "-Wextra",
+            "-Werror",
+            "-Wno-misleading-indentation",
+            "-std=c99",
+            "-Wl,-z,defs",
+            "-I" + str(ROOT / "include"),
+            str(ROOT / "src/chaos_next_use.c"),
+            str(ROOT / "src/chaos_lua.c"),
+            str(ROOT / "tests/chaos/next_use_author_native.c"),
+            *subprocess.check_output(
+                ["/usr/bin/pkg-config", "--cflags", "--libs", "lua5.4"], text=True
+            ).split(),
+            "-lm",
+            "-o",
+            str(library),
+        ]
+        commands.append(validator_command)
+        subprocess.run(validator_command, check=True, capture_output=True, timeout=30)
+        cls.validator = author.NativeAuthorValidator(library)
         (cls.artifacts / "build-commands.json").write_text(
             json.dumps(commands, indent=2)
         )
@@ -166,7 +194,18 @@ class NextUseUnixSaveTests(unittest.TestCase):
     def test_corrupt_admitted_save_preserved_before_healthy_continuation(self):
         self._two_family_order("WF", boundary="corrupt-save")
 
-    def _two_family_order(self, order, *, boundary="unchanged"):
+    def test_author_state_checkpoint_preserves_nonzero_state_and_quiet_f(self):
+        self._two_family_order("WF", program="state")
+
+    def test_author_witness_checkpoint_preserves_delivered_w_and_refresh_f(self):
+        self._two_family_order("WF", program="witness")
+
+    def test_author_unpublished_checkpoint_does_not_invent_witness_for_f(self):
+        self._two_family_order("WF", program="witness", unpublished=True)
+
+    def _two_family_order(
+        self, order, *, boundary="unchanged", program=None, unpublished=False
+    ):
         """Controlled wizard geometry/RNG; NOT ordinary play or #66 evidence."""
         self.assertIn(
             boundary,
@@ -201,6 +240,13 @@ class NextUseUnixSaveTests(unittest.TestCase):
         block = old.split('!strcmp(argv[1], "wf-families")', 1)[1]
         block = block.split("static const char src[] =", 1)[1].split(";", 1)[0]
         source = "".join(json.loads(s) for s in re.findall(r'"(?:[^"\\]|\\.)*"', block))
+        if program is not None:
+            self.assertIn(program, ("state", "witness"))
+            self.assertEqual((order, boundary), ("WF", "unchanged"))
+            source = fixture_sources()[0 if program == "state" else 1].decode("ascii")
+        if unpublished:
+            self.assertEqual(program, "witness")
+        refresh = program is None or (program == "witness" and not unpublished)
         sha = hashlib.sha256(source.encode("ascii")).hexdigest()
         results = []
         for interrupted in (False, True):
@@ -213,6 +259,8 @@ class NextUseUnixSaveTests(unittest.TestCase):
                     order
                     + "-"
                     + boundary
+                    + ("-" + program if program else "")
+                    + ("-unpublished" if unpublished else "")
                     + ("-restore" if interrupted else "-continuous")
                 ),
             )
@@ -310,8 +358,36 @@ class NextUseUnixSaveTests(unittest.TestCase):
                 payload, separators=(",", ":"), sort_keys=True
             ).encode()
             envelope = game.run / "next_use-envelope.json"
-            envelope.write_bytes(encoded)
-            envelope.chmod(0o600)
+            author_evidence = {}
+            if program is None:
+                envelope.write_bytes(encoded)
+                envelope.chmod(0o600)
+            else:
+                # Real engine-origin history and schedule, not synthetic rows.
+                # The author owns capabilities and timing. Never patch its output.
+                transport = author.FakeAuthorTransport(response(source.encode("ascii")))
+                authored = author.author_offline(
+                    game.run, transport=transport, validator=self.validator
+                )
+                self.assertEqual(len(transport.calls), 1)
+                self.assertEqual(authored["validation"], "native_parser_and_load")
+                self.assertEqual(authored["status"], "envelope_published_not_admitted")
+                self.assertEqual(authored["source_sha256"], sha)
+                encoded = envelope.read_bytes()
+                # Compare independently derived native origins, not retimed ones.
+                self.assertEqual(json.loads(encoded), payload)
+                self.assertEqual(
+                    authored["envelope_sha256"], hashlib.sha256(encoded).hexdigest()
+                )
+                self.assertEqual(
+                    (game.run / "next_use-author-response.json").read_bytes(),
+                    transport.response,
+                )
+                author_evidence = {
+                    path.name: path.read_bytes()
+                    for path in game.run.glob("next_use-author-*.json")
+                }
+
             # Immutable admission evidence is outside the candidate transport;
             # later deliberate candidate tampering never rewrites this history.
             evidence = game.root / "published-envelope.json"
@@ -337,7 +413,7 @@ class NextUseUnixSaveTests(unittest.TestCase):
                 # Fixed bound: witness at A+5, finish inside (not exactly
                 # on) A+10. Never re-whistle to resume an armed saved target.
                 game.wait_turns(7)
-                self.assertEqual(state()["witnessed"], 1, state())
+                self.assertEqual(state()["witnessed"], int(not unpublished), state())
                 self.assertEqual(state()["attention_claimed"], 1)
 
             def effect(family):
@@ -346,14 +422,34 @@ class NextUseUnixSaveTests(unittest.TestCase):
                     await_attention()
                 else:
                     fountain()
-                    self.assertEqual(state()["slot_f"], 2, state())
+                    self.assertEqual(state()["slot_f"], 2 if refresh else 4, state())
 
+            if unpublished:
+                # Only the eligible native W decision's presentation route is denied.
+                (game.game / "deny-w-message").touch()
             if armed_checkpoint:
                 whistle()
             else:
                 effect(order[0])
             checkpoint = state()
             self.assertEqual(checkpoint["valid"], 1)
+            if program:
+                self.assertEqual(checkpoint["state"], int(program == "state"))
+                self.assertEqual(checkpoint["witnessed"], int(not unpublished))
+                self.assertEqual(checkpoint["attention_claimed"], 1)
+                self.assertEqual(checkpoint["callback_ordinal"], 1)
+                self.assertEqual(checkpoint["callback_w"], 1)
+                self.assertEqual(checkpoint["callback_f"], 0)
+                self.assertEqual(checkpoint["slot_f"], 1)
+                # Production safe_try currently installs zero count inputs;
+                # they are NOT observed-event totals. Preserve the real values
+                # without claiming nonzero/count-sensitive production coverage.
+                self.assertEqual(checkpoint["whistle_count"], 0)
+                self.assertEqual(checkpoint["fountain_count"], 0)
+                self.assertLess(
+                    checkpoint["monstermoves"],
+                    checkpoint["activation_monstermoves"] + 10,
+                )
             if armed_checkpoint:
                 self.assertEqual(checkpoint["slot_w"], 2)  # consumed, armed
                 self.assertEqual(checkpoint["slot_f"], 1)  # still pending
@@ -508,6 +604,26 @@ class NextUseUnixSaveTests(unittest.TestCase):
                     "origin_w_deadline",
                     "origin_f_deadline",
                     "program_expiry",
+                    "whistle_count",
+                    "fountain_count",
+                    "callback_w",
+                    "callback_f",
+                    "next_seq",
+                    "admission_move",
+                    "variant",
+                    "delay_used",
+                    "delay_until",
+                    "last_root",
+                    "binding_sha256",
+                    "snapshot_v",
+                    "program_id",
+                    "phase",
+                    "origin_w_live",
+                    "origin_f_live",
+                    "identity_unsafe",
+                    "termination_emitted",
+                    "replay_cursor",
+                    "source_length",
                 ):
                     self.assertEqual(restored[key], checkpoint[key], key)
                 if armed_checkpoint:
@@ -530,6 +646,12 @@ class NextUseUnixSaveTests(unittest.TestCase):
             effect(order[1])
             complete = state()
             self.assertEqual(complete["callback_ordinal"], 2)
+            if program:
+                self.assertEqual(complete["state"], int(program == "state" or refresh))
+                self.assertEqual(
+                    (complete["callback_w"], complete["callback_f"]), (1, 1)
+                )
+            (game.root / "complete.json").write_text(json.dumps(complete, indent=2))
             # Retry with the exact expected candidate transport (original,
             # absent, replaced or relocated): never readmit/debit or regain uses.
             game.sanity(40)
@@ -549,6 +671,8 @@ class NextUseUnixSaveTests(unittest.TestCase):
             self.assertEqual(final["spent"], spent_before + 2)
             self.assertEqual(final["source_sha256"], sha)
             self.assertEqual(evidence.read_bytes(), encoded)
+            for name, raw in author_evidence.items():
+                self.assertEqual((game.run / name).read_bytes(), raw, name)
             self.assertEqual(
                 (game.run / "next_use-receipt.jsonl").read_bytes(), receipt
             )
@@ -569,10 +693,34 @@ class NextUseUnixSaveTests(unittest.TestCase):
                 self.assertEqual(final["run_token"], checkpoint["run_token"])
             trace = native_trace()
             witnesses = [r for r in trace if r["kind"] == "witness" and r["delivered"]]
-            self.assertEqual(len(witnesses), 1, trace)
-            self.assertEqual(witnesses[0]["displaced"], 1)
-            self.assertEqual(witnesses[0]["classifier"], 1)
-            self.assertEqual(witnesses[0]["pet_id"], fixture["pet_id"])
+            attempts = [r for r in trace if r["kind"] == "witness"]
+            self.assertEqual(len(attempts), 1, trace)
+            self.assertEqual(len(witnesses), int(not unpublished), trace)
+            self.assertEqual(attempts[0]["displaced"], 1)
+            self.assertEqual(attempts[0]["classifier"], 1)
+            self.assertEqual(attempts[0]["pet_id"], fixture["pet_id"])
+            attention = [
+                e["observation"]
+                for e in game.events()
+                if e.get("observation", {}).get("operation") == "whistle_attention"
+            ]
+            self.assertEqual(len(attention), 2 if unpublished else 3)
+            if unpublished:
+                self.assertEqual(
+                    [e["stage"] for e in attention], ["started", "blocked"]
+                )
+            else:
+                self.assertEqual(
+                    [e["stage"] for e in attention], ["started", "notice", "completed"]
+                )
+                self.assertEqual(attention[1]["fact"], "attention")
+            refresh_notices = [
+                e
+                for e in game.events()
+                if e.get("observation", {}).get("fact") == "water_refreshed"
+            ]
+            self.assertEqual(len(refresh_notices), 2 if refresh else 1)
+
             if armed_checkpoint:
                 self.assertEqual(witnesses[0]["pet_id"], checkpoint["armed_m_id"])
                 self.assertGreaterEqual(
@@ -586,8 +734,12 @@ class NextUseUnixSaveTests(unittest.TestCase):
             drinks = [r for r in trace if r["kind"] == "fountain"]
             self.assertEqual(len(drinks), 3)
             # Native contract enum: natural, remapped, default without intent.
-            self.assertEqual([drink["outcome"] for drink in drinks], [1, 6, 4])
-            self.assertEqual([drink["hunger_delta"] for drink in drinks], [4, 4, 0])
+            self.assertEqual(
+                [drink["outcome"] for drink in drinks], [1, 6 if refresh else 4, 4]
+            )
+            self.assertEqual(
+                [drink["hunger_delta"] for drink in drinks], [4, 4 if refresh else 0, 0]
+            )
             summary = dict(
                 final={
                     k: final[k]
@@ -599,6 +751,38 @@ class NextUseUnixSaveTests(unittest.TestCase):
                         "attention_claimed",
                         "callback_ordinal",
                         "spent",
+                    )
+                },
+                checkpoint_context={
+                    k: checkpoint[k]
+                    for k in (
+                        "state",
+                        "whistle_count",
+                        "fountain_count",
+                        "callback_w",
+                        "callback_f",
+                        "callback_ordinal",
+                        "witnessed",
+                        "variant",
+                        "admission_move",
+                        "moves",
+                        "monstermoves",
+                    )
+                },
+                complete_context={
+                    k: complete[k]
+                    for k in (
+                        "state",
+                        "whistle_count",
+                        "fountain_count",
+                        "callback_w",
+                        "callback_f",
+                        "callback_ordinal",
+                        "witnessed",
+                        "variant",
+                        "admission_move",
+                        "moves",
+                        "monstermoves",
                     )
                 },
                 witnesses=[
