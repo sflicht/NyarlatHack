@@ -708,7 +708,7 @@ class NextUseUnixSaveTests(unittest.TestCase):
                     )
                     version_at = marker + 4 + word
                     self.assertEqual(
-                        original[version_at : version_at + word], struct.pack("i", 4)
+                        original[version_at : version_at + word], struct.pack("i", 5)
                     )
                     changed_source = bytearray(original)
                     changed_source[source_at] ^= 1

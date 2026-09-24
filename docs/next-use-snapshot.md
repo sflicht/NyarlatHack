@@ -31,6 +31,37 @@ the earlier segment must be retained by the recorder. Complete checkpointed
 native replay and independently checked trace continuity remain #65; resetting
 these buffers alone is not replay evidence.
 
+## Journal acknowledgement checkpoint (v5)
+
+The runtime additionally owns `journal_state` (NONE=0, OPEN=1, COMPLETE=2,
+FAILED=3), acknowledged `journal_bytes` (at most 8 MiB), lowercase
+`journal_sha256[65]`, and exact Boolean `capture_incomplete`. `replay_cursor`
+remains the acknowledged transition count. Journal cursors are bounded to 4096.
+NONE has zero bytes/empty hash, but permits a positive custom-subscriber cursor
+and an incomplete custom capture. Subscriber bindings are never serialized or
+automatically reconnected by import.
+
+OPEN requires a healthy committed runtime and a valid acknowledged anchor;
+cursor zero denotes the header. COMPLETE requires a healthy terminal runtime,
+positive cursor and footer acknowledgement. FAILED requires incompleteness and
+retains the last acknowledged anchor; a header failure may have no anchor.
+Settled failed recording remains a valid game save, not a gameplay rollback.
+Capture transaction and sink-delivery saves are refused before any save write.
+
+The writer's per-line byte count/hash is only a **working tip**. Publication to
+the runtime happens after the entire sink acknowledgement: transition fsync,
+and for terminal records footer fsync plus successful close. Initial header
+publication additionally requires directory fsync. Failures never promote a
+working tip to a checkpoint. A complete-looking file alone cannot prove success.
+The initial header explicitly carries v5 NONE/zero bytes/empty hash/incomplete=0,
+so it does not circularly hash its own anchor. The outer journal and replay-input
+formats remain v1; the exact inner header schema is explicitly v5.
+
+This stage does **not** reopen journals or implement recording continuation.
+The existing native restore-unsupported policy still latches failure, retaining
+imported anchors and failed status. Secure prefix scanning and the startup
+resume hook remain a later stage; no full native resume/replay claim is made.
+
 ## Stable-state invariants
 
 - Only committed or terminated programs can be represented. Terminated means
@@ -68,8 +99,8 @@ Snapshot version 2 lacks authoritative witness/count/sequence information.
 It is rejected, not silently upgraded and not assigned an invented witness.
 Retain the original bytes with the matching old binary/data. An incompatible
 payload is not permission to delete a save or rewrite historical evidence.
-The current development schema is version 4 (version 3 was an incomplete
-unmerged development schema and is also rejected); it is not yet an accepted stable
+The current development schema is version 5. Versions 3 and 4 are also rejected,
+with their original bytes retained; it is not yet an accepted stable
 persistence release. Failed parsing/validation leaves the existing live runtime
 unchanged; an explicitly valid absent payload resets it.
 

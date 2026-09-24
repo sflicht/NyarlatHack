@@ -79,6 +79,8 @@ static void snapshot(const struct chaos_next_use_snapshot *p)
     N(p, origin_w_live); N(p, origin_f_live); N(p, armed_m_id); N(p, replay_cursor);
     N(p, origin_w); N(p, origin_f); N(p, origin_w_deadline); N(p, origin_f_deadline);
     N(p, run_token); N(p, level_token); N(p, activation_monstermoves); N(p, armed_root);
+    N(p, journal_state); N(p, journal_bytes); T(p, journal_sha256);
+    N(p, capture_incomplete);
     N(p, source_length); T(p, source_sha256); T(p, binding_sha256);
     if (p->source_length > CHAOS_NEXT_USE_SOURCE_MAX) journal.bad = 1;
     put("\"source_hex\":\"");
@@ -205,7 +207,7 @@ static void fail(void)
 {
     static const char marker[] = "{\"journal_failed\":1}\n";
     journal.failed = 1;
-    chaos_next_use_capture_fail();
+    chaos_next_use_capture_journal_fail();
     /* Best effort negative evidence, never overwrite/delete the original prefix.
      * A footer CAN survive failed fsync/close even when this marker cannot land.
      * File completeness is NOT capture acknowledgement: the caller must consult
@@ -274,6 +276,9 @@ static int sink(void *opaque, const struct chaos_next_use_replay_input *p)
         journal.fd = -1;
         journal.ended = 1;
     }
+    chaos_next_use_capture_journal_ack(
+        journal.ended ? CHAOS_JOURNAL_COMPLETE : CHAOS_JOURNAL_OPEN,
+        (unsigned long)journal.bytes, journal.previous);
     journal.cursor = p->cursor;
     return 1;
 }
@@ -296,27 +301,31 @@ int chaos_next_use_journal_begin(int dir)
     struct chaos_next_use_snapshot initial;
     const struct chaos_next_use_runtime_private_record *a, *b;
     struct chaos_next_use_capture_status status;
-    if (journal.started) { chaos_next_use_capture_fail(); return 0; }
+    int result = 0;
+    /* Reentrant callers neither reset the writer nor release the outer guard. */
+    if (!chaos_next_use_capture_journal_enter(&status)) return 0;
+    if (journal.started) { chaos_next_use_capture_fail(); goto done; }
     journal.started = 1;
-    chaos_next_use_capture_status(&status);
     chaos_next_use_capture_set_sink(sink, NULL);
     if (status.incomplete || status.transaction_open || status.acknowledged_cursor
         || !chaos_next_use_snapshot_export(&initial) || initial.replay_cursor
         || initial.phase != CHAOS_ATTEMPT_COMMITTED
+        || initial.journal_state != CHAOS_JOURNAL_NONE
+        || initial.capture_incomplete
         || chaos_next_use_runtime_private_count() != 2
         || fstat(dir, &st) || !S_ISDIR(st.st_mode) || st.st_uid != getuid()
-        || (st.st_mode & 077)) { fail(); return 0; }
+        || (st.st_mode & 077)) goto failed;
     a = chaos_next_use_runtime_private_at(0);
     b = chaos_next_use_runtime_private_at(1);
     if (!a || !b || a->kind != CHAOS_RUNTIME_PRIVATE_ATTEMPT
-        || b->kind != CHAOS_RUNTIME_PRIVATE_ADMISSION) { fail(); return 0; }
+        || b->kind != CHAOS_RUNTIME_PRIVATE_ADMISSION) goto failed;
     journal.fd = openat(dir, "next_use-journal.jsonl",
                         O_WRONLY | O_CREAT | O_EXCL | O_NOFOLLOW | O_NONBLOCK | O_CLOEXEC, 0600);
-    if (journal.fd < 0) { fail(); return 0; }
+    if (journal.fd < 0) goto failed;
     if (fstat(journal.fd, &st) || !S_ISREG(st.st_mode) || st.st_uid != getuid()
         || st.st_nlink != 1 || (st.st_mode & 077) || st.st_size != 0) {
         /* Never write to an unverified descriptor, including a failure marker. */
-        (void)close(journal.fd); journal.fd = -1; fail(); return 0;
+        (void)close(journal.fd); journal.fd = -1; goto failed;
     }
     memset(journal.previous, '0', 64); journal.previous[64] = 0;
     memcpy(journal.source_sha256, initial.source_sha256, 65);
@@ -324,6 +333,14 @@ int chaos_next_use_journal_begin(int dir)
     put("{\"snapshot\":"); snapshot(&initial);
     put(",\"private_records\":["); private_record(a); put(","); private_record(b);
     put("]}");
-    if (!finish_line() || !sync_all(dir)) { fail(); return 0; }
-    return 1;
+    if (!finish_line() || !sync_all(dir)) goto failed;
+    chaos_next_use_capture_journal_ack(CHAOS_JOURNAL_OPEN,
+        (unsigned long)journal.bytes, journal.previous);
+    result = 1;
+    goto done;
+failed:
+    fail();
+done:
+    chaos_next_use_capture_journal_leave();
+    return result;
 }

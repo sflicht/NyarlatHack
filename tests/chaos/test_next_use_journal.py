@@ -75,7 +75,7 @@ class NextUseJournalTests(unittest.TestCase):
             trace["records"][0]["data"]["snapshot"]["program_expiry"],
         )
 
-    def run_native(self, fault=None, folder=None, escaped=False, mode=None):
+    def run_native(self, fault=None, folder=None, escaped=False, mode=None, probe=None):
         folder = folder or Path(tempfile.mkdtemp(prefix="nyarl-journal-run-"))
         if not (folder / "next_use-envelope.json").exists():
             publish_envelope(
@@ -92,6 +92,9 @@ class NextUseJournalTests(unittest.TestCase):
         env = dict(os.environ, TERM="xterm", COLUMNS="80", LINES="24")
         env.pop("JOURNAL_TEST_FAULT", None)
         env.pop("JOURNAL_TEST_MODE", None)
+        env.pop("JOURNAL_TEST_HEADER_PROBE", None)
+        if probe:
+            env["JOURNAL_TEST_HEADER_PROBE"] = probe
         if mode:
             env["JOURNAL_TEST_MODE"] = mode
         if fault:
@@ -111,8 +114,37 @@ class NextUseJournalTests(unittest.TestCase):
             (row["admitted"], row["rejected"], row["spent"], row["hunger_delta"]),
             (0, 1, 0, 0)
             if mode == "deadline-late"
-            else (1, 0, 1, 0 if mode == "expire" else 4),
+            else (1, 0, 1, 0 if mode in ("expire", "header") else 4),
         )
+        if row["admitted"]:
+            self.assertEqual(
+                row["journal_state"],
+                3 if row["incomplete"] else (1 if mode == "header" else 2),
+            )
+            data = (folder / "next_use-journal.jsonl").read_bytes()
+            if row["journal_bytes"]:
+                prefix = data[: row["journal_bytes"]]
+                self.assertTrue(prefix.endswith(b"\n"))
+                last = json.loads(prefix.splitlines()[-1])
+                # Independent actual payload bytes, not the writer's hash helper.
+                raw = (
+                    prefix.splitlines()[-1]
+                    .split(b'{"payload":', 1)[1]
+                    .rsplit(b',"sha256":', 1)[0]
+                )
+                self.assertEqual(hashlib.sha256(raw).hexdigest(), row["journal_sha256"])
+                self.assertEqual(last["payload"]["cursor"], row["cursor"])
+                self.assertEqual(
+                    last["payload"]["kind"],
+                    "header"
+                    if row["cursor"] == 0
+                    else ("end" if not row["incomplete"] else "transition"),
+                )
+            else:
+                self.assertEqual(
+                    (row["journal_sha256"], row["cursor"], row["incomplete"]),
+                    ("", 0, 1),
+                )
         print("JOURNAL_ARTIFACT=" + str(folder) + " " + json.dumps(row), flush=True)
         return folder, row
 
@@ -405,6 +437,19 @@ class NextUseJournalTests(unittest.TestCase):
                             _transition(bad, s, 4, before)
 
     def test_physical_fountain_writes_complete_typed_journal(self):
+        header_folder, header_row = self.run_native(mode="header")
+        self.assertEqual(
+            (
+                header_row["cursor"],
+                header_row["journal_state"],
+                header_row["incomplete"],
+            ),
+            (0, 1, 0),
+        )
+        self.assertEqual(
+            header_row["journal_bytes"],
+            (header_folder / "next_use-journal.jsonl").stat().st_size,
+        )
         folder, row = self.run_native(escaped=True)
         path = folder / "next_use-journal.jsonl"
         self.assertTrue(
@@ -426,6 +471,62 @@ class NextUseJournalTests(unittest.TestCase):
         self.assertEqual([r["data"]["operation"] for r in records], [1, 6])
         self.assertEqual(records[-1]["data"]["fountain_outcome"], 6)
         self.assertEqual(records[-1]["data"]["expected_token"]["consumed"], 1)
+
+    def assert_header_interruption(self, point, fault=None):
+        folder, row = self.run_native(mode="header", probe=point, fault=fault)
+        probe = json.loads((folder / "header-probe.json").read_text())
+        self.assertEqual(probe["seen"], 1)
+        self.assertEqual(
+            (probe["status"], probe["saved"], probe["open"], probe["offset"]),
+            (-1, 0, 1, 3),
+            str(folder),
+        )
+        self.assertEqual((folder / "interrupted.save").read_bytes(), b"save-sentinel")
+        self.assertEqual(
+            (probe["settled_status"], probe["settled_saved"], probe["settled_open"]),
+            (1, 1, 0),
+        )
+        self.assertGreater((folder / "settled.save").stat().st_size, 8)
+        self.assertEqual(
+            (row["journal_state"], row["incomplete"]), (3, 1) if fault else (1, 0)
+        )
+        if not fault:
+            header = json.loads((folder / "next_use-journal.jsonl").read_bytes())
+            anchor = header["payload"]["data"]["snapshot"]
+            self.assertEqual(
+                (
+                    anchor["journal_state"],
+                    anchor["journal_bytes"],
+                    anchor["capture_incomplete"],
+                ),
+                (0, 0, 0),
+            )
+            self.assertEqual(
+                row["journal_bytes"], (folder / "next_use-journal.jsonl").stat().st_size
+            )
+        if point == "reentrant":
+            self.assertEqual(probe["reentrant"], 0)
+
+    def test_header_write_signal_save_refused(self):
+        self.assert_header_interruption("write")
+
+    def test_header_file_sync_signal_save_refused(self):
+        self.assert_header_interruption("fsync")
+
+    def test_header_directory_sync_signal_save_refused(self):
+        self.assert_header_interruption("dirsync")
+
+    def test_header_reentrant_begin_preserves_outer_guard(self):
+        self.assert_header_interruption("reentrant")
+
+    def test_header_failures_release_guard_with_failed_checkpoint(self):
+        for point, fault in (
+            ("write", "header-write"),
+            ("fsync", "sync1"),
+            ("dirsync", "dirsync"),
+        ):
+            with self.subTest(point=point):
+                self.assert_header_interruption(point, fault)
 
     def test_retry_partial_write_and_eintr(self):
         from chaos.next_use_journal import read_journal
@@ -480,7 +581,7 @@ class NextUseJournalTests(unittest.TestCase):
     def test_failures_do_not_ack_or_reject_admission(self):
         from chaos.next_use_journal import read_journal, JournalError
 
-        for fault in ("sync1", "sync2", "sync3", "sync4", "write", "zero"):
+        for fault in ("dirsync", "sync1", "sync2", "sync3", "sync4", "write", "zero"):
             with self.subTest(fault=fault):
                 folder, row = self.run_native(fault)
                 self.assertEqual(row["incomplete"], 1)
@@ -517,6 +618,12 @@ class NextUseJournalTests(unittest.TestCase):
         edits = [
             ((0, "snapshot", "binding_sha256"), "0" * 64),
             ((0, "snapshot", "snapshot_v"), 3),
+            ((0, "snapshot", "snapshot_v"), 4),
+            ((0, "snapshot", "journal_state"), 1),
+            ((0, "snapshot", "journal_bytes"), 1),
+            ((0, "snapshot", "journal_sha256"), "0" * 64),
+            ((0, "snapshot", "capture_incomplete"), 1),
+            ((0, "snapshot", "capture_incomplete"), False),
             ((0, "snapshot", "run_token"), 2**63),
             ((0, "snapshot", "extra"), 1),
             ((0, "private_records", 1, "data", "envelope_sha256"), "0" * 64),
@@ -598,7 +705,7 @@ class NextUseJournalTests(unittest.TestCase):
         self.assertEqual(read_journal(p)["status"], "incomplete")
         for bad in (
             payload.replace(b'"v": 1', b'"v": 1, "v": 1', 1),
-            payload.replace(b'"snapshot_v": 4', b'"snapshot_v": 4, "snapshot_v": 4', 1),
+            payload.replace(b'"snapshot_v": 5', b'"snapshot_v": 5, "snapshot_v": 5', 1),
             payload.replace(b'"phase": 3', b'"phase": NaN', 1),
         ):
             p.write_bytes(outer(bad))

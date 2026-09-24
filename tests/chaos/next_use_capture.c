@@ -93,6 +93,17 @@ static int sink(void *opaque, const struct chaos_next_use_replay_input *record)
     struct chaos_next_use_capture_status status;
     struct chaos_next_use_replay_input bad;
     assert(opaque == &calls);
+    assert(chaos_next_use_save_status() == CHAOS_SNAPSHOT_ERROR);
+    {
+        FILE *fp = tmpfile();
+        char kept[4];
+        assert(fp);
+        assert(write(fileno(fp), "keep", 4) == 4);
+        rewind(fp);
+        assert(!chaos_next_use_save(fileno(fp)));
+        assert(read(fileno(fp), kept, 4) == 4 && !memcmp(kept, "keep", 4));
+        fclose(fp);
+    }
     ++calls;
     received = *record;
     chaos_next_use_capture_status(&status);
@@ -173,6 +184,19 @@ int main(int argc, char **argv)
         assert(calls == 1 && received.operation == CHAOS_REPLAY_ACTION);
         assert(received.root == 99 && received.expected_last_root == 0);
         assert(received.private_count == 1);
+    } else if (!strcmp(mode, "journal_missing") || !strcmp(mode, "journal_reject")) {
+        static const char anchor[] =
+            "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
+        chaos_next_use_capture_journal_ack(CHAOS_JOURNAL_OPEN, 1234, anchor);
+        if (!strcmp(mode, "journal_missing")) chaos_next_use_capture_set_sink(NULL, NULL);
+        else reject = 1;
+        assert(chaos_next_use_on_action(CHAOS_NEXT_USE_FAMILY_W, 30, NULL));
+        chaos_next_use_capture_whistle(30, 7, 40);
+        assert(chaos_next_use_save_status() == CHAOS_SNAPSHOT_VALID);
+        assert(chaos_next_use_snapshot_export(&snap));
+        assert(snap.journal_state == CHAOS_JOURNAL_FAILED && snap.capture_incomplete);
+        assert(snap.replay_cursor == 0 && snap.journal_bytes == 1234);
+        assert(!strcmp(snap.journal_sha256, anchor));
     } else if (!strcmp(mode, "failure") || !strcmp(mode, "missing")) {
         if (!strcmp(mode, "missing")) chaos_next_use_capture_set_sink(NULL, NULL);
         else reject = 1;
@@ -185,6 +209,11 @@ int main(int argc, char **argv)
         chaos_next_use_capture_status(&status);
         assert(status.incomplete && status.acknowledged_cursor == 0);
         assert(chaos_next_use_save_status() == CHAOS_SNAPSHOT_VALID);
+        assert(chaos_next_use_snapshot_export(&snap));
+        assert(snap.capture_incomplete && snap.journal_state == CHAOS_JOURNAL_NONE);
+        assert(chaos_next_use_snapshot_import(&snap));
+        chaos_next_use_capture_status(&status);
+        assert(status.incomplete && !status.sink_connected);
     } else if (!strcmp(mode, "fountain") || !strncmp(mode, "bool_token_", 11)) {
         chaos_next_use_runtime_reset();
         snprintf(origins, sizeof origins, "%s", f_origin);

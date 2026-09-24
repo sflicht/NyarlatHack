@@ -9,6 +9,7 @@
 #include <limits.h>
 #include <stdint.h>
 #include <unistd.h>
+#include <signal.h>
 
 #define CHAOS_RUNTIME_PRIVATE_MAX 16
 #define CHAOS_RUNTIME_PUBLIC_MAX 1
@@ -46,6 +47,9 @@ struct runtime_state {
     int manifest_success;
     int expected_manifest_root, expected_notice_seq, expected_end_seq;
     unsigned long replay_cursor;
+    int journal_state;
+    unsigned long journal_bytes;
+    char journal_sha256[65];
     unsigned expected_manifest_m_id;
     unsigned armed_m_id;
     long activation_monstermoves, armed_root, pending_w_root, f_root;
@@ -88,12 +92,30 @@ static struct chaos_next_use_replay_input capture_record;
 static chaos_next_use_capture_sink capture_sink;
 static void *capture_opaque;
 static int capture_depth, capture_incomplete, capture_delivering;
+/* Process-local header transaction, not part of the header's NONE anchor.
+ * A signal-triggered save must observe it before touching snapshot values. */
+static volatile sig_atomic_t capture_journal_initializing;
+
+int chaos_next_use_capture_journal_enter(struct chaos_next_use_capture_status *before)
+{
+    if (capture_journal_initializing) return 0;
+    capture_journal_initializing = 1;
+    chaos_next_use_capture_status(before);
+    /* Return the preexisting native transaction state, excluding our guard. */
+    before->transaction_open = capture_depth != 0 || capture_delivering;
+    return 1;
+}
+
+void chaos_next_use_capture_journal_leave(void)
+{
+    capture_journal_initializing = 0;
+}
 static int capture_private_before, capture_public_before, capture_manifest_open;
 
 void chaos_next_use_capture_set_sink(chaos_next_use_capture_sink sink, void *opaque)
 {
     if (capture_depth || capture_delivering) {
-        capture_incomplete = 1;
+        chaos_next_use_capture_fail();
         return;
     }
     capture_sink = sink;
@@ -103,6 +125,30 @@ void chaos_next_use_capture_set_sink(chaos_next_use_capture_sink sink, void *opa
 void chaos_next_use_capture_fail(void)
 {
     capture_incomplete = 1;
+    if (live_runtime.journal_state != CHAOS_JOURNAL_NONE)
+        live_runtime.journal_state = CHAOS_JOURNAL_FAILED;
+}
+
+void chaos_next_use_capture_journal_fail(void)
+{
+    live_runtime.journal_state = CHAOS_JOURNAL_FAILED;
+    chaos_next_use_capture_fail();
+}
+
+void chaos_next_use_capture_journal_ack(int state, unsigned long bytes,
+                                      const char sha256[65])
+{
+    /* Internal trusted writer seam. Transaction saves are blocked until the
+     * sink returns and capture_leave commits the matching replay cursor. */
+    if (capture_incomplete || !bytes || bytes > CHAOS_NEXT_USE_JOURNAL_BYTES_MAX
+        || !valid_hash_field(sha256)
+        || (state != CHAOS_JOURNAL_OPEN && state != CHAOS_JOURNAL_COMPLETE)) {
+        chaos_next_use_capture_journal_fail();
+        return;
+    }
+    live_runtime.journal_state = state;
+    live_runtime.journal_bytes = bytes;
+    memcpy(live_runtime.journal_sha256, sha256, 65);
 }
 
 void chaos_next_use_capture_status(struct chaos_next_use_capture_status *out)
@@ -110,7 +156,8 @@ void chaos_next_use_capture_status(struct chaos_next_use_capture_status *out)
     if (!out) return;
     out->sink_connected = capture_sink != NULL;
     out->incomplete = capture_incomplete;
-    out->transaction_open = capture_depth != 0 || capture_delivering;
+    out->transaction_open = capture_journal_initializing
+        || capture_depth != 0 || capture_delivering;
     out->acknowledged_cursor = live_runtime.replay_cursor;
 }
 
@@ -185,13 +232,16 @@ static int capture_enter(int operation)
 {
     if (runtime_staging) return 0;
     if (capture_delivering) {
-        capture_incomplete = 1;
+        chaos_next_use_capture_fail();
         return 0;
     }
     if (capture_depth) { ++capture_depth; return 1; }
     if (runtime.phase != CHAOS_ATTEMPT_COMMITTED || capture_incomplete) return 0;
+    /* Data-only imports are not yet bound to a native game. A rejected action
+     * there is not a missed transition, and must leave saved values untouched. */
+    if (!runtime.current_run_token || !runtime.current_level_token) return 0;
     if (!capture_sink || live_runtime.replay_cursor >= INT32_MAX) {
-        capture_incomplete = 1;
+        chaos_next_use_capture_fail();
         return 0;
     }
     capture_depth = 1;
@@ -209,8 +259,13 @@ static int capture_enter(int operation)
 static void capture_leave(int entered)
 {
     int i, acknowledged;
-    if (!entered || --capture_depth) return;
-    if (capture_incomplete) return;
+    if (!entered) return;
+    if (capture_depth > 1) { --capture_depth; return; }
+    /* No signal-save gap between finishing mutation, calling the sink, and
+     * publishing its cursor alongside the acknowledged journal anchor. */
+    capture_delivering = 1;
+    capture_depth = 0;
+    if (capture_incomplete) { capture_delivering = 0; return; }
     capture_record.expected_last_root = runtime.last_root;
     capture_record.callback_ordinal = runtime.callback_ordinal;
     capture_record.state = runtime.state;
@@ -223,20 +278,20 @@ static void capture_leave(int entered)
     capture_record.public_count = runtime.public_count - capture_public_before;
     if (capture_record.private_count < 0 || capture_record.private_count > 4
         || capture_record.public_count < 0 || capture_record.public_count > 1) {
-        capture_incomplete = 1;
+        chaos_next_use_capture_fail();
+        capture_delivering = 0;
         return;
     }
     for (i = 0; i < capture_record.private_count; ++i)
         capture_record.private_records[i] = runtime.private_records[capture_private_before + i];
     for (i = 0; i < capture_record.public_count; ++i)
         capture_record.public_records[i] = runtime.public_records[capture_public_before + i];
-    capture_delivering = 1;
     acknowledged = capture_sink(capture_opaque, &capture_record);
-    capture_delivering = 0;
     if (acknowledged && !capture_incomplete)
         live_runtime.replay_cursor = capture_record.cursor;
     else
-        capture_incomplete = 1;
+        chaos_next_use_capture_fail();
+    capture_delivering = 0;
 }
 
 static void chaos_next_use_sha256_hex(const unsigned char *data, size_t length,
@@ -396,6 +451,7 @@ static void clear_action_token(struct chaos_fountain_token *token)
 void chaos_next_use_runtime_reset(void)
 {
     runtime_staging = 0;
+    capture_journal_initializing = 0;
     capture_depth = capture_manifest_open = capture_incomplete = 0;
     memset(&live_runtime, 0, sizeof live_runtime);
     memset(&replay_runtime, 0, sizeof replay_runtime);
@@ -1435,7 +1491,7 @@ void chaos_next_use_manifestation_complete(
 {
     int entered = !runtime_staging && capture_manifest_open;
     if (!witness) {
-        if (entered) capture_incomplete = 1;
+        if (entered) chaos_next_use_capture_fail();
     } else {
         if (entered && capture_depth == 1) {
             capture_record.root = witness->root;
@@ -1823,6 +1879,10 @@ static void snapshot_values(struct chaos_next_use_snapshot *out)
     out->origin_f_live = runtime.origin_f_live;
     out->armed_m_id = runtime.armed_m_id;
     out->replay_cursor = runtime.replay_cursor;
+    out->journal_state = runtime.journal_state;
+    out->capture_incomplete = capture_incomplete;
+    out->journal_bytes = runtime.journal_bytes;
+    memcpy(out->journal_sha256, runtime.journal_sha256, 65);
     out->activation_monstermoves = runtime.activation_monstermoves;
     out->armed_root = runtime.armed_root;
     out->origin_w = runtime.origin_w;
@@ -1868,6 +1928,28 @@ int chaos_next_use_snapshot_validate(const struct chaos_next_use_snapshot *in)
 
     if (!in || in->snapshot_v != CHAOS_NEXT_USE_SNAPSHOT_V)
         return 0;
+    if (in->journal_state < CHAOS_JOURNAL_NONE
+        || in->journal_state > CHAOS_JOURNAL_FAILED
+        || (in->capture_incomplete != 0 && in->capture_incomplete != 1)
+        || in->journal_bytes > CHAOS_NEXT_USE_JOURNAL_BYTES_MAX)
+        return 0;
+    if (in->journal_state == CHAOS_JOURNAL_NONE) {
+        if (in->journal_bytes || in->journal_sha256[0]) return 0;
+    } else {
+        if (in->replay_cursor > CHAOS_NEXT_USE_JOURNAL_RECORDS_MAX) return 0;
+        if (in->journal_bytes) {
+            if (!valid_hash_field(in->journal_sha256)) return 0;
+        } else if (in->journal_sha256[0] || in->replay_cursor
+                   || in->journal_state != CHAOS_JOURNAL_FAILED) return 0;
+        if (in->journal_state == CHAOS_JOURNAL_FAILED) {
+            if (!in->capture_incomplete) return 0;
+        } else if (in->capture_incomplete
+                   || (in->journal_state == CHAOS_JOURNAL_OPEN
+                       && in->phase != CHAOS_ATTEMPT_COMMITTED)
+                   || (in->journal_state == CHAOS_JOURNAL_COMPLETE
+                       && (in->phase != CHAOS_ATTEMPT_TERMINATED
+                           || !in->replay_cursor))) return 0;
+    }
     if (in->program_id <= 0 || in->source_length < 1
         || in->source_length > CHAOS_NEXT_USE_SOURCE_MAX)
         return 0;
@@ -2005,6 +2087,13 @@ int chaos_next_use_snapshot_import(const struct chaos_next_use_snapshot *in)
     live_runtime.origin_f_live = in->origin_f_live;
     live_runtime.armed_m_id = in->armed_m_id;
     live_runtime.replay_cursor = in->replay_cursor;
+    live_runtime.journal_state = in->journal_state;
+    live_runtime.journal_bytes = in->journal_bytes;
+    memcpy(live_runtime.journal_sha256, in->journal_sha256, 65);
+    capture_incomplete = in->capture_incomplete;
+    /* A value import never reconnects a process-local custom/native sink. */
+    capture_sink = NULL;
+    capture_opaque = NULL;
     live_runtime.activation_monstermoves = in->activation_monstermoves;
     live_runtime.armed_root = in->armed_root;
     live_runtime.origin_w = in->origin_w;
@@ -2040,7 +2129,7 @@ static int snapshot_io_all(int fd, void *buf, size_t n, int writing)
 
 int chaos_next_use_snapshot_write(int fd, const struct chaos_next_use_snapshot *in)
 {
-    int32_t header[37];
+    int32_t header[40];
 
     if (fd < 0 || !chaos_next_use_snapshot_validate(in))
         return 0;
@@ -2082,10 +2171,14 @@ int chaos_next_use_snapshot_write(int fd, const struct chaos_next_use_snapshot *
     header[34] = in->callback_w;
     header[35] = in->callback_f;
     header[36] = (int32_t)((uint64_t)in->run_token >> 32);
+    header[37] = in->journal_state;
+    header[38] = in->capture_incomplete;
+    header[39] = (int32_t)in->journal_bytes;
     if (!snapshot_io_all(fd, header, sizeof header, 1))
         return 0;
     if (!snapshot_io_all(fd, (void *)in->source_sha256, 65, 1)
-        || !snapshot_io_all(fd, (void *)in->binding_sha256, 65, 1))
+        || !snapshot_io_all(fd, (void *)in->binding_sha256, 65, 1)
+        || !snapshot_io_all(fd, (void *)in->journal_sha256, 65, 1))
         return 0;
     if (!snapshot_io_all(fd, (void *)in->source, in->source_length, 1))
         return 0;
@@ -2134,7 +2227,7 @@ int chaos_next_use_snapshot_read(int fd, struct chaos_next_use_snapshot *out)
     snap.activation_monstermoves = header[24];
     snap.armed_root = header[25];
     {
-        int32_t extra[11];
+        int32_t extra[14];
         if (!snapshot_io_all(fd, extra, sizeof extra, 0))
             return 0;
         snap.witnessed = extra[0];
@@ -2147,6 +2240,10 @@ int chaos_next_use_snapshot_read(int fd, struct chaos_next_use_snapshot *out)
         snap.last_root = extra[7];
         snap.callback_w = extra[8];
         snap.callback_f = extra[9];
+        snap.journal_state = extra[11];
+        snap.capture_incomplete = extra[12];
+        if (extra[13] < 0) return 0;
+        snap.journal_bytes = (unsigned long)extra[13];
         {
             uint64_t token = ((uint64_t)(uint32_t)extra[10] << 32)
                              | (uint32_t)header[22];
@@ -2155,7 +2252,8 @@ int chaos_next_use_snapshot_read(int fd, struct chaos_next_use_snapshot *out)
         }
     }
     if (!snapshot_io_all(fd, snap.source_sha256, 65, 0)
-        || !snapshot_io_all(fd, snap.binding_sha256, 65, 0))
+        || !snapshot_io_all(fd, snap.binding_sha256, 65, 0)
+        || !snapshot_io_all(fd, snap.journal_sha256, 65, 0))
         return 0;
     if (!snapshot_io_all(fd, snap.source, snap.source_length, 0))
         return 0;
@@ -2169,11 +2267,13 @@ int chaos_next_use_snapshot_read(int fd, struct chaos_next_use_snapshot *out)
 int chaos_next_use_save_status(void)
 {
     struct chaos_next_use_snapshot snap;
+    if (capture_journal_initializing) return CHAOS_SNAPSHOT_ERROR;
     if (live_runtime.program_id == 0 && live_runtime.phase == 0)
         return CHAOS_SNAPSHOT_ABSENT;
     /* Native save may be interrupted into during an action. The action's
      * temporary token/presentation handshake is not a persistent value. */
-    if (live_runtime.pending_w_capture || live_runtime.f_inflight
+    if (capture_depth || capture_delivering
+        || live_runtime.pending_w_capture || live_runtime.f_inflight
         || live_runtime.defer_termination
         || (live_runtime.expected_manifest_root && !live_runtime.witnessed))
         return CHAOS_SNAPSHOT_ERROR;
