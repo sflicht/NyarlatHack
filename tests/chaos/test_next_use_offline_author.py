@@ -187,7 +187,7 @@ class OfflineAuthorTests(unittest.TestCase):
             "SOURCE",
             "MEASURED",
             "UNKNOWN",
-            "fd885c482c6eb0307b9278ef2a4e6827be4477ec",
+            "8483058da95d037fa342c8f4ad91dce1376d7745",
             "do not persist",
             "not available in on_action",
             "not typical",
@@ -495,7 +495,7 @@ class OfflineAuthorTests(unittest.TestCase):
             (ROOT / "chaos/prompts/next-use-mechanics-sources.json").read_bytes()
         )
         self.assertEqual(
-            manifest["revision"], "fd885c482c6eb0307b9278ef2a4e6827be4477ec"
+            manifest["revision"], "8483058da95d037fa342c8f4ad91dce1376d7745"
         )
         for name, digest in manifest["files"].items():
             self.assertEqual(

@@ -2,6 +2,7 @@
 #include "hack.h"
 #include "chaos.h"
 #include "chaos_next_use_runtime.h"
+#include "chaos_next_use_safe.h"
 #include "wintty.h"
 #include <assert.h>
 #include <stdio.h>
@@ -9,11 +10,14 @@
 #include <string.h>
 
 static void capture_finalize(struct monst *, struct chaos_whistle_witness *);
+static void capture_reset(void);
+#define chaos_next_use_safe_reset_for_test capture_reset
 #define chaos_whistle_witness_finalize capture_finalize
 #define main historical_dogmove_main
 #include "next_use_dogmove.c"
 #undef main
 #undef chaos_whistle_witness_finalize
+#undef chaos_next_use_safe_reset_for_test
 
 static int transitions, manifests, intents, pubs, delivered, displaced;
 static int publications, rejection_seen;
@@ -49,6 +53,14 @@ static int native_sink(void *opaque, const struct chaos_next_use_replay_input *r
     return 1;
 }
 
+static void capture_reset(void)
+{
+    /* Fixture reset now disconnects recorder state. Subscribe AFTER that reset
+     * and before installation/actions; do not weaken capture completeness. */
+    chaos_next_use_safe_reset_for_test();
+    chaos_next_use_capture_set_sink(native_sink, &transitions);
+}
+
 static void capture_finalize(struct monst *pet, struct chaos_whistle_witness *witness)
 {
     /* Real map publication denied AFTER native movement and message delivery.
@@ -63,7 +75,6 @@ int main(int argc, char **argv)
     struct chaos_next_use_capture_status status;
     FILE *out;
     int rc;
-    chaos_next_use_capture_set_sink(native_sink, &transitions);
     rc = historical_dogmove_main(argc, argv);
     if (rc) return rc;
     chaos_next_use_capture_status(&status);
