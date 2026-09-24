@@ -155,9 +155,86 @@ int __wrap_chaos_next_use_save(int fd)
     return result;
 }
 
+/* This fault is deliberately NOT serialized missing-world evidence: dorecover
+ * has restored the full world, and allmain is about to call chaos_start then
+ * its first chaos_observe. Remove the actual resident through native lifecycle
+ * functions; optionally allocate a different native pet (never assign m_id).
+ * No runtime, capability, witness, clock or accounting setter is called. */
+static void restore_target_fault(void)
+{
+    int missing = access("armed-missing-target", F_OK) == 0;
+    int replacement = access("armed-replacement-target", F_OK) == 0;
+    struct chaos_next_use_snapshot before, after;
+    struct monst *pet, *old = NULL;
+    long oldmoves = moves, oldmonstermoves = monstermoves;
+    int spent = u.chaos.spent, count = 0, eligible = 0;
+    unsigned original_id;
+    FILE *f;
+    if (!missing && !replacement) return;
+    assert(missing != replacement && wizard);
+    memset(&before, 0, sizeof before);
+    memset(&after, 0, sizeof after);
+    assert(chaos_next_use_snapshot_export(&before));
+    assert(before.phase == CHAOS_ATTEMPT_COMMITTED);
+    assert(before.w_runtime == CHAOS_W_RUNTIME_ARMED);
+    assert(!before.witnessed && !before.attention_claimed);
+    assert(monstermoves < before.activation_monstermoves + 5);
+    for (pet = fmon; pet; pet = pet->nmon)
+        if (!DEADMONSTER(pet)) { ++count; old = pet; }
+    assert(count == 1 && old && old->m_id == before.armed_m_id);
+    original_id = old->m_id; /* measured world ID, not substituted snapshot ID */
+    mongone(old);
+    dmonsfree();
+    assert(!fmon);
+    if (replacement) {
+        int glyph;
+        pet = makemon(&mons[PM_LITTLE_DOG], u.ux + 2, u.uy, MM_EDOG);
+        assert(pet);
+        initedog(pet);
+        EDOG(pet)->hungrytime = monstermoves + 10000;
+        assert(pet->m_id && pet->m_id != original_id);
+        vision_recalc(0);
+        docrt();
+        flush_screen(1);
+        glyph = glyph_at(pet->mx, pet->my);
+        /* Readonly predicates from chaos_next_use_whistle_completed; do not
+         * invoke another whistle/callback to prove replacement eligibility. */
+        eligible = !DEADMONSTER(pet) && canseemon(pet) && !Hallucination
+            && !u.uswallow && isok(pet->mx, pet->my) && glyph_is_monster(glyph)
+            && glyph_to_mon(glyph) == PM_LITTLE_DOG
+            && tty_snapshot_projectable(pet->mx, pet->my, glyph)
+            && pet->mtyp == PM_LITTLE_DOG && pet->mtame && get_mx(pet, MX_EDOG)
+            && pet != u.usteed && pet != u.urider && !pet->mleashed
+            && !get_mx(pet, MX_ESUM) && !mon_attacktype(pet, AT_EXPL)
+            && !Conflict && !pet->mberserk;
+        assert(eligible);
+    }
+    assert(chaos_next_use_snapshot_export(&after));
+    assert(!memcmp(&before, &after, sizeof before));
+    assert(moves == oldmoves && monstermoves == oldmonstermoves && u.chaos.spent == spent);
+    f = file("restore-target.json", "w");
+    fprintf(f, "{\"boundary\":\"after-world-restore-before-chaos-start\","
+        "\"captured_id\":%u,\"before_ids\":[%u],\"after_ids\":[",
+        before.armed_m_id, original_id);
+    count = 0;
+    for (pet = fmon; pet; pet = pet->nmon)
+        if (!DEADMONSTER(pet)) {
+            assert(pet->m_id != original_id);
+            fprintf(f, "%s%u", count++ ? "," : "", pet->m_id);
+        }
+    assert(count == replacement);
+    fprintf(f, "],\"eligible_replacement\":%d,\"runtime_unchanged\":1,"
+        "\"moves\":%ld,\"monstermoves\":%ld,\"spent\":%d,"
+        "\"game_token\":%ld,\"level_token\":%ld}\n",
+        eligible, moves, monstermoves, spent, u.chaos_game_token,
+        chaos_next_use_pack_level(u.uz.dnum, u.uz.dlevel));
+    assert(!fclose(f));
+}
+
 void __wrap_chaos_start(void)
 {
     int fresh = u.chaos.version == 0;
+    if (!fresh) restore_target_fault();
     __real_chaos_start();
     started = 1;
     test_rng_control();
@@ -346,8 +423,12 @@ void __wrap_drinkfountain(void)
     }
 }
 
+int test_native_save_layout(void);
+
 int main(int argc, char **argv)
 {
+    if (argc == 2 && !strcmp(argv[1], "--native-save-layout"))
+        return test_native_save_layout();
     if (argc == 2 && strstr(argv[1], "negative-control")) {
         test_rng_negative_control(argv[1]);
         return 0;
