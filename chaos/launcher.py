@@ -194,8 +194,11 @@ def _validate_startup_pending(backend, state, pending):
             raise ValueError("pending request conflicts with selected pack")
 
 
-def _observe(reader, state, box, backend):
-    for event in reader.read():
+def _observe(reader, state, box, backend, *, next_use=False):
+    for event in reader.read(allow_observations=next_use):
+        # Match the opt-in live loop; observations are not legacy whisper state.
+        if event.get("v") in (2, 4) and event.get("event") == "observation":
+            continue
         state.ingest(event)
     if reader.tail:
         raise ValueError("incomplete existing event history; reconcile before restore")
@@ -381,7 +384,7 @@ def play(args):
                 directory / "events.jsonl", args.max_bytes, args.max_events
             )
             state = State()
-            _observe(reader, state, box, backend)
+            _observe(reader, state, box, backend, next_use=args.next_use)
             try:
                 journal = secure_open(directory / "whispers.jsonl")
             except FileNotFoundError:
