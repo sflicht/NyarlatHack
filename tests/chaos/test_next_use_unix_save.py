@@ -5,6 +5,7 @@ import json
 import os
 import re
 import shutil
+import struct
 from pathlib import Path
 import subprocess
 import tempfile
@@ -162,6 +163,9 @@ class NextUseUnixSaveTests(unittest.TestCase):
     def test_armed_whistle_save_restores_target_before_attention(self):
         self._two_family_order("WF", boundary="armed-whistle")
 
+    def test_corrupt_admitted_save_preserved_before_healthy_continuation(self):
+        self._two_family_order("WF", boundary="corrupt-save")
+
     def _two_family_order(self, order, *, boundary="unchanged"):
         """Controlled wizard geometry/RNG; NOT ordinary play or #66 evidence."""
         self.assertIn(
@@ -172,6 +176,7 @@ class NextUseUnixSaveTests(unittest.TestCase):
                 "replaced-candidate",
                 "relocated-transport",
                 "armed-whistle",
+                "corrupt-save",
             ),
         )
         armed_checkpoint = boundary == "armed-whistle"
@@ -375,6 +380,78 @@ class NextUseUnixSaveTests(unittest.TestCase):
                     retained = game.root / ("saved-" + save.name)
                     shutil.copy2(save, retained)
                     retained.chmod(0o400)
+                if boundary == "corrupt-save":
+                    # Disposable current uncompressed native save, with a used W
+                    # and pending F. Preserve the readonly original as evidence.
+                    self.assertEqual(len(saves), 1)
+                    save = saves[0]
+                    original = save.read_bytes()
+                    source_bytes = source.encode("ascii")
+                    self.assertEqual(original.count(source_bytes), 1)
+                    source_at = original.index(source_bytes)
+                    self.assertEqual(original.count(b"NUS1"), 1)
+                    marker = original.index(b"NUS1")
+                    word = struct.calcsize("i")
+                    self.assertEqual(
+                        original[marker + 4 : marker + 4 + word], struct.pack("i", 1)
+                    )
+                    version_at = marker + 4 + word
+                    self.assertEqual(
+                        original[version_at : version_at + word], struct.pack("i", 4)
+                    )
+                    changed_source = bytearray(original)
+                    changed_source[source_at] ^= 1
+                    incompatible = bytearray(original)
+                    incompatible[version_at : version_at + word] = struct.pack("i", 3)
+                    # Alter the independently saved player identity BEFORE the
+                    # next-use extension, leaving its self-consistent binding
+                    # and source intact. This tests the trusted native binding,
+                    # not merely the snapshot's internal digest checker.
+                    logical = struct.pack("l", checkpoint["run_token"])
+                    self.assertEqual(original[:marker].count(logical), 1)
+                    logical_at = original[:marker].index(logical)
+                    wrong_game = bytearray(original)
+                    replacement_identity = checkpoint["run_token"] ^ 1
+                    if replacement_identity == 0:
+                        replacement_identity = 2
+                    wrong_game[logical_at : logical_at + len(logical)] = struct.pack(
+                        "l", replacement_identity
+                    )
+                    faults = {
+                        "source-digest": bytes(changed_source),
+                        "short-source": original[: source_at + len(source_bytes) // 2],
+                        "unsupported-version": bytes(incompatible),
+                        "independent-game-identity": bytes(wrong_game),
+                    }
+                    protected_paths = [
+                        game.run / "events.jsonl",
+                        game.run / "next_use-receipt.jsonl",
+                        game.game / "native.jsonl",
+                        game.game / "state.json",
+                    ]
+                    protected = {p: p.read_bytes() for p in protected_paths}
+                    for fault, damaged in faults.items():
+                        with self.subTest(save_fault=fault):
+                            save.write_bytes(damaged)
+                            retained_fault = game.root / (fault + ".save")
+                            retained_fault.write_bytes(damaged)
+                            retained_fault.chmod(0o400)
+                            raw_begin = len(game.raw)
+                            text = game.start()
+                            self.assertEqual(game.finish(text), 1)
+                            self.assertIn(b"save file preserved", game.raw[raw_begin:])
+                            self.assertEqual(save.read_bytes(), damaged)
+                            for path, raw in protected.items():
+                                self.assertEqual(path.read_bytes(), raw, str(path))
+                            self.assertFalse(
+                                list(game.game.glob(f"{os.getuid()}wizard.*"))
+                            )
+                    # Only the disposable active input is restored. The corrupt
+                    # and pristine evidence files remain byte-identical.
+                    save.write_bytes(original)
+                    self.assertEqual(
+                        (game.root / ("saved-" + save.name)).read_bytes(), original
+                    )
                 if boundary == "deleted-candidate":
                     envelope.unlink()
                     expected_envelope = None
