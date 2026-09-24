@@ -2,9 +2,84 @@
 
 This is host-built selection, not authored composition and not a claim that a player has recognized a cause.
 
-## What was demonstrated
+## Earlier publication-only evidence
 
 One ordinary nonwizard Bard, fixed test clock, no wizard flag and no seed search, applied the starting tin whistle. `play --ordinary --next-use` published one envelope from the origin schedule. The retained selection was `whistle_attention`, not quiet. The next prayer safe point admitted it once and showed the engine warning. Fountain did not occur in that start. A separate restore of that save kept one receipt; that restore is not in the automated test because the quit prompt was racy. Do not treat this as authored composition or as a recurring haunting.
+
+## Native effect and replay acceptance
+
+The expanded `test_next_use_ordinary.py` now carries that same ordinary Bard
+path through an actual whistle-attention effect. W means whistle attention;
+F means fountain refresh. W naturally qualifies here; F does not, and no
+fountain or companion is injected to manufacture a second family.
+
+The engine uses normal compiled game objects, including `rnd.o`, `dogmove.o`
+and `unixmain.o`. A test-only observer wraps the real startup/observation hooks,
+reads state after the real hooks return, and never writes game state or draws
+random values. Its private output is inspected only after all public input
+policies finish. No wizard flag, bootstrap mutation, hidden-state input
+selection, `ordinary_route` import or execution, provider credentials or model
+call is involved. The original fixed clock/entropy shim remains in use; this
+is not arbitrary saved-random-stream replay or a measured ordinary success rate.
+
+The declared sequence is public inventory inspection, the starting tin whistle,
+one confirmed prayer, a second whistle, and a native save/process exit. The
+saved programme is then restored for a fixed look/pickup and movement policy.
+A real displaced, publicly delivered companion manifestation must appear;
+warning-only execution fails the positive oracle. The programme terminates,
+is saved again, and remains consumed after another actual restore.
+
+A second continuation copies the **same admitted native save and run prefix**,
+then replays every recorded input byte, including automatic prompt replies,
+through the existing launcher. It makes no new choice: both restore sessions
+report `already_published` before history selection. Exact source/envelope,
+one admission/debit, engine events, acknowledged journal, read-only native
+observations and final native log agree. Independent source/binding digests
+and journal decoding remain required. The raw terminal files are retained:
+only their two launcher announcements differ, because each names its own
+private directory; every intervening byte must agree. No historical comparator
+or evidence file is changed to obtain this result.
+
+The measured baseline has 48 replayed suffix input chunks and 41 acknowledged
+transitions, with one delivered W manifestation at monster-clock tick 9.
+`ordinary-result.json` records qualification/publication and effect milestones
+in wall-clock seconds from the start of the positive test, including its prefix
+and continuations. Automated wall time is not human pacing. It also retains native saves, inputs, journals, receipts, source identity
+and normal-object hashes under the printed `ORDINARY_NEXT_USE_ARTIFACTS` path.
+
+Controls are part of the same test invocation:
+
+- The previously unqualified no-look/no-pickup public policy uses the same
+  admitted save and fixed movement but fails the positive witness oracle. The
+  pickup changes time and random-number evolution too; this does not isolate
+  pickup causality. Older negative trials remain valid evidence, not discarded
+  seeds or repaired goldens.
+- A labelled synthetic copy of the actual qualifying public history removes
+  the whistle observations. Remaining observed state and director seed 0 stay
+  fixed: the W menu disappears. The original history permits both quiet and
+  attention. These counterfactual records are never fed to the native game.
+- The test terminates only its own supervised director after normal game
+  startup. With either no candidate or an invalid candidate, ordinary play
+  continues to a normal exit without admission, spend or a warning.
+
+Run the production launcher with one command:
+
+```sh
+python3 -m chaos play --ordinary --next-use
+```
+
+Run the bounded development demonstration and its controls from a built checkout:
+
+```sh
+make -j2 install CHAOS=1
+NYARLATHACK_GAME_TESTS=1 python3 -B -m unittest discover -s tests/chaos -p test_next_use_ordinary.py -v
+```
+
+A failed or unqualified run is retained and fails its oracle; the driver does
+not hunt a different seed or rescue the game. Existing limits and the choice
+of host-built rather than authored source are unchanged. This establishes a
+bounded ordinary path, not player causal recognition, broad continuity, a
+recurring haunting or full-run balance. Those remain separate from #66.
 
 ## What is connected
 
