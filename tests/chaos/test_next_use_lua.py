@@ -6,6 +6,8 @@ import subprocess
 import tempfile
 import unittest
 
+from test_next_use_author_contract import CONTRACT, EXPLICIT_STATE, RESET_COUNTER
+
 ROOT = Path(__file__).resolve().parents[2]
 
 
@@ -95,11 +97,22 @@ class NextUseLuaTests(unittest.TestCase):
         self.assertEqual(second["state"], 1)
 
     def test_returned_state_can_drive_a_later_call(self):
-        first, second = self.run_case("returned-state")
-        self.assertEqual(first["status"], 0)
-        self.assertEqual(first["state"], 1)
-        self.assertEqual(second["status"], 0)
-        self.assertEqual(second["state"], 2)
+        rows = self.run_case("returned-state")
+        self.assertEqual(
+            rows, [{"status": 0, "op": 0, "state": state} for state in (1, 2, 3, 3)]
+        )
+
+    def test_exact_prompt_reset_counter_runs_in_fresh_vms(self):
+        self.assertIn(f"```lua\n{RESET_COUNTER}```", CONTRACT.read_text())
+        rows = self.run_case("upvalue-counter", "stdin", stdin=RESET_COUNTER)
+        self.assertEqual(rows, [{"status": 0, "op": 0, "state": 1}] * 2)
+
+    def test_exact_prompt_explicit_state_includes_upper_bound(self):
+        self.assertIn(f"```lua\n{EXPLICIT_STATE}```", CONTRACT.read_text())
+        rows = self.run_case("returned-state", "stdin", stdin=EXPLICIT_STATE)
+        self.assertEqual(
+            rows, [{"status": 0, "op": 0, "state": state} for state in (1, 2, 3, 3)]
+        )
 
     def test_two_fixtures_branch_without_a_c_edit(self):
         rows = {row["tag"]: row for row in self.run_case("branch-fixtures")}
