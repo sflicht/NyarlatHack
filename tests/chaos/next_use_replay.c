@@ -29,6 +29,11 @@ void bwrite(int fd, genericptr_t loc, unsigned int num)
     if (write(fd, loc, num) != (ssize_t)num) abort();
 }
 
+int chaos_next_use_mread(int fd, void *loc, unsigned int num)
+{
+    return read(fd, loc, num) == (ssize_t)num;
+}
+
 void mread(int fd, genericptr_t loc, unsigned int num)
 {
     if (read(fd, loc, num) != (ssize_t)num) abort();

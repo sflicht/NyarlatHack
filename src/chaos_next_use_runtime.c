@@ -1613,7 +1613,7 @@ static int snapshot_io_all(int fd, void *buf, size_t n, int writing)
     if (writing)
         bwrite(fd, buf, (unsigned)n);
     else
-        mread(fd, buf, (unsigned)n);
+        return chaos_next_use_mread(fd, buf, (unsigned)n);
     return 1;
 }
 
@@ -1782,10 +1782,11 @@ static int restore_snapshot(int fd, long run_token, long level_token, int bound)
     int present = 0;
     struct chaos_next_use_snapshot snap;
 
-    mread(fd, magic, 4);
-    if (memcmp(magic, "NUS1", 4) != 0)
+    if (!chaos_next_use_mread(fd, magic, 4)
+        || memcmp(magic, "NUS1", 4) != 0)
         return 0;
-    mread(fd, (genericptr_t)&present, sizeof present);
+    if (!chaos_next_use_mread(fd, &present, sizeof present))
+        return 0;
     if (present == 0) {
         chaos_next_use_runtime_reset();
         return 1;

@@ -3,6 +3,7 @@
 /* NetHack may be freely redistributed.  See license for details. */
 
 #include "hack.h"
+#include <errno.h>
 #include "chaos.h"
 #include "chaos_next_use.h"
 #include "lev.h"
@@ -19,7 +20,7 @@ extern void FDECL(substitute_tiles, (d_level *));       /* from tile.c */
 #endif
 
 #ifdef ZEROCOMP
-static int NDECL(mgetc);
+static int FDECL(mgetc, (int));
 #endif
 STATIC_DCL void NDECL(find_lev_obj);
 STATIC_DCL void FDECL(restlevchn, (int));
@@ -1239,16 +1240,22 @@ static NEARDATA short inrunlength = -1;
 static NEARDATA int mreadfd;
 
 static int
-mgetc()
+mgetc(int nonfatal)
 {
+    int count;
     if (inbufp >= inbufsz) {
-	inbufsz = read(mreadfd, (genericptr_t)inbuf, sizeof inbuf);
-	if (!inbufsz) {
-	    if (inbufp > sizeof inbuf)
+	/* Keep the signed result until errors have been rejected. */
+	do {
+	    count = read(mreadfd, (genericptr_t)inbuf, sizeof inbuf);
+	} while (count < 0 && errno == EINTR);
+	if (count <= 0) {
+	    inbufsz = 0;
+	    if (!nonfatal && inbufp > sizeof inbuf)
 		error("EOF on file #%d.\n", mreadfd);
 	    inbufp = 1 + sizeof inbuf;  /* exactly one warning :-) */
 	    return -1;
 	}
+	inbufsz = (unsigned short)count;
 	inbufp = 0;
     }
     return inbuf[inbufp++];
@@ -1262,29 +1269,39 @@ minit()
     inrunlength = -1;
 }
 
-int
-mread(fd, buf, len)
-int fd;
-genericptr_t buf;
-register unsigned len;
+/* The checked CHAOS seam and stock mread share all buffered/run state. */
+static int
+mread_zerocomp(int fd, genericptr_t buf, unsigned len, int nonfatal)
 {
-    /*register int readlen = 0;*/
-    if (fd < 0) error("Restore error; mread attempting to read file %d.", fd);
+    if (fd < 0) {
+        if (!nonfatal) error("Restore error; mread attempting to read file %d.", fd);
+        return -1;
+    }
     mreadfd = fd;
     while (len--) {
 	if (inrunlength > 0) {
 	    inrunlength--;
 	    *(*((char **)&buf))++ = '\0';
 	} else {
-	    register short ch = mgetc();
-	    if (ch < 0) return -1; /*readlen;*/
-	    if ((*(*(char **)&buf)++ = (char)ch) == RLESC) {
-		inrunlength = mgetc();
+	    register short ch = mgetc(nonfatal);
+	    if (ch < 0) return -1;
+	    if (ch == RLESC) {
+		inrunlength = mgetc(nonfatal);
+		if (inrunlength < 0) return -1;
 	    }
+	    *(*(char **)&buf)++ = (char)ch;
 	}
-	/*readlen++;*/
     }
-    return 0; /*readlen;*/
+    return 0;
+}
+
+int
+mread(fd, buf, len)
+int fd;
+genericptr_t buf;
+register unsigned len;
+{
+    return mread_zerocomp(fd, buf, len, 0);
 }
 
 #else /* ZEROCOMP */
@@ -1320,5 +1337,28 @@ register unsigned int len;
 	}
 }
 #endif /* ZEROCOMP */
+
+#ifdef CHAOS
+/* A failed snapshot read must reach chaos_restore_reject, not stock mread's
+ * deletion/panic path. Never reset or bypass the native compression decoder. */
+int
+chaos_next_use_mread(int fd, void *buf, unsigned int len)
+{
+    if (fd < 0 || (!buf && len)) return 0;
+#ifdef ZEROCOMP
+    return mread_zerocomp(fd, buf, len, 1) == 0;
+#else
+    unsigned char *next = buf;
+    while (len) {
+        ssize_t count = read(fd, next, len);
+        if (count < 0 && errno == EINTR) continue;
+        if (count <= 0) return 0;
+        next += count;
+        len -= (unsigned int)count;
+    }
+    return 1;
+#endif
+}
+#endif
 
 /*restore.c*/

@@ -11,6 +11,22 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <fcntl.h>
+#include <errno.h>
+
+#ifdef NYARL_TEST_NATIVE_READS
+static int injected_interrupts, injected_short_reads;
+ssize_t chaos_test_native_read(int fd, void *buf, size_t size)
+{
+    if (injected_interrupts) {
+        --injected_interrupts;
+        errno = EINTR;
+        return -1;
+    }
+    if (injected_short_reads && size > 3) size = 3;
+    return read(fd, buf, size);
+}
+#endif
 
 long moves;
 long monstermoves;
@@ -29,13 +45,35 @@ void panic(const char *str, ...)
 
 void bwrite(int fd, genericptr_t loc, unsigned int num)
 {
+#if defined(NYARL_TEST_NATIVE_READS) && defined(ZEROCOMP)
+    /* Valid literal zero-run encoding; only the reader is under test here. */
+    unsigned char *p = loc;
+    while (num--) {
+        if (write(fd, p, 1) != 1) abort();
+        if (!*p && write(fd, p, 1) != 1) abort();
+        ++p;
+    }
+#else
     if (write(fd, loc, num) != (ssize_t)num) abort();
+#endif
 }
 
+#ifndef NYARL_TEST_NATIVE_READS
+int chaos_next_use_mread(int fd, void *loc, unsigned int num)
+{
+    return read(fd, loc, num) == (ssize_t)num;
+}
 void mread(int fd, genericptr_t loc, unsigned int num)
 {
     if (read(fd, loc, num) != (ssize_t)num) abort();
 }
+#else
+/* Cleanup/UI doubles must never be reached by checked snapshot reads. */
+boolean restoring = TRUE;
+void pline(const char *fmt, ...) { (void)fmt; }
+int delete_savefile(void) { fputs("native reader deleted save\n", stderr); abort(); }
+void error(const char *fmt, ...) { (void)fmt; abort(); }
+#endif
 
 static const char source_text[] = "return 0";
 static const char quiet_lua[] =
@@ -309,6 +347,110 @@ int main(int argc, char **argv)
 
     mode = argc > 1 ? argv[1] : "roundtrip";
     chaos_next_use_runtime_reset();
+#ifdef NYARL_TEST_NATIVE_READS
+    if (!strcmp(mode, "native_interrupted_short_reads")) {
+        FILE *fp = tmpfile();
+        if (!fp || !install_pending()
+            || !chaos_next_use_snapshot_export(&snap)
+            || !chaos_next_use_save(fileno(fp))) return 1;
+        rewind(fp); minit();
+        chaos_next_use_runtime_reset();
+        injected_interrupts = 2;
+        injected_short_reads = 1;
+        if (!chaos_next_use_restore_bound(fileno(fp), 1, 1)
+            || injected_interrupts
+            || !chaos_next_use_snapshot_export(&live)
+            || memcmp(&snap, &live, sizeof snap)) return 1;
+        fclose(fp);
+        printf("{\"interrupted_short_reads\":1}\n");
+        return 0;
+    }
+    if (!strcmp(mode, "native_read_error")) {
+        int fd = open("/dev/null", O_WRONLY), i;
+        unsigned char byte = 0xa5;
+        if (fd < 0 || !install_pending()
+            || !chaos_next_use_snapshot_export(&snap)) return 1;
+        minit();
+        for (i = 0; i < 3; ++i) {
+            if (chaos_next_use_mread(fd, &byte, 1) || byte != 0xa5
+                || chaos_next_use_restore_bound(fd, 1, 1)
+                || !chaos_next_use_snapshot_export(&live)
+                || memcmp(&snap, &live, sizeof snap)) return 1;
+        }
+        /* Invalid descriptor must not be satisfied from residual decoder state. */
+        close(fd);
+        if (chaos_next_use_mread(-1, &byte, 1)) return 1;
+        printf("{\"errors_rejected\":1,\"unchanged\":1}\n");
+        return 0;
+    }
+    if (!strcmp(mode, "native_decoder_state")) {
+        FILE *fp = tmpfile();
+#ifdef ZEROCOMP
+        unsigned char wire[] = {'A', 0, 5, 'B', 0, 0, 'C'};
+#else
+        unsigned char wire[] = {'A', 0, 0, 0, 0, 0, 0, 'B', 0, 'C'};
+#endif
+        unsigned char expected[] = {'A', 0, 0, 0, 0, 0, 0, 'B', 0, 'C'};
+        unsigned char bytes[sizeof expected];
+        if (!fp || write(fileno(fp), wire, sizeof wire) != sizeof wire) return 1;
+        rewind(fp); minit();
+        mread(fileno(fp), bytes, 2); /* leaves buffered bytes and a partial run */
+        if (!chaos_next_use_mread(fileno(fp), bytes + 2, 3)) return 1;
+        mread(fileno(fp), bytes + 5, 2);
+        if (!chaos_next_use_mread(fileno(fp), bytes + 7, 3)
+            || memcmp(bytes, expected, sizeof bytes)) return 1;
+        if (chaos_next_use_mread(fileno(fp), bytes, 1)
+            || chaos_next_use_mread(fileno(fp), bytes, 1)) return 1;
+        /* A fresh stream after failed reads must not inherit EOF/run state. */
+        rewind(fp); minit();
+        if (!chaos_next_use_mread(fileno(fp), bytes, sizeof bytes)
+            || memcmp(bytes, expected, sizeof bytes)) return 1;
+        fclose(fp);
+        printf("{\"shared_decoder\":1,\"fresh_stream\":1}\n");
+        return 0;
+    }
+    if (!strcmp(mode, "native_truncation")) {
+        FILE *original = tmpfile();
+        unsigned char bytes[16384], retained[16384];
+        long length, cut;
+        int empty = argc > 2 && !strcmp(argv[2], "empty");
+        if (!original || (!empty && !install_pending())) return 1;
+        if (!chaos_next_use_save(fileno(original))) return 1;
+        length = lseek(fileno(original), 0, SEEK_END);
+        if (length <= 0 || length > (long)sizeof bytes
+            || pread(fileno(original), bytes, length, 0) != length) return 1;
+        /* Keep the complete source immutable; truncate only disposable copies.
+         * Every physical byte boundary includes marker/header/hash/source and
+         * (in ZEROCOMP) missing run counts, not just logical field boundaries. */
+        for (cut = 0; cut <= length; ++cut) {
+            FILE *copy = tmpfile();
+            int restored, same;
+            if (!copy || write(fileno(copy), bytes, cut) != cut) return 1;
+            rewind(copy);
+            minit();
+            chaos_next_use_runtime_reset();
+            if (!install_pending_token(2)
+                || !chaos_next_use_snapshot_export(&snap)) return 1;
+            restored = chaos_next_use_restore_bound(fileno(copy), 1, 1);
+            exported = chaos_next_use_snapshot_export(&live);
+            same = exported && !memcmp(&snap, &live, sizeof snap);
+            if (cut < length && (restored || !same)) {
+                fprintf(stderr, "accepted/published truncated save at %ld/%ld\n", cut, length);
+                return 1;
+            }
+            if (cut == length && (!restored || (empty ? exported : !exported))) return 1;
+            if (lseek(fileno(copy), 0, SEEK_END) != cut
+                || pread(fileno(copy), retained, cut, 0) != cut
+                || memcmp(retained, bytes, cut)) return 1;
+            fclose(copy);
+        }
+        if (pread(fileno(original), retained, length, 0) != length
+            || memcmp(retained, bytes, length)) return 1;
+        fclose(original);
+        printf("{\"truncated\":%ld,\"positive\":1,\"preserved\":1}\n", length);
+        return 0;
+    }
+#endif
     if (!strcmp(mode, "legacy_no_invented_witness")) {
         /* Literal historical v2 layout: progress but no persisted witness.
          * The missing information is not recoverable from callback count. */

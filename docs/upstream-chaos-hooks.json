@@ -1432,6 +1432,11 @@
           ",",
           "unsigned"
         ]
+      },
+      {
+        "symbol": "chaos_next_use_mread",
+        "start": ["chaos_next_use_mread", "(", "int", "fd", ",", "void", "*", "buf", ",", "unsigned", "int", "len", ")"],
+        "end": []
       }
     ],
     "src/shk.c": [
@@ -10201,15 +10206,26 @@
       "file": "src/restore.c",
       "symbol": "<file>",
       "kind": "directive",
-      "purpose": "#2: compile private non-destructive rejection helper only with CHAOS",
+      "purpose": "#2/#64: compile private save-preserving rejection helper and checked snapshot reader only with CHAOS (two file-scope guards)",
       "signature": [
         "#",
         "ifdef",
         "CHAOS"
       ],
       "guards": [],
+      "count": 2,
+      "chaos0": "Both helper and checked snapshot reader are omitted when CHAOS is undefined."
+    },
+    {
+      "id": "issue64-checked-snapshot-reader",
+      "file": "src/restore.c",
+      "symbol": "chaos_next_use_mread",
+      "kind": "call-or-declaration",
+      "purpose": "#64: fail nonfatally on incomplete next-use snapshot reads using native ZEROCOMP decoder state, before runtime publication or save deletion",
+      "signature": ["endif", "#", "ifdef", "CHAOS", "int", "chaos_next_use_mread", "(", "int", "fd", ",", "void", "*", "buf", ",", "unsigned", "int", "len", ")"],
+      "guards": ["ifdef CHAOS"],
       "count": 1,
-      "chaos0": "Omitted when CHAOS is undefined; stock restore rejection remains unchanged."
+      "chaos0": "Checked snapshot entry point omitted; shared ZEROCOMP decoder still rejects signed read errors and missing zero-run counts."
     },
     {
       "id": "issue2-restore-helper",

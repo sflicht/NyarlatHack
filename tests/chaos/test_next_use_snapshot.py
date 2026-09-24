@@ -47,6 +47,65 @@ class NextUseSnapshotTests(unittest.TestCase):
         result = subprocess.run(command, capture_output=True, timeout=30)
         if result.returncode:
             raise RuntimeError(result.stderr.decode())
+        # Execute the actual native reader/decoder, not the unit mread double.
+        # Same extracted-production approach as test_restore_safety; unrelated
+        # restore graph and platform cleanup are deliberately not linked here.
+        source = (ROOT / "src/restore.c").read_text()
+        reader = Path(cls.build.name) / "native-read.c"
+        reader.write_text(
+            '#include "hack.h"\n#include "chaos_next_use.h"\n#include <errno.h>\n'
+            "ssize_t chaos_test_native_read(int, void *, size_t);\n"
+            "#define read chaos_test_native_read\n"
+            + source[source.index("#ifdef ZEROCOMP\n#define RLESC") :]
+        )
+        cls.native_binaries = {}
+        for zerocomp in (False, True):
+            binary = Path(cls.build.name) / f"native-read-{int(zerocomp)}"
+            native_command = command[:-2] + [
+                "-DNYARL_TEST_NATIVE_READS",
+                *(["-DZEROCOMP"] if zerocomp else []),
+                str(reader),
+                "-o",
+                str(binary),
+            ]
+            result = subprocess.run(native_command, capture_output=True, timeout=30)
+            if result.returncode:
+                raise RuntimeError(result.stderr.decode())
+            cls.native_binaries[zerocomp] = binary
+
+    def test_native_truncation_preserves_bytes_and_live_runtime(self):
+        for zerocomp, binary in self.native_binaries.items():
+            for state in ("present", "empty"):
+                with self.subTest(zerocomp=zerocomp, state=state):
+                    result = subprocess.run(
+                        [str(binary), "native_truncation", state],
+                        capture_output=True,
+                        text=True,
+                        timeout=10,
+                    )
+                    self.assertEqual(
+                        result.returncode, 0, result.stdout + result.stderr
+                    )
+                    row = json.loads(result.stdout)
+                    self.assertGreater(row["truncated"], 4)
+                    self.assertEqual(row["positive"], 1)
+                    self.assertEqual(row["preserved"], 1)
+
+    def test_native_read_errors_and_shared_decoder_state(self):
+        for zerocomp, binary in self.native_binaries.items():
+            for mode, expected in (
+                ("native_read_error", {"errors_rejected": 1, "unchanged": 1}),
+                ("native_interrupted_short_reads", {"interrupted_short_reads": 1}),
+                ("native_decoder_state", {"shared_decoder": 1, "fresh_stream": 1}),
+            ):
+                with self.subTest(zerocomp=zerocomp, mode=mode):
+                    result = subprocess.run(
+                        [str(binary), mode], capture_output=True, text=True, timeout=10
+                    )
+                    self.assertEqual(
+                        result.returncode, 0, result.stdout + result.stderr
+                    )
+                    self.assertEqual(json.loads(result.stdout), expected)
 
     def run_mode(self, mode, *args):
         result = subprocess.run(
