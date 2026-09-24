@@ -249,7 +249,7 @@ bytes remain unchanged; old event/schedule prefixes remain intact. The existing
 same-game two-family continuation, empty-save admission and relocation matrix
 provides the positive controls.
 
-## Still-open boundaries
+## Native coverage and remaining scope
 
 The separately saved attempt latch distinguishes an unused empty game from a
 rejected or consumed admission opportunity. The real Unix save test now covers
@@ -271,9 +271,35 @@ save/restart roundtrip.
 
 The controlled Unix matrix covers two-family save/process-exit continuation,
 admitted relocation, independent saved-player-token mismatch and the unrelated
-transport-reuse boundary above. Actual-process **active wrong-level and
-missing/changed/reused-target negatives**, plus a next-use-specific **bones
-non-inheritance regression**, remain open #64/#92 acceptance evidence, not newly
-established runtime defects. This document alone closes neither #63 nor #20,
-and is not whole #64/#92 or #65 sign-off. Transport device/inode binding remains
-a separate local file defense; it is not logical saved-game identity.
+transport-reuse boundary above. Three additional tests in
+`tests/chaos/test_next_use_unix_save.py` cover the restart negatives:
+
+- `test_active_wrong_level_restore_rejected_before_healthy_continuation` changes
+  only the independently saved native player level, using compiled layout
+  offsets. The unchanged next-use extension still validates internally, but the
+  real bound restore rejects the active level mismatch before runtime import.
+  Retained damaged and pristine copies remain intact; pristine continuation passes.
+- `test_armed_restore_missing_target_does_not_rebind` and
+  `test_armed_restore_replacement_target_does_not_rebind` use explicit test-world
+  faults **after native world restore and before `chaos_start`**. The saved world
+  originally contained the companion; these do not claim serialized target loss.
+  Native removal and native allocation leave the captured identity unchanged,
+  including when a different eligible companion exists. Attention is not claimed
+  or witnessed, the original window ends, and the remaining fountain capability
+  still produces its native effect without another debit. This does not claim
+  arbitrary identifier recycling within one game and level.
+
+`tests/chaos/test_next_use_bones_integration.py` exercises real whole-level
+`savebones`/`getbones` through the unchanged curio bones fixture. Synthetic
+parser/admission/runtime setup gives the donor a nonzero programme with pending
+work; a new empty receiver stays empty, and a receiver with a distinct programme
+keeps its own exact state, identity, budget and record counts. Loaded native
+objects prove the load was not a no-op. No reset or import after loading hides
+inheritance. The appended-source control tests byte-leak detection only, not an
+executed inheritance fault. This is the supported uncompressed native fixture,
+not ordinary dungeon generation.
+
+These are bounded native acceptance tests, not general corrupt-save hardening,
+complete compressed-game restoration, ordinary play/replay (#66), or automatic
+recovery-tracker closure. Transport device/inode binding remains a separate
+local file defense; it is not logical saved-game identity.
