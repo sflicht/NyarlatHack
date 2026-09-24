@@ -123,6 +123,11 @@ int main(int argc, char **argv)
         if (!strcmp(mode, "undelivered")) windowprocs.win_putstr = no_message;
         dog_draws = reseed_count;
         dog_result = dog_move(&pet, 0, &witness);
+        /* Match m_move's postmov publication, not just dog_move's location. */
+        if (dog_result == 1 && !DEADMONSTER(&pet)) {
+            newsym(ox, oy);
+            newsym(pet.mx, pet.my);
+        }
         chaos_whistle_witness_finalize(&pet, &witness);
         dog_draws = reseed_count - dog_draws;
         ready_after = chaos_next_use_whistle_decision_ready(pet.m_id);

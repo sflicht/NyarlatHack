@@ -143,6 +143,7 @@ class NextUseDogMoveTests(unittest.TestCase):
         self.assertEqual(positive["telegraph"], 1)
         self.assertEqual(positive["ready_before"], 1)
         self.assertEqual(positive["ready_after"], 0)
+        self.assertEqual(positive["post_glyph"], positive["pre_glyph"])
         self.assertEqual(positive["public"], 1)
         self.assertEqual(positive["public2"], 1)
         self.assertEqual(positive["displaced"], 1)
@@ -151,6 +152,22 @@ class NextUseDogMoveTests(unittest.TestCase):
         self.assertEqual((control["mx"], control["my"]), (bypass["mx"], bypass["my"]))
         self.assertEqual(control["rng_next"], bypass["rng_next"])
         self.assertEqual(control["reseed"], bypass["reseed"])
+
+    def test_changed_presentation_target_or_level_cannot_certify_old_event(self):
+        for name in ("postid", "postlevel"):
+            with self.subTest(name=name):
+                row = self.run_case(name)
+                self.assertEqual(row["delivered"], 1)
+                self.assertEqual(row["displaced"], 1)
+                self.assertEqual(row["public"], 0)
+                self.assertEqual(row["public2"], 0)
+
+    def test_unrelated_glyph_cannot_certify_companion_attention(self):
+        row = self.run_case("postglyph")
+        self.assertEqual(row["delivered"], 1)
+        self.assertEqual(row["displaced"], 1)
+        self.assertEqual(row["public"], 0)
+        self.assertEqual(row["public2"], 0)
 
     def test_same_companion_id_cannot_cross_game_or_level_lifetime(self):
         for name in ("level_lifetime", "game_lifetime"):

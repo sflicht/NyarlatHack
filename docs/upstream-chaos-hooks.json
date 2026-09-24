@@ -10689,32 +10689,6 @@
       "chaos0": "Present in CHAOS-off; no-op or type-only."
     },
     {
-      "id": "hook-0329",
-      "file": "src/dogmove.c",
-      "symbol": "<file>",
-      "kind": "directive",
-      "purpose": "<file>: directive",
-      "signature": [
-        "#",
-        "if",
-        "defined",
-        "(",
-        "CHAOS",
-        ")",
-        "&",
-        "&",
-        "defined",
-        "(",
-        "TTY_GRAPHICS",
-        ")"
-      ],
-      "guards": [
-        "ifdef OVL0"
-      ],
-      "count": 2,
-      "chaos0": "Present in CHAOS-off; no-op or type-only."
-    },
-    {
       "id": "hook-0330",
       "file": "src/dogmove.c",
       "symbol": "<file>",
@@ -10881,7 +10855,7 @@
       "purpose": "<file>: call-or-declaration",
       "signature": [
         ")",
-        ")",
+        ";",
         "(",
         "void",
         ")",
@@ -12949,6 +12923,69 @@
       ],
       "count": 1,
       "chaos0": "Omitted when CHAOS is undefined."
+    },
+    {
+      "id": "hook-presentation-snapshot",
+      "file": "src/dogmove.c",
+      "symbol": "<file>",
+      "kind": "call-or-declaration",
+      "purpose": "Bound W presentation: chaos_presentation_snapshot",
+      "signature": [
+        "u",
+        ".",
+        "uswallow",
+        "&",
+        "&",
+        "chaos_presentation_snapshot",
+        "(",
+        "omx",
+        ",",
+        "omy",
+        ",",
+        "PM_LITTLE_DOG",
+        ",",
+        "&",
+        "pre_glyph",
+        ")"
+      ],
+      "guards": [
+        "ifdef OVL0"
+      ],
+      "count": 1,
+      "chaos0": "Present in CHAOS-off; helper is a no-op."
+    },
+    {
+      "id": "hook-presentation-begin",
+      "file": "src/dogmove.c",
+      "symbol": "<file>",
+      "kind": "call-or-declaration",
+      "purpose": "Bound W presentation: chaos_presentation_begin",
+      "signature": [
+        ")",
+        "{",
+        "(",
+        "void",
+        ")",
+        "chaos_presentation_begin",
+        "(",
+        "&",
+        "witness",
+        "-",
+        ">",
+        "presentation",
+        ",",
+        "manifestation_root",
+        ",",
+        "mtmp",
+        ",",
+        "pre_glyph",
+        ")"
+      ],
+      "guards": [
+        "ifdef OVL0"
+      ],
+      "count": 1,
+      "chaos0": "Present in CHAOS-off; helper is a no-op."
     }
   ],
   "build_blocks": [
@@ -12963,7 +13000,7 @@
     ],
     [
       "ifeq ($(CHAOS),1)",
-      "SRCOBJ += chaos_protocol.o chaos_io.o chaos_engine.o chaos_lua.o chaos_next_use.o chaos_next_use_admission.o chaos_next_use_runtime.o chaos_next_use_journal.o chaos_next_use_io.o chaos_next_use_safe.o chaos_shadow.o chaos_haunt.o chaos_curio.o",
+      "SRCOBJ += chaos_protocol.o chaos_io.o chaos_engine.o chaos_presentation.o chaos_lua.o chaos_next_use.o chaos_next_use_admission.o chaos_next_use_runtime.o chaos_next_use_journal.o chaos_next_use_io.o chaos_next_use_safe.o chaos_shadow.o chaos_haunt.o chaos_curio.o",
       "chaos_next_use.o: src/chaos_next_use.c include/chaos_next_use.h",
       "chaos_next_use_admission.o: src/chaos_next_use_admission.c include/chaos_next_use_admission.h",
       "chaos_next_use_runtime.o: src/chaos_next_use_runtime.c include/chaos_next_use_runtime.h",

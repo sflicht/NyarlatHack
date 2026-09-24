@@ -529,6 +529,13 @@ class OfflineAuthorTests(unittest.TestCase):
         self.assertEqual(
             manifest["revision"], "6b7bd822c82d770bafa10af6e751cbf987231c6b"
         )
+        for name in (
+            "include/chaos_presentation.h",
+            "src/chaos_presentation.c",
+            "src/chaos_engine.c",
+            "win/tty/wintty.c",
+        ):
+            self.assertIn(name, manifest["files"])
         for name, digest in manifest["files"].items():
             self.assertEqual(
                 hashlib.sha256((ROOT / name).read_bytes()).hexdigest(), digest
