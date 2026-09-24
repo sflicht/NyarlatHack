@@ -66,12 +66,21 @@ class HistoryState:
                     marker = True
                 elif stage == "started":
                     roots.append(
-                        dict(operation=payload["operation"], fact=None, completed=False)
+                        dict(
+                            operation=payload["operation"],
+                            fact=None,
+                            completed=False,
+                            root_seq=row["seq"],
+                            notice_seq=None,
+                            end_seq=None,
+                        )
                     )
                 elif stage == "notice":
                     roots[-1]["fact"] = payload["fact"]
-                elif stage == "completed":
-                    roots[-1]["completed"] = True
+                    roots[-1]["notice_seq"] = row["seq"]
+                elif stage in ("completed", "blocked"):
+                    roots[-1]["completed"] = stage == "completed"
+                    roots[-1]["end_seq"] = row["seq"]
                 continue
             if row["event"] == "session":
                 self.enabled, marker = marker, False
@@ -116,6 +125,9 @@ class HistoryState:
                 admission["expiry_observed"] = True
                 del pending_expiry[row["detail"]]
             self._legacy.ingest(row)
+        # Preserve the same bounded, validated chronology for exact next-use
+        # references. The public episode summary deliberately samples notices.
+        self._next_use_roots = tuple(roots)
         self._qualifying = any(
             root["operation"] == "fountain_drink"
             and root["fact"] == "water_refreshed"

@@ -4,6 +4,7 @@
 #include "hack.h"
 #include "chaos.h"
 #include "chaos_curio.h"
+#include "chaos_next_use.h"
 #include <errno.h>
 #include <unistd.h>
 
@@ -18,6 +19,19 @@ int multi;
 static int shadow, write_count, sync_count, fail_write, fail_sync;
 int chaos_shadow_active(void) { return shadow; }
 void chaos_curio_safe(int dir) { (void)dir; }
+/* Observe the engine's owned origins; admission itself is tested by next_use_safe. */
+void chaos_next_use_safe_bind_origin(const struct chaos_next_use_origin_ref *origin,
+                                    int qualifying)
+{
+    printf("owned %d %d %d %d\n", origin->root, origin->notice_seq,
+           origin->end_seq, qualifying);
+}
+int chaos_next_use_on_safe(int dir, long at, int sanity, struct chaos_state *state,
+                           int dnum, int dlevel)
+{
+    (void)dir; (void)at; (void)sanity; (void)state; (void)dnum; (void)dlevel;
+    return 0;
+}
 const char *chaos_next_use_player_warning(const char *identifier)
 {
     (void)identifier;
@@ -69,6 +83,9 @@ int main(void) {
         before = u;
         if (!strcmp(cmd, "food")) mons[PM_HUMAN].mflagst = MT_CARNIVORE;
         else if (!strcmp(cmd, "start")) chaos_start();
+        else if (!strcmp(cmd, "schedule")) {
+            monstermoves = 40; u.uz.dnum = 0; u.uz.dlevel = 1;
+        } else if (!strcmp(cmd, "safe")) chaos_safe("prayer");
         else if (!strcmp(cmd, "restore")) {
             chaos_state_init(&u.chaos); u.chaos.seq = 20;
             u.chaos.safe = 7; u.chaos.spent = 1; u.chaos.last_id = 3;

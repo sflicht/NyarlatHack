@@ -131,6 +131,18 @@ int main(int argc, char **argv)
     if (!strcmp(evidence_mode, "valid"))
         bind_origin(run, 1, "ordinary_whistle", 10, 1, origin_move,
                     CHAOS_NEXT_USE_FAMILY_W, 11, 12);
+    else if (!strcmp(evidence_mode, "schedule_fff"))
+        bind_origin(run, 1, "water_refreshed", 11, 1, origin_move,
+                    CHAOS_NEXT_USE_FAMILY_F, 12, 13);
+    else if (!strcmp(evidence_mode, "schedule_ww"))
+        bind_origin(run, 1, "ordinary_whistle", 8, 1, origin_move,
+                    CHAOS_NEXT_USE_FAMILY_W, 9, 10);
+    else if (!strcmp(evidence_mode, "schedule_wf")) {
+        bind_origin(run, 1, "ordinary_whistle", 5, 1, origin_move,
+                    CHAOS_NEXT_USE_FAMILY_W, 6, 7);
+        bind_origin(run, 1, "water_refreshed", 8, 1, origin_move,
+                    CHAOS_NEXT_USE_FAMILY_F, 9, 10);
+    }
     else if (!strcmp(evidence_mode, "missing"))
         ; /* leave unbound */
     else if (!strcmp(evidence_mode, "incomplete"))

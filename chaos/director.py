@@ -36,8 +36,8 @@ DEFAULT_BYTES = 16 * 1024 * 1024
 DEFAULT_EVENTS = 50000
 
 
-def secure_open(path, flags=os.O_RDONLY, mode=0o600):
-    fd = os.open(path, flags | os.O_NOFOLLOW | os.O_NONBLOCK, mode)
+def secure_open(path, flags=os.O_RDONLY, mode=0o600, *, dir_fd=None):
+    fd = os.open(path, flags | os.O_NOFOLLOW | os.O_NONBLOCK, mode, dir_fd=dir_fd)
     s = os.fstat(fd)
     if (
         not stat.S_ISREG(s.st_mode)
@@ -56,19 +56,28 @@ class EventReader:
     Total read/hash work is bounded by max_bytes per poll. No silent dedup.
     """
 
-    def __init__(self, path, max_bytes=DEFAULT_BYTES, max_events=DEFAULT_EVENTS):
+    def __init__(
+        self,
+        path,
+        max_bytes=DEFAULT_BYTES,
+        max_events=DEFAULT_EVENTS,
+        *,
+        parser=None,
+        max_line=EVENT_CAP,
+    ):
         self.path = Path(path)
         self.max_bytes, self.max_events = max_bytes, max_events
+        self.parser, self.max_line = parser, max_line
         self.offset = self.count = 0
         self.tail = b""
         self.identity = None
         self.digest = hashlib.sha256(b"").digest()
 
-    def read(self, allow_observations=False):
+    def read(self, allow_observations=False, *, dir_fd=None):
         from .episodes import parse_episode_event
 
         try:
-            fd = secure_open(self.path)
+            fd = secure_open(self.path, dir_fd=dir_fd)
         except FileNotFoundError:
             if self.identity is not None:
                 raise ValueError("event log disappeared")
@@ -102,15 +111,24 @@ class EventReader:
                 h.update(chunk)
                 parts = (tail + chunk).split(b"\n")
                 tail = parts.pop()
-                if len(tail) > EVENT_CAP:
+                if len(tail) > self.max_line:
                     raise ValueError("event line exceeds byte cap")
                 for line in parts:
-                    if allow_observations:
+                    if len(line) > self.max_line:
+                        raise ValueError("event line exceeds byte cap")
+                    if self.count + len(records) >= self.max_events:
+                        raise ValueError("event count cap exceeded")
+                    if self.parser is not None:
+                        records.append(self.parser(line))
+                    elif allow_observations:
                         records.append(parse_episode_event(line))
                     else:
                         records.append(parse_event(line))
-                    if self.count + len(records) > self.max_events:
-                        raise ValueError("event count cap exceeded")
+            current = os.stat(self.path, dir_fd=dir_fd, follow_symlinks=False)
+            if (current.st_dev, current.st_ino) != identity:
+                raise ValueError("event log replaced while reading")
+            if os.fstat(f.fileno()).st_size < s.st_size:
+                raise ValueError("event log truncated while reading")
             self.tail, self.offset, self.digest, self.identity = (
                 tail,
                 s.st_size,

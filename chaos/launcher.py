@@ -217,15 +217,24 @@ def _offline_loop(box, backend, reader, state, args, ready):
     submitted, last_choice = 0, None
     known_pending = None
     first = True
+    next_use = None
+    next_use_status = None
+    if getattr(args, "next_use", False):
+        from .next_use_schedule import NextUseScheduler
+
+        next_use = NextUseScheduler(
+            box.path, seed=0 if args.seed is None else args.seed
+        )
     while time.monotonic() < deadline or first:
         for event in reader.read(allow_observations=getattr(args, "next_use", False)):
             if event.get("v") in (2, 4) and event.get("event") == "observation":
                 continue
             state.ingest(event)
-        if getattr(args, "next_use", False):
-            from .next_use_schedule import consider_next_use
-
-            consider_next_use(box.path, box)
+        if next_use is not None:
+            status = next_use.poll(box)["status"]
+            if status != next_use_status:
+                print("chaos: next-use: " + status, file=sys.stderr, flush=True)
+                next_use_status = status
         if first and reader.tail:
             raise ValueError("incomplete event history before game startup")
         if state.ended:
