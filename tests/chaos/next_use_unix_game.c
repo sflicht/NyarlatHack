@@ -11,6 +11,7 @@
 
 int original_game_main(int, char **);
 void __real_chaos_start(void);
+int __real_chaos_next_use_save(int);
 void __real_chaos_observe(void);
 void __real_rhack(char *);
 int __real_dog_move(struct monst *, int, struct chaos_whistle_witness *);
@@ -36,7 +37,8 @@ static void state(void)
     memset(&s, 0, sizeof s);
     valid = chaos_next_use_snapshot_export(&s);
     f = file("state.json", "w");
-    fprintf(f, "{\"valid\":%d,\"moves\":%ld,\"monstermoves\":%ld,"
+    fprintf(f, "{\"attempted\":%d,", chaos_next_use_safe_attempted());
+    fprintf(f, "\"valid\":%d,\"moves\":%ld,\"monstermoves\":%ld,"
         "\"safe\":%ld,\"spent\":%d,\"dnum\":%d,\"dlevel\":%d,"
         "\"slot_w\":%d,\"slot_f\":%d,\"w_runtime\":%d,"
         "\"witnessed\":%d,\"attention_claimed\":%d,\"callback_ordinal\":%d,\"state\":%d,"
@@ -64,6 +66,33 @@ static void state(void)
         s.identity_unsafe, s.termination_emitted, s.replay_cursor,
         (unsigned long)s.source_length);
     assert(!fclose(f));
+    if (valid && s.w_runtime == CHAOS_W_RUNTIME_WINDOW_ENDED
+        && access("window-ended.json", F_OK) != 0) {
+        /* Read-only first observation, including the pre-clock-advance sample. */
+        f = file("window-ended.json", "w");
+        fprintf(f, "{\"monstermoves\":%ld,\"activation_monstermoves\":%ld}\n",
+            monstermoves, s.activation_monstermoves);
+        assert(!fclose(f));
+    }
+}
+
+int __wrap_chaos_next_use_save(int fd)
+{
+    int result, drop = access("drop-program-on-save", F_OK) == 0;
+    if (drop) {
+        /* TEST ONLY: player state/latch has already been serialized by save.c.
+         * Drop only the runtime, then let the REAL serializer write ABSENT. */
+        chaos_next_use_runtime_reset();
+    }
+    result = __real_chaos_next_use_save(fd);
+    if (drop) {
+        FILE *f = file("native.jsonl", "a");
+        fprintf(f, "{\"kind\":\"drop-program-save\",\"serializer_result\":%d,"
+            "\"spent\":%d,\"attempted\":%d}\n",
+            result, u.chaos.spent, chaos_next_use_safe_attempted());
+        assert(!fclose(f));
+    }
+    return result;
 }
 
 void __wrap_chaos_start(void)
