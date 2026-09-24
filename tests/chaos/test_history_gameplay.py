@@ -610,14 +610,16 @@ def native(args):
         "compiled base identity mismatch",
     )
     require(
-        len(manifest["objects"]) == 161
-        and "sys/unix/unixmain.o" in manifest["objects"],
+        len(manifest["objects"]) == 162
+        and "sys/unix/unixmain.o" in manifest["objects"]
+        and "src/chaos_next_use_journal.o" in manifest["objects"],
         "complete original production object receipt required",
     )
     require(
-        len(manifest["generated_headers"]) == 128
+        len(manifest["generated_headers"]) == 129
         and "include/date.h" in manifest["generated_headers"]
-        and "include/chaos_next_use_schedule.h" in manifest["generated_headers"],
+        and "include/chaos_next_use_schedule.h" in manifest["generated_headers"]
+        and "include/chaos_next_use_journal.h" in manifest["generated_headers"],
         "complete frozen header receipt required",
     )
     protected = dict(manifest["generated_headers"], **manifest["objects"])

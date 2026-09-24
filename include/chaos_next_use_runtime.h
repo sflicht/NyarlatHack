@@ -215,6 +215,8 @@ struct chaos_next_use_capture_status {
 };
 void chaos_next_use_capture_set_sink(chaos_next_use_capture_sink, void *);
 void chaos_next_use_capture_status(struct chaos_next_use_capture_status *);
+/* Trace transport failure only: never terminalize/rollback the game. */
+void chaos_next_use_capture_fail(void);
 /* Called by native finalization after observation finish, even on failure. */
 void chaos_next_use_manifestation_complete(const struct chaos_whistle_witness *,
                                           long end_seq, int published);

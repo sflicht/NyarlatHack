@@ -6,6 +6,7 @@
 #include "chaos_next_use_io.h"
 #include "chaos_next_use_runtime.h"
 #include "chaos_next_use_safe.h"
+#include "chaos_next_use_journal.h"
 
 #include <fcntl.h>
 #include <stdint.h>
@@ -35,6 +36,7 @@ void chaos_next_use_safe_bind_logical(long run_token)
 
 void chaos_next_use_safe_reset_for_test(void)
 {
+    chaos_next_use_journal_reset();
     settled = 0;
     owned_run_set = 0;
     logical_run = 0;
@@ -101,12 +103,15 @@ int chaos_next_use_safe_restore_attempted(int attempted)
     if ((attempted != 0 && attempted != 1)
         || (!attempted && chaos_next_use_runtime_run_token() > 0))
         return 0;
+    if (attempted || chaos_next_use_runtime_run_token() > 0)
+        chaos_next_use_journal_restore_unsupported();
     settled = attempted;
     return 1;
 }
 
 void chaos_next_use_safe_mark_restored(void)
 {
+    chaos_next_use_journal_restore_unsupported();
     settled = 1;
 }
 
@@ -245,7 +250,14 @@ int chaos_next_use_on_safe(int dir, long at_safe, int sanity,
         req.receipt = production_receipt;
         req.receipt_opaque = (void *)(intptr_t)dir;
     }
-    return chaos_next_use_safe_try(&req, &res);
+    {
+        int rc = chaos_next_use_safe_try(&req, &res);
+        /* Validated source/admission remain in the installed runtime carrier.
+         * Journal failure is a trace gap, NOT a rejected paid admission. */
+        if (rc == CHAOS_NEXT_USE_ADMISSION_OK && res.active)
+            (void)chaos_next_use_journal_begin(dir);
+        return rc;
+    }
 }
 
 int chaos_next_use_safe_try(const struct chaos_next_use_safe_request *request,

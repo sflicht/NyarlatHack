@@ -100,6 +100,11 @@ void chaos_next_use_capture_set_sink(chaos_next_use_capture_sink sink, void *opa
     capture_opaque = opaque;
 }
 
+void chaos_next_use_capture_fail(void)
+{
+    capture_incomplete = 1;
+}
+
 void chaos_next_use_capture_status(struct chaos_next_use_capture_status *out)
 {
     if (!out) return;
