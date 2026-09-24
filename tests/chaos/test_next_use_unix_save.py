@@ -88,6 +88,7 @@ class NextUseUnixSaveTests(unittest.TestCase):
         wraps = (
             "chaos_start",
             "chaos_next_use_save",
+            "chaos_next_use_restore_bound",
             "chaos_observe",
             "rhack",
             "dog_move",
@@ -105,6 +106,7 @@ class NextUseUnixSaveTests(unittest.TestCase):
             "-DCHAOS",
             "-isystem" + str(ROOT / "include"),
             str(ROOT / "tests/chaos/next_use_unix_game.c"),
+            str(ROOT / "tests/chaos/next_use_unix_restore_diagnostics.c"),
             *map(str, objects),
             *["-Wl,--wrap=" + name for name in wraps],
             "-lncursesw",
@@ -150,6 +152,7 @@ class NextUseUnixSaveTests(unittest.TestCase):
         )
         for name in (
             "next_use_unix_game.c",
+            "next_use_unix_restore_diagnostics.c",
             "test_next_use_unix_save.py",
             "replay_clock.c",
             "native_rng.h",
@@ -204,6 +207,15 @@ class NextUseUnixSaveTests(unittest.TestCase):
 
     def test_armed_whistle_save_restores_target_before_attention(self):
         self._two_family_order("WF", boundary="armed-whistle")
+
+    def test_active_wrong_level_restore_rejected_before_healthy_continuation(self):
+        self._two_family_order("WF", boundary="wrong-level")
+
+    def test_armed_restore_missing_target_does_not_rebind(self):
+        self._two_family_order("WF", boundary="armed-missing-target")
+
+    def test_armed_restore_replacement_target_does_not_rebind(self):
+        self._two_family_order("WF", boundary="armed-replacement-target")
 
     def test_corrupt_admitted_save_preserved_before_healthy_continuation(self):
         self._two_family_order("WF", boundary="corrupt-save")
@@ -458,11 +470,17 @@ class NextUseUnixSaveTests(unittest.TestCase):
                 "armed-whistle",
                 "corrupt-save",
                 "drop-program",
+                "wrong-level",
+                "armed-missing-target",
+                "armed-replacement-target",
             ),
         )
+        target_fault = boundary in ("armed-missing-target", "armed-replacement-target")
         w_only = order == "W"
         mutant = boundary == "drop-program"
-        armed_checkpoint = boundary == "armed-whistle"
+        armed_checkpoint = (
+            boundary == "armed-whistle" or target_fault or boundary == "wrong-level"
+        )
         if armed_checkpoint:
             self.assertEqual(order, "WF")
         saved = {
@@ -792,6 +810,12 @@ class NextUseUnixSaveTests(unittest.TestCase):
                         self.assertEqual(
                             retained.read_bytes().count(source.encode("ascii")), 1
                         )
+                if boundary == "wrong-level":
+                    self._reject_wrong_level(game, saves, checkpoint)
+                if target_fault:
+                    # Fault is AFTER world restore, BEFORE chaos_start/observe;
+                    # the serialized world still contains the original pet.
+                    (game.game / boundary).touch()
                 if boundary == "corrupt-save":
                     # Disposable current uncompressed native save, with a used W
                     # and pending F. Preserve the readonly original as evidence.
@@ -1015,6 +1039,19 @@ class NextUseUnixSaveTests(unittest.TestCase):
                     ),
                     1,
                 )
+            if target_fault and interrupted:
+                self._missing_target_continuation(
+                    game,
+                    checkpoint,
+                    state,
+                    native_trace,
+                    whistle,
+                    fountain,
+                    receipt,
+                    encoded,
+                    boundary,
+                )
+                continue
             if w_only:
                 results.append(
                     self._claimed_w_continuation(
@@ -1299,8 +1336,233 @@ class NextUseUnixSaveTests(unittest.TestCase):
             (game.root / "assertions.json").write_text(json.dumps(summary, indent=2))
             results.append(summary)
             self.assertEqual(game.quit(), 0)
-        if not mutant:
+        if not mutant and not target_fault:
             self.assertEqual(results[0], results[1])
+
+    def _reject_wrong_level(self, game, saves, checkpoint):
+        self.assertEqual(len(saves), 1)
+        save = saves[0]
+        original = save.read_bytes()
+        # sizeof/offsetof and member widths from this exact compiled fixture.
+        probe = subprocess.run(
+            [str(self.two_family_exe), "--native-save-layout"],
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+        self.assertEqual(
+            probe.returncode, 0, "missing native layout diagnostic: " + probe.stderr
+        )
+        (game.root / "native-save-layout.json").write_text(probe.stdout)
+        self.assertTrue(
+            probe.stdout.startswith("{"), "missing native layout diagnostic"
+        )
+        layout = json.loads(probe.stdout)
+        self.assertEqual(layout["compressed"], 0)
+        self.assertEqual(layout["dlevel_size"], struct.calcsize("i"))
+        self.assertEqual(original.count(b"NUS1"), 1)
+        marker = original.index(b"NUS1")
+        player_at = marker - layout["you_size"]
+        level_at = player_at + layout["dlevel_offset"]
+        width = layout["dlevel_size"]
+        self.assertGreater(player_at, 0)
+        self.assertEqual(
+            original[level_at : level_at + width],
+            struct.pack("i", checkpoint["dlevel"]),
+        )
+        changed = bytearray(original)
+        changed[level_at : level_at + width] = struct.pack(
+            "i", checkpoint["dlevel"] + 1
+        )
+        damaged = bytes(changed)
+        self.assertNotEqual(damaged, original)
+        self.assertEqual(damaged[:level_at], original[:level_at])
+        self.assertEqual(damaged[level_at + width :], original[level_at + width :])
+        self.assertEqual(damaged[marker:], original[marker:])
+        retained = game.root / "independent-level-identity.save"
+        retained.write_bytes(damaged)
+        retained.chmod(0o400)
+        protected = {
+            path: path.read_bytes()
+            for path in (
+                game.run / "events.jsonl",
+                game.run / "next_use-receipt.jsonl",
+                game.run / "next_use-journal.jsonl",
+                game.game / "native.jsonl",
+                game.game / "state.json",
+            )
+        }
+        save.write_bytes(damaged)
+        (game.game / "diagnose-restore-bound").touch()
+        raw_begin = len(game.raw)
+        text = game.start()
+        self.assertEqual(game.finish(text), 1)
+        rejected_output = game.raw[raw_begin:]
+        self.assertIn(b"save file preserved", rejected_output)
+        self.assertNotIn(b"The next whistle", rejected_output)
+        diag = json.loads((game.game / "restore-bound.json").read_text())
+        self.assertEqual(diag["snapshot_valid"], 1)
+        self.assertEqual(diag["result"], 0)
+        self.assertEqual(diag["published"], 0)
+        for key in ("run_token", "level_token", "armed_m_id", "phase"):
+            self.assertEqual(diag[key], checkpoint[key], key)
+        self.assertEqual(diag["trusted_run"], checkpoint["run_token"])
+        self.assertNotEqual(diag["trusted_level"], checkpoint["level_token"])
+        self.assertEqual(diag["trusted_dlevel"], checkpoint["dlevel"] + 1)
+        self.assertEqual(diag["phase"], 3)  # COMMITTED, not terminal departure
+        for path, raw in protected.items():
+            self.assertEqual(path.read_bytes(), raw, str(path))
+        self.assertEqual(save.read_bytes(), damaged)
+        self.assertEqual(retained.read_bytes(), damaged)
+        self.assertEqual((game.root / ("saved-" + save.name)).read_bytes(), original)
+        self.assertFalse(list(game.game.glob(f"{os.getuid()}wizard.*")))
+        (game.root / "wrong-level-evidence.json").write_text(
+            json.dumps(
+                dict(
+                    player_at=player_at,
+                    level_at=level_at,
+                    width=width,
+                    marker=marker,
+                    original_sha256=hashlib.sha256(original).hexdigest(),
+                    damaged_sha256=hashlib.sha256(damaged).hexdigest(),
+                    extension_sha256=hashlib.sha256(original[marker:]).hexdigest(),
+                    rejected_exit=game.exitcode,
+                    diagnostic=diag,
+                ),
+                indent=2,
+            )
+        )
+        (game.game / "diagnose-restore-bound").unlink()
+        save.write_bytes(original)  # pristine continuation uses unchanged oracles
+
+    def _missing_target_continuation(
+        self,
+        game,
+        checkpoint,
+        state,
+        native_trace,
+        whistle,
+        fountain,
+        receipt,
+        encoded,
+        boundary,
+    ):
+        diagnostic = game.game / "restore-target.json"
+        self.assertTrue(
+            diagnostic.exists(), "missing post-world-restore target fault seam"
+        )
+        world = json.loads(diagnostic.read_text())
+        self.assertEqual(world["boundary"], "after-world-restore-before-chaos-start")
+        self.assertEqual(world["captured_id"], checkpoint["armed_m_id"])
+        self.assertEqual(world["before_ids"], [checkpoint["armed_m_id"]])
+        self.assertNotIn(checkpoint["armed_m_id"], world["after_ids"])
+        replacement = boundary == "armed-replacement-target"
+        self.assertEqual(len(world["after_ids"]), int(replacement))
+        self.assertEqual(world["eligible_replacement"], int(replacement))
+        self.assertEqual(world["runtime_unchanged"], 1)
+        self.assertEqual(world["moves"], checkpoint["moves"])
+        self.assertEqual(world["monstermoves"], checkpoint["monstermoves"])
+        self.assertEqual(world["spent"], checkpoint["spent"])
+        self.assertEqual(world["game_token"], checkpoint["run_token"])
+        self.assertEqual(world["level_token"], checkpoint["level_token"])
+        (game.game / boundary).unlink()  # exactly one restore-world fault
+        deadline = checkpoint["activation_monstermoves"] + 10
+        samples = []
+        while state()["monstermoves"] <= deadline:
+            current = state()
+            self.assertEqual(current["w_runtime"], 1)
+            for key in (
+                "armed_m_id",
+                "activation_monstermoves",
+                "witnessed",
+                "attention_claimed",
+                "callback_ordinal",
+                "callback_w",
+                "callback_f",
+                "slot_w",
+                "slot_f",
+                "source_sha256",
+                "binding_sha256",
+                "run_token",
+                "level_token",
+                "spent",
+            ):
+                self.assertEqual(current[key], checkpoint[key], key)
+            samples.append(current)
+            game.wait_turns(1)
+        ended = state()
+        self.assertEqual(ended["w_runtime"], 2)
+        self.assertEqual(ended["monstermoves"], deadline + 1)
+        self.assertEqual(
+            json.loads((game.game / "window-ended.json").read_text()),
+            dict(
+                monstermoves=deadline,
+                activation_monstermoves=deadline - 10,
+            ),
+        )
+        self.assertEqual(ended["slot_f"], 1)
+        # Exact wf-families source refreshes F unconditionally: target loss must
+        # not consume its pending slot or make it dependent on a fake witness.
+        fountain()
+        complete = state()
+        self.assertEqual((complete["slot_w"], complete["slot_f"]), (2, 2))
+        self.assertEqual((complete["callback_w"], complete["callback_f"]), (1, 1))
+        self.assertEqual(complete["callback_ordinal"], 2)
+        game.sanity(40)
+        whistle()
+        game.wait_turns(10)
+        fountain()
+        final = state()
+        for key in (
+            "slot_w",
+            "slot_f",
+            "callback_ordinal",
+            "spent",
+            "armed_m_id",
+            "activation_monstermoves",
+            "source_sha256",
+            "binding_sha256",
+        ):
+            self.assertEqual(final[key], complete[key], key)
+        self.assertEqual(final["spent"], checkpoint["spent"])
+        self.assertEqual((final["witnessed"], final["attention_claimed"]), (0, 0))
+        self.assertFalse([r for r in native_trace() if r["kind"] == "witness"])
+        self.assertFalse(
+            [
+                e
+                for e in game.events()
+                if e.get("observation", {}).get("operation") == "whistle_attention"
+            ]
+        )
+        self.assertNotIn(b"echo sharpens", game.raw)
+        drinks = [r for r in native_trace() if r["kind"] == "fountain"]
+        self._assert_fountain_continuation(drinks, True)
+        self.assertEqual([r["hunger_delta"] for r in drinks], [4, 4, 0])
+        self.assertEqual((game.run / "next_use-receipt.jsonl").read_bytes(), receipt)
+        self.assertEqual((game.run / "next_use-envelope.json").read_bytes(), encoded)
+        capture = json.loads((game.game / "capture.json").read_text())
+        self.assertEqual(
+            read_journal(
+                game.run / "next_use-journal.jsonl",
+                capture_status=capture,
+            )["status"],
+            "acknowledged_complete",
+        )
+        self.assertEqual(game.quit(), 0)
+        (game.root / "target-negative-evidence.json").write_text(
+            json.dumps(
+                dict(
+                    world=world,
+                    samples=samples,
+                    ended=ended,
+                    complete=complete,
+                    final=final,
+                    native_trace=native_trace(),
+                    exitcode=game.exitcode,
+                ),
+                indent=2,
+            )
+        )
 
     def _assert_fountain_continuation(self, drinks, refresh):
         self.assertEqual(
