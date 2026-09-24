@@ -38,6 +38,7 @@ class NextUseSnapshotTests(unittest.TestCase):
             str(ROOT / "src/chaos_lua.c"),
             str(ROOT / "src/chaos_next_use_safe.c"),
             str(ROOT / "src/chaos_next_use_io.c"),
+            str(ROOT / "src/chaos_next_use_journal.c"),
             "-Wl,--gc-sections",
             *flags,
             "-lm",
