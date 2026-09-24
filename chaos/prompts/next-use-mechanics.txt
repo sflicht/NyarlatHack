@@ -1,0 +1,79 @@
+Next-use mechanics guide v1 (trusted instructions, not public history)
+SOURCE revision: fd885c482c6eb0307b9278ef2a4e6827be4477ec.
+Exact referenced file hashes: next-use-mechanics-sources.json. The builder checks
+these before transport; source drift requires review, not a silently newer guide.
+LEGAL means representation bounds; SOURCE means native semantics; MEASURED and
+UNKNOWN are separate. A legal maximum is not typical gameplay.
+
+Sanity/Insight — authoring background, not available in on_action
+LEGAL: this callback has no sanity/insight keys. Its copied fields are exactly
+age, fountain_count, next_use_context_v, own_witnessed, source_sha256, state,
+trigger, variant, whistle_count (src/chaos_lua.c:next_push_context).
+SOURCE: src/u_init.c:u_init initially sets Sanity=100, Insight=0, veil=TRUE;
+the Madman role later sets Sanity=75. These are initialization facts, not a
+play distribution. src/attrib.c:change_usanity adds delta, floors at zero and
+caps at 100, with the no-madness negative-delta floor min(start,50) when below
+50. change_uinsight returns while veiled; otherwise it adds delta and floors
+at zero with no explicit upper cap. The veil is NOT disclosed to the author.
+MEASURED: none in this slice. UNKNOWN: ordinary Sanity/Insight distributions,
+veil-lift timing, and useful early-game Insight thresholds. An Insight >500
+condition in the separate curio interface was legal but potentially irrelevant
+early, not a typical value. Do not transplant that condition into this callback:
+Sanity/Insight are public authoring background only, not runtime callback fields.
+
+W/F capabilities — only supplied operations may be admitted
+LEGAL: source 1..4096 bytes; response <=8192; state 0..3; age 0..99;
+whistle_count/fountain_count 0..3; variant 0..2; trigger W or F;
+own_witnessed none or W (include/chaos_next_use.h; src/chaos_next_use.c:
+schema_author, schema_context). source_sha256 identifies exact retained bytes.
+SOURCE: src/chaos_next_use_runtime.c:chaos_next_use_on_action copies age as
+monstermoves minus admission_move, counts from host runtime, and last accepted
+state. These counts are host-bounded inputs, not callback invocation counters.
+Only a delivered W manifestation establishes own_witnessed=W
+(chaos_next_use_on_manifestation). Admission or private application is not witness.
+Production currently supplies both counts as zero at installation
+(src/chaos_next_use_safe.c:chaos_next_use_safe_try); they are not current-game
+observation totals. Do not infer observed frequencies from them. Nonzero count
+inputs in component fixtures are not evidence of nonzero production history.
+
+SOURCE: schema_envelope in src/chaos_next_use.c fixes TTL=100 and cost=number
+of admitted families (one each, WF costs two); canonical operation order is W,F.
+Telegraph ids are next-use-v2-W/F/WF; host-built origins bind run/level/schedule.
+These are representation/authority limits, not a recommendation to spend more.
+SOURCE: chaos/history.py retains exact chronology for 32 roots, separate from
+the sampled public episode summary. chaos/next_use_history.py selects the latest
+qualifying notice per family; a newer pending notice suppresses the older slot.
+chaos/next_use_schedule.py matches exact root/notice/end sequences across bounded
+repeated/mixed schedule rows, in either history order. W,F is envelope order only.
+Selected completion safe/last_id must still equal the current snapshot: no
+retiming to a later admission window. Schedule metadata is not native authority.
+SOURCE: chaos_next_use_on_action consumes the triggering slot on quiet or delay;
+quiet does not arm an effect. One delay is allowed globally and consumes that
+family's slot; it suppresses callbacks until max(admission_move+10,now+10).
+A second delay or wrong-family intent terminates invalidly. Delay is not a retry
+of the same family. Each admitted family supplies only one slot.
+
+W whistle_attention: SOURCE src/chaos_next_use_runtime.c:
+chaos_next_use_capture_whistle, chaos_next_use_whistle_attention and
+src/dogmove.c:dog_move bind an ordinary whistle to native companion attention.
+The extra attention window is A+5 <= monstermoves < A+10 for the captured
+whistle's move A and matching companion identity. No companion, quiet or wrong
+family does not grant a hidden target. Applying attention need not deliver a
+public manifestation. Source cannot choose the companion or hidden identity.
+F fountain_refresh: SOURCE src/fountain.c:drinkfountain remaps the selected
+ordinary fate 10..18 branch once; fate 9 remains natural, 19..30 native. Native
+reachability and other exclusions still apply. Source never sees or sets fate.
+MEASURED: the original two handwritten sources were unit inputs. The separate
+controlled linked-native composition tests now run those exact sources through
+native dog_move/presentation and drinkfountain: state after W selects quiet F;
+delivered W selects refresh F; applied but unpublished W selects quiet F. These
+are fixed geometry/RNG measurements, NOT ordinary gameplay distributions.
+UNKNOWN: ordinary qualification/delivery rates or usefulness of these branches.
+
+Sandbox: SOURCE src/chaos_lua.c:next_use_vm, next_root_exact,
+next_intent_extract, chaos_lua_next_use_load and chaos_lua_next_use_on_action.
+Use the shared bounded fresh VM, not another interpreter. The only root field
+is on_action; results have exactly next_use_intent_v=2, op and state. No extra
+fields, hidden context, standard libraries, game RNG or native mutation API.
+Load validation is not callback coverage or native admission; the engine must
+still validate intents, capabilities, origins, budget, lifetime and telegraph.
