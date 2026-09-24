@@ -5,7 +5,10 @@ learning or full-run recurrence. W denotes the existing whistle-attention
 capability; F denotes fountain refresh. Gameplay integration follows #66/#67;
 #44 owns actual human evaluation and #45 owns live-model evidence. This document
 adds no executable programme, mechanic, policy allowance or literary encounter.
-The #66 ordinary acceptance is still open; this note does not close that gate.
+At the earlier design-only checkpoint, “ordinary acceptance is still open” was
+the recorded status. This note does not itself clear that gate; see the
+[subsequent native ordinary evidence](next-use-ordinary.md) for its development
+demonstration and limits.
 
 ## Rule and two distinguishable opportunities
 
