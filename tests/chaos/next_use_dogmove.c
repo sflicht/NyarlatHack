@@ -206,12 +206,32 @@ static int persist_and_restore(const char *dirpath)
     return restored;
 }
 
+/* The fresh native transport must claim its logical owner before publication.
+ * This controlled fixture already has exact candidate bytes prepared by Python;
+ * defer only their publication, without rewriting bytes or forging ownership.
+ * Both links are no-clobber and preserve failed-run evidence on error. */
+static int defer_candidate(const char *dirpath, int restore)
+{
+    char candidate[512], held[512];
+    const char *from, *to;
+    if (snprintf(candidate, sizeof candidate, "%s/next_use-envelope.json", dirpath)
+            >= (int)sizeof candidate
+        || snprintf(held, sizeof held, "%s/fixture-envelope-held.json", dirpath)
+            >= (int)sizeof held)
+        return 0;
+    from = restore ? held : candidate;
+    to = restore ? candidate : held;
+    return !link(from, to) && !unlink(from);
+}
+
 static int run_case(const char *name, const char *dirpath)
 {
     struct monst pet;
     struct chaos_whistle_witness witness;
     int telegraphs = 0, rc, ox, oy, ready, arm, public_n, public2, f_action;
     int snapshot = 0, windowed = 0, pre_glyph = 0, restored = 0, spent2 = 0;
+    int owned_start = !strcmp(name, "safehit") || !strcmp(name, "safemiss")
+        || !strcmp(name, "obsorigin") || !strcmp(name, "unequalclock");
     unsigned orig_id;
 
     test_rng_control();
@@ -219,7 +239,16 @@ static int run_case(const char *name, const char *dirpath)
     setup_level(&pet);
     setenv("NYARLATHACK_OBSERVATIONS", "1", 1);
     setenv("NYARLATHACK_RUN_DIR", dirpath, 1);
+    if (owned_start) {
+        if (!defer_candidate(dirpath, 0)) return 2;
+        setenv("NYARLATHACK_NEXT_USE_ADMIT", "1", 1);
+        /* Other linked cases intentionally preinitialize restore-like state.
+         * These safe-point cases must exercise genuine fresh initialization. */
+        u.chaos.version = 0;
+        u.chaos_game_token = 0;
+    }
     chaos_start();
+    if (owned_start && !defer_candidate(dirpath, 1)) return 2;
     ox = pet.mx;
     oy = pet.my;
     orig_id = pet.m_id;
