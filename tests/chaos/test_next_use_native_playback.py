@@ -1,8 +1,8 @@
-"""R1: controlled Unix-fixture playback, not ordinary play or saved-RNG replay.
+"""Four-case controlled Unix playback, not ordinary play or saved-RNG replay.
 
 Fake author bootstrap is a labelled fixture, not an intelligence claim. The
-value-only typed C preflight is separate from physical execution; broader native
-matrix coverage and general replay remain outside this bounded test.
+value-only typed C preflight is separate from physical execution. Separate
+effect-loss controls and general replay remain outside this bounded matrix.
 """
 
 import hashlib
@@ -10,7 +10,7 @@ import json
 import os
 import shutil
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 from chaos import next_use_author as author
 from chaos.next_use_journal import read_journal
@@ -73,6 +73,35 @@ def preflight(files, trusted, journal, capture, initial, source):
     return decoded
 
 
+class InputTapeTests(unittest.TestCase):
+    """Fast byte-guard probes: no native game or author transport."""
+
+    def test_mismatch_at_each_position_rejected_before_send(self):
+        # Explicit commands and the automatic save/quit responses share one tape.
+        expected = [b"a", b"b", b" ", b"S", b"y", b"\n"]
+        for index, value in enumerate(expected):
+            with self.subTest(index=index):
+                sink = Mock()
+                tape = InputTape(sink, [v.hex() for v in expected])
+                for prefix in expected[:index]:
+                    tape.send(prefix)
+                tape.original.reset_mock()
+                with self.assertRaisesRegex(
+                    AssertionError, "input differs before send"
+                ):
+                    tape.send(value + b"x")
+                tape.original.assert_not_called()
+                self.assertEqual(tape.cursor, index)
+
+    def test_exhaustion_rejected_before_send(self):
+        sink = Mock()
+        tape = InputTape(sink, [])
+        with self.assertRaisesRegex(AssertionError, "unexpected input"):
+            tape.send(b"x")
+        tape.original.assert_not_called()
+        self.assertEqual(tape.cursor, 0)
+
+
 @unittest.skipUnless(
     os.environ.get("NYARLATHACK_GAME_TESTS") == "1", "real game opt-in"
 )
@@ -93,21 +122,42 @@ class NativePlaybackTests(unittest.TestCase):
             "semantic-preflight",
             "*/game/dnethack",
             "*/game/nhdat",
+            "*/*/game/dnethack",
+            "*/*/game/nhdat",
+            "*/semantic-preflight",
         ):
             for path in cls.artifacts.glob(pattern):
                 path.unlink()
         shutil.rmtree(cls.asset_pool, ignore_errors=True)
 
     def test_same_admitted_save_w_checkpoint_f_exact_input_playback(self):
+        self.run_case("WF", "witness")
+
+    def run_case(self, order, program, unpublished=False):
         self._build_two_family_game()
         shutil.copy2(__file__, self.artifacts / "test_next_use_native_playback.py")
         with patch.dict(
             os.environ,
             {"NYARLATHACK_NEXT_USE_ADMIT": "1", "NYARLATHACK_OBSERVATIONS": "1"},
         ):
-            self.exercise()
+            self.exercise(order, program, unpublished)
 
-    def exercise(self):
+    def test_state_wf_quiet_exact_input_playback(self):
+        self.run_case("WF", "state")
+
+    def test_state_fw_refresh_exact_input_playback(self):
+        self.run_case("FW", "state")
+
+    def test_witness_wf_unsupported_message_exact_input_playback(self):
+        self.run_case("WF", "witness", unpublished=True)
+
+    def exercise(self, order="WF", program="witness", unpublished=False):
+        case = order + "-" + program + ("-unpublished" if unpublished else "")
+        directory = self.artifacts / case
+        directory.mkdir()
+        refresh = order == "FW" or (program == "witness" and not unpublished)
+        original_case = case == "WF-witness"
+
         def game(name):
             result = Game(
                 ROOT / "dnethackdir",
@@ -115,7 +165,7 @@ class NativePlaybackTests(unittest.TestCase):
                 wizard=True,
                 asset_pool=self.asset_pool,
                 executable=self.two_family_exe,
-                root=self.artifacts / name,
+                root=directory / name,
             )
             self.addCleanup(result.close)
             (result.game / "detailed-native").touch()
@@ -128,12 +178,14 @@ class NativePlaybackTests(unittest.TestCase):
         bootstrap.more(bootstrap.send(slot))
         bootstrap.more(bootstrap.send("q"))
         bootstrap.more(bootstrap.send("y"))
-        source = fixture_sources()[1]
+        source = fixture_sources()[0 if program == "state" else 1]
         transport = author.FakeAuthorTransport(response(source))
         authored = author.author_offline(
             bootstrap.run, transport=transport, validator=self.validator
         )
         self.assertEqual(authored["status"], "envelope_published_not_admitted")
+        self.assertEqual(authored["validation"], "native_parser_and_load")
+        self.assertEqual(authored["source_sha256"], hashlib.sha256(source).hexdigest())
         self.assertEqual(len(transport.calls), 1)
         envelope = bootstrap.run / "next_use-envelope.json"
         (bootstrap.root / "fixture-envelope.json").write_bytes(envelope.read_bytes())
@@ -146,6 +198,7 @@ class NativePlaybackTests(unittest.TestCase):
         self.assertEqual((initial["callback_w"], initial["callback_f"]), (0, 0))
         self.assertEqual((initial["slot_w"], initial["slot_f"]), (1, 1))
         self.assertEqual(initial["spent"], 2)
+        self.assertEqual(initial["source_sha256"], hashlib.sha256(source).hexdigest())
         identity = load(bootstrap.game / "identity.json")
         self.assertEqual(initial["run_token"], identity["game_token"])
         self.assertEqual(
@@ -194,6 +247,9 @@ class NativePlaybackTests(unittest.TestCase):
             )
             self.assertFalse((result.run / "next_use-envelope.json").exists())
             self.assertFalse((result.run / "next_use.lua").exists())
+            if unpublished:
+                # Real unsupported presentation route, never a witness setter.
+                (result.game / "deny-w-message").touch()
             return result
 
         record = clone("record")
@@ -218,10 +274,14 @@ class NativePlaybackTests(unittest.TestCase):
                 self.assertEqual(len(g.inputs), expected_end)
             return load(g.game / "state.json")
 
+        whistle = [("send", "a"), ("send", slot)] + [("send", ".")] * 7
+        fountain = [("send", "q"), ("send", "y")]
+        operations = {"W": whistle, "F": fountain}
         for kind, value in (
-            [("start", None), ("send", "a"), ("send", slot)]
-            + [("send", ".")] * 7
-            + [("save", None), ("start", None), ("send", "q"), ("send", "y")]
+            [("start", None)]
+            + operations[order[0]]
+            + [("save", None), ("start", None)]
+            + operations[order[1]]
             + [("send", ".")] * 4
             + [("quit", None)]
         ):
@@ -233,11 +293,50 @@ class NativePlaybackTests(unittest.TestCase):
                 for key in initial:
                     if key not in ("replay_cursor", "journal_bytes", "journal_sha256"):
                         self.assertEqual(states[0][key], initial[key], key)
+            if kind == "start" and len(states) > 1:
+                # Preserve the original W attention anchor or still-pending W,
+                # not a newly armed window after the new-process restore.
+                for key in (
+                    "state",
+                    "callback_ordinal",
+                    "callback_w",
+                    "callback_f",
+                    "slot_w",
+                    "slot_f",
+                    "w_runtime",
+                    "witnessed",
+                    "attention_claimed",
+                    "activation_monstermoves",
+                    "armed_m_id",
+                    "armed_root",
+                    "source_sha256",
+                ):
+                    self.assertEqual(states[-1][key], states[-2][key], key)
             if kind == "save":
-                self.assertEqual(states[-1]["witnessed"], 1)
-                self.assertEqual(states[-1]["callback_w"], 1)
-                self.assertEqual(states[-1]["callback_f"], 0)
-                self.assertEqual(states[-1]["slot_f"], 1)
+                middle = states[-1]
+                self.assertEqual(middle["callback_ordinal"], 1)
+                self.assertEqual(middle["callback_w"], int(order == "WF"))
+                self.assertEqual(middle["callback_f"], int(order == "FW"))
+                self.assertEqual(
+                    middle["state"], int(program == "state" and order == "WF")
+                )
+                self.assertEqual(
+                    middle["witnessed"], int(order == "WF" and not unpublished)
+                )
+                if order == "WF":
+                    self.assertEqual(middle["slot_f"], 1)
+                    self.assertEqual(middle["attention_claimed"], 1)
+                    self.assertEqual(middle["w_runtime"], 1)
+                    self.assertGreaterEqual(
+                        middle["monstermoves"], middle["activation_monstermoves"] + 5
+                    )
+                    self.assertLess(
+                        middle["monstermoves"], middle["activation_monstermoves"] + 10
+                    )
+                else:
+                    self.assertEqual(middle["slot_w"], 1)
+                    self.assertEqual(middle["slot_f"], 2)
+                    self.assertEqual(middle["attention_claimed"], 0)
             schedule.append(dict(kind=kind, begin=begin, end=len(record.inputs)))
         (record.root / "schedule.json").write_text(json.dumps(schedule, indent=2))
         (record.root / "states.json").write_text(json.dumps(states, indent=2))
@@ -253,12 +352,18 @@ class NativePlaybackTests(unittest.TestCase):
         self.assertEqual(len(witnesses), 1)
         self.assertEqual(len(drinks), 1)
         w, f = witnesses[0], drinks[0]
-        self.assertEqual(w["delivered"], 1)
-        self.assertEqual(w["witnessed"], 1)
+        self.assertEqual(w["delivered"], int(not unpublished))
+        self.assertEqual(w["witnessed"], int(not unpublished))
+        self.assertEqual(w["displaced"], 1)
+        self.assertEqual(w["notice"] > 0, not unpublished)
+        self.assertEqual(
+            [r["kind"] for r in physical if r["kind"] in ("W", "F")], list(order)
+        )
         self.assertNotEqual(w["before"], w["after"])
         self.assertEqual(w["after"], w["actual"])
-        self.assertEqual(f["hunger_after"] - f["hunger_before"], 4)
-        self.assertEqual(f["outcome"], 6)
+        self.assertEqual(f["hunger_after"] - f["hunger_before"], 4 if refresh else 0)
+        # Existing Unix calibration: native fate 11 emits DEFAULT outcome 4.
+        self.assertEqual(f["outcome"], 6 if refresh else 4)
         self.assertEqual(states[-1]["callback_ordinal"], 2)
         self.assertEqual(states[-1]["spent"], 2)
 
@@ -290,9 +395,16 @@ class NativePlaybackTests(unittest.TestCase):
             "clock": self.clock,
             "native_data": record.game / "nhdat",
         }
-        for directory, label in ((bootstrap.run, "prefix"), (record.run, "record")):
+        for capture_directory, label in (
+            (bootstrap.run, "prefix"),
+            (record.run, "record"),
+        ):
             files.update(
-                {label + "/" + p.name: p for p in directory.iterdir() if p.is_file()}
+                {
+                    label + "/" + p.name: p
+                    for p in capture_directory.iterdir()
+                    if p.is_file()
+                }
             )
         for name in (
             "inputs.json",
@@ -313,9 +425,7 @@ class NativePlaybackTests(unittest.TestCase):
                 }
             )
         trusted = {name: digest(p) for name, p in files.items()}
-        (self.artifacts / "bundle-digests.json").write_text(
-            json.dumps(trusted, indent=2)
-        )
+        (directory / "bundle-digests.json").write_text(json.dumps(trusted, indent=2))
         args = (
             files,
             trusted,
@@ -325,7 +435,7 @@ class NativePlaybackTests(unittest.TestCase):
             source,
         )
         original_inputs = (record.root / "inputs.json").read_bytes()
-        tampered_inputs = self.artifacts / "tampered-inputs.json"
+        tampered_inputs = directory / "tampered-inputs.json"
         tampered_inputs.write_bytes(b'["2e"]')
         altered_files = dict(files, **{"inputs.json": tampered_inputs})
         with self.assertRaisesRegex(AssertionError, "bundle digest: inputs.json"):
@@ -336,17 +446,42 @@ class NativePlaybackTests(unittest.TestCase):
         )  # Before playback Game.start (including all auto bytes).
         from next_use_semantic_preflight import validate_bundle, exercise_negatives
 
-        semantic = validate_bundle(decoded, files, self.artifacts)
-        self.assertEqual(semantic["accepted"], 51)
+        semantic = validate_bundle(decoded, files, directory)
+        transitions = [r for r in decoded["records"] if r["kind"] == "transition"]
+        self.assertEqual(semantic["accepted"], len(transitions))
+        actions = [r["data"] for r in transitions if r["data"]["operation"] == 1]
+        self.assertEqual(
+            [t["family"] for t in actions], [{"W": 1, "F": 2}[f] for f in order]
+        )
+        f_action = next(t for t in actions if t["family"] == 2)
+        intents = [
+            r["data"]["intent"]["op"]
+            for r in f_action["private_records"]
+            if r["kind"] == 3
+        ]
+        self.assertEqual(intents, [3 if refresh else 0])
+        # Quiet may terminate in ACTION without an active F-result transition.
+        # Judge its native effect separately above, not by inventing a result.
+        public_w = [
+            p
+            for t in transitions
+            for p in t["data"]["public_records"]
+            if p["family"] == 1
+        ]
+        self.assertEqual(len(public_w), int(not unpublished))
+        if public_w:
+            self.assertEqual(public_w[0]["root"], w["root"])
+            self.assertEqual(public_w[0]["notice_seq"], w["notice"])
         self.assertEqual(semantic["checkpoints"], 1)
         self.assertEqual(semantic["terminal"], 1)
-        with patch.object(
-            Game,
-            "start",
-            side_effect=AssertionError("negative launched native playback"),
-        ) as start:
-            exercise_negatives(self, decoded, files, self.artifacts)
-            start.assert_not_called()
+        if original_case:
+            with patch.object(
+                Game,
+                "start",
+                side_effect=AssertionError("negative launched native playback"),
+            ) as start:
+                exercise_negatives(self, decoded, files, directory)
+                start.assert_not_called()
         playback = clone("playback")
         for original in bootstrap.run.iterdir():
             if original.is_file():
@@ -390,7 +525,13 @@ class NativePlaybackTests(unittest.TestCase):
                     (g.root / "middle-prefix/next_use-journal.jsonl").read_bytes()
                 )
             )
-        for name in ("native.jsonl", "physical.jsonl", "identity.json", "capture.json"):
+        for name in (
+            "native.jsonl",
+            "physical.jsonl",
+            "state.json",
+            "identity.json",
+            "capture.json",
+        ):
             self.assertEqual(
                 (record.game / name).read_bytes(),
                 (playback.game / name).read_bytes(),
@@ -410,7 +551,7 @@ class NativePlaybackTests(unittest.TestCase):
         validate_native(reference)
         validate_native(candidate)
         compare_runs(reference, candidate)
-        (self.artifacts / "playback-result.json").write_text(
+        (directory / "playback-result.json").write_text(
             json.dumps(
                 {
                     "status": "exact_native_pair",
@@ -418,7 +559,13 @@ class NativePlaybackTests(unittest.TestCase):
                     "input_chunks": len(tape.expected),
                     "initial_cursor": initial["replay_cursor"],
                     "typed_c_preflight": semantic,
-                    "validator_negative_count": 4,
+                    "validator_negative_count": 4 if original_case else 0,
+                    "case": case,
+                    "source_sha256": hashlib.sha256(source).hexdigest(),
+                    "fountain_hunger_delta": f["hunger_after"] - f["hunger_before"],
+                    "fountain_outcome": f["outcome"],
+                    "w_delivered": w["delivered"],
+                    "rng_saved": False,
                     "ordinary_play": False,
                 },
                 indent=2,
