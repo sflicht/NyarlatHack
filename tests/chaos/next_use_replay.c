@@ -323,12 +323,12 @@ int main(int argc, char **argv)
          * and decision records legitimately generate no private carrier. */
         bad = record;
         --bad.seq;
-        past = chaos_next_use_replay_record(&bad);
+        past = chaos_next_use_replay_legacy_fixture(&bad);
         bad = record;
         ++bad.seq;
-        future = chaos_next_use_replay_record(&bad);
-        status = chaos_next_use_replay_record(&record);
-        duplicate = chaos_next_use_replay_record(&record);
+        future = chaos_next_use_replay_legacy_fixture(&bad);
+        status = chaos_next_use_replay_legacy_fixture(&record);
+        duplicate = chaos_next_use_replay_legacy_fixture(&record);
         unchanged = chaos_next_use_snapshot_export(&live)
             && memcmp(&snap, &live, sizeof snap) == 0;
         printf("{\"status\":%d,\"past\":%d,\"future\":%d,"
@@ -338,7 +338,7 @@ int main(int argc, char **argv)
     }
     if (!strcmp(mode, "skip")) {
         fill_replay(&record, &snap, 2);
-        status = chaos_next_use_replay_record(&record);
+        status = chaos_next_use_replay_legacy_fixture(&record);
         if (!chaos_next_use_snapshot_export(&live))
             return 1;
         printf("{\"tag\":\"skip\",\"installed\":%d,\"status\":%d,\"slot_w\":%d}\n",
@@ -350,7 +350,7 @@ int main(int argc, char **argv)
         fill_replay(&record, &snap, 1);
         record.source_sha256[0] =
             record.source_sha256[0] == '0' ? '1' : '0';
-        status = chaos_next_use_replay_record(&record);
+        status = chaos_next_use_replay_legacy_fixture(&record);
         if (!chaos_next_use_snapshot_export(&live))
             return 1;
         printf("{\"tag\":\"bad_sha\",\"status\":%d,\"slot_w\":%d}\n",
@@ -361,7 +361,7 @@ int main(int argc, char **argv)
     if (!strcmp(mode, "wrong_clock")) {
         fill_replay(&record, &snap, 1);
         record.at_move = monstermoves + 1;
-        status = chaos_next_use_replay_record(&record);
+        status = chaos_next_use_replay_legacy_fixture(&record);
         if (!chaos_next_use_snapshot_export(&live))
             return 1;
         printf("{\"tag\":\"wrong_clock\",\"status\":%d,\"slot_w\":%d}\n",
@@ -372,7 +372,7 @@ int main(int argc, char **argv)
     if (!strcmp(mode, "after_expire")) {
         chaos_next_use_expire(CHAOS_END_PROGRAM_EXPIRED);
         fill_replay(&record, &snap, 1);
-        status = chaos_next_use_replay_record(&record);
+        status = chaos_next_use_replay_legacy_fixture(&record);
         printf("{\"tag\":\"after_expire\",\"status\":%d}\n", status);
         return installed && status == CHAOS_REPLAY_BLOCKED_REPLAY ? 0 : 1;
     }
@@ -389,7 +389,7 @@ int main(int argc, char **argv)
         restored = chaos_next_use_restore_bound(fd, 1, 1);
         fclose(fp);
         fill_replay(&record, &snap, 2);
-        status = chaos_next_use_replay_record(&record);
+        status = chaos_next_use_replay_legacy_fixture(&record);
         if (!chaos_next_use_snapshot_export(&live))
             return 1;
         printf("{\"tag\":\"save_replay\",\"restored\":%d,\"status\":%d,\"slot_w\":%d}\n",
@@ -480,10 +480,10 @@ int main(int argc, char **argv)
                     ? '1' : '0';
         }
         monstermoves = 40;
-        status = chaos_next_use_replay_record(&recorded);
+        status = chaos_next_use_replay_legacy_fixture(&recorded);
         if (!chaos_next_use_snapshot_export(&live) && strcmp(mode, "apply_w_bad_intent"))
             return 1;
-        second = chaos_next_use_replay_record(&recorded);
+        second = chaos_next_use_replay_legacy_fixture(&recorded);
         printf("{\"tag\":\"%s\",\"status\":%d,\"second\":%d,\"slot_w\":%d,"
                "\"slot_f\":%d,\"restored\":%d,\"intent_sha\":\"%s\"}\n",
                mode, status, second, live.slot_w, live.slot_f, restored, sha);

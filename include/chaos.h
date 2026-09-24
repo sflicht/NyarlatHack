@@ -54,6 +54,8 @@ boolean chaos_next_use_manifestation_begin(unsigned m_id, long root);
 void chaos_next_use_manifestation_notice(long root, long notice_seq);
 void chaos_next_use_manifestation_end(long root, long notice_seq,
                                       long end_seq, int success);
+void chaos_next_use_manifestation_complete(const struct chaos_whistle_witness *,
+                                           long end_seq, int published);
 boolean chaos_whistle_attention_message(struct chaos_whistle_witness *witness);
 void chaos_whistle_witness_finalize(struct monst *mtmp,
                                     struct chaos_whistle_witness *witness);
@@ -102,6 +104,7 @@ int chaos_next_use_safe_restore_attempted(int attempted);
 #define chaos_next_use_manifestation_begin(m_id,root) (FALSE)
 #define chaos_next_use_manifestation_notice(root,notice_seq) ((void)0)
 #define chaos_next_use_manifestation_end(root,notice_seq,end_seq,success) ((void)0)
+#define chaos_next_use_manifestation_complete(witness,end_seq,published) ((void)0)
 #define chaos_whistle_attention_message(witness) (FALSE)
 #define chaos_whistle_witness_finalize(mtmp,witness) ((void)0)
 #define chaos_next_use_on_manifestation(witness,end_seq) ((void)0)
