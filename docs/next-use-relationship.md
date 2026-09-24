@@ -5,6 +5,7 @@ learning or full-run recurrence. W denotes the existing whistle-attention
 capability; F denotes fountain refresh. Gameplay integration follows #66/#67;
 #44 owns actual human evaluation and #45 owns live-model evidence. This document
 adds no executable programme, mechanic, policy allowance or literary encounter.
+The #66 ordinary acceptance is still open; this note does not close that gate.
 
 ## Rule and two distinguishable opportunities
 
@@ -167,7 +168,8 @@ ordinary pacing and any live-model intelligence remain unmeasured here.
 
 ## If repeated cycles are necessary
 
-Do not reset consumed slots. The present one-admission latch blocks a later
+Do not reset a consumed slot. Do not raise the use cap, cruelty budget or effect
+privilege under this design. The present one-admission latch blocks a later
 programme even when it uses already authorized operations. If human evidence
 shows that two opportunities cannot support learning, the smallest proposal for
 review is **one additional admission after the first programme is terminal**:
