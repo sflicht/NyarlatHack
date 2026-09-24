@@ -111,6 +111,55 @@ long chaos_next_use_game_identity(void)
     return u.chaos_game_token;
 }
 
+/* This marker binds admission transport to the separately saved player token.
+ * It is neither a receipt nor save authority. Never adopt an occupied mailbox,
+ * repair a missing binding on restore, or overwrite a foreign owner's marker. */
+static int next_use_transport_owned(long token, int claim)
+{
+    static const char owner[] = "next_use-owner";
+    static const char *const evidence[] = {
+        "events.jsonl", "whispers.jsonl", "next_use-envelope.json",
+        "next_use-receipt.jsonl", "next_use.lua", "next_use-used.lua",
+        "next_use-schedule.jsonl"
+    };
+    char expected[32], actual[32];
+    struct stat st;
+    int fd, i, n, ok;
+    ssize_t got;
+    if (token <= 0 || io.dir < 0 || io.failed) return 0;
+    n = snprintf(expected, sizeof expected, "NUO1:%016lx\n", (unsigned long)token);
+    if (n <= 0 || (size_t)n >= sizeof expected) return 0;
+    fd = openat(io.dir, owner, O_RDONLY | O_NOFOLLOW | O_NONBLOCK | O_CLOEXEC);
+    if (fd >= 0) {
+        ok = !fstat(fd, &st) && S_ISREG(st.st_mode)
+            && st.st_uid == getuid() && st.st_nlink == 1 && !(st.st_mode & 077)
+            && st.st_size == n;
+        got = ok ? read(fd, actual, sizeof actual) : -1;
+        ok = ok && got == n && !memcmp(actual, expected, (size_t)n);
+        if (close(fd)) ok = 0;
+        return ok;
+    }
+    if (errno != ENOENT || !claim) return 0;
+    /* Startup precedes our first event. Only the two empty logs created by
+     * chaos_io_open may already exist; old candidate/source/receipt presence
+     * is disqualifying even if empty. Errors and symlinks fail closed. */
+    for (i = 0; i < (int)(sizeof evidence / sizeof evidence[0]); ++i) {
+        if (!fstatat(io.dir, evidence[i], &st, AT_SYMLINK_NOFOLLOW)) {
+            if (i >= 2 || !S_ISREG(st.st_mode) || st.st_size != 0
+                || st.st_uid != getuid() || st.st_nlink != 1) return 0;
+        } else if (errno != ENOENT) return 0;
+    }
+    fd = openat(io.dir, owner,
+                O_WRONLY | O_CREAT | O_EXCL | O_NOFOLLOW | O_NONBLOCK | O_CLOEXEC,
+                0600);
+    if (fd < 0) return 0;
+    ok = write(fd, expected, (size_t)n) == n && !fsync(fd);
+    if (close(fd)) ok = 0;
+    if (fsync(io.dir)) ok = 0;
+    /* On failure retain the marker/evidence; never repair or replace it. */
+    return ok;
+}
+
 static void next_use_bind_owned(void)
 {
     struct chaos_next_use_origin_ref origin;
@@ -119,7 +168,9 @@ static void next_use_bind_owned(void)
     const char *fact;
     int slot;
     if (chaos_next_use_safe_bind_logical)
-        chaos_next_use_safe_bind_logical(chaos_next_use_game_identity());
+        chaos_next_use_safe_bind_logical(
+            next_use_transport_owned(u.chaos_game_token, 0)
+                ? u.chaos_game_token : 0);
     if (io.dir < 0 || fstat(io.dir, &st)) return;
     if (snprintf(run, sizeof run, "%016llx%016llx%016llx%016llx",
                  (unsigned long long)st.st_dev,
@@ -223,6 +274,9 @@ void chaos_start(void) {
     oldsanity = u.usanity; oldinsight = u.uinsight;
     started = 1;
     (void)chaos_io_open(&io, getenv("NYARLATHACK_RUN_DIR"));
+    flag = getenv("NYARLATHACK_NEXT_USE_ADMIT");
+    if (fresh && flag && !strcmp(flag, "1") && io.dir >= 0 && !io.failed)
+        (void)next_use_transport_owned(chaos_next_use_game_identity(), 1);
     flag = getenv("NYARLATHACK_OBSERVATIONS");
     observations = flag && !strcmp(flag, "1") && io.events >= 0
         && !io.failed && !chaos_shadow_active() && !program_state.gameover;
