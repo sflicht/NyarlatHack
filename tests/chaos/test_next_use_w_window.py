@@ -56,6 +56,7 @@ class NextUseWhistleWindowTests(unittest.TestCase):
             str(ROOT / "src/chaos_next_use_admission.c"),
             str(ROOT / "src/chaos_next_use_runtime.c"),
             str(ROOT / "src/chaos_next_use_io.c"),
+            str(ROOT / "src/chaos_next_use_journal.c"),
             str(ROOT / "src/chaos_next_use_safe.c"),
             str(ROOT / "src/chaos_protocol.c"),
             str(ROOT / "src/chaos_lua.c"),

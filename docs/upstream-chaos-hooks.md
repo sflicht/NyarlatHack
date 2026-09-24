@@ -62,7 +62,15 @@ the separately restored player game/level identity and restores the saved
 attempt latch rather than consuming every empty save's opportunity. The
 player-only token/latch are excluded from CHAOS-off structures and bones.
 Internal initial-level safe points, Sanity thresholds and haunt ticks remain
-in owned engine files.
+in owned engine files. The reviewed `CHAOS=1` object block includes the owned
+`chaos_next_use_journal.o` and its source/header dependencies; `CHAOS=0` omits it.
+The current history driver receipt requires 162 production objects and 129
+headers, including `src/chaos_next_use_journal.o` and
+`include/chaos_next_use_journal.h`. Every recorded input remains hash-checked;
+these current-build counts do not revise historical receipts or acceptance.
+`test_history_build_inventory.py` independently evaluates the GNUmakefile object
+assignments without compiling, and tests missing/extra receipt entries and
+same-count journal substitutions. These are metadata checks, not native replay.
 
 ## Extending an authorized seam (#1 / #25)
 
