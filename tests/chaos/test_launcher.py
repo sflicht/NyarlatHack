@@ -588,6 +588,255 @@ class LauncherTests(unittest.TestCase):
         self.assertTrue(self.info()["tty"])
         self.assert_reaped(self.info())
 
+    def observation_restore(self, name):
+        """Synthetic pre-quit prefix, not a native save or ordinary-effect claim."""
+        from test_director import REQ, current_ack, current_event
+        from test_episodes import action, enabled, session, wire
+
+        run = self.path / name
+        run.mkdir(mode=0o700)
+        records = [
+            dict(enabled(), v=4, cosmetic=dict(seen=0, last_turn=0)),
+            dict(session(2), v=3, cosmetic=dict(seen=0, last_turn=0)),
+            current_event(3),
+            current_ack(4),
+        ]
+        origin = action(records)
+        for row in records[4:]:
+            row.update(v=4, last_id=1, cosmetic=dict(seen=1, last_turn=10))
+        schedule = dict(
+            next_use_schedule_v=1,
+            family="W",
+            move=40,
+            level_dnum=0,
+            level_dlevel=1,
+            root=origin["root_seq"],
+            notice_seq=origin["notice_seq"],
+            end_seq=origin["end_seq"],
+        )
+        journal = dict(
+            REQ,
+            policy=2,
+            turn=10,
+            safe=1,
+            status="admitted",
+            cost=0,
+            cosmetic_cost=1,
+            expires=0,
+        )
+        for filename, raw in (
+            ("events.jsonl", wire(*records)),
+            ("whisper.json", json.dumps(REQ).encode()),
+            ("whispers.jsonl", wire(journal)),
+            ("next_use-schedule.jsonl", wire(schedule)),
+        ):
+            with os.fdopen(
+                os.open(run / filename, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600),
+                "wb",
+            ) as stream:
+                stream.write(raw)
+        return run, records
+
+    def test_next_use_restore_observation_prefix_starts_fake_game(self):
+        from chaos.history import HistoryState, public_context
+        from chaos.history_choice import RandomHistoryBackend
+        from chaos.next_use_envelope import engine_run_hex, envelope_from_selection
+        from chaos.next_use_history import next_use_menu
+        from chaos.next_use_schedule import host_from_schedule
+
+        run, _ = self.observation_restore("observation-restore")
+        before = {p.name: p.read_bytes() for p in run.iterdir()}
+        history = HistoryState(before["events.jsonl"])
+        menu = next_use_menu(history)
+        self.assertEqual([r["op"] for r in menu], ["quiet", "whistle_attention"])
+        selected = RandomHistoryBackend(0).choose_next_use(
+            public_context(history), menu
+        )
+        self.assertEqual(selected, menu[1])
+        _, expected = envelope_from_selection(
+            selected,
+            host_from_schedule(
+                json.loads(before["next_use-schedule.jsonl"]), engine_run_hex(run), 2, 2
+            ),
+        )
+        result = self.run_cli("--next-use", "--reuse-run-dir", str(run))
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertTrue(self.info()["locked"])
+        self.assertEqual((run / "next_use-envelope.json").read_bytes(), expected)
+        for name, raw in before.items():
+            self.assertEqual((run / name).read_bytes(), raw)
+        self.assert_reaped(self.info())
+
+    def test_default_restore_rejects_observation_prefix(self):
+        run, _ = self.observation_restore("default-observation-restore")
+        before = {p.name: p.read_bytes() for p in run.iterdir()}
+        result = self.run_cli("--reuse-run-dir", str(run))
+        self.assertEqual(result.returncode, 2, result.stderr)
+        self.assertFalse(self.marker.exists())
+        self.assertFalse((run / "next_use-envelope.json").exists())
+        for name, raw in before.items():
+            self.assertEqual((run / name).read_bytes(), raw)
+
+    def test_next_use_restore_never_ingests_observations_into_legacy_state(self):
+        from chaos.__main__ import main
+        from chaos.director import State
+
+        run, records = self.observation_restore("legacy-state-restore")
+        ingested = []
+        original = State.ingest
+
+        def ingest(state, event):
+            self.assertNotEqual(event["event"], "observation")
+            ingested.append(event)
+            return original(state, event)
+
+        with (
+            patch.dict(os.environ, self.env),
+            patch.object(State, "ingest", ingest),
+            redirect_stderr(io.StringIO()),
+        ):
+            result = main(
+                [
+                    "play",
+                    "--game-root",
+                    str(self.root),
+                    "--next-use",
+                    "--reuse-run-dir",
+                    str(run),
+                ]
+            )
+        self.assertEqual(result, 0)
+        # Parent preflight visits all legacy rows; the fork inherits the guard.
+        self.assertEqual(ingested, records[1:4])
+        self.assert_reaped(self.info())
+
+    def test_next_use_restore_existing_envelope_is_one_shot_offline(self):
+        import builtins
+        from chaos.__main__ import main
+        from chaos.next_use_schedule import NextUseScheduler
+
+        run, _ = self.observation_restore("published-restore")
+        self.assertEqual(
+            NextUseScheduler(run, seed=0).poll()["status"],
+            "envelope_published_not_admitted",
+        )
+        before = {p.name: p.read_bytes() for p in run.iterdir()}
+        envelope = run / "next_use-envelope.json"
+        identity = envelope.stat()
+        original_import = builtins.__import__
+
+        def offline_import(name, globals=None, locals=None, fromlist=(), level=0):
+            blocked = {"ordinary_route", "model", "oauth", "openai", "anthropic"}
+            if blocked.intersection(name.split(".")) or blocked.intersection(
+                fromlist or ()
+            ):
+                raise AssertionError("gated route/provider import")
+            return original_import(name, globals, locals, fromlist, level)
+
+        with (
+            patch.dict(os.environ, self.env),
+            patch("builtins.__import__", side_effect=offline_import),
+            patch(
+                "chaos.history_choice.RandomHistoryBackend.choose_next_use",
+                side_effect=AssertionError("reselection"),
+            ),
+            patch(
+                "chaos.next_use_envelope.publish_envelope",
+                side_effect=AssertionError("republication"),
+            ),
+            patch(
+                "chaos.director.Mailbox.submit",
+                side_effect=AssertionError("extra legacy request"),
+            ),
+            redirect_stderr(io.StringIO()),
+        ):
+            result = main(
+                [
+                    "play",
+                    "--game-root",
+                    str(self.root),
+                    "--ordinary",
+                    "--next-use",
+                    "--reuse-run-dir",
+                    str(run),
+                ]
+            )
+        self.assertEqual(result, 0)
+        # Readiness with the inherited raising guards proves no reselection,
+        # republication or legacy submission, even in the forked director.
+        for name, raw in before.items():
+            self.assertEqual((run / name).read_bytes(), raw)
+        after = envelope.stat()
+        self.assertEqual(
+            (after.st_ino, after.st_mtime_ns), (identity.st_ino, identity.st_mtime_ns)
+        )
+        self.assertFalse((run / "next_use-receipt.jsonl").exists())
+        self.assert_reaped(self.info())
+
+    def test_next_use_restore_invalid_observation_histories_fail_closed(self):
+        from test_episodes import wire
+
+        for case in ("malformed", "partial", "ended", "orphan_notice"):
+            with self.subTest(case=case):
+                run, records = self.observation_restore(case)
+                if case == "malformed":
+                    records[-1]["observation"]["stage"] = "invalid"
+                elif case == "ended":
+                    records.append(
+                        dict(
+                            records[2],
+                            seq=8,
+                            event="death",
+                            detail="quit",
+                            last_id=1,
+                            cosmetic=dict(seen=1, last_turn=10),
+                        )
+                    )
+                elif case == "orphan_notice":
+                    records[-2]["observation"]["root_seq"] = 3
+                raw = wire(*records) + (b'{"v":4,' if case == "partial" else b"")
+                (run / "events.jsonl").write_bytes(raw)
+                before = {p.name: p.read_bytes() for p in run.iterdir()}
+                result = self.run_cli("--next-use", "--reuse-run-dir", str(run))
+                self.assertEqual(result.returncode, 2, result.stderr)
+                self.assertFalse(self.marker.exists())
+                self.assertFalse((run / "next_use-envelope.json").exists())
+                for name, raw in before.items():
+                    self.assertEqual((run / name).read_bytes(), raw)
+
+    def test_next_use_restore_conflicting_pending_requests_fail_closed(self):
+        from test_director import REQ
+
+        for index, request in enumerate(
+            (dict(REQ, value=2), dict(REQ, id=2), dict(REQ, id=2, at=2))
+        ):
+            with self.subTest(request=request):
+                run, _ = self.observation_restore(f"observation-conflict-{index}")
+                (run / "whisper.json").write_text(json.dumps(request))
+                before = {p.name: p.read_bytes() for p in run.iterdir()}
+                result = self.run_cli("--next-use", "--reuse-run-dir", str(run))
+                self.assertEqual(result.returncode, 2, result.stderr)
+                self.assertFalse(self.marker.exists())
+                self.assertFalse((run / "next_use-envelope.json").exists())
+                for name, raw in before.items():
+                    self.assertEqual((run / name).read_bytes(), raw)
+
+    def test_next_use_restore_unsafe_inputs_fail_before_game(self):
+        for name in ("events.jsonl", "whispers.jsonl", "whisper.json"):
+            with self.subTest(name=name):
+                run, _ = self.observation_restore("unsafe-" + name)
+                target = run / name
+                original = target.read_bytes()
+                victim = run / "retained"
+                target.rename(victim)
+                target.symlink_to(victim)
+                result = self.run_cli("--next-use", "--reuse-run-dir", str(run))
+                self.assertEqual(result.returncode, 2, result.stderr)
+                self.assertFalse(self.marker.exists())
+                self.assertFalse((run / "next_use-envelope.json").exists())
+                self.assertTrue(target.is_symlink())
+                self.assertEqual(victim.read_bytes(), original)
+
     def test_ordinary_sets_bard_options_without_wizard_args(self):
         from chaos.ordinary_start import OPTIONS
 
