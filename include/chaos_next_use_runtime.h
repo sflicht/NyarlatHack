@@ -270,7 +270,25 @@ long chaos_next_use_fountain_completed_root(void);
 void chaos_next_use_fountain_result(const struct chaos_fountain_token *token,
                                     int outcome);
 
-#define CHAOS_NEXT_USE_SNAPSHOT_V 4
+#define CHAOS_NEXT_USE_SNAPSHOT_V 5
+#define CHAOS_NEXT_USE_JOURNAL_BYTES_MAX 8388608UL
+#define CHAOS_NEXT_USE_JOURNAL_RECORDS_MAX 4096UL
+enum chaos_next_use_journal_state {
+    CHAOS_JOURNAL_NONE = 0,
+    CHAOS_JOURNAL_OPEN,
+    CHAOS_JOURNAL_COMPLETE,
+    CHAOS_JOURNAL_FAILED
+};
+/* Writer-only acknowledgement publication; never publish a working line tip.
+ * No descriptor, pathname or subscriber binding belongs in saved values. */
+void chaos_next_use_capture_journal_ack(int state, unsigned long bytes,
+                                      const char sha256[65]);
+void chaos_next_use_capture_journal_fail(void);
+/* Trusted writer initialization: enter before any writer mutation/I/O; only
+ * the successful entrant may leave, after acknowledgement or settled failure.
+ * `before` excludes this new guard, but includes native capture transactions. */
+int chaos_next_use_capture_journal_enter(struct chaos_next_use_capture_status *before);
+void chaos_next_use_capture_journal_leave(void);
 
 struct chaos_next_use_snapshot {
     int snapshot_v;
@@ -286,6 +304,9 @@ struct chaos_next_use_snapshot {
     int origin_w_live, origin_f_live;
     unsigned armed_m_id;
     unsigned long replay_cursor;
+    int journal_state, capture_incomplete;
+    unsigned long journal_bytes;
+    char journal_sha256[65];
     long origin_w, origin_f;
     long origin_w_deadline, origin_f_deadline;
     long run_token, level_token;

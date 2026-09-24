@@ -84,6 +84,8 @@ class NextUseCaptureTests(unittest.TestCase):
             "nested",
             "failure",
             "missing",
+            "journal_missing",
+            "journal_reject",
             "fountain",
             "identity",
             "no_root",

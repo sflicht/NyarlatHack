@@ -79,6 +79,8 @@ static void snapshot(const struct chaos_next_use_snapshot *p)
     N(p, origin_w_live); N(p, origin_f_live); N(p, armed_m_id); N(p, replay_cursor);
     N(p, origin_w); N(p, origin_f); N(p, origin_w_deadline); N(p, origin_f_deadline);
     N(p, run_token); N(p, level_token); N(p, activation_monstermoves); N(p, armed_root);
+    N(p, journal_state); N(p, journal_bytes); T(p, journal_sha256);
+    N(p, capture_incomplete);
     N(p, source_length); T(p, source_sha256); T(p, binding_sha256);
     if (p->source_length > CHAOS_NEXT_USE_SOURCE_MAX) journal.bad = 1;
     put("\"source_hex\":\"");
@@ -205,7 +207,7 @@ static void fail(void)
 {
     static const char marker[] = "{\"journal_failed\":1}\n";
     journal.failed = 1;
-    chaos_next_use_capture_fail();
+    chaos_next_use_capture_journal_fail();
     /* Best effort negative evidence, never overwrite/delete the original prefix.
      * A footer CAN survive failed fsync/close even when this marker cannot land.
      * File completeness is NOT capture acknowledgement: the caller must consult
@@ -274,6 +276,9 @@ static int sink(void *opaque, const struct chaos_next_use_replay_input *p)
         journal.fd = -1;
         journal.ended = 1;
     }
+    chaos_next_use_capture_journal_ack(
+        journal.ended ? CHAOS_JOURNAL_COMPLETE : CHAOS_JOURNAL_OPEN,
+        (unsigned long)journal.bytes, journal.previous);
     journal.cursor = p->cursor;
     return 1;
 }
@@ -284,11 +289,203 @@ void chaos_next_use_journal_reset(void)
     journal.fd = -1;
     chaos_next_use_capture_set_sink(NULL, NULL);
 }
-void chaos_next_use_journal_restore_unsupported(void)
+/* This is a writer-framing scanner, not a second semantic JSON interpreter.
+ * The trusted save tip authenticates every payload in the original prefix. */
+static int take(const char **p, const char *literal)
 {
-    /* No open, truncate, restart or append on restore. Resume is not supported. */
-    chaos_next_use_journal_reset();
-    chaos_next_use_capture_fail();
+    size_t n = strlen(literal);
+    if (strncmp(*p, literal, n)) return 0;
+    *p += n;
+    return 1;
+}
+static int number(const char **p, const char *key, long *value)
+{
+    char prefix[80], canonical[40], *end;
+    const char *start;
+    long v;
+    snprintf(prefix, sizeof prefix, "\"%s\":", key);
+    if (!take(p, prefix)) return 0;
+    start = *p;
+    errno = 0;
+    v = strtol(start, &end, 10);
+    if (errno || end == start || *end != ',') return 0;
+    snprintf(canonical, sizeof canonical, "%ld", v);
+    if ((size_t)(end - start) != strlen(canonical)
+        || strncmp(start, canonical, (size_t)(end - start))) return 0;
+    *value = v; *p = end + 1;
+    return 1;
+}
+static int header_binding(const char *p, const struct chaos_next_use_snapshot *s)
+{
+    static const char *fields[] = {
+        "snapshot_v", "program_id", "phase", "slot_w", "slot_f", "w_runtime",
+        "state", "delay_used", "callback_ordinal", "witnessed", "attention_claimed",
+        "whistle_count", "fountain_count", "next_seq", "termination_emitted",
+        "identity_unsafe", "callback_w", "callback_f", "last_root", "admission_move",
+        "program_expiry", "delay_until", "variant", "origin_w_live", "origin_f_live",
+        "armed_m_id", "replay_cursor", "origin_w", "origin_f", "origin_w_deadline",
+        "origin_f_deadline", "run_token", "level_token", "activation_monstermoves",
+        "armed_root", "journal_state", "journal_bytes"
+    };
+    size_t i;
+    long v;
+    char tail[256], hex[3];
+    if (!take(&p, "{\"snapshot\":{")) return 0;
+    for (i = 0; i < sizeof fields / sizeof fields[0]; ++i) {
+        if (!number(&p, fields[i], &v)) return 0;
+        if ((!i && v != CHAOS_NEXT_USE_SNAPSHOT_V)
+            || ((!strcmp(fields[i], "replay_cursor")
+                 || !strcmp(fields[i], "journal_state")
+                 || !strcmp(fields[i], "journal_bytes")) && v)) return 0;
+    }
+    snprintf(tail, sizeof tail,
+        "\"journal_sha256\":\"\",\"capture_incomplete\":0,\"source_length\":%lu,"
+        "\"source_sha256\":\"%s\",\"binding_sha256\":\"%s\",\"source_hex\":\"",
+        (unsigned long)s->source_length, s->source_sha256, s->binding_sha256);
+    if (!take(&p, tail)) return 0;
+    for (i = 0; i < s->source_length; ++i) {
+        snprintf(hex, sizeof hex, "%02x", (unsigned char)s->source[i]);
+        if (!take(&p, hex)) return 0;
+    }
+    return take(&p, "\"},\"private_records\":[");
+}
+static int inner_cursor(const char *p, unsigned long cursor, long *seq)
+{
+    static const char *before[] = {
+        "replay_input_v", "expected_last_root", "activation_move", "notice_root",
+        "witness_notice_seq", "token_present", "root_present", "expected_result",
+        "published", "pre_public", "operation", "family", "root"
+    };
+    static const char *after[] = {
+        "callback_ordinal", "state", "seq", "slot_w", "slot_f", "w_runtime", "m_id",
+        "at_move", "fountain_outcome", "run_token", "level_token", "origin_w_live",
+        "origin_f_live", "whistle_count", "fountain_count", "end_reason",
+        "expected_attention", "decision_root", "cursor"
+    };
+    size_t i;
+    long v;
+    char source[96];
+    if (!take(&p, "{")) return 0;
+    for (i = 0; i < sizeof before / sizeof before[0]; ++i)
+        if (!number(&p, before[i], &v) || (!i && v != 1)) return 0;
+    snprintf(source, sizeof source, "\"source_sha256\":\"%s\",", journal.source_sha256);
+    if (!take(&p, source)) return 0;
+    for (i = 0; i < sizeof after / sizeof after[0]; ++i) {
+        if (!number(&p, after[i], &v)) return 0;
+        if (i == 2) *seq = v;
+    }
+    return v >= 0 && (unsigned long)v == cursor;
+}
+int chaos_next_use_journal_resume(int dir)
+{
+    struct chaos_next_use_snapshot saved;
+    struct chaos_next_use_capture_status status;
+    struct stat before, after;
+    FILE *input = NULL;
+    int fd = -1, copy = -1, ok = 0, ended = 0, lines = 0;
+    unsigned long cursor = 0;
+    size_t total = 0, n, payload_length;
+    long seq = 0;
+    char previous[65], digest[65], framing[256], footer[128];
+    const char *kind, *data;
+    if (!chaos_next_use_capture_journal_enter(&status)) return 0;
+    /* Never reset an existing writer, including a closed terminal writer. */
+    if (journal.started) goto done;
+    if (!chaos_next_use_snapshot_export(&saved)) { ok = 1; goto done; }
+    if (saved.journal_state == CHAOS_JOURNAL_NONE) { ok = 1; goto done; }
+    journal.started = 1;
+    if (saved.journal_state == CHAOS_JOURNAL_FAILED || status.incomplete
+        || status.transaction_open || dir < 0
+        || fstat(dir, &before) || !S_ISDIR(before.st_mode)
+        || before.st_uid != getuid() || (before.st_mode & 077)) goto rejected;
+    fd = openat(dir, "next_use-journal.jsonl",
+                (saved.journal_state == CHAOS_JOURNAL_COMPLETE ? O_RDONLY : O_RDWR)
+                | O_NOFOLLOW | O_NONBLOCK | O_CLOEXEC);
+    if (fd < 0 || fstat(fd, &before) || !S_ISREG(before.st_mode)
+        || before.st_uid != getuid() || before.st_nlink != 1
+        || (before.st_mode & 077) || before.st_size < 1
+        || (unsigned long)before.st_size != saved.journal_bytes
+        || saved.journal_bytes > CHAOS_JOURNAL_BYTES_MAX) goto rejected;
+    copy = dup(fd);
+    if (copy < 0) goto rejected;
+    input = fdopen(copy, "r");
+    if (!input) { close(copy); goto rejected; }
+    memset(previous, '0', 64); previous[64] = 0;
+    memcpy(journal.source_sha256, saved.source_sha256, 65);
+    while (fgets(journal.line, sizeof journal.line, input)) {
+        n = strlen(journal.line);
+        if (ended || n < 100 || n >= CHAOS_JOURNAL_LINE_MAX
+            || journal.line[n - 1] != '\n'
+            || ++lines > CHAOS_JOURNAL_RECORDS_MAX + 2
+            || total + n > saved.journal_bytes) goto rejected;
+        total += n;
+        /* Fixed suffix, including the exact payload closing brace and LF. */
+        payload_length = n - 11 - (sizeof(",\"sha256\":\"") - 1) - 64 - 3;
+        if (journal.line[11 + payload_length - 1] != '}') goto rejected;
+        {
+            unsigned char raw[32];
+            int i;
+            if (chaos_next_use_sha256(journal.line + 11, payload_length, raw))
+                goto rejected;
+            for (i = 0; i < 32; ++i) sprintf(digest + i * 2, "%02x", raw[i]);
+        }
+        snprintf(framing, sizeof framing, ",\"sha256\":\"%s\"}\n", digest);
+        if (strcmp(journal.line + 11 + payload_length, framing)) goto rejected;
+        if (lines == 1) kind = "header";
+        else if (!strncmp(journal.line, "{\"payload\":{\"v\":1,\"kind\":\"end\",",
+                          sizeof("{\"payload\":{\"v\":1,\"kind\":\"end\",") - 1)) {
+            kind = "end"; ended = 1;
+        } else { kind = "transition"; ++cursor; }
+        if (cursor > CHAOS_JOURNAL_RECORDS_MAX) goto rejected;
+        snprintf(framing, sizeof framing,
+            "{\"payload\":{\"v\":1,\"kind\":\"%s\",\"cursor\":%lu,\"prev\":\"%s\",\"data\":",
+            kind, cursor, previous);
+        data = journal.line;
+        if (!take(&data, framing)) goto rejected;
+        if (lines == 1) {
+            if (!header_binding(data, &saved)) goto rejected;
+        } else if (ended) {
+            snprintf(footer, sizeof footer,
+                "{\"status\":\"complete\",\"terminal_seq\":%ld}}", seq);
+            if (!cursor || (size_t)(journal.line + 11 + payload_length - data) != strlen(footer)
+                || strncmp(data, footer, strlen(footer))) goto rejected;
+        } else if (!inner_cursor(data, cursor, &seq)) goto rejected;
+        memcpy(previous, digest, 65);
+    }
+    if (ferror(input) || !lines || total != saved.journal_bytes
+        || cursor != saved.replay_cursor || strcmp(previous, saved.journal_sha256)
+        || ended != (saved.journal_state == CHAOS_JOURNAL_COMPLETE)) goto rejected;
+    if (fclose(input)) { input = NULL; goto rejected; }
+    input = NULL;
+    if (fstat(fd, &after) || before.st_dev != after.st_dev
+        || before.st_ino != after.st_ino || before.st_size != after.st_size
+        || before.st_mode != after.st_mode || before.st_uid != after.st_uid
+        || after.st_nlink != 1
+        || before.st_mtim.tv_sec != after.st_mtim.tv_sec
+        || before.st_mtim.tv_nsec != after.st_mtim.tv_nsec
+        || before.st_ctim.tv_sec != after.st_ctim.tv_sec
+        || before.st_ctim.tv_nsec != after.st_ctim.tv_nsec) goto rejected;
+    if (ended) {
+        int rc = close(fd);
+        fd = -1;
+        if (rc) goto rejected;
+    } else if (fcntl(fd, F_SETFL, O_APPEND | O_NONBLOCK) < 0) goto rejected;
+    journal.fd = fd; fd = -1;
+    journal.cursor = cursor; journal.bytes = total; journal.ended = ended;
+    memcpy(journal.previous, previous, 65);
+    /* Closed COMPLETE retains its status subscriber, never a writable fd. */
+    chaos_next_use_capture_set_sink(sink, NULL);
+    ok = 1;
+    goto done;
+rejected:
+    if (input) fclose(input);
+    if (fd >= 0) close(fd);
+    journal.failed = 1;
+    /* Unlike fail(), rejection must never touch the untrusted input bytes. */
+    chaos_next_use_capture_journal_fail();
+done:
+    chaos_next_use_capture_journal_leave();
+    return ok;
 }
 int chaos_next_use_journal_begin(int dir)
 {
@@ -296,27 +493,31 @@ int chaos_next_use_journal_begin(int dir)
     struct chaos_next_use_snapshot initial;
     const struct chaos_next_use_runtime_private_record *a, *b;
     struct chaos_next_use_capture_status status;
-    if (journal.started) { chaos_next_use_capture_fail(); return 0; }
+    int result = 0;
+    /* Reentrant callers neither reset the writer nor release the outer guard. */
+    if (!chaos_next_use_capture_journal_enter(&status)) return 0;
+    if (journal.started) { chaos_next_use_capture_fail(); goto done; }
     journal.started = 1;
-    chaos_next_use_capture_status(&status);
     chaos_next_use_capture_set_sink(sink, NULL);
     if (status.incomplete || status.transaction_open || status.acknowledged_cursor
         || !chaos_next_use_snapshot_export(&initial) || initial.replay_cursor
         || initial.phase != CHAOS_ATTEMPT_COMMITTED
+        || initial.journal_state != CHAOS_JOURNAL_NONE
+        || initial.capture_incomplete
         || chaos_next_use_runtime_private_count() != 2
         || fstat(dir, &st) || !S_ISDIR(st.st_mode) || st.st_uid != getuid()
-        || (st.st_mode & 077)) { fail(); return 0; }
+        || (st.st_mode & 077)) goto failed;
     a = chaos_next_use_runtime_private_at(0);
     b = chaos_next_use_runtime_private_at(1);
     if (!a || !b || a->kind != CHAOS_RUNTIME_PRIVATE_ATTEMPT
-        || b->kind != CHAOS_RUNTIME_PRIVATE_ADMISSION) { fail(); return 0; }
+        || b->kind != CHAOS_RUNTIME_PRIVATE_ADMISSION) goto failed;
     journal.fd = openat(dir, "next_use-journal.jsonl",
                         O_WRONLY | O_CREAT | O_EXCL | O_NOFOLLOW | O_NONBLOCK | O_CLOEXEC, 0600);
-    if (journal.fd < 0) { fail(); return 0; }
+    if (journal.fd < 0) goto failed;
     if (fstat(journal.fd, &st) || !S_ISREG(st.st_mode) || st.st_uid != getuid()
         || st.st_nlink != 1 || (st.st_mode & 077) || st.st_size != 0) {
         /* Never write to an unverified descriptor, including a failure marker. */
-        (void)close(journal.fd); journal.fd = -1; fail(); return 0;
+        (void)close(journal.fd); journal.fd = -1; goto failed;
     }
     memset(journal.previous, '0', 64); journal.previous[64] = 0;
     memcpy(journal.source_sha256, initial.source_sha256, 65);
@@ -324,6 +525,14 @@ int chaos_next_use_journal_begin(int dir)
     put("{\"snapshot\":"); snapshot(&initial);
     put(",\"private_records\":["); private_record(a); put(","); private_record(b);
     put("]}");
-    if (!finish_line() || !sync_all(dir)) { fail(); return 0; }
-    return 1;
+    if (!finish_line() || !sync_all(dir)) goto failed;
+    chaos_next_use_capture_journal_ack(CHAOS_JOURNAL_OPEN,
+        (unsigned long)journal.bytes, journal.previous);
+    result = 1;
+    goto done;
+failed:
+    fail();
+done:
+    chaos_next_use_capture_journal_leave();
+    return result;
 }

@@ -87,7 +87,8 @@ callback_ordinal witnessed attention_claimed whistle_count fountain_count next_s
 termination_emitted identity_unsafe callback_w callback_f last_root admission_move
 program_expiry delay_until variant origin_w_live origin_f_live armed_m_id replay_cursor
 origin_w origin_f origin_w_deadline origin_f_deadline run_token level_token
-activation_monstermoves armed_root source_length source_sha256 binding_sha256 source_hex"""
+activation_monstermoves armed_root source_length source_sha256 binding_sha256 source_hex
+journal_state journal_bytes journal_sha256 capture_incomplete"""
 _POST = """phase delay_used delay_until termination_emitted identity_unsafe
 pending_w_capture f_inflight witnessed attention_claimed callback_w callback_f
 whistle_count fountain_count origin_w_live origin_f_live manifest_success armed_m_id
@@ -108,7 +109,10 @@ invalid pending_w_capture f_inflight manifest_success active remap consumed
 reason_present intent_present intent_sha256_present failure_code_present delay_used_after""".split()
 )
 _RANGES = {
-    "snapshot_v": (4, 4),
+    "snapshot_v": (5, 5),
+    "journal_state": (0, 0),
+    "journal_bytes": (0, 0),
+    "capture_incomplete": (0, 0),
     "replay_input_v": (1, 1),
     "next_use_private_v": (2, 2),
     "next_use_public_v": (2, 2),
@@ -162,7 +166,8 @@ def _scalars(value, names, nested=()):
 
 
 def _snapshot(s):
-    _scalars(s, _SNAPSHOT, ("source_hex",))
+    _scalars(s, _SNAPSHOT, ("source_hex", "journal_sha256"))
+    _require(s["journal_sha256"] == "", "initial journal anchor")
     text = s["source_hex"]
     _require(
         type(text) is str

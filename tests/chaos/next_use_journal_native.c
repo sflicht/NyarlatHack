@@ -3,6 +3,31 @@
 #include "next_use_fountain.c"
 #undef main
 #include <errno.h>
+#include <signal.h>
+#include "chaos_next_use_journal.h"
+
+/* Controlled component interruption, not an executed Unix hangup path. */
+static const char *header_probe;
+static int probe_fd = -1, probe_dir = -1;
+static volatile sig_atomic_t probe_seen, probe_status, probe_saved, probe_open;
+static int probe_reentrant = -1;
+static void header_signal(int sig)
+{
+    struct chaos_next_use_capture_status status;
+    (void)sig;
+    probe_status = chaos_next_use_save_status();
+    chaos_next_use_capture_status(&status);
+    probe_open = status.transaction_open;
+    probe_saved = chaos_next_use_save(probe_fd);
+}
+static void interrupt_header(const char *point)
+{
+    if (!header_probe || probe_seen || strcmp(header_probe, point)) return;
+    probe_seen = 1;
+    if (!strcmp(point, "reentrant"))
+        probe_reentrant = chaos_next_use_journal_begin(probe_dir);
+    assert(!raise(SIGUSR1));
+}
 
 ssize_t __real_write(int, const void *, size_t);
 int __real_fsync(int);
@@ -21,6 +46,10 @@ ssize_t __wrap_write(int fd, const void *buf, size_t n)
 {
     static int interrupted, calls;
     const char *fault = getenv("JOURNAL_TEST_FAULT");
+    if (journal_fd(fd)) {
+        interrupt_header("write");
+        interrupt_header("reentrant");
+    }
     if (fault && journal_fd(fd)) {
         ++calls;
         if (!strcmp(fault, "short")) {
@@ -28,6 +57,7 @@ ssize_t __wrap_write(int fd, const void *buf, size_t n)
             if (n > 7) n = 7;
         }
         if (!strcmp(fault, "sync4-persistent") && calls >= 5) { errno = EIO; return -1; }
+        if (!strcmp(fault, "header-write") && calls == 1) { errno = EIO; return -1; }
         if (!strcmp(fault, "write") && calls == 3) { errno = EIO; return -1; }
         if (!strcmp(fault, "zero") && calls == 3) return 0;
     }
@@ -37,6 +67,12 @@ int __wrap_fsync(int fd)
 {
     static int count, interrupted;
     const char *fault = getenv("JOURNAL_TEST_FAULT");
+    struct stat st;
+    if (!fstat(fd, &st) && S_ISDIR(st.st_mode)) interrupt_header("dirsync");
+    if (journal_fd(fd)) interrupt_header("fsync");
+    if (fault && !strcmp(fault, "dirsync") && !fstat(fd, &st) && S_ISDIR(st.st_mode)) {
+        errno = EIO; return -1;
+    }
     if (journal_fd(fd)) {
         if (fault && !strcmp(fault, "short") && !interrupted++) {
             errno = EINTR; return -1;
@@ -68,6 +104,7 @@ int main(int argc, char **argv)
     char run[65];
     struct chaos_fountain_token token;
     struct chaos_next_use_capture_status status;
+    struct chaos_next_use_snapshot checkpoint;
     struct chaos_next_use_safe_result result;
     long obs, root;
     FILE *out;
@@ -88,8 +125,35 @@ int main(int argc, char **argv)
     /* Keep approved origin move/source unchanged; advance only the live clock. */
     if (mode && !strcmp(mode, "deadline")) monstermoves = 140;
     if (mode && !strcmp(mode, "deadline-late")) monstermoves = 141;
+    header_probe = getenv("JOURNAL_TEST_HEADER_PROBE");
+    if (header_probe) {
+        probe_dir = dir;
+        probe_fd = open("interrupted.save", O_RDWR | O_CREAT | O_EXCL, 0600);
+        assert(probe_fd >= 0);
+        assert(write(probe_fd, "save-sentinel", 13) == 13);
+        assert(lseek(probe_fd, 3, SEEK_SET) == 3);
+        assert(signal(SIGUSR1, header_signal) != SIG_ERR);
+    }
     admitted = chaos_next_use_on_safe(dir, 7, 50, &u.chaos, 0, 1);
     chaos_next_use_safe_last(&result);
+    if (header_probe) {
+        struct chaos_next_use_capture_status settled;
+        int saved, fd;
+        chaos_next_use_capture_status(&settled);
+        fd = open("settled.save", O_WRONLY | O_CREAT | O_EXCL, 0600);
+        assert(fd >= 0);
+        saved = chaos_next_use_save(fd);
+        close(fd);
+        out = fopen("header-probe.json", "w");
+        assert(out);
+        fprintf(out, "{\"seen\":%d,\"status\":%d,\"saved\":%d,\"open\":%d,\"offset\":%ld,\"reentrant\":%d,\"settled_status\":%d,\"settled_saved\":%d,\"settled_open\":%d}\n",
+                (int)probe_seen, (int)probe_status, (int)probe_saved,
+                (int)probe_open, (long)lseek(probe_fd, 0, SEEK_CUR),
+                probe_reentrant, chaos_next_use_save_status(), saved,
+                settled.transaction_open);
+        fclose(out);
+        close(probe_fd);
+    }
     close(dir);
     hunger_before = u.uhunger;
     memset(&token, 0, sizeof token);
@@ -101,6 +165,7 @@ int main(int argc, char **argv)
         goto report; /* Rejected admission must never call native effects. */
     }
     if (admitted || !result.active) return 4;
+    if (mode && !strcmp(mode, "header")) goto report;
     reseed_period = INT_MAX;
     reseed_count = 0;
     /* Preselected controlled native seed, shared with the capture fixture.
@@ -122,12 +187,42 @@ int main(int argc, char **argv)
     }
 report:
     chaos_next_use_capture_status(&status);
+    memset(&checkpoint, 0, sizeof checkpoint);
+    if (result.admitted) {
+        assert(chaos_next_use_snapshot_export(&checkpoint));
+        assert(chaos_next_use_save_status() == CHAOS_SNAPSHOT_VALID);
+        assert(!status.transaction_open);
+        if (header_probe) {
+            struct chaos_next_use_snapshot saved;
+            char magic[4];
+            int present, fd = open("settled.save", O_RDONLY);
+            assert(fd >= 0);
+            assert(read(fd, magic, 4) == 4 && !memcmp(magic, "NUS1", 4));
+            assert(read(fd, &present, sizeof present) == sizeof present);
+            assert(present == CHAOS_SNAPSHOT_VALID);
+            assert(chaos_next_use_snapshot_read(fd, &saved));
+            assert(!memcmp(&checkpoint, &saved, sizeof saved));
+            close(fd);
+        }
+        if (status.incomplete) {
+            struct chaos_next_use_snapshot restored;
+            struct chaos_next_use_capture_status imported_status;
+            assert(chaos_next_use_snapshot_import(&checkpoint));
+            assert(chaos_next_use_snapshot_export(&restored));
+            assert(!memcmp(&checkpoint, &restored, sizeof checkpoint));
+            chaos_next_use_capture_status(&imported_status);
+            assert(imported_status.incomplete && !imported_status.sink_connected);
+            assert(!imported_status.transaction_open);
+            assert(chaos_next_use_save_status() == CHAOS_SNAPSHOT_VALID);
+        }
+    }
     out = fopen("result.json", "w");
     if (!out) return 5;
-    fprintf(out, "{\"admitted\":%d,\"rejected\":%d,\"spent\":%d,\"hunger_delta\":%d,\"consumed\":%d,\"incomplete\":%d,\"cursor\":%lu}\n",
+    fprintf(out, "{\"admitted\":%d,\"rejected\":%d,\"spent\":%d,\"hunger_delta\":%d,\"consumed\":%d,\"incomplete\":%d,\"cursor\":%lu,\"journal_state\":%d,\"journal_bytes\":%lu,\"journal_sha256\":\"%s\"}\n",
             result.admitted, result.rejected, u.chaos.spent,
             u.uhunger - hunger_before, token.consumed,
-            status.incomplete, status.acknowledged_cursor);
+            status.incomplete, status.acknowledged_cursor,
+            checkpoint.journal_state, checkpoint.journal_bytes, checkpoint.journal_sha256);
     fclose(out);
     return 0;
 }

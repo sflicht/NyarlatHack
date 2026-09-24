@@ -451,6 +451,92 @@ int main(int argc, char **argv)
         return 0;
     }
 #endif
+    if (!strcmp(mode, "checkpoint_wire")) {
+        struct chaos_next_use_snapshot before, after, decoded;
+        unsigned char wire[8192], kept[8192];
+        int32_t value;
+        size_t length;
+        FILE *fp = tmpfile();
+        if (argc != 4 || !fp || !install_pending()
+            || !chaos_next_use_snapshot_export(&before)
+            || !chaos_next_use_snapshot_write(fileno(fp), &before)) return 1;
+        length = (size_t)lseek(fileno(fp), 0, SEEK_CUR);
+        if (length > sizeof wire) return 2;
+        rewind(fp);
+        if (read(fileno(fp), wire, length) != (ssize_t)length) return 3;
+        if (!strcmp(argv[2], "old4")) {
+            /* Literal v4 layout: 37 int32s, two hashes, source; never upgrade. */
+            value = 4;
+            memcpy(wire, &value, sizeof value);
+            memmove(wire + 37 * 4, wire + 40 * 4, 130);
+            memmove(wire + 37 * 4 + 130, wire + 40 * 4 + 195, before.source_length);
+            length = 37 * 4 + 130 + before.source_length;
+        } else if (!strcmp(argv[2], "hash")) {
+            wire[40 * 4 + 130] = 'a';
+        } else {
+            value = atoi(argv[3]);
+            memcpy(wire + atoi(argv[2]) * 4, &value, sizeof value);
+        }
+        rewind(fp);
+        if (write(fileno(fp), wire, length) != (ssize_t)length
+            || ftruncate(fileno(fp), (off_t)length)) return 4;
+        rewind(fp);
+        decoded = before;
+        if (chaos_next_use_snapshot_read(fileno(fp), &decoded)
+            || memcmp(&decoded, &before, sizeof before)
+            || !chaos_next_use_snapshot_export(&after)
+            || memcmp(&after, &before, sizeof before)) return 5;
+        rewind(fp);
+        if (read(fileno(fp), kept, length) != (ssize_t)length
+            || memcmp(wire, kept, length)) return 6;
+        fclose(fp);
+        printf("{\"preserved\":1}\n");
+        return 0;
+    }
+    if (!strcmp(mode, "checkpoint")) {
+        struct chaos_next_use_snapshot before, after, decoded;
+        struct chaos_next_use_capture_status status;
+        FILE *fp = tmpfile();
+        int valid, got;
+        if (argc != 9 || !fp || !install_pending()
+            || !chaos_next_use_snapshot_export(&before)) return 1;
+        snap = before;
+        snap.journal_state = atoi(argv[2]);
+        snap.capture_incomplete = atoi(argv[3]);
+        snap.journal_bytes = strtoul(argv[4], NULL, 10);
+        snap.replay_cursor = strtoul(argv[5], NULL, 10);
+        if (strcmp(argv[6], "empty")) {
+            strncpy(snap.journal_sha256, argv[6], 65);
+        }
+        if (atoi(argv[7])) {
+            snap.phase = CHAOS_ATTEMPT_TERMINATED;
+            snap.termination_emitted = 1;
+            snap.slot_w = CHAOS_SLOT_W_TERMINATED_EXPIRY;
+        }
+        valid = atoi(argv[8]);
+        if (chaos_next_use_snapshot_validate(&snap) != valid) return 2;
+        decoded = before;
+        got = chaos_next_use_snapshot_write(fileno(fp), &snap);
+        if (got != valid) return 3;
+        if (valid) {
+            rewind(fp);
+            if (!chaos_next_use_snapshot_read(fileno(fp), &decoded)
+                || memcmp(&snap, &decoded, sizeof snap)) return 4;
+        }
+        if (chaos_next_use_snapshot_import(&snap) != valid
+            || !chaos_next_use_snapshot_export(&after)
+            || memcmp(valid ? &snap : &before, &after, sizeof after)) return 5;
+        chaos_next_use_capture_status(&status);
+        if (valid && (status.incomplete != snap.capture_incomplete
+                      || status.sink_connected)) return 6;
+        fclose(fp);
+        printf("{\"valid\":%d}\n", valid);
+        return 0;
+    }
+    if (!strcmp(mode, "checkpoint_version")) {
+        printf("{\"version\":%d}\n", CHAOS_NEXT_USE_SNAPSHOT_V);
+        return 0;
+    }
     if (!strcmp(mode, "legacy_no_invented_witness")) {
         /* Literal historical v2 layout: progress but no persisted witness.
          * The missing information is not recoverable from callback count. */

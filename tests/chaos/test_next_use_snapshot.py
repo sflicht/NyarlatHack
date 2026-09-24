@@ -279,6 +279,59 @@ class NextUseSnapshotTests(unittest.TestCase):
         self.assertEqual(rows[2]["sha"], rows[0]["sha"])
         self.assertEqual(rows[2]["source_len"], rows[0]["source_len"])
 
+    def test_checkpoint_wire_errors_preserve_destination_live_and_bytes(self):
+        for field, value in (
+            ("old4", 0),
+            (37, 4),
+            (38, -1),
+            (38, 2),
+            (39, -1),
+            (39, 8388609),
+            ("hash", 0),
+            (21, -1),
+        ):
+            with self.subTest(field=field, value=value):
+                self.assertEqual(
+                    self.run_mode("checkpoint_wire", field, value), [{"preserved": 1}]
+                )
+
+    def test_checkpoint_roundtrip_and_atomic_rejection(self):
+        digest = hashlib.sha256(b"independent acknowledged payload").hexdigest()
+        cases = [
+            (0, 0, 0, 17, "empty", 0, 1),
+            (0, 1, 0, 17, "empty", 0, 1),
+            (1, 0, 1234, 0, digest, 0, 1),
+            (1, 0, 1234, 4096, digest, 0, 1),
+            (2, 0, 1234, 2, digest, 1, 1),
+            (3, 1, 0, 0, "empty", 0, 1),
+            (3, 1, 1234, 1, digest, 1, 1),
+            (4, 1, 0, 0, "empty", 0, 0),
+            (0, 2, 0, 0, "empty", 0, 0),
+            (0, -1, 0, 0, "empty", 0, 0),
+            (0, 0, 1, 0, "empty", 0, 0),
+            (0, 0, 0, 0, digest, 0, 0),
+            (1, 1, 1234, 1, digest, 0, 0),
+            (1, 0, 0, 0, "empty", 0, 0),
+            (1, 0, 8388609, 1, digest, 0, 0),
+            (1, 0, 1234, 4097, digest, 0, 0),
+            (1, 0, 1234, 1, digest.upper(), 0, 0),
+            (1, 0, 1234, 1, "f" * 65, 0, 0),
+            (1, 0, 1234, 1, digest, 1, 0),
+            (2, 0, 1234, 0, digest, 1, 0),
+            (2, 0, 1234, 1, digest, 0, 0),
+            (3, 0, 1234, 1, digest, 0, 0),
+            (3, 1, 0, 1, "empty", 0, 0),
+            (3, 1, 1234, 1, "empty", 0, 0),
+        ]
+        for case in cases:
+            with self.subTest(case=case):
+                self.assertEqual(
+                    self.run_mode("checkpoint", *case), [{"valid": case[-1]}]
+                )
+
+    def test_explicit_v5_checkpoint_format(self):
+        self.assertEqual(self.run_mode("checkpoint_version")[0]["version"], 5)
+
     def test_bad_version_does_not_overwrite_live(self):
         rows = self.run_mode("bad_version")
         self.assertEqual(rows[-1]["validated"], 0)

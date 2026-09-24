@@ -61,11 +61,23 @@ static void state(void)
         s.delay_until, s.variant, s.binding_sha256);
     fprintf(f, ",\"snapshot_v\":%d,\"program_id\":%d,\"phase\":%d,"
         "\"origin_w_live\":%d,\"origin_f_live\":%d,\"identity_unsafe\":%d,"
-        "\"termination_emitted\":%d,\"replay_cursor\":%lu,\"source_length\":%lu}\n",
+        "\"termination_emitted\":%d,\"replay_cursor\":%lu,\"source_length\":%lu",
         s.snapshot_v, s.program_id, s.phase, s.origin_w_live, s.origin_f_live,
         s.identity_unsafe, s.termination_emitted, s.replay_cursor,
         (unsigned long)s.source_length);
+    fprintf(f, ",\"journal_state\":%d,\"journal_bytes\":%lu,"
+        "\"journal_sha256\":\"%s\",\"capture_incomplete\":%d}\n",
+        s.journal_state, s.journal_bytes, s.journal_sha256, s.capture_incomplete);
     assert(!fclose(f));
+    {
+        struct chaos_next_use_capture_status c;
+        chaos_next_use_capture_status(&c);
+        f = file("capture.json", "w");
+        fprintf(f, "{\"sink_connected\":%d,\"incomplete\":%d,"
+            "\"transaction_open\":%d,\"acknowledged_cursor\":%lu}\n",
+            c.sink_connected, c.incomplete, c.transaction_open, c.acknowledged_cursor);
+        assert(!fclose(f));
+    }
     if (valid && s.w_runtime == CHAOS_W_RUNTIME_WINDOW_ENDED
         && access("window-ended.json", F_OK) != 0) {
         /* Read-only first observation, including the pre-clock-advance sample. */

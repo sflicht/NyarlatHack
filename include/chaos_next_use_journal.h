@@ -9,5 +9,6 @@
  * Failure affects capture only, not admission or gameplay. */
 int chaos_next_use_journal_begin(int dir);
 void chaos_next_use_journal_reset(void);
-void chaos_next_use_journal_restore_unsupported(void);
+/* Validate the saved anchor and attach only to its existing prefix. */
+int chaos_next_use_journal_resume(int dir);
 #endif

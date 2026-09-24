@@ -14,7 +14,7 @@
 #include <string.h>
 #include <unistd.h>
 
-static int settled;
+static int settled, resume_pending;
 static char owned_run[65];
 static int owned_run_set;
 static int (*owned_warn)(void *, const char *);
@@ -37,7 +37,7 @@ void chaos_next_use_safe_bind_logical(long run_token)
 void chaos_next_use_safe_reset_for_test(void)
 {
     chaos_next_use_journal_reset();
-    settled = 0;
+    settled = resume_pending = 0;
     owned_run_set = 0;
     logical_run = 0;
     owned_run[0] = '\0';
@@ -104,15 +104,22 @@ int chaos_next_use_safe_restore_attempted(int attempted)
         || (!attempted && chaos_next_use_runtime_run_token() > 0))
         return 0;
     if (attempted || chaos_next_use_runtime_run_token() > 0)
-        chaos_next_use_journal_restore_unsupported();
+        resume_pending = 1;
     settled = attempted;
     return 1;
 }
 
 void chaos_next_use_safe_mark_restored(void)
 {
-    chaos_next_use_journal_restore_unsupported();
+    resume_pending = 1;
     settled = 1;
+}
+
+void chaos_next_use_safe_resume(int dir)
+{
+    if (!resume_pending) return;
+    (void)chaos_next_use_journal_resume(dir);
+    resume_pending = 0;
 }
 
 int chaos_next_use_safe_last(struct chaos_next_use_safe_result *out)
