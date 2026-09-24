@@ -24,6 +24,9 @@ class NextUseUnixSaveTests(unittest.TestCase):
     def setUpClass(cls):
         assert (ROOT / ".chaos-build").read_text().strip() == "1"
         cls.artifacts = Path(tempfile.mkdtemp(prefix="nyarl-next-use-unix-save-"))
+        # One readonly snapshot per unique executable/data image for this suite;
+        # all logs, saves, runs and other case files remain private.
+        cls.asset_pool = cls.artifacts / "assets"
         print("NEXT_USE_UNIX_SAVE_ARTIFACTS=" + str(cls.artifacts), flush=True)
         cls.clock = cls.artifacts / "clock.so"
         subprocess.run(
@@ -203,11 +206,14 @@ class NextUseUnixSaveTests(unittest.TestCase):
         source = "".join(json.loads(s) for s in re.findall(r'"(?:[^"\\]|\\.)*"', block))
         sha = hashlib.sha256(source.encode("ascii")).hexdigest()
         results = []
+        self._build_two_family_game()
         for interrupted in (False, True):
             game = Game(
                 ROOT / "dnethackdir",
                 self.clock,
                 wizard=True,
+                asset_pool=self.asset_pool,
+                executable=self.two_family_exe,
                 root=self.artifacts
                 / (
                     order
@@ -217,8 +223,6 @@ class NextUseUnixSaveTests(unittest.TestCase):
                 ),
             )
             self.addCleanup(game.close)
-            self._build_two_family_game()
-            shutil.copy2(self.two_family_exe, game.game / "dnethack")
             game.start()
             self.assertTrue(
                 (game.game / "fixture.json").exists(),
@@ -654,6 +658,7 @@ class NextUseUnixSaveTests(unittest.TestCase):
             self.clock,
             observe=True,
             wizard=True,
+            asset_pool=self.asset_pool,
             root=self.artifacts
             / (departure or ("empty-first" if save_before_origin else "save")),
         )
