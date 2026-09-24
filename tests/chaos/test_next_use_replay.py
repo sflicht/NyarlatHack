@@ -22,6 +22,7 @@ class NextUseReplayTests(unittest.TestCase):
         command = [
             "/usr/bin/gcc",
             "-DCHAOS",
+            "-DCHAOS_NEXT_USE_TEST_LEGACY_REPLAY",
             "-ffunction-sections",
             "-fdata-sections",
             "-Wall",
