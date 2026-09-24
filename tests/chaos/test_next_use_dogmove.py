@@ -101,6 +101,7 @@ class NextUseDogMoveTests(unittest.TestCase):
         host["run"] = engine_run_hex(folder)
         host["move"] = move
         publish_envelope(folder, row, host)
+        original = (folder / "next_use-envelope.json").read_bytes()
         env = dict(os.environ)
         env["NYARLATHACK_RUN_DIR"] = str(folder)
         env["NYARLATHACK_OBSERVATIONS"] = "1"
@@ -116,6 +117,20 @@ class NextUseDogMoveTests(unittest.TestCase):
             cwd=folder,
         )
         self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        if name in ("safehit", "safemiss", "obsorigin", "unequalclock"):
+            self.assertEqual((folder / "next_use-envelope.json").read_bytes(), original)
+            self.assertFalse((folder / "fixture-envelope-held.json").exists())
+            self.assertRegex(
+                (folder / "next_use-owner").read_text(), r"^NUO1:[0-9a-f]{16}\n$"
+            )
+            sessions = [
+                json.loads(line)
+                for line in (folder / "events.jsonl").read_text().splitlines()
+            ]
+            self.assertEqual(
+                [row["detail"] for row in sessions if row["event"] == "session"],
+                ["new"],
+            )
         return json.loads((folder / "result.json").read_text())
 
     def test_admitted_dog_move_consumes_extra_attention(self):

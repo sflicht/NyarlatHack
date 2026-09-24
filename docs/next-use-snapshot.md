@@ -105,6 +105,60 @@ cannot mask missing phase, clock or width checks. Separate integrity fixtures
 retain the stale binding and include valid-value/recomputed-digest controls.
 Bypassing the exact 100-move expiry validator must fail the semantic suite.
 
+## Transport ownership across logical lifetimes
+
+A transport directory is not a game identity. In particular, new native games
+reset observation sequences and can repeat the same moves and safe-point index.
+Previously, an unchanged envelope and receipt in a reused directory could be
+admitted by a different game: the directory-bound origins matched, and only
+then was the new player token attached to the installed program.
+
+For next-use-enabled fresh starts, the engine now allocates the existing
+`u.chaos_game_token` **before the first event**, rather than at a later admission
+safe point. It exclusively creates a private `next_use-owner` file containing
+`NUO1:` plus the token as 16 lowercase hexadecimal digits and a newline. Creation
+requires no existing candidate, receipt, load-only source or used-source marker,
+and no nonempty event/whisper history. The empty logs just opened by the engine
+are allowed. Existing foreign, malformed, symlinked or non-private bindings are
+not overwritten. This remains a local ownership check, not authentication
+against an owner rewriting files or saves. Creation attempts synchronization,
+but a synchronization or close failure is not a sticky process-wide admission
+latch: a later safe point independently checks the readable marker. A complete,
+matching marker may then establish ownership for the **same** logical game.
+This check does not certify crash durability or authenticate another process.
+
+At every admission safe point, the engine rereads that binding against the
+player's persisted token. Missing or foreign ownership supplies no logical
+admission authority; the existing scheduled-attempt path rejects before warning,
+debit or installation. It does not rewrite the candidate, append a success
+receipt, reset the budget or reset the saved attempt latch. Neither restarting
+nor saving/restoring an unrelated game adopts the old directory. Normal event
+and origin-schedule logging may still append; their old byte prefixes survive.
+
+Restore never creates or repairs this binding. This deliberately means an older
+unadmitted save with no marker, a game first started without next-use enabled,
+or a restore redirected into an unbound transport cannot gain fresh admission
+there. There is no implicit migration. Already-admitted native saved state is
+still authoritative and continues without a candidate or ownership marker;
+its saved attempt latch prevents readmission. Copying the transport including
+its marker preserves ownership for the same logical game, but does not rebind
+inode-based origin references: existing admitted relocation works; old unadmitted
+references from another inode do not become valid. Start a genuinely new game
+with a clean transport for a new admission lifetime; deleting or replacing old
+history in place is not an automatic reset protocol.
+
+The Unix regression uses the declared wizard geometry/RNG fixture, **not ordinary
+play**. One game earns both real origins and a native receipt, saves and exits;
+a distinct game with an empty save directory then uses the exact same transport
+inode, birthday, seed, clock, origin sequence/move references and admission index.
+The fresh game must have zero warning/debit/install/callback/attention/remap from
+the old candidate. Two more cases take matching empty-save/restore paths before
+origins, with the old owner present or missing, so restart cannot hide behind
+nonmatching references or a process-only fresh flag. Candidate, receipt and author
+bytes remain unchanged; old event/schedule prefixes remain intact. The existing
+same-game two-family continuation, empty-save admission and relocation matrix
+provides the positive controls.
+
 ## Still-open boundaries
 
 The separately saved attempt latch distinguishes an unused empty game from a
@@ -117,8 +171,9 @@ with pending and completed quiet programs. Component fixtures cover pending,
 armed and completed departure histories, rejecting foreign-game identities and
 active foreign-level restores without replacing live state.
 
-Short-read handling through native compression, directory-reuse/relocation
-coverage, and actual two-family save/process-exit continuation still need
-evidence before #63/#64/#92 or the recovery milestone closes. Transport
-device/inode binding remains a separate local file defense; it is not logical
-saved-game identity.
+Short-read handling through native compression and the remaining recovery cases
+still need separate evidence before the recovery milestone closes. The controlled
+Unix matrix now covers two-family save/process-exit continuation, admitted
+relocation and the unrelated-directory-reuse boundary above; this is not whole
+#63/#64/#92 or #65 sign-off. Transport device/inode binding remains a separate
+local file defense; it is not logical saved-game identity.
