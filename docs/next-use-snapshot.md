@@ -1,8 +1,8 @@
 # Next-use persistence snapshot
 
 Whistle capability **W** and fountain capability **F** each permit at most one
-callback in an admitted program. This document describes the in-progress
-snapshot repair for #63; full native save/process-exit continuation is #64 and
+callback in an admitted program. This document describes the bounded
+snapshot contract for #63; full native save/process-exit continuation is #64 and
 logical game identity is #92. Component tests are not completion of those gates.
 
 ## Authoritative values
@@ -27,9 +27,26 @@ telegraphs or draws gameplay random numbers.
 
 Record arrays are process-local output buffers, not a second source of game
 state. Continuation starts an empty buffer with the persisted next sequence;
-the earlier segment must be retained by the recorder. Complete checkpointed
-native replay and independently checked trace continuity remain #65; resetting
-these buffers alone is not replay evidence.
+the earlier segment must be retained by the recorder. Remaining replay acceptance
+belongs to #65; resetting these buffers alone is not replay evidence. The bounded
+merged recording/playback tests are distinguished below.
+
+## Owner, cache, lifetime and reset contract
+
+Each live value has one authoritative owner. A `chaos_next_use_snapshot`, an
+admission staging struct or a copied Lua context is a value transfer, **not a
+second owner**. In particular, admission evidence is not an author's plan, a
+candidate's asserted origin or a transport receipt reconstructed as authority.
+
+| Values | Authoritative owner / callers | Derived or process-local copies | Lifetime and reset / restore rule |
+| --- | --- | --- | --- |
+| Retained W/F admission evidence | `src/chaos_engine.c:next_use_origin[2]`; `observation_notice` records a qualifying delivered notice, then `chaos_observation_end` marks readiness after schedule publication. | `next_use_bind_owned` copies ready refs to safe admission; `next_use-schedule.jsonl` is output for the offline author, not a way to repopulate engine evidence. | Process-local, initially zero; a newer qualifying notice replaces that family's retained entry. Not serialized. Safe admission checks level and original move/deadline; new-process restore does not recover unused origins from files. Already-admitted roots/deadlines belong to the runtime below. |
+| Admission opportunity | `src/chaos_next_use_safe.c:settled`, read by `chaos_next_use_safe_attempted`, set by `chaos_next_use_safe_try`. | `u.chaos_next_use_attempted` is the native-save carrier, **not necessarily current during live admission**. `last_result` is a process-local report. | One settled attempt per game; `src/save.c:savegamestate` synchronizes the player field immediately before serializing `struct you`. `restgamestate` calls `chaos_next_use_safe_restore_attempted`; restore never reopens a settled opportunity. `chaos_next_use_safe_reset_for_test` is a fixture reset, not a gameplay retry. |
+| Safe admission bindings | Native engine evidence/identity above supplies `chaos_next_use_safe_bind_origin`, `chaos_next_use_safe_bind_run`, `chaos_next_use_safe_bind_logical`, `chaos_next_use_safe_bind_telegraph`; `chaos_next_use_on_safe` selects the receipt sink. | Safe-layer `origin_evidence`, `owned_run`, `logical_run`, `owned_warn`, `owned_receipt` and opaque pointers are process-local bindings, not independent saved facts. `owned_run` derives from directory device/inode, not game identity. | Rebound at safe points by `next_use_bind_owned`; none is serialized. The `NUO1` marker is checked against the native player token, never repaired on restore. `resume_pending` only stages journal reconnection. Receipt success is an admission prerequisite, not restore/readmission authority. |
+| Exact program, memory, uses and clocks | `src/chaos_next_use_runtime.c:live_runtime`, installed by `chaos_next_use_runtime_install`: `source`/length/digests, `state`, slots, callback bits/ordinal, origins/live flags/deadlines, admission/expiry/delay, armed ID/root/activation, claimed/witnessed, counts, termination and identity-unsafe state. | `snapshot_values` exports values; `runtime_on_action_impl` supplies a copied context to a fresh Lua VM. Admission structs cease to own the installed program; closures retain nothing. | Validated import replaces runtime values, not their age: original deadlines, used slots, claims and witness survive. `chaos_next_use_runtime_reset` clears the carrier for install/import or a valid absent payload; validation failure leaves it unchanged. Expiry/departure terminalizes rather than refreshes. Production installation supplies zero context counts, not observed-history totals. |
+| Native game, level, target, time and spending | `u.chaos_game_token`, `u.uz`, native `fmon`/`m_id`, `monstermoves`, and `u.chaos` remain engine-owned. `chaos_next_use_game_identity`, `chaos_next_use_whistle_completed` and `dog_move` provide the native identity/target seams. | Runtime admission `run_token`/`level_token`/`armed_m_id` bind a capability to those owners; `current_run_token`/`current_level_token` are trusted boundary copies, not candidate authority or persisted current identity. | Native save restores player/level/monsters/clock/budget independently. `restgamestate` supplies the restored player token and packed `u.uz` to `chaos_next_use_restore_bound` **before import**; `chaos_observe` checks native identity thereafter. Data-only import leaves current identity unbound. Restore cannot refresh time, refund spend, grant another use or bind a replacement target merely from its numeric ID. |
+| Presentation and record buffers | Native observation/delivery and `chaos_whistle_witness_finalize` establish publication; runtime `attention_claimed` and `witnessed` alone own the retained next-use outcomes. | `observation_*`, stack `chaos_whistle_witness`, TTY `certificate_observer`, runtime `expected_manifest_*`, action tokens and `private_records`/`public_records` are process-local handshakes or output, not saved witness authority. | `observation_clear` clears attribution at action/session/level boundaries; TTY certificates cover a single publication. `chaos_next_use_save_status` refuses unfinished runtime handshakes. Import empties output arrays while retaining `next_seq`/`last_root` and outcome bits; it neither replays presentation nor invents delivery. |
+| Replay and journal progress | Runtime `next_seq`, `last_root`, `replay_cursor`, `journal_state`/bytes/hash and module `capture_incomplete` own the saved sequence/acknowledgement checkpoint; `capture_leave` advances the cursor only after sink acknowledgement. | `replay_runtime`/`staged_runtime` are isolated validation copies. `capture_record`, sink/opaque, transaction guards, and `src/chaos_next_use_journal.c:journal` descriptor/line/cursor/working tip are process-local; they cannot advance saved progress by themselves. | Snapshot import retains the checkpoint, disconnects the sink and initializes replay copies without evaluating Lua. `chaos_start` -> `chaos_next_use_safe_resume` -> `chaos_next_use_journal_resume` validates the exact saved prefix before reconnecting. Writer reset closes its descriptor; a missing/failed journal does not roll back gameplay or refresh admission. |
 
 ## Journal acknowledgement checkpoint (v5)
 
@@ -75,13 +92,34 @@ journal transaction guard also covers reopening, so a signal-triggered save
 cannot publish a partially validated recorder. Terminal status retains a closed
 subscriber for honest acknowledgement reporting, not a writable descriptor.
 
-Controlled real Unix WF/FW save/exit/new-process tests now check native effects,
-prefix preservation and a single strictly read, acknowledged-complete journal.
-Corrupted, fully rehashed, truncated, extra and missing prefixes are rejected
-without cursor advancement or changed input bytes, including a subsequent failed
-capture save/restore. This is checkpointed recording continuation, **not physical
-playback**. Header-only resume and the wider hostile-file/race matrix still need
-focused execution; author-conditioned cases require reviewed source-guide repins.
+Merged [PR #150](https://github.com/sflicht/NyarlatHack/pull/150) supplies native
+journal capture; [PR #153](https://github.com/sflicht/NyarlatHack/pull/153) adds
+acknowledged checkpoints and resume. In `tests/chaos/test_next_use_unix_save.py`,
+controlled real Unix WF/FW save/exit/new-process cases check native effects,
+prefix preservation and a single acknowledged-complete journal. Corrupted,
+fully rehashed, truncated, extra and missing prefixes are rejected without
+cursor advancement or changed input bytes, including a later failed-capture
+save/restore. That is recording continuation, not by itself physical playback.
+
+Physical playback is no longer wholly absent: merged
+[PR #154](https://github.com/sflicht/NyarlatHack/pull/154) adds
+`test_next_use_native_playback.py:test_same_admitted_save_w_checkpoint_f_exact_input_playback`.
+It records and replays the same admitted native save under controlled Unix
+wizard geometry, clock and RNG fixtures, with a W checkpoint before F, exact
+input bytes (including automatic answers), native/physical output comparisons,
+and typed C semantic preflight before playback. This is one bounded WF pair,
+not ordinary-play reproducibility or saved-RNG replay. Later merged
+[PR #155](https://github.com/sflicht/NyarlatHack/pull/155) extends the bounded
+evidence to four native pairs and three physical-loss controls (remaining F
+hunger effect, native W effect bypass, and witness loss at save). Its reviewed
+[Quality run 35980228714](https://github.com/sflicht/NyarlatHack/actions/runs/35980228714)
+at `1b46972c54c04a6fa94eb311419dc2cf3e18aa4a` ran those cases, the existing
+save-drop control and configured history driver; the full suite reported 1285
+tests with 13 skips. These counts describe that exact reviewed head, not later
+revisions. The same-save playback starts from an admitted header-only journal
+(cursor zero) and exercises native resume from that saved anchor. Wider replay
+and hostile-file/race coverage remains separately scoped; none of this is whole
+#65 acceptance or ordinary-play evidence.
 
 ## Stable-state invariants
 
@@ -223,9 +261,19 @@ with pending and completed quiet programs. Component fixtures cover pending,
 armed and completed departure histories, rejecting foreign-game identities and
 active foreign-level restores without replacing live state.
 
-Short-read handling through native compression and the remaining recovery cases
-still need separate evidence before the recovery milestone closes. The controlled
-Unix matrix now covers two-family save/process-exit continuation, admitted
-relocation and the unrelated-directory-reuse boundary above; this is not whole
-#63/#64/#92 or #65 sign-off. Transport device/inode binding remains a separate
-local file defense; it is not logical saved-game identity.
+Short-read evidence already exists in `tests/chaos/test_next_use_snapshot.py`:
+`test_native_truncation_preserves_bytes_and_live_runtime` and
+`test_native_read_errors_and_shared_decoder_state` compile the actual extracted
+`src/restore.c` reader with and without `ZEROCOMP`. They exercise present/absent
+payload truncation, read errors, interrupted short reads and shared decoder
+state. This is reader/component coverage, not a complete compressed executable
+save/restart roundtrip.
+
+The controlled Unix matrix covers two-family save/process-exit continuation,
+admitted relocation, independent saved-player-token mismatch and the unrelated
+transport-reuse boundary above. Actual-process **active wrong-level and
+missing/changed/reused-target negatives**, plus a next-use-specific **bones
+non-inheritance regression**, remain open #64/#92 acceptance evidence, not newly
+established runtime defects. This document alone closes neither #63 nor #20,
+and is not whole #64/#92 or #65 sign-off. Transport device/inode binding remains
+a separate local file defense; it is not logical saved-game identity.

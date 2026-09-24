@@ -128,9 +128,15 @@ int main(int argc, char **argv)
     if (!strcmp(argv[1], "upvalue-counter")) {
         const char *s = "local n=0 return {on_action=function(c) n=n+1 "
                         "return {next_use_intent_v=2, op=\"quiet\", state=n} end}";
-        status = chaos_lua_next_use_on_action(s, strlen(s), &context, &intent);
+        n = strlen(s);
+        if (argc == 3 && !strcmp(argv[2], "stdin")) {
+            n = fread(source, 1, sizeof source, stdin);
+            s = source;
+        }
+        status = chaos_lua_next_use_on_action(s, n, &context, &intent);
         print_intent(status, &intent);
-        status = chaos_lua_next_use_on_action(s, strlen(s), &context, &intent);
+        context.state = intent.state;
+        status = chaos_lua_next_use_on_action(s, n, &context, &intent);
         print_intent(status, &intent);
         return 0;
     }
@@ -138,12 +144,18 @@ int main(int argc, char **argv)
         const char *s = "return {on_action=function(c) "
                         "return {next_use_intent_v=2, op=\"quiet\", "
                         "state=(c.state<3) and (c.state+1) or 3} end}";
-        context.state = 0;
-        status = chaos_lua_next_use_on_action(s, strlen(s), &context, &intent);
-        print_intent(status, &intent);
-        context.state = intent.state;
-        status = chaos_lua_next_use_on_action(s, strlen(s), &context, &intent);
-        print_intent(status, &intent);
+        int call;
+        n = strlen(s);
+        if (argc == 3 && !strcmp(argv[2], "stdin")) {
+            n = fread(source, 1, sizeof source, stdin);
+            s = source;
+        }
+        /* Interpreter-only boundary probes, not four admitted game uses. */
+        for (call = 0; call < 4; ++call) {
+            status = chaos_lua_next_use_on_action(s, n, &context, &intent);
+            print_intent(status, &intent);
+            context.state = intent.state;
+        }
         return 0;
     }
     if (!strcmp(argv[1], "branch-fixtures")) {

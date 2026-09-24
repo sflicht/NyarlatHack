@@ -14,6 +14,7 @@ from unittest.mock import patch
 
 from chaos.history import HistoryState
 from chaos.next_use_history import next_use_menu
+from test_next_use_author_contract import CONTRACT, HANDWRITTEN_EXAMPLES
 from test_director import ack, event
 from test_episodes import action, enabled, session, wire
 
@@ -214,6 +215,37 @@ class OfflineAuthorTests(unittest.TestCase):
         self.assertIn("must not read c.sanity or c.insight", instructions)
         observed = json.loads(prompt)["public_context"]["summary"]["observed"]
         self.assertEqual((observed["sanity"], observed["insight"]), (60, 0))
+
+    def test_handwritten_examples_reach_bounded_private_free_prompt(self):
+        calls = []
+        for secret in ("PRIVATE-state-fate-7", "PRIVATE-map-target-3"):
+            directory = self.setup_run(hidden=secret)
+            receipt, transport, _ = self.run_author(directory)
+            instructions, prompt = transport.calls[0]
+            for label, source in HANDWRITTEN_EXAMPLES:
+                self.assertIn(f"{label}\n```lua\n{source}```", instructions)
+                self.assertNotIn(source, prompt)  # Instructions, not public history.
+            assembled = instructions + prompt
+            self.assertLessEqual(len(assembled.encode()), self.api().MAX_PROMPT_BYTES)
+            self.assertEqual(receipt["prompt_bytes"], len(assembled.encode()))
+            self.assertEqual(
+                receipt["contract_sha256"],
+                hashlib.sha256(CONTRACT.read_bytes()).hexdigest(),
+            )
+            for forbidden in (
+                secret,
+                str(directory),
+                "history_checkpoint",
+                "level_dnum",
+                '"identity"',
+                '"run"',
+                '"move"',
+            ):
+                self.assertNotIn(forbidden, assembled)
+            saved = json.loads((directory / "next_use-author-prompt.json").read_bytes())
+            self.assertEqual(saved, {"instructions": instructions, "prompt": prompt})
+            calls.append(transport.calls[0])
+        self.assertEqual(calls[0], calls[1])
 
     def test_actions_vary_independently_of_prior_whispers(self):
         prompts = []
