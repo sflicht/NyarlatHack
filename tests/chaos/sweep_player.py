@@ -22,7 +22,7 @@ from gameplay_support import Game, ROOT
 from sweep_screen import COLS, Screen, status
 
 START_OPTIONS = {
-    # The ordinary default start (chaos/ordinary_start.py).
+    # The ordinary default start (chaos/ordinary_start.py), plus !mail below.
     "bard": None,
     # Madmen start at Sanity 75 (src/u_init.c).
     "madman": (
@@ -88,11 +88,16 @@ class HarnessError(Exception):
     pass
 
 
+# The engine's mail daemon stats the host's real mail spool; a message
+# arriving mid-sweep changes the game. Every sweep start disables it.
+NO_HOST_MAIL = ",!mail"
+
+
 def _with_options(options):
     """Game reads chaos.ordinary_start.OPTIONS in its forked child."""
     import chaos.ordinary_start as start
 
-    return start, start.OPTIONS if options is None else options
+    return start, (start.OPTIONS if options is None else options) + NO_HOST_MAIL
 
 
 class Player:

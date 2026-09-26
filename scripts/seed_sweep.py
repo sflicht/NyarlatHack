@@ -225,6 +225,7 @@ def markdown(report):
         "  event timing (`turn`, not the engine's monstermoves).",
         "- A single one-shot next-use program per game (the launcher's current design).",
         "- The inherited start fixes one artifact (Vampire Killer); others are untested.",
+        "- In-game mail is off (`!mail`): it reads the host mail spool, not the seed.",
         "",
     ]
     return "\n".join(lines)
@@ -278,7 +279,8 @@ def main():
         "policy": args.policy,
         "policy_params": sweep_player.POLICIES[args.policy],
         "starts": {
-            s: sweep_player.START_OPTIONS[s] or "chaos.ordinary_start.OPTIONS"
+            s: (sweep_player.START_OPTIONS[s] or "chaos.ordinary_start.OPTIONS")
+            + sweep_player.NO_HOST_MAIL
             for s in starts
         },
         "seeds": [lo, hi],
