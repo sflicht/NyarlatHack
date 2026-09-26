@@ -105,6 +105,11 @@ no keys so tests never need a model. Keep prompts in files, not in code.
 
 ## Testing
 
+Each PR declares a verification tier (A: state and authority; B: director and
+presentation; C: flagged experiment) and a player-visible delta. See
+[verification tiers](docs/quality-control.md#verification-tiers) for what each
+tier requires. Only Tier A PRs add to `docs/evidence/`.
+
 - The engine must build warning-clean under the flags in `GNUmakefile` plus
   whatever we add. New warnings in our files are failures.
 - Regression: headless run with the stream on and mailbox empty vs. stock
