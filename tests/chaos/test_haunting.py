@@ -94,12 +94,36 @@ class HauntingTests(unittest.TestCase):
                 g.more(g.send(key))
             self.assertEqual(g.quit(), 0)
             games.append(g)
-        self.assertEqual(games[0].inputs, games[1].inputs)
-        self.assertEqual(games[0].raw, games[1].raw)
+        # Play is identical. The only permitted difference is the post-mortem
+        # reveal (#163): the observed game can read its admitted haunting, so
+        # it alone is asked the reveal question (answered with the default n)
+        # and carries the chaos_* xlogfile suffix.
+        import difflib
+
+        observed, blind = games
+        # One extra "n" answer, just before the final dismissal key.
         self.assertEqual(
-            (games[0].game / "xlogfile").read_bytes(),
-            (games[1].game / "xlogfile").read_bytes(),
+            observed.inputs, blind.inputs[:-1] + ["6e"] + blind.inputs[-1:]
         )
+        a, b = bytes(observed.raw), bytes(blind.raw)
+        ops = [
+            op
+            for op in difflib.SequenceMatcher(None, a, b, autojunk=False).get_opcodes()
+            if op[0] != "equal"
+        ]
+        self.assertEqual([op[0] for op in ops], ["delete"], ops)
+        extra = a[ops[0][1] : ops[0][2]]
+        self.assertIn(b"Do you want to know what watched you? [ynq] (n) ", extra)
+        self.assertLess(len(extra), 100, extra)
+        self.assertNotIn(b"The Crawling Chaos remembers.", a)
+        xa = (observed.game / "xlogfile").read_bytes()
+        xb = (blind.game / "xlogfile").read_bytes()
+        self.assertTrue(xa.startswith(xb[:-1]), (xa, xb))
+        self.assertRegex(
+            xa[len(xb) - 1 :],
+            rb"^:chaos_admitted=[1-9]\d*:chaos_delivered=\d+:chaos_spent=\d+\n$",
+        )
+        self.assertNotIn(b"chaos_", xb)
 
     def test_generated_candidate_exact_source_and_replay(self):
         import hashlib

@@ -1446,6 +1446,7 @@ die:
 		}
 #endif
 	}
+	chaos_reveal_end(how);
 	/* finish_paybill should be called after disclosure but before bones */
 	if (bones_ok && taken) finish_paybill();
 
