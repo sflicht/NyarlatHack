@@ -5,6 +5,39 @@ and manual dispatch. Continuous integration (CI) is deliberately offline with
 respect to model providers: it needs no model keys, subscription authentication,
 or inference allowance.
 
+## Verification tiers
+
+Every pull request (PR) states one tier. The tier sets how much verification
+the change needs. No tier weakens an `AGENTS.md` non-negotiable, and every tier
+keeps replay and no-whisper equality green.
+
+**Tier A: state and authority.** Covers save layout, random-number-generator
+(RNG) consumption, admission and budget, native effect application, replay,
+and bones. This keeps the full standard: native tests, matched controls,
+save/restore, exact replay, and an evidence entry. Only Tier A PRs add files
+under `docs/evidence/`.
+
+**Tier B: director and presentation.** Covers director selection, prompts,
+post-mortem and chronicle output, telegraph wording, README and other docs,
+launcher user experience, and corpus data that already passes Tier A
+validation. The standard is:
+
+- unit tests for the changed code;
+- one smoke run of the changed path;
+- the existing no-whisper equality tests staying green.
+
+Tier B needs no per-PR evidence ledger and no multi-review cycle. A change that
+alters game state, RNG draws or saves is Tier A, whatever it is labelled.
+
+**Tier C: experiments.** The change sits behind an explicit off-by-default flag
+or on a separate branch. It must build warning-clean in both modes and must not
+change stock behaviour at all while the flag is off. Promoting it to default
+requires meeting Tier A or Tier B.
+
+Every PR description also carries a **player-visible delta**: one or two
+sentences on what a player can now see or do, or "none". Milestone checkpoints
+report the delta alongside test counts.
+
 ## Checks
 
 - **Upstream hook inventory:** [reviewed seams and extension procedure](upstream-chaos-hooks.md).
