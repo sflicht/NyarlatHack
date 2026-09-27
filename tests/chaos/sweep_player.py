@@ -16,6 +16,7 @@ import os
 from pathlib import Path
 import random
 import re
+import select
 import time
 
 from gameplay_support import Game, ROOT
@@ -143,9 +144,31 @@ class Player:
         self.screen.feed(raw)
 
     def send(self, keys):
-        text = self.game.send(keys)
+        try:
+            text = self.game.send(keys)
+        except (FileNotFoundError, ProcessLookupError):
+            # The game exited between our write and the harness's /proc input
+            # check. Treat it as the exit it is, not a harness failure.
+            if not self.exited():
+                raise
+            text = self._drain()
         self._feed()
         return text
+
+    def _drain(self):
+        """Collect the exited game's final terminal output until PTY EOF."""
+        data = bytearray()
+        fd = self.game.fd
+        while fd is not None and select.select([fd], [], [], 0.2)[0]:
+            try:
+                part = os.read(fd, 65536)
+            except OSError:
+                break
+            if not part:
+                break
+            data.extend(part)
+        self.game.raw.extend(data)
+        return bytes(data)
 
     def exited(self):
         if self.game.pid is None:
