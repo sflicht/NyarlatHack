@@ -20,6 +20,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tests/chaos"))
 import native_fixture_config as config  # noqa: E402
 from native_fixture_selection import prepare  # noqa: E402
+from artifact_hygiene import KEEP_ENV, keep_requested, remove_tree  # noqa: E402
 
 
 def suite_environment(path, data):
@@ -42,6 +43,8 @@ def suite_environment(path, data):
         "NYARLATHACK_NATIVE_BUILD_RECEIPT": data["receipt"],
         config.REVISION_KEY: data["revision"],
     }
+    if keep_requested():
+        env[KEEP_ENV] = "1"  # tests then retain their own dirs too
     if data["profile"] == "selected-turnloop":
         env["NYARLATHACK_TURNLOOP_EVIDENCE"] = str(
             Path(data["artifact_parent"]) / "turnloop"
@@ -166,6 +169,8 @@ def main():
         ),
         "profile and historical-stock selection must be complete",
     )
+    fixtures = Path(args.build_output) / "fixtures"
+    before = set(fixtures.iterdir()) if fixtures.is_dir() else set()
     path, data, env = create_descriptor(
         args.root,
         args.expected_revision,
@@ -173,7 +178,30 @@ def main():
         profile=args.profile,
         historical_stock=stock,
     )
-    return run_unittest(ROOT, env, path.parent / "full-suite.log")
+    code = run_unittest(ROOT, env, path.parent / "full-suite.log")
+    tidy_fixtures(fixtures, before, path.parent, code)
+    return code
+
+
+def tidy_fixtures(fixtures, before, invocation, code, environ=None):
+    """After a passing suite, remove fixture dirs this invocation created.
+
+    The invocation directory (descriptor and full-suite.log) is kept: the log
+    is the authoritative record, including skip counts. Everything is kept on
+    failure or with NYARLATHACK_KEEP_ARTIFACTS=1. Preparation outputs and
+    entries that existed before the run are never touched.
+    """
+    if code != 0 or keep_requested(environ):
+        print(f"fixtures retained: {fixtures}", flush=True)
+        return []
+    removed = []
+    for entry in sorted(set(fixtures.iterdir()) - before):
+        if entry == invocation:
+            continue
+        if remove_tree(entry):
+            removed.append(entry)
+    print(f"fixtures removed after success: {len(removed)}", flush=True)
+    return removed
 
 
 if __name__ == "__main__":
