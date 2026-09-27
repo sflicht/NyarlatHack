@@ -11,7 +11,7 @@
     "src/chaos_lua.c": "62a68112a8155aa10622bd124c00400b9aad9127f48e18dd5fbcdc240f52042f",
     "src/chaos_next_use.c": "0e2e4c81577612035b221bfdd35fdb8f227b8e006a05988907d9bd8094b96a8c",
     "src/chaos_next_use_runtime.c": "df7221e29632a61e7495605e91b7ba1672a102d65fc6b7f3ef26c5afa5577908",
-    "src/chaos_next_use_safe.c": "8207611b4ef3546480aa276f5233cae355303109cf8cb2e365e8269e68ff3877",
+    "src/chaos_next_use_safe.c": "1f6507ab1ec5ba35ad3b1c89863939298e394312e77cee32b7b5b65d3302209d",
     "src/chaos_presentation.c": "fa405cf41bb8852193b63e8f5c56d58dd7383129348f756bb16fb91ca2fda309",
     "src/dogmove.c": "77384390a5357d79d7b5333e23d7d0626e36c8834538ef062827521d5c76b1a3",
     "src/fountain.c": "418d5bddeb8a22ad427e18b97b88560f08071dc0ddc051a00ba6e34e85f41f86",
