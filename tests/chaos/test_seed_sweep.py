@@ -295,6 +295,36 @@ class _FakeGame:
         return ""
 
 
+class _VanishedReader(_FakeGame):
+    def send(self, keys):
+        raise FileNotFoundError("/proc/1/io")
+
+
+class PlayerExitRaceTest(unittest.TestCase):
+    def _player(self, exits_after):
+        p = sweep_player.Player.__new__(sweep_player.Player)
+        p.game, p.screen, p.fed = _VanishedReader(), Screen(), 0
+        p.game.fd = None
+        calls = []
+
+        def exited():
+            calls.append(1)
+            return len(calls) > exits_after
+
+        p.exited = exited
+        return p
+
+    def test_launcher_exits_shortly_after_reader(self):
+        p = self._player(exits_after=3)
+        self.assertEqual(p.send("x"), b"")
+
+    def test_launcher_still_running_is_an_error(self):
+        p = self._player(exits_after=10**9)
+        with mock.patch.object(sweep_player, "EXIT_WAIT_SECONDS", 0.1):
+            with self.assertRaises(FileNotFoundError):
+                p.send("x")
+
+
 class PlayerBoundTest(unittest.TestCase):
     def test_unreadable_status_is_bounded(self):
         p = sweep_player.Player.__new__(sweep_player.Player)

@@ -87,6 +87,8 @@ NEIGHBOURS_8 = NEIGHBOURS_4 + ((1, 1), (1, -1), (-1, 1), (-1, -1))
 
 # Harness bound, not policy: consecutive unreadable status lines before failing.
 MAX_STATUS_MISSES = 20
+# Harness bound: how long a vanished reader may precede the launcher's exit.
+EXIT_WAIT_SECONDS = 10.0
 
 
 class HarnessError(Exception):
@@ -152,9 +154,11 @@ class Player:
         try:
             text = self.game.send(keys)
         except (FileNotFoundError, ProcessLookupError):
-            # The game exited between our write and the harness's /proc input
-            # check. Treat it as the exit it is, not a harness failure.
-            if not self.exited():
+            # The game's reader exited between our write and the harness's /proc
+            # input check. The launcher may take a moment longer to exit, so
+            # wait (bounded) before deciding; the outcome must not depend on
+            # scheduler timing.
+            if not self.wait_exit(EXIT_WAIT_SECONDS):
                 raise
             text = self._drain()
         self._feed()
@@ -174,6 +178,14 @@ class Player:
             data.extend(part)
         self.game.raw.extend(data)
         return bytes(data)
+
+    def wait_exit(self, seconds):
+        deadline = time.monotonic() + seconds
+        while not self.exited():
+            if time.monotonic() >= deadline:
+                return False
+            time.sleep(0.05)
+        return True
 
     def exited(self):
         if self.game.pid is None:
