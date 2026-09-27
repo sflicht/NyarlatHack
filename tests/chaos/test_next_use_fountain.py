@@ -104,6 +104,9 @@ class NextUseFountainTests(RetainOnFailure):
         env["LINES"] = "24"
         p = subprocess.run(
             [str(self.exe), str(fate), mode, str(folder)],
+            # The tty fixture may wait for a key at --More--; an inherited
+            # open-but-silent stdin pipe blocks it until the timeout.
+            stdin=subprocess.DEVNULL,
             capture_output=True,
             text=True,
             timeout=10,
