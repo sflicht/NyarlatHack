@@ -103,9 +103,10 @@ reached and does not admit it, the engine appends one row to the existing
 
 `reasons` lists every failing check in a fixed order: `schema`, `identity`,
 `run_unavailable`, `level_invalid`, `budget_state`, `missed_index`,
-`run_mismatch`, `level_mismatch`, `origin_expired` (more than 100 monster
-moves after the origin), `origin_unbound`, `origin_superseded` (a newer
-qualifying notice now holds the family's slot), `source`, `telegraph`,
+`run_mismatch`, `level_mismatch`, `origin_expired` (more than
+`CHAOS_NEXT_USE_ORIGIN_LIFETIME` = 100 monster moves after the origin),
+`origin_unbound`, `origin_superseded` (a newer origin holds the family's slot
+and the engine could not rebind to it; see below), `source`, `telegraph`,
 `budget`, `receipt`, `internal`. Admission keeps its existing kind-2 row and
 writes no decision row. Nothing is written for an empty mailbox, a pending
 or unparseable envelope, a clock-range rejection, or a transport directory this
@@ -114,8 +115,60 @@ directory's receipt bytes unchanged), so stock and empty-mailbox output is
 unchanged. The row draws no random numbers and does not alter which checks
 pass. It is diagnostic: a failed append is a trace gap, not a game-state
 change. `tests/chaos/sweep_funnel.py` reports these recorded reasons and falls
-back to `inferred:` labels only when no row exists. The admission rule and
-the exact-index `at` contract are unchanged.
+back to `inferred:` labels only when no row exists. The exact-index `at`
+contract is unchanged (see "Timing contract" below).
+
+## Origin binding: rebind to the newest origin (#177 option 1)
+
+Before this change an envelope was admissible only while it named the exact
+origin the engine currently holds for that family; any newer qualifying notice
+made it `origin_superseded`. In the baseline-v1 sweep that was the most common
+loss, because the scripted player whistles again before the next safe point.
+
+Now, at a due safe point, if the named origin was replaced, the engine binds
+the envelope to the origin it now holds for that family when **all** of these
+hold, and otherwise records `origin_superseded` exactly as before:
+
+- same family (W→W, F→F) and same fact (`ordinary_whistle` / `water_refreshed`);
+- engine-observed and delivered: the engine's own slot, noted with a completed
+  end record (not a pending notice; that stays `origin_unbound`);
+- same run as the envelope, and strictly newer (root, notice and end sequence
+  all larger; move no earlier);
+- on the current level (level binding is unchanged: a newer origin on another
+  level is not bound);
+- within the origin lifetime, measured from the **bound** origin's move, and
+  no later than the safe point.
+
+The engine chooses; the director never retimes or re-publishes. The engine
+holds one origin per family, so the "newest" origin is simply that slot. The
+envelope, its source digest, the telegraph id and text, the cost and the
+program TTL are unchanged. The W target is still resolved by the engine at
+the triggering whistle (exactly one visible eligible little dog, otherwise
+`whistle_capture_suppressed`), now keyed to the bound root. No random numbers
+are drawn and nothing is written when the mailbox is empty or inactive.
+
+The admission receipt row now records both origins per operation:
+
+```json
+{"next_use_private_v":2,"kind":2,"seq":2,"origins":[{"family":"W","published":5,"bound":8}]}
+```
+
+The private journal's admission record carries `origin_roots` (published),
+`bound_roots` and `bound_moves`; the validator accepts a differing bound root
+only when it is newer, no earlier and ties the snapshot's origin and deadline.
+The next-use snapshot is version 6 (the runtime's origin fields now hold the
+bound origin); version 5 and older saves are rejected, never migrated
+(`docs/next-use-snapshot.md`).
+
+## Timing contract (#5)
+
+Issue #5's rule is unchanged: an envelope is considered only at its exact
+assigned safe index `at`; an earlier poll leaves it pending, a later one records
+`missed_index`, and nothing is retimed to a later window. Rebinding does not
+move `at`. It only changes **which** already-observed origin of the same
+family the program attaches to at that one index. Origin lifetime is a
+separate clock (monster moves from the bound origin), and program expiry
+(TTL 100 from admission) is unchanged.
 
 ## Schedule/transport regression scope (#143)
 

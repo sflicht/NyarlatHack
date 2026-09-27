@@ -134,7 +134,14 @@ create the directory yourself with mode 0700. No network calls.
   turn/safe index. Not a model input.
 
 A missing mailbox means unchanged play. At most one request is handled at a
-safe point, without waiting. Failed transport/journal writes fail closed for
+safe point, without waiting. A request is considered only at its exact
+assigned safe index (#5): earlier polls leave it pending and later ones reject
+it as missed; the engine never retimes it. For next-use envelopes the origin
+binding is engine-owned: if the named origin was replaced by a newer
+same-family, delivered, same-run origin on the current level within the origin
+lifetime, the engine binds to that origin at the same safe index and records
+both the published and the bound origin in the receipt (#177 option 1; see
+[next-use ordinary path](next-use-ordinary.md#origin-binding-rebind-to-the-newest-origin-177-option-1)). Failed transport/journal writes fail closed for
 new admissions. Previously admitted effects continue until expiry. There is no
 crash-transaction guarantee across the OS filesystem and a game save: restore
 is rollback to the save, not recovery of an unsaved process. Journals may

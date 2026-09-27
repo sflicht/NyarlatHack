@@ -158,7 +158,8 @@ Snapshot version 2 lacks authoritative witness/count/sequence information.
 It is rejected, not silently upgraded and not assigned an invented witness.
 Retain the original bytes with the matching old binary/data. An incompatible
 payload is not permission to delete a save or rewrite historical evidence.
-The current development schema is version 5. Versions 3 and 4 are also rejected,
+The current development schema is version 6 (#177: runtime origin fields hold
+the bound origin). Versions 3, 4 and 5 are also rejected,
 with their original bytes retained; it is not yet an accepted stable
 persistence release. Failed parsing/validation leaves the existing live runtime
 unchanged; an explicitly valid absent payload resets it.
