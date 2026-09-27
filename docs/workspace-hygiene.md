@@ -48,6 +48,22 @@ or mapped files). Without `--apply` it only reports. Named paths are removed at
 any age; a scan without paths removes only items older than `--max-age` days
 (default 7).
 
+## `~/.local/share/nyarlathack`
+
+This directory holds only what tests and docs read by default: the two test
+baselines (`baselines/ff37b3a7a`, `generated-curio/prechange-on`), the
+`milestone2/` ledger and smoke evidence, the acceptance evidence cited in
+`docs/evidence/`, and small PDFs and write-ups. On 2026-09-27 older run output
+was moved into zstd tar archives under
+`~/.hermes/reports/nyarlathack-archive/local-share/` (checksums in `SHA256SUMS`;
+the report is on PR #184). To restore one, for example the baseline that
+`docs/evidence/milestone2-extra-checks.py` reads:
+
+```
+cd ~/.hermes/reports/nyarlathack-archive/local-share && sha256sum -c SHA256SUMS
+zstd -dc --long=27 baselines-28bf1b192.tar.zst | tar -C ~/.local/share/nyarlathack -xf -
+```
+
 Scope limit: the tests' own `gameplay_support.Game` driver is pinned by hash
 (`SOURCE_DRIVER_HASH`) and was left unchanged. Tests that already register
 their directories clean up after themselves. Legacy tests that create
