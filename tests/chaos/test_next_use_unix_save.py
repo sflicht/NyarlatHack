@@ -921,7 +921,7 @@ class NextUseUnixSaveTests(unittest.TestCase):
                     damaged = prefix
                     if journal_damage == "tamper":
                         damaged = prefix.replace(
-                            b'"snapshot_v":5', b'"snapshot_v":4', 1
+                            b'"snapshot_v":6', b'"snapshot_v":5', 1
                         )
                     elif journal_damage == "truncated":
                         damaged = prefix[:-1]

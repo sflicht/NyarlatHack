@@ -5,6 +5,12 @@
 #include <stddef.h>
 #include "chaos_next_use_admission.h"
 
+/* Native moves an engine-observed origin stays admissible after its notice
+ * (#177). The origin deadline is the bound origin's move plus this value. */
+#ifndef CHAOS_NEXT_USE_ORIGIN_LIFETIME
+#define CHAOS_NEXT_USE_ORIGIN_LIFETIME 100
+#endif
+
 struct chaos_next_use_safe_request {
     int dir;
     int enabled;
@@ -53,6 +59,8 @@ struct chaos_next_use_safe_result {
     int telegraph_count;
     int spent;
     int reasons;
+    /* Bit per operation index: the engine bound a newer origin (#177). */
+    int rebound;
 };
 
 int chaos_next_use_safe_try(const struct chaos_next_use_safe_request *,
@@ -72,6 +80,10 @@ int chaos_next_use_safe_restore_attempted(int attempted);
 /* Startup only: resolve the restored recorder before observation boundaries. */
 void chaos_next_use_safe_resume(int dir);
 int chaos_next_use_safe_last(struct chaos_next_use_safe_result *);
+/* Formats the admission receipt row (with newline): identity plus the
+ * published and bound origin root per operation (#177). 0 on failure. */
+int chaos_next_use_safe_receipt_row(const struct chaos_next_use_private_record *,
+                                    char *out, size_t cap);
 /* Formats the recorded rejection row (with newline); 0 when there is none:
  * not rejected, unparsed envelope (at < 1) or a transport the game does not own. */
 int chaos_next_use_safe_decision_row(const struct chaos_next_use_safe_result *,

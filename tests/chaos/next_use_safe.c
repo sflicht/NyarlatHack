@@ -175,6 +175,28 @@ int main(int argc, char **argv)
                     CHAOS_NEXT_USE_FAMILY_F, 14, 15);
         bind_origin(run, 1, "ordinary_whistle", 10, 1, origin_move,
                     CHAOS_NEXT_USE_FAMILY_W, 11, 12);
+    } else if (!strcmp(evidence_mode, "rebind_w")) {
+        /* #177: a newer engine-observed W origin, 5 moves later, same level. */
+        bind_origin(run, 1, "ordinary_whistle", 20, 1, origin_move + 5,
+                    CHAOS_NEXT_USE_FAMILY_W, 21, 22);
+    } else if (!strcmp(evidence_mode, "rebind_other_level")) {
+        bind_origin(run, 1, "ordinary_whistle", 20, 2, origin_move + 5,
+                    CHAOS_NEXT_USE_FAMILY_W, 21, 22);
+    } else if (!strcmp(evidence_mode, "rebind_not_delivered")) {
+        bind_origin(run, 0, "ordinary_whistle", 20, 1, origin_move + 5,
+                    CHAOS_NEXT_USE_FAMILY_W, 21, 22);
+    } else if (!strcmp(evidence_mode, "rebind_wrong_family")) {
+        /* Only the other family is newer; the W slot holds an older origin. */
+        bind_origin(run, 1, "ordinary_whistle", 9, 1, origin_move,
+                    CHAOS_NEXT_USE_FAMILY_W, 11, 12);
+        bind_origin(run, 1, "water_refreshed", 20, 1, origin_move + 5,
+                    CHAOS_NEXT_USE_FAMILY_F, 21, 22);
+    } else if (!strcmp(evidence_mode, "rebind_wrong_fact")) {
+        bind_origin(run, 1, "water_refreshed", 20, 1, origin_move + 5,
+                    CHAOS_NEXT_USE_FAMILY_W, 21, 22);
+    } else if (!strcmp(evidence_mode, "rebind_wrong_run")) {
+        bind_origin("cd", 1, "ordinary_whistle", 20, 1, origin_move + 5,
+                    CHAOS_NEXT_USE_FAMILY_W, 21, 22);
     } else if (!strcmp(evidence_mode, "wf_wrong_f")) {
         bind_origin(run, 1, "ordinary_whistle", 10, 1, origin_move,
                     CHAOS_NEXT_USE_FAMILY_W, 11, 12);
@@ -244,7 +266,7 @@ int main(int argc, char **argv)
            "\"second_caller_spent\":%d,\"telegraph_spent\":%d,"
            "\"budget_valid\":%d,\"reserved\":%d,\"hunger_value\":%d,"
            "\"hunger_cost\":%d,\"hunger_expires\":%ld,\"run_token\":%ld,"
-           "\"level_token\":%ld,\"reasons\":%d}\n",
+           "\"level_token\":%ld,\"reasons\":%d,\"rebound\":%d}\n",
            first.loaded, first.rejected, first.admitted, first.active,
            first.pending, first.telegraph_count, first.spent,
            second.admitted, second.telegraph_count, second.spent,
@@ -254,6 +276,6 @@ int main(int argc, char **argv)
            budget.effects[CHAOS_HUNGER].cost,
            budget.effects[CHAOS_HUNGER].expires,
            chaos_next_use_runtime_run_token(),
-           chaos_next_use_pack_level(dnum, dlevel), first.reasons);
+           chaos_next_use_pack_level(dnum, dlevel), first.reasons, first.rebound);
     return 0;
 }

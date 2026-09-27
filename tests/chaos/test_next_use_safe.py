@@ -371,16 +371,86 @@ class NextUseSafeAdmitTests(RetainOnFailure):
         self.assertEqual(row["telegraph"], 1)
         self.assertEqual(row["rejected"], 0)
 
-    def test_production_wrong_second_origin_rejects_before_telegraph(self):
-        row = self.run_case(
-            self.rewrite_wf(self.publish()),
-            wrapper="on_safe",
-            evidence="wf_wrong_f",
+    def test_production_newer_second_origin_rebinds_only_that_family(self):
+        # #177 option 1: the engine's newer F origin (root 20) replaces the
+        # published F origin (root 13); the matching W origin stays bound.
+        folder = self.rewrite_wf(self.publish())
+        row = self.run_case(folder, wrapper="on_safe", evidence="wf_wrong_f")
+        self.assertEqual(row["admitted"], 1)
+        self.assertEqual(row["rebound"], 2)
+        self.assertEqual(row["caller_spent"], 2)
+        self.assertEqual(row["telegraph"], 1)
+        receipt = (Path(folder) / "next_use-receipt.jsonl").read_text()
+        self.assertIn(
+            '"origins":[{"family":"W","published":10,"bound":10},'
+            '{"family":"F","published":13,"bound":20}]',
+            receipt,
         )
-        self.assertEqual(row["admitted"], 0)
-        self.assertEqual(row["caller_spent"], 0)
+
+    def rebind_case(self, evidence, **changes):
+        # The newer engine origin is at move 45; admit after it (move 50).
+        folder = self.publish()
+        changes.setdefault("at_move", 50)
+        row = self.run_case(folder, wrapper="on_safe", evidence=evidence, **changes)
+        return folder, row
+
+    def rows(self, folder):
+        path = Path(folder) / "next_use-receipt.jsonl"
+        if not path.exists():
+            return []
+        return [json.loads(line) for line in path.read_text().splitlines()]
+
+    def test_rebind_newer_same_family_admits_and_records_both_origins(self):
+        folder, row = self.rebind_case("rebind_w")
+        self.assertEqual(
+            (row["admitted"], row["rebound"], row["telegraph"], row["reasons"]),
+            (1, 1, 1, 0),
+        )
+        self.assertEqual(row["caller_spent"], 1)
+        rows = self.rows(folder)
+        self.assertEqual([row.get("kind") for row in rows], [2])
+        self.assertEqual(
+            rows[0]["origins"], [{"family": "W", "published": 10, "bound": 20}]
+        )
+
+    def test_rebind_rejects_origin_noted_after_the_safe_point(self):
+        _, row = self.rebind_case("rebind_w", at_move=44)
+        self.assertEqual((row["admitted"], row["rebound"], row["telegraph"]), (0, 0, 0))
+
+    def test_rebind_lifetime_is_measured_from_the_bound_origin(self):
+        # Published origin at move 40 has expired at 141; the newer origin
+        # (move 45) is still within its lifetime, so the engine rebinds.
+        _, row = self.rebind_case("rebind_w", at_move=141)
+        self.assertEqual((row["admitted"], row["rebound"]), (1, 1))
+        # Past the bound origin's own lifetime: expired, no rebind.
+        _, row = self.rebind_case("rebind_w", at_move=146)
+        self.assertEqual((row["admitted"], row["rebound"]), (0, 0))
         self.assertEqual(row["telegraph"], 0)
-        self.assertEqual(row["rejected"], 1)
+        self.assertEqual(row["caller_spent"], 0)
+
+    def test_no_rebind_cases_reject_before_telegraph(self):
+        cases = {
+            "rebind_other_level": "origin_superseded",
+            "rebind_not_delivered": "origin_unbound",
+            "rebind_wrong_family": "origin_superseded",
+            "rebind_wrong_fact": "origin_superseded",
+            "rebind_wrong_run": "origin_superseded",
+            "stale": "origin_superseded",
+        }
+        for evidence, reason in cases.items():
+            with self.subTest(evidence=evidence):
+                folder, row = self.rebind_case(evidence)
+                self.assertEqual(
+                    (row["admitted"], row["rebound"], row["telegraph"]),
+                    (0, 0, 0),
+                )
+                self.assertEqual(row["caller_spent"], 0)
+                self.assertEqual(row["rejected"], 1)
+                self.assertTrue(row["reasons"] & REASON_BITS[reason], row)
+                rows = self.rows(folder)
+                self.assertEqual([r.get("decision") for r in rows], ["rejected"], rows)
+                self.assertIn(reason, rows[0]["reasons"])
+                self.assertNotIn("origins", rows[0])
 
     def test_production_f_then_w_bind_order_admits(self):
         row = self.run_case(

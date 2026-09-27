@@ -102,6 +102,10 @@ struct chaos_next_use_private_record {
             int operation_count;
             int operations[2];
             int origin_roots[2];
+            /* Origin the engine bound at admission (#177): equal to the
+             * published root unless a newer qualifying origin replaced it. */
+            int bound_roots[2];
+            int bound_moves[2];
             int program_expiry;
             size_t envelope_b64_length;
             char envelope_b64[CHAOS_NEXT_USE_ENVELOPE_B64_MAX + 1];
@@ -145,6 +149,15 @@ int chaos_next_use_admit(struct chaos_next_use_admission *,
                          const struct chaos_next_use_envelope *,
                          const char *, size_t, int, int, int,
                          chaos_next_use_receipt_fn, void *);
+/* As chaos_next_use_admit, binding operation i to bound[i] instead of the
+ * envelope's published origin. NULL binds the published origins. */
+int chaos_next_use_admit_bound(struct chaos_next_use_admission *,
+                               const struct chaos_next_use_admission *,
+                               struct chaos_next_use_attempt_gate *,
+                               const struct chaos_next_use_envelope *,
+                               const struct chaos_next_use_origin_ref *bound,
+                               const char *, size_t, int, int, int,
+                               chaos_next_use_receipt_fn, void *);
 void chaos_next_use_append_private(struct chaos_next_use_carrier *,
                                    const struct chaos_next_use_private_record *,
                                    int, int, int);
