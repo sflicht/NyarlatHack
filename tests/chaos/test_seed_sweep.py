@@ -338,7 +338,7 @@ class PlayerBoundTest(unittest.TestCase):
                 p.step()
         self.assertEqual(p.status_misses, sweep_player.MAX_STATUS_MISSES + 1)
         self.assertEqual(p.game.sent, sweep_player.MAX_STATUS_MISSES)
-        self.assertEqual(p.commands, sweep_player.MAX_STATUS_MISSES + 1)
+        self.assertEqual(p.commands, 0)
 
 
 @unittest.skipUnless(

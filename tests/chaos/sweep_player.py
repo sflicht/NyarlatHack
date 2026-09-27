@@ -356,9 +356,11 @@ class Player:
         s = status(self.screen)
         p = self.params
         if s is None:
-            # Unreadable status line: bounded recovery, counted as inputs.
+            # Unreadable status line: bounded recovery, counted in its own
+            # bound. Not added to `commands`: a dying game's last screen can
+            # lose its status line before the exit is visible, so one extra
+            # recovery key there depends on timing and must not reach the report.
             self.status_misses += 1
-            self.commands += 1
             if self.status_misses > MAX_STATUS_MISSES:
                 raise HarnessError("status line unreadable after recovery")
             return self.settle(self.send("\x1b")) or None
