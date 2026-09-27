@@ -44,3 +44,29 @@ Across the 153 rejection rows (the other 24 published envelopes were admitted (5
 `level_mismatch` 79, `origin_unbound` 14. No row reports `missed_index` or
 `budget`: every envelope was evaluated at its exact `at`, and the budget check
 was never reached.
+
+## Rebind re-sweep (#177 option 1)
+
+Same policy, seeds, starts and clock, with the engine rebinding a superseded
+envelope to the newest qualifying origin. The origin lifetime was measured at
+100 and at 300 monster moves; nothing else differed.
+
+- `baseline-v1-seeds-1-100-rebind-lifetime-100.{json,md}`: revision
+  `ce0a988`, lifetime 100. Games delivered 4; admitted 56.
+- `baseline-v1-seeds-1-100-rebind-lifetime-300.{json,md}`: revision
+  `1e3c7af`, lifetime 300, report digest `a2ee03e4…11de`. Games delivered 9
+  (bard 40, 44, 67, 78, 93; bard-inherited 3, 7, 46, 66); admitted 68.
+
+The lifetime-300 comparison was first measured on an unversioned copy of
+`a18e498` with only the lifetime constants changed: delivered 9, admitted 68.
+The committed 300 report is a fresh run of `1e3c7af`; every game's stage
+counts, loss label and outcome match that first measurement. For every admitted game without a delivered effect, the report's
+loss label is the engine's recorded reason (`whistle_capture_suppressed`:
+not exactly one visible eligible little dog at the triggering whistle;
+`program_expired` and `origin_expired`: the 100-move program window or the
+bound origin's lifetime ended first; `level_departure`; and
+`native_effect_not_delivered`: armed, but the companion's move was not
+witnessed). `admitted_trace_incomplete` (7 games in both runs, all ending in the
+player's death) means the journal has no terminal record, so delivery is
+unknown, not zero. The madman 61 and bard-inherited 67 harness
+errors are the same as in the baseline.
