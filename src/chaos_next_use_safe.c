@@ -252,9 +252,10 @@ static const char *const reason_names[] = {
 };
 
 /* #177 recorded decision: one row appended to the existing receipt file when
- * an envelope was read and rejected (admission keeps its kind-2 row). Written
- * only after a read envelope, so empty mailboxes stay byte-identical. The
- * row names every failing check; it is not a new capability or state. */
+ * a parsed envelope was rejected in a transport this game owns (admission
+ * keeps its kind-2 row). Empty mailboxes, pending or unparseable envelopes and
+ * foreign transports are never written. The row names every failing check;
+ * it is not a new capability or state. */
 int chaos_next_use_safe_decision_row(const struct chaos_next_use_safe_result *result,
                                      int at, long at_safe, long at_move,
                                      char *out, size_t cap)
@@ -265,6 +266,9 @@ int chaos_next_use_safe_decision_row(const struct chaos_next_use_safe_result *re
     if (!result || !out || cap < 1) return 0;
     out[0] = '\0';
     if (!result->loaded || !result->rejected || result->admitted) return 0;
+    /* Unparsed envelopes (at < 1) and transports this game does not own
+     * (identity) leave the directory's existing evidence untouched. */
+    if (at < 1 || (result->reasons & CHAOS_NEXT_USE_SAFE_IDENTITY)) return 0;
     n = snprintf(out, cap, "{\"next_use_decision_v\":1,\"decision\":\"rejected\","
                  "\"at\":%d,\"safe\":%ld,\"move\":%ld,\"reasons\":[",
                  at, at_safe, at_move);

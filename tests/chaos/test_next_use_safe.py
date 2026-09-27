@@ -524,6 +524,10 @@ class NextUseSafeRecordedDecisionTests(unittest.TestCase):
     publish = NextUseSafeAdmitTests.publish
     run_case = NextUseSafeAdmitTests.run_case
 
+    def receipt_bytes(self, folder):
+        path = Path(folder) / "next_use-receipt.jsonl"
+        return path.read_bytes() if path.exists() else None
+
     def decisions(self, folder):
         path = Path(folder) / "next_use-receipt.jsonl"
         if not path.exists():
@@ -531,12 +535,17 @@ class NextUseSafeRecordedDecisionTests(unittest.TestCase):
         rows = [json.loads(line) for line in path.read_text().splitlines()]
         return [row for row in rows if "next_use_decision_v" in row]
 
-    def assert_reason(self, reason, folder=None, **kwargs):
+    def assert_reason(self, reason, folder=None, recorded=True, **kwargs):
         folder = folder or self.publish()
+        before = self.receipt_bytes(folder)
         row = self.run_case(folder, wrapper="on_safe", **kwargs)
         self.assertEqual(row["admitted"], 0)
         self.assertEqual(row["rejected"], 1)
         self.assertTrue(row["reasons"] & REASON_BITS[reason], row)
+        if not recorded:
+            # Unparsed envelope or unowned transport: existing bytes untouched.
+            self.assertEqual(self.receipt_bytes(folder), before)
+            return None
         decisions = self.decisions(folder)
         self.assertEqual(len(decisions), 1, decisions)
         self.assertEqual(decisions[0]["decision"], "rejected")
@@ -564,14 +573,18 @@ class NextUseSafeRecordedDecisionTests(unittest.TestCase):
         self.assertEqual(row["loaded"], 0)
         self.assertEqual(sorted(os.listdir(empty)), [])
 
-    def test_schema(self):
+    def test_unparseable_envelope_is_schema_and_writes_nothing(self):
         folder = self.publish()
         (Path(folder) / "next_use-envelope.json").write_text("{}")
         os.chmod(Path(folder) / "next_use-envelope.json", 0o600)
-        self.assert_reason("schema", folder)
+        self.assert_reason("schema", folder, recorded=False)
 
-    def test_identity(self):
-        self.assert_reason("identity", identity=0)
+    def test_unowned_transport_is_identity_and_keeps_old_receipt(self):
+        folder = self.publish()
+        path = Path(folder) / "next_use-receipt.jsonl"
+        path.write_bytes(b'{"next_use_private_v":1,"kind":2,"seq":2}\n')
+        os.chmod(path, 0o600)
+        self.assert_reason("identity", folder, recorded=False, identity=0)
 
     def test_run_unavailable(self):
         self.assert_reason("run_unavailable", run="none")
@@ -610,7 +623,7 @@ class NextUseSafeRecordedDecisionTests(unittest.TestCase):
         payload["source"] = payload["source"] + " "
         path.write_text(json.dumps(payload, separators=(",", ":"), sort_keys=True))
         os.chmod(path, 0o600)
-        self.assert_reason("schema", folder)
+        self.assert_reason("schema", folder, recorded=False)
 
     def test_source(self):
         import hashlib

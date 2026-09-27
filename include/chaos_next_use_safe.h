@@ -72,7 +72,8 @@ int chaos_next_use_safe_restore_attempted(int attempted);
 /* Startup only: resolve the restored recorder before observation boundaries. */
 void chaos_next_use_safe_resume(int dir);
 int chaos_next_use_safe_last(struct chaos_next_use_safe_result *);
-/* Formats the recorded rejection row (with newline); 0 when there is none. */
+/* Formats the recorded rejection row (with newline); 0 when there is none:
+ * not rejected, unparsed envelope (at < 1) or a transport the game does not own. */
 int chaos_next_use_safe_decision_row(const struct chaos_next_use_safe_result *,
                                      int at, long at_safe, long at_move,
                                      char *out, size_t cap);

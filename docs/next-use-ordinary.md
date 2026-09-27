@@ -108,7 +108,9 @@ moves after the origin), `origin_unbound`, `origin_superseded` (a newer
 qualifying notice now holds the family's slot), `source`, `telegraph`,
 `budget`, `receipt`, `internal`. Admission keeps its existing kind-2 row and
 writes no decision row. Nothing is written for an empty mailbox, a pending
-envelope or a clock-range rejection, so stock and empty-mailbox output is
+or unparseable envelope, a clock-range rejection, or a transport directory this
+game does not own (a new game reusing an old run directory leaves that
+directory's receipt bytes unchanged), so stock and empty-mailbox output is
 unchanged. The row draws no random numbers and does not alter which checks
 pass. It is diagnostic: a failed append is a trace gap, not a game-state
 change. `tests/chaos/sweep_funnel.py` reports these recorded reasons and falls
