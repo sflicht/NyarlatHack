@@ -120,7 +120,14 @@ class NextUseDogMoveTests(RetainOnFailure):
             cwd=folder,
         )
         self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
-        if name in ("safehit", "safemiss", "obsorigin", "unequalclock"):
+        if name in (
+            "safehit",
+            "safemiss",
+            "obsorigin",
+            "unequalclock",
+            "obsrebind",
+            "obsrebind_level",
+        ):
             self.assertEqual((folder / "next_use-envelope.json").read_bytes(), original)
             self.assertFalse((folder / "fixture-envelope-held.json").exists())
             self.assertRegex(
@@ -134,7 +141,12 @@ class NextUseDogMoveTests(RetainOnFailure):
                 [row["detail"] for row in sessions if row["event"] == "session"],
                 ["new"],
             )
+        self.last_folder = folder
         return json.loads((folder / "result.json").read_text())
+
+    def receipt_rows(self):
+        path = self.last_folder / "next_use-receipt.jsonl"
+        return [json.loads(line) for line in path.read_text().splitlines()]
 
     def test_admitted_dog_move_consumes_extra_attention(self):
         control = self.run_case("none")
@@ -255,6 +267,45 @@ class NextUseDogMoveTests(RetainOnFailure):
         row = self.run_case("unequalclock", move=200)
         self.assertEqual(row["spent"], 1)
         self.assertEqual(row["arm"], 2)
+
+    def test_superseded_origin_rebinds_to_newest_whistle_and_delivers(self):
+        # #177 option 1, real observation path: envelope names root 10; a
+        # newer delivered whistle on the same level replaces it before the
+        # safe point. The engine binds the newest origin, W delivers.
+        row = self.run_case("obsrebind")
+        self.assertGreater(row["bound_root"], 10)
+        self.assertEqual(row["spent"], 1)
+        self.assertEqual(row["arm"], 2)
+        self.assertEqual(row["ready_before"], 1)
+        self.assertEqual(row["public"], 1)
+        self.assertEqual(row["delivered"], 1)
+        admission = [r for r in self.receipt_rows() if r.get("kind") == 2]
+        self.assertEqual(
+            admission[0]["origins"],
+            [{"family": "W", "published": 10, "bound": row["bound_root"]}],
+        )
+
+    def test_rebound_run_replays_identically(self):
+        first = self.run_case("obsrebind")
+        second = self.run_case("obsrebind")
+        for key in ("mx", "my", "rng_next", "reseed", "bound_root", "public"):
+            self.assertEqual(first[key], second[key], key)
+
+    def test_newer_origin_on_other_level_does_not_rebind(self):
+        row = self.run_case("obsrebind_level")
+        self.assertEqual(row["spent"], 0)
+        self.assertEqual(row["arm"], 0)
+        self.assertEqual(row["public"], 0)
+        decisions = [r for r in self.receipt_rows() if "next_use_decision_v" in r]
+        self.assertEqual(len(decisions), 1)
+        self.assertIn("origin_superseded", decisions[0]["reasons"])
+
+    def test_save_restore_mid_rebind_keeps_bound_origin(self):
+        row = self.run_case("obsrebind_save")
+        self.assertEqual(row["restored"], 1)
+        self.assertEqual(row["spent2"], 1)
+        self.assertEqual(row["arm"], 2)
+        self.assertEqual(row["public"], 1)
 
     def test_save_restore_continues_without_readmit(self):
         row = self.run_case("save")
