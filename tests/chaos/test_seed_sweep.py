@@ -204,12 +204,12 @@ class FunnelTest(unittest.TestCase):
         events = [
             SESSION,
             *_whistle(2, "sound_high", 20),
-            {"event": "observation", "seq": 12, "turn": 140, "observation": {}},
+            {"event": "observation", "seq": 12, "turn": 340, "observation": {}},
             {
                 "event": "safe_point",
                 "seq": 20,
                 "safe": 2,
-                "turn": 150,
+                "turn": 350,
                 "detail": "pray",
                 "budget": 2,
             },

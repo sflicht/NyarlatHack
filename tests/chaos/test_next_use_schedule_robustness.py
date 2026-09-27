@@ -505,7 +505,7 @@ class ScheduleProductionFlowTests(unittest.TestCase):
         cases = (
             {"run": "cd" * 32},
             {"dlevel": 2},
-            {"at_move": 141},
+            {"at_move": 341},
             {"at_safe": 3},
             {"evidence": "missing"},
         )

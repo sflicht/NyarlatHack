@@ -175,7 +175,7 @@ class NextUseJournalTests(RetainOnFailure):
         trace = read_journal(folder / "next_use-journal.jsonl")
         snapshot = trace["records"][0]["data"]["snapshot"]
         self.assertEqual(
-            (snapshot["admission_move"], snapshot["program_expiry"]), (140, 240)
+            (snapshot["admission_move"], snapshot["program_expiry"]), (340, 440)
         )
         self.assertEqual(
             bytes.fromhex(snapshot["source_hex"]), envelope["source"].encode()
@@ -183,7 +183,7 @@ class NextUseJournalTests(RetainOnFailure):
         self.assertEqual(trace["status"], "structurally_complete")
         self.assertEqual(row["cursor"], 2)
         effect = trace["records"][-2]["data"]
-        self.assertEqual((effect["at_move"], effect["fountain_outcome"]), (140, 6))
+        self.assertEqual((effect["at_move"], effect["fountain_outcome"]), (340, 6))
         # Engine consumes its bound copy, not the driver's original token.
         self.assertEqual(effect["expected_token"]["consumed"], 1)
 

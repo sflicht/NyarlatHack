@@ -8,7 +8,7 @@
 /* Native moves an engine-observed origin stays admissible after its notice
  * (#177). The origin deadline is the bound origin's move plus this value. */
 #ifndef CHAOS_NEXT_USE_ORIGIN_LIFETIME
-#define CHAOS_NEXT_USE_ORIGIN_LIFETIME 100
+#define CHAOS_NEXT_USE_ORIGIN_LIFETIME 300
 #endif
 
 struct chaos_next_use_safe_request {

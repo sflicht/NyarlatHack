@@ -19,7 +19,7 @@ MAX_RECORDS = 4096
 I32 = 2147483647
 I64 = 9223372036854775807
 # Native moves an origin stays admissible (CHAOS_NEXT_USE_ORIGIN_LIFETIME).
-ORIGIN_LIFETIME = 100
+ORIGIN_LIFETIME = 300
 
 
 class JournalError(ValueError):

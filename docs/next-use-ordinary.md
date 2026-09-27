@@ -104,7 +104,7 @@ reached and does not admit it, the engine appends one row to the existing
 `reasons` lists every failing check in a fixed order: `schema`, `identity`,
 `run_unavailable`, `level_invalid`, `budget_state`, `missed_index`,
 `run_mismatch`, `level_mismatch`, `origin_expired` (more than
-`CHAOS_NEXT_USE_ORIGIN_LIFETIME` = 100 monster moves after the origin),
+`CHAOS_NEXT_USE_ORIGIN_LIFETIME` = 300 monster moves after the origin),
 `origin_unbound`, `origin_superseded` (a newer origin holds the family's slot
 and the engine could not rebind to it; see below), `source`, `telegraph`,
 `budget`, `receipt`, `internal`. Admission keeps its existing kind-2 row and
@@ -169,6 +169,24 @@ move `at`. It only changes **which** already-observed origin of the same
 family the program attaches to at that one index. Origin lifetime is a
 separate clock (monster moves from the bound origin), and program expiry
 (TTL 100 from admission) is unchanged.
+
+## Origin lifetime: 100 vs 300 (#177)
+
+The origin lifetime was measured with the rebind at both values: the same
+baseline-v1 sweep (seeds 1-100; bard, madman, bard-inherited) and the same
+player, differing only in `CHAOS_NEXT_USE_ORIGIN_LIFETIME` and its two Python
+mirrors. Games reaching each stage, all three starts together:
+
+| Lifetime | Published | Admitted | Trigger | Native effect | Delivered |
+| --- | --- | --- | --- | --- | --- |
+| 100 | 177 | 56 | 11 | 11 | 4 |
+| 300 | 177 | 68 | 18 | 18 | 9 |
+
+300 delivers in more than twice as many games, which is not comparable, so the
+lifetime is **300 monster moves**. It is one constant with two Python mirrors
+that must change together: `ORIGIN_LIFETIME` in `chaos/next_use_journal.py` and
+`ORIGIN_TTL` in `tests/chaos/sweep_funnel.py`. Reports:
+`docs/evidence/seed-sweep/baseline-v1-seeds-1-100-rebind-lifetime-{100,300}.md`.
 
 ## Schedule/transport regression scope (#143)
 

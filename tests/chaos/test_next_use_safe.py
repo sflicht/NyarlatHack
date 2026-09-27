@@ -212,7 +212,7 @@ class NextUseSafeAdmitTests(RetainOnFailure):
         self.assertEqual(row["spent"], 0)
 
     def test_stale_origin_is_rejected(self):
-        row = self.run_case(self.publish(), at_move=141)
+        row = self.run_case(self.publish(), at_move=341)
         self.assertEqual(row["rejected"], 1)
         self.assertEqual(row["admitted"], 0)
 
@@ -279,7 +279,7 @@ class NextUseSafeAdmitTests(RetainOnFailure):
         self.assertEqual(row["caller_spent"], 0)
 
     def test_production_stale_origin_clock_rejects(self):
-        row = self.run_case(self.publish(), wrapper="on_safe", at_move=141)
+        row = self.run_case(self.publish(), wrapper="on_safe", at_move=341)
         self.assertEqual(row["admitted"], 0)
         self.assertEqual(row["caller_spent"], 0)
 
@@ -418,12 +418,12 @@ class NextUseSafeAdmitTests(RetainOnFailure):
         self.assertEqual((row["admitted"], row["rebound"], row["telegraph"]), (0, 0, 0))
 
     def test_rebind_lifetime_is_measured_from_the_bound_origin(self):
-        # Published origin at move 40 has expired at 141; the newer origin
+        # Published origin at move 40 has expired at 341; the newer origin
         # (move 45) is still within its lifetime, so the engine rebinds.
-        _, row = self.rebind_case("rebind_w", at_move=141)
+        _, row = self.rebind_case("rebind_w", at_move=341)
         self.assertEqual((row["admitted"], row["rebound"]), (1, 1))
         # Past the bound origin's own lifetime: expired, no rebind.
-        _, row = self.rebind_case("rebind_w", at_move=146)
+        _, row = self.rebind_case("rebind_w", at_move=346)
         self.assertEqual((row["admitted"], row["rebound"]), (0, 0))
         self.assertEqual(row["telegraph"], 0)
         self.assertEqual(row["caller_spent"], 0)
@@ -677,8 +677,8 @@ class NextUseSafeRecordedDecisionTests(unittest.TestCase):
         self.assert_reason("level_mismatch", dlevel=2)
 
     def test_origin_expired(self):
-        decision = self.assert_reason("origin_expired", at_move=141)
-        self.assertEqual(decision["move"], 141)
+        decision = self.assert_reason("origin_expired", at_move=341)
+        self.assertEqual(decision["move"], 341)
 
     def test_origin_unbound(self):
         self.assert_reason("origin_unbound", evidence="missing")
@@ -719,7 +719,7 @@ class NextUseSafeRecordedDecisionTests(unittest.TestCase):
 
     def test_all_failing_checks_are_listed(self):
         decision = self.assert_reason(
-            "level_mismatch", at_safe=8, at_move=141, dlevel=2
+            "level_mismatch", at_safe=8, at_move=341, dlevel=2
         )
         self.assertEqual(
             decision["reasons"],

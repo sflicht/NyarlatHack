@@ -41,7 +41,7 @@ TERMINATION = {
 }
 W_ARMED, W_CAPTURE_SUPPRESSED, W_WITNESSED, F_REMAPPED = 1, 2, 3, 12
 FAMILY_OPERATION = {"W": "whistling", "F": "fountain_drink"}
-ORIGIN_TTL = 100  # engine: origin expiry is move + 100
+ORIGIN_TTL = 300  # engine: CHAOS_NEXT_USE_ORIGIN_LIFETIME
 
 
 def _rows(path):
@@ -67,7 +67,7 @@ def _publication_loss(events, envelope, qualifying):
 
     The engine checks an envelope at the safe point whose index equals
     envelope["at"]; it rejects it if any origin is on another level, older than
-    100 monster moves, or no longer the bound origin for its family (a newer
+    ORIGIN_TTL monster moves, or no longer the bound origin for its family (a newer
     qualifying notice replaces it). This uses public `turn` for monstermoves,
     and the safe_point event's budget, which is read before ordinary whisper
     admission and so may exceed the budget at the next-use debit. Every label

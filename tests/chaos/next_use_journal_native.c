@@ -123,8 +123,10 @@ int main(int argc, char **argv)
     chaos_next_use_safe_bind_run(run);
     chaos_next_use_safe_bind_telegraph(telegraph_ok, &telegraphs);
     /* Keep approved origin move/source unchanged; advance only the live clock. */
-    if (mode && !strcmp(mode, "deadline")) monstermoves = 140;
-    if (mode && !strcmp(mode, "deadline-late")) monstermoves = 141;
+    if (mode && !strcmp(mode, "deadline"))
+        monstermoves = 40 + CHAOS_NEXT_USE_ORIGIN_LIFETIME;
+    if (mode && !strcmp(mode, "deadline-late"))
+        monstermoves = 40 + CHAOS_NEXT_USE_ORIGIN_LIFETIME + 1;
     header_probe = getenv("JOURNAL_TEST_HEADER_PROBE");
     if (header_probe) {
         probe_dir = dir;
