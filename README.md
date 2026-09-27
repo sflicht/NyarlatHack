@@ -23,8 +23,10 @@ No model, network or account is needed: the director runs offline from
 hand-written packs. Save with `S` as usual; the launcher prints a private run
 directory, and `python3 -m chaos play --reuse-run-dir /that/path` resumes it.
 `--ordinary` always uses the same character name, so while a saved game exists
-a fresh `chaos play --ordinary` restores it into a new directory and the
-director stops. Resume with `--reuse-run-dir`, or finish or quit that game first.
+a fresh `chaos play --ordinary` refuses to start: it exits with an error naming
+the save file and, when it can find the save's run directory, prints the exact
+`--reuse-run-dir` command to resume. To start fresh instead, finish or quit that
+game, or move the named save file aside yourself; the launcher never touches it.
 
 ## What you might notice
 
