@@ -210,7 +210,6 @@ def analyse(game_root):
         "start_budget": sessions[0]["budget"] if sessions else None,
         "start_sanity": sessions[0]["sanity"] if sessions else None,
         "session_details": [e["detail"] for e in sessions],
-        "director_final": statuses[-1] if statuses else None,
         "journal_status": journal_status,
         "effect_outcomes": sorted(e["data"]["outcome"] for e in effects),
         "terminations": [
