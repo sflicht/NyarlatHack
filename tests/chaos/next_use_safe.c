@@ -121,6 +121,8 @@ int main(int argc, char **argv)
         budget.spent = 100;
     else if (!strcmp(budget_mode, "empty"))
         budget.spent = 12;
+    else if (!strcmp(budget_mode, "null"))
+        budget_watch = NULL;
     else if (!strcmp(budget_mode, "shared")) {
         budget.effects[CHAOS_HUNGER].value = 2;
         budget.effects[CHAOS_HUNGER].cost = 3;
@@ -201,7 +203,7 @@ int main(int argc, char **argv)
     req.level_dlevel = dlevel;
     req.run_hex = strcmp(run, "none") ? run : NULL;
     req.sanity = 50;
-    req.budget = &budget;
+    req.budget = strcmp(budget_mode, "null") ? &budget : NULL;
     chaos_next_use_safe_bind_logical(argc > 15 ? strtol(argv[15], NULL, 10)
                                              : 1750000001L);
     if (!strcmp(telegraph_mode, "ok")) {
@@ -242,7 +244,7 @@ int main(int argc, char **argv)
            "\"second_caller_spent\":%d,\"telegraph_spent\":%d,"
            "\"budget_valid\":%d,\"reserved\":%d,\"hunger_value\":%d,"
            "\"hunger_cost\":%d,\"hunger_expires\":%ld,\"run_token\":%ld,"
-           "\"level_token\":%ld}\n",
+           "\"level_token\":%ld,\"reasons\":%d}\n",
            first.loaded, first.rejected, first.admitted, first.active,
            first.pending, first.telegraph_count, first.spent,
            second.admitted, second.telegraph_count, second.spent,
@@ -252,6 +254,6 @@ int main(int argc, char **argv)
            budget.effects[CHAOS_HUNGER].cost,
            budget.effects[CHAOS_HUNGER].expires,
            chaos_next_use_runtime_run_token(),
-           chaos_next_use_pack_level(dnum, dlevel));
+           chaos_next_use_pack_level(dnum, dlevel), first.reasons);
     return 0;
 }

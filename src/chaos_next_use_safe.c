@@ -8,6 +8,7 @@
 #include "chaos_next_use_safe.h"
 #include "chaos_next_use_journal.h"
 
+#include <errno.h>
 #include <fcntl.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -28,6 +29,7 @@ static struct {
 } origin_evidence[2];
 static long logical_run;
 static struct chaos_next_use_safe_result last_result;
+static int last_at;
 
 void chaos_next_use_safe_bind_logical(long run_token)
 {
@@ -47,6 +49,7 @@ void chaos_next_use_safe_reset_for_test(void)
     owned_receipt_opaque = 0;
     memset(origin_evidence, 0, sizeof origin_evidence);
     memset(&last_result, 0, sizeof last_result);
+    last_at = 0;
     chaos_next_use_runtime_reset();
 }
 
@@ -141,17 +144,20 @@ static int hex64(const char *text)
     return text[64] == '\0';
 }
 
-static int origin_evidence_ok(const struct chaos_next_use_origin_ref *origin)
+/* 0 when the envelope names the engine's current bound origin for its family;
+ * otherwise the reason bit. A different bound origin means a newer qualifying
+ * notice replaced it (the engine keeps one origin per family). */
+static int origin_evidence_reason(const struct chaos_next_use_origin_ref *origin)
 {
     int slot;
     const struct chaos_next_use_origin_ref *bound;
 
-    if (!origin) return 0;
+    if (!origin) return CHAOS_NEXT_USE_SAFE_SCHEMA;
     if (origin->family == CHAOS_NEXT_USE_FAMILY_W) slot = 0;
     else if (origin->family == CHAOS_NEXT_USE_FAMILY_F) slot = 1;
-    else return 0;
+    else return CHAOS_NEXT_USE_SAFE_SCHEMA;
     if (!origin_evidence[slot].bound || !origin_evidence[slot].qualifying)
-        return 0;
+        return CHAOS_NEXT_USE_SAFE_ORIGIN_UNBOUND;
     bound = &origin_evidence[slot].origin;
     if (bound->root != origin->root
         || bound->notice_seq != origin->notice_seq
@@ -159,39 +165,44 @@ static int origin_evidence_ok(const struct chaos_next_use_origin_ref *origin)
         || bound->family != origin->family
         || bound->level_dnum != origin->level_dnum
         || bound->level_dlevel != origin->level_dlevel
-        || bound->move != origin->move)
-        return 0;
-    if (strcmp(bound->fact, origin->fact)
+        || bound->move != origin->move
+        || strcmp(bound->fact, origin->fact)
         || strcmp(bound->run, origin->run))
-        return 0;
-    return 1;
+        return CHAOS_NEXT_USE_SAFE_ORIGIN_SUPERSEDED;
+    return 0;
 }
 
-static int envelope_origins_ok(const struct chaos_next_use_envelope *envelope,
-                               const struct chaos_next_use_safe_request *request)
+/* Every failing origin check, not just the first: the recorded decision is
+ * measurement (#177). Same checks, same pass/fail outcome as before. */
+static int envelope_origin_reasons(const struct chaos_next_use_envelope *envelope,
+                                   const struct chaos_next_use_safe_request *request)
 {
-    int i;
+    int i, reasons = 0;
 
-    if (!envelope || !request || !hex64(request->run_hex))
-        return 0;
+    if (!envelope || !request) return CHAOS_NEXT_USE_SAFE_SCHEMA;
+    if (!hex64(request->run_hex))
+        reasons |= CHAOS_NEXT_USE_SAFE_RUN_UNAVAILABLE;
     if (envelope->operation_count < 1 || envelope->operation_count > 2)
-        return 0;
+        return reasons | CHAOS_NEXT_USE_SAFE_SCHEMA;
+    if (request->at_move < 0)
+        reasons |= CHAOS_NEXT_USE_SAFE_SCHEMA;
     for (i = 0; i < envelope->operation_count; ++i) {
         const struct chaos_next_use_origin_ref *origin = &envelope->origin_refs[i];
-        int expiry;
 
-        if (origin->move < 0 || origin->move > 2147483547)
-            return 0;
-        expiry = origin->move + 100;
-        if (strcmp(origin->run, request->run_hex)
-            || origin->level_dnum != request->level_dnum
-            || origin->level_dlevel != request->level_dlevel
-            || request->at_move < 0
-            || request->at_move > expiry
-            || !origin_evidence_ok(origin))
-            return 0;
+        if (origin->move < 0 || origin->move > 2147483547) {
+            reasons |= CHAOS_NEXT_USE_SAFE_SCHEMA;
+            continue;
+        }
+        if (hex64(request->run_hex) && strcmp(origin->run, request->run_hex))
+            reasons |= CHAOS_NEXT_USE_SAFE_RUN_MISMATCH;
+        if (origin->level_dnum != request->level_dnum
+            || origin->level_dlevel != request->level_dlevel)
+            reasons |= CHAOS_NEXT_USE_SAFE_LEVEL_MISMATCH;
+        if (request->at_move > origin->move + 100)
+            reasons |= CHAOS_NEXT_USE_SAFE_ORIGIN_EXPIRED;
+        reasons |= origin_evidence_reason(origin);
     }
-    return 1;
+    return reasons;
 }
 
 static int production_receipt(void *opaque,
@@ -224,6 +235,78 @@ static int finish(struct chaos_next_use_safe_result *result, int rc)
 {
     last_result = *result;
     return rc;
+}
+
+static int reject(struct chaos_next_use_safe_result *result, int reasons, int rc)
+{
+    result->rejected = 1;
+    result->reasons |= reasons;
+    return finish(result, rc);
+}
+
+static const char *const reason_names[] = {
+    "schema", "identity", "run_unavailable", "level_invalid", "budget_state",
+    "missed_index", "run_mismatch", "level_mismatch", "origin_expired",
+    "origin_unbound", "origin_superseded", "source", "telegraph", "budget",
+    "receipt", "internal"
+};
+
+/* #177 recorded decision: one row appended to the existing receipt file when
+ * an envelope was read and rejected (admission keeps its kind-2 row). Written
+ * only after a read envelope, so empty mailboxes stay byte-identical. The
+ * row names every failing check; it is not a new capability or state. */
+int chaos_next_use_safe_decision_row(const struct chaos_next_use_safe_result *result,
+                                     int at, long at_safe, long at_move,
+                                     char *out, size_t cap)
+{
+    size_t used;
+    int i, n, first = 1;
+
+    if (!result || !out || cap < 1) return 0;
+    out[0] = '\0';
+    if (!result->loaded || !result->rejected || result->admitted) return 0;
+    n = snprintf(out, cap, "{\"next_use_decision_v\":1,\"decision\":\"rejected\","
+                 "\"at\":%d,\"safe\":%ld,\"move\":%ld,\"reasons\":[",
+                 at, at_safe, at_move);
+    if (n < 1 || (size_t)n >= cap) { out[0] = '\0'; return 0; }
+    used = (size_t)n;
+    for (i = 0; i < (int)(sizeof reason_names / sizeof reason_names[0]); ++i) {
+        if (!(result->reasons & (1 << i))) continue;
+        n = snprintf(out + used, cap - used, "%s\"%s\"", first ? "" : ",",
+                     reason_names[i]);
+        if (n < 1 || (size_t)n >= cap - used) { out[0] = '\0'; return 0; }
+        used += (size_t)n;
+        first = 0;
+    }
+    n = snprintf(out + used, cap - used, "%s]}\n", first ? "\"other\"" : "");
+    if (n < 1 || (size_t)n >= cap - used) { out[0] = '\0'; return 0; }
+    return 1;
+}
+
+static void production_decision(int dir, const struct chaos_next_use_safe_result *result,
+                                int at, long at_safe, long at_move)
+{
+    char line[512];
+    size_t n, done = 0;
+    int fd;
+
+    if (dir < 0
+        || !chaos_next_use_safe_decision_row(result, at, at_safe, at_move,
+                                             line, sizeof line))
+        return;
+    n = strlen(line);
+    fd = openat(dir, "next_use-receipt.jsonl",
+                O_WRONLY | O_CREAT | O_APPEND | O_NOFOLLOW | O_CLOEXEC, 0600);
+    if (fd < 0) return;
+    while (done < n) {
+        ssize_t wrote = write(fd, line + done, n - done);
+        if (wrote < 0 && errno == EINTR) continue;
+        if (wrote <= 0) break;
+        done += (size_t)wrote;
+    }
+    /* A lost diagnostic row is a trace gap, never a game-state change. */
+    (void)fsync(fd);
+    (void)close(fd);
 }
 
 int chaos_next_use_on_safe(int dir, long at_safe, int sanity,
@@ -259,6 +342,7 @@ int chaos_next_use_on_safe(int dir, long at_safe, int sanity,
     }
     {
         int rc = chaos_next_use_safe_try(&req, &res);
+        production_decision(dir, &res, last_at, at_safe, monstermoves);
         /* Validated source/admission remain in the installed runtime carrier.
          * Journal failure is a trace gap, NOT a rejected paid admission. */
         if (rc == CHAOS_NEXT_USE_ADMISSION_OK && res.active)
@@ -276,7 +360,7 @@ int chaos_next_use_safe_try(const struct chaos_next_use_safe_request *request,
     struct chaos_next_use_admission source, admitted;
     struct chaos_next_use_attempt_gate gate;
     size_t n = 0, written = 0;
-    int rc;
+    int rc, reasons;
 
     if (!result)
         return CHAOS_NEXT_USE_ADMISSION_SCHEMA;
@@ -291,35 +375,42 @@ int chaos_next_use_safe_try(const struct chaos_next_use_safe_request *request,
            != CHAOS_NEXT_USE_OK) {
         settled = 1;
         result->loaded = 1;
-        result->rejected = 1;
-        return finish(result, CHAOS_NEXT_USE_ADMISSION_SCHEMA);
+        last_at = 0;
+        return reject(result, CHAOS_NEXT_USE_SAFE_SCHEMA,
+                      CHAOS_NEXT_USE_ADMISSION_SCHEMA);
     }
     result->loaded = 1;
+    last_at = envelope.at;
     if (envelope.at > request->at_safe) {
         result->pending = 1;
         return finish(result, CHAOS_NEXT_USE_ADMISSION_NOT_OPEN);
     }
     settled = 1;
-    if (envelope.at != request->at_safe
-        || logical_run <= 0
-        || chaos_next_use_pack_level(request->level_dnum, request->level_dlevel) <= 0
-        || !request->budget
-        || !chaos_state_valid(request->budget)
-        || !envelope_origins_ok(&envelope, request)
-        || chaos_lua_next_use_load(envelope.source, envelope.source_length) != 0) {
-        result->rejected = 1;
-        return finish(result, CHAOS_NEXT_USE_ADMISSION_SCHEMA);
-    }
+    reasons = 0;
+    if (envelope.at != request->at_safe)
+        reasons |= CHAOS_NEXT_USE_SAFE_MISSED_INDEX;
+    if (logical_run <= 0)
+        reasons |= CHAOS_NEXT_USE_SAFE_IDENTITY;
+    if (chaos_next_use_pack_level(request->level_dnum, request->level_dlevel) <= 0)
+        reasons |= CHAOS_NEXT_USE_SAFE_LEVEL_INVALID;
+    if (!request->budget || !chaos_state_valid(request->budget))
+        reasons |= CHAOS_NEXT_USE_SAFE_BUDGET_STATE;
+    reasons |= envelope_origin_reasons(&envelope, request);
+    /* The sandboxed source check runs only when every cheaper check passed,
+     * exactly as before; it draws no game RNG. */
+    if (!reasons
+        && chaos_lua_next_use_load(envelope.source, envelope.source_length) != 0)
+        reasons |= CHAOS_NEXT_USE_SAFE_SOURCE;
+    if (reasons)
+        return reject(result, reasons, CHAOS_NEXT_USE_ADMISSION_SCHEMA);
     if (!request->telegraph
-        || !request->telegraph(request->telegraph_opaque, envelope.telegraph)) {
-        result->rejected = 1;
-        return finish(result, CHAOS_NEXT_USE_ADMISSION_RECEIPT_TRANSPORT);
-    }
+        || !request->telegraph(request->telegraph_opaque, envelope.telegraph))
+        return reject(result, CHAOS_NEXT_USE_SAFE_TELEGRAPH,
+                      CHAOS_NEXT_USE_ADMISSION_RECEIPT_TRANSPORT);
     result->telegraph_count = 1;
-    if (!request->receipt) {
-        result->rejected = 1;
-        return finish(result, CHAOS_NEXT_USE_ADMISSION_RECEIPT_TRANSPORT);
-    }
+    if (!request->receipt)
+        return reject(result, CHAOS_NEXT_USE_SAFE_RECEIPT,
+                      CHAOS_NEXT_USE_ADMISSION_RECEIPT_TRANSPORT);
     memset(&source, 0, sizeof source);
     memset(&admitted, 0, sizeof admitted);
     source.budget_state = *request->budget;
@@ -335,10 +426,14 @@ int chaos_next_use_safe_try(const struct chaos_next_use_safe_request *request,
         *request->budget = admitted.budget_state;
         result->spent = admitted.budget_state.spent;
     }
-    if (rc != CHAOS_NEXT_USE_ADMISSION_OK) {
-        result->rejected = 1;
-        return finish(result, rc);
-    }
+    if (rc != CHAOS_NEXT_USE_ADMISSION_OK)
+        return reject(result,
+                      rc == CHAOS_NEXT_USE_ADMISSION_BUDGET
+                          ? CHAOS_NEXT_USE_SAFE_BUDGET
+                      : rc == CHAOS_NEXT_USE_ADMISSION_RECEIPT_TRANSPORT
+                          ? CHAOS_NEXT_USE_SAFE_RECEIPT
+                          : CHAOS_NEXT_USE_SAFE_INTERNAL,
+                      rc);
     result->admitted = 1;
     {
         long origin_w = 0, origin_w_deadline = 0;
@@ -365,10 +460,9 @@ int chaos_next_use_safe_try(const struct chaos_next_use_safe_request *request,
                                                 request->level_dlevel),
                                             origin_w, origin_w_deadline,
                                             origin_f, origin_f_deadline,
-                                            envelope.variant, 0, 0)) {
-            result->rejected = 1;
-            return finish(result, CHAOS_NEXT_USE_ADMISSION_RECEIPT_TRANSPORT);
-        }
+                                            envelope.variant, 0, 0))
+            return reject(result, CHAOS_NEXT_USE_SAFE_INTERNAL,
+                          CHAOS_NEXT_USE_ADMISSION_RECEIPT_TRANSPORT);
     }
     result->active = 1;
     return finish(result, CHAOS_NEXT_USE_ADMISSION_OK);
