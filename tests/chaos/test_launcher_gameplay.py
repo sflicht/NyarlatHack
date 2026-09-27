@@ -7,15 +7,20 @@ import tempfile
 import unittest
 from chaos.director import Mailbox
 from gameplay_support import Game, ROOT
+from artifact_hygiene import RetainOnFailure
 
 
 @unittest.skipUnless(
     os.environ.get("NYARLATHACK_GAME_TESTS") == "1", "real game opt-in"
 )
-class LauncherGameplayTests(unittest.TestCase):
+class LauncherGameplayTests(RetainOnFailure):
     @classmethod
     def setUpClass(cls):
-        cls.root = Path(tempfile.mkdtemp(prefix="nyarl-launcher-gameplay-"))
+        cls.root = Path(
+            cls.track_class_artifacts(
+                tempfile.mkdtemp(prefix="nyarl-launcher-gameplay-")
+            )
+        )
         cls.clock = cls.root / "clock.so"
         subprocess.run(
             [

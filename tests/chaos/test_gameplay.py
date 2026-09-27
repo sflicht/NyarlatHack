@@ -12,16 +12,21 @@ import tempfile
 import unittest
 from gameplay_support import ANSI, Game, ROOT
 from native_rng import controlled_rng_objects
+from artifact_hygiene import RetainOnFailure
 
 
 @unittest.skipUnless(
     os.environ.get("NYARLATHACK_GAME_TESTS") == "1",
     "opt-in actual game tests: NYARLATHACK_GAME_TESTS=1",
 )
-class GameplayTests(unittest.TestCase):
+class GameplayTests(RetainOnFailure):
     @classmethod
     def setUpClass(cls):
-        cls.artifacts = Path(tempfile.mkdtemp(prefix="nyarlathack-acceptance-"))
+        cls.artifacts = Path(
+            cls.track_class_artifacts(
+                tempfile.mkdtemp(prefix="nyarlathack-acceptance-")
+            )
+        )
         cls.clock = cls.artifacts / "clock.so"
         cls.current = ROOT / "dnethackdir"
         cls.stock = Path(
