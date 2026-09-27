@@ -119,6 +119,17 @@ tier requires. Only Tier A PRs add to `docs/evidence/`.
 - Sidecar: unit tests for schema validation, budget arithmetic, and the
   telegraph requirement. Every rejected-whisper path needs a test.
 
+## Workspace hygiene
+
+The VPS is shared with other projects; runs must leave nothing behind. Use a
+per-run temp root `/tmp/nyarlathack-work/<run-id>/` as `TMPDIR`, delete it at
+the end unless something failed (failures: at most 7 days), keep evidence only
+in committed Tier A evidence or `~/.hermes/reports/nyarlathack-*` (never a bare
+`/tmp` path), and remove clones/build outputs once pushed and clean. Before the
+final message, run `python3 scripts/clean_workspace.py --apply
+/tmp/nyarlathack-work/<run-id>` and report the freed space. Full policy:
+[`docs/workspace-hygiene.md`](docs/workspace-hygiene.md).
+
 ## Git conventions
 
 - Commit identity in this repo is `Xiongmao (雄猫) <xiongmao@lichtens.cloud>`

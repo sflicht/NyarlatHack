@@ -12,6 +12,7 @@ import json
 import os
 from pathlib import Path
 import select
+import shlex
 import signal
 import stat
 import subprocess
@@ -34,6 +35,8 @@ from .protocol import parse_request
 
 SIGNALS = (signal.SIGINT, signal.SIGTERM, signal.SIGHUP)
 GRACE = 2.0
+RUN_PREFIX = "nyarlathack-"
+_SCAN_CAP = 4096
 
 
 def add_parser(sub):
@@ -180,8 +183,157 @@ def _directory(args):
         path.mkdir(mode=0o700)  # Never adopt an existing directory implicitly.
         path.chmod(0o700)
     else:
-        path = Path(tempfile.mkdtemp(prefix="nyarlathack-"))
+        path = Path(tempfile.mkdtemp(prefix=RUN_PREFIX))
     return path.resolve(strict=True)
+
+
+def _ordinary_name(env, game_args):
+    """The player name the game will use: -u wins, then NETHACKOPTIONS, $USER."""
+    name = None
+    for index, arg in enumerate(game_args):
+        if arg == "-u" and index + 1 < len(game_args):
+            name = game_args[index + 1]
+        elif arg.startswith("-u") and len(arg) > 2:
+            name = arg[2:]
+    if name is None:
+        options = env.get("NETHACKOPTIONS", "")
+        if options.startswith("@"):
+            return None  # Options file: do not guess its contents.
+        for option in options.split(","):
+            key, _, value = option.strip().partition(":")
+            if key.strip().lower() == "name" and value.strip():
+                name = value.strip()
+    if name is None:
+        name = env.get("USER") or env.get("LOGNAME")
+    if not name:
+        return None
+    # Mirror plnamesuffix() and set_savefile_name()/regularize() on Unix.
+    name = name[:31].split("-", 1)[0].replace(",", " ")
+    for ch in "./ ":
+        name = name.replace(ch, "_")
+    return name or None
+
+
+def _save_path(root, env, name):
+    playground = env.get("NETHACKDIR") or env.get("HACKDIR")
+    base = root / playground if playground else root
+    return base / "save" / (str(os.getuid()) + name)
+
+
+def _owning_run(save_mtime):
+    """Best-effort, read-only search of the launcher's own mkdtemp directories.
+
+    A candidate began with a new game, has not ended, passes the director's
+    usual history checks and was last written no later than the save. Only a
+    single most recent match is named; anything else is reported as unknown.
+    """
+    parent = Path(tempfile.gettempdir())
+    found = []
+    try:
+        entries = os.scandir(parent)
+    except OSError:
+        return None
+    with entries:
+        for index, entry in enumerate(entries):
+            if index >= _SCAN_CAP:
+                break
+            if not entry.name.startswith(RUN_PREFIX):
+                continue
+            try:
+                s = entry.stat(follow_symlinks=False)
+                if (
+                    not stat.S_ISDIR(s.st_mode)
+                    or s.st_uid != os.getuid()
+                    or stat.S_IMODE(s.st_mode) != 0o700
+                ):
+                    continue
+                path = Path(entry.path)
+                events = path / "events.jsonl"
+                mtime = events.lstat().st_mtime
+                if mtime > save_mtime:
+                    continue
+                reader = EventReader(events, DEFAULT_BYTES, DEFAULT_EVENTS)
+                state = State()
+                first = None
+                for event in reader.read(allow_observations=True):
+                    if event.get("v") in (2, 4) and event.get("event") == "observation":
+                        continue
+                    if first is None:
+                        first = event
+                    state.ingest(event)
+            except (OSError, ValueError):
+                continue
+            if (
+                first is None
+                or first.get("event") != "session"
+                or first.get("detail") != "new"
+                or reader.tail
+                or state.ended
+            ):
+                continue
+            found.append((mtime, path))
+    if not found:
+        return None
+    found.sort()
+    if len(found) > 1 and found[-1][0] == found[-2][0]:
+        return None
+    return found[-1][1]
+
+
+def _refuse_ordinary_over_save(args, root):
+    """Fresh --ordinary over an existing save would restore into a new run (#175).
+
+    Read-only: never creates, moves or deletes a save or run directory.
+    Returns an exit status to stop with, or None to continue.
+    """
+    if not args.ordinary or args.reuse_run_dir is not None:
+        return None
+    from .ordinary_start import OPTIONS
+
+    env = dict(os.environ)
+    env.setdefault("NETHACKOPTIONS", OPTIONS)
+    game_args = args.game_args[1:] if args.game_args[:1] == ["--"] else args.game_args
+    name = _ordinary_name(env, game_args)
+    if name is None:
+        return None
+    save = _save_path(root, env, name)
+    try:
+        s = save.lstat()
+    except FileNotFoundError:
+        return None
+    lines = [
+        "chaos: refusing a fresh ordinary run: a saved game already exists at",
+        "  " + json.dumps(str(save)),
+        "chaos: a fresh run would restore it into a new run directory that never",
+        "chaos: saw that game, and the director would stop.",
+    ]
+    owner = _owning_run(s.st_mtime) if stat.S_ISREG(s.st_mode) else None
+    if owner is not None:
+        command = ["python3", "-m", "chaos", "play", "--ordinary"]
+        if args.next_use:
+            command.append("--next-use")
+        default_root = (
+            Path(__file__).resolve().parent.parent / "dnethackdir"
+        ).resolve()
+        if root != default_root:
+            command += ["--game-root", str(root)]
+        command += ["--reuse-run-dir", str(owner)]
+        lines += [
+            "chaos: its run directory appears to be " + json.dumps(str(owner)),
+            "chaos: resume it (add any other options you used) with:",
+            "  " + shlex.join(command),
+        ]
+    else:
+        lines += [
+            "chaos: no single run directory for this save was found.",
+        ]
+    lines += [
+        "chaos: to start fresh instead, move or remove the save file yourself, e.g.",
+        "  mv " + shlex.quote(str(save)) + " " + shlex.quote(str(save) + ".bak"),
+        "chaos: nothing was launched and no file was changed.",
+    ]
+    print("\n".join(lines), file=sys.stderr, flush=True)
+    return 2
 
 
 def _validate_startup_pending(backend, state, pending):
@@ -356,6 +508,9 @@ def _curio_install(directory, box, prepared, *, restore):
 
 def play(args):
     backend, root, executable = _configuration(args)
+    refused = _refuse_ordinary_over_save(args, root)
+    if refused is not None:
+        return refused
     curio = _curio_preflight(args)
     directory = _directory(args)
     print(

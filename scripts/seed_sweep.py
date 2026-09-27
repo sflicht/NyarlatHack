@@ -7,7 +7,9 @@ a Markdown funnel report. Engine stages only: notice, attribution and changed
 decisions are human-only (#44) and are never inferred from these numbers.
 
 No model calls, no wizard mode, no hidden-state lookahead, no retries and no
-discarded seeds. Per-game artifacts stay under --work (not committed).
+discarded seeds. Per-game artifacts stay under --work (not committed). The
+default mkdtemp work dir is removed after a clean sweep and kept on failure or
+with NYARLATHACK_KEEP_ARTIFACTS=1; an explicit --work dir is always kept.
 """
 
 import argparse
@@ -26,6 +28,7 @@ sys.path[:0] = [str(ROOT), str(ROOT / "tests/chaos")]
 
 import sweep_funnel  # noqa: E402
 import sweep_player  # noqa: E402
+from artifact_hygiene import keep_requested, remove_tree  # noqa: E402
 
 REPORT_V = 2
 
@@ -266,21 +269,47 @@ def main():
             raise SystemExit(f"unknown start {start}")
     if (ROOT / ".chaos-build").read_text().strip() != "1":
         raise SystemExit("CHAOS=1 build required")
-    if args.work is None:
+    owned = args.work is None
+    if owned:
         work = Path(tempfile.mkdtemp(prefix="nyarl-sweep-"))
     else:
         work = args.work
         work.mkdir(parents=True, exist_ok=False)  # never reuse an occupied dir
-    clock = build_clock(work)
     print(f"SWEEP_WORK={work}", flush=True)
+    games = None
+    try:
+        clock = build_clock(work)
+        jobs = [
+            (s, seed, args.policy, str(work), str(clock), str(args.game_dir))
+            for s in starts
+            for seed in range(lo, hi + 1)
+        ]
+        with ProcessPoolExecutor(max_workers=args.jobs) as pool:
+            games = list(pool.map(one, jobs))
+        return write_report(args, lo, hi, starts, games)
+    finally:
+        tidy_work(work, owned, games)
 
-    jobs = [
-        (s, seed, args.policy, str(work), str(clock), str(args.game_dir))
-        for s in starts
-        for seed in range(lo, hi + 1)
-    ]
-    with ProcessPoolExecutor(max_workers=args.jobs) as pool:
-        games = list(pool.map(one, jobs))
+
+def sweep_failed(games):
+    """A sweep failed if it did not finish or any game hit a harness error."""
+    return games is None or any(g["outcome"] == "harness_error" for g in games)
+
+
+def tidy_work(work, owned, games, environ=None):
+    """Remove a default (mkdtemp) work dir after success; keep it otherwise.
+
+    An explicit --work directory always belongs to the caller and is kept.
+    """
+    if not owned:
+        return False
+    if sweep_failed(games) or keep_requested(environ):
+        print(f"SWEEP_WORK_RETAINED={work}", flush=True)
+        return False
+    return remove_tree(work)
+
+
+def write_report(args, lo, hi, starts, games):
 
     identity = {
         "report_v": REPORT_V,

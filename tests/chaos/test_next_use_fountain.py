@@ -9,6 +9,7 @@ import unittest
 
 from chaos.next_use_envelope import engine_run_hex, publish_envelope
 from native_rng import controlled_rng_objects
+from artifact_hygiene import RetainOnFailure, track
 
 ROOT = Path(__file__).resolve().parents[2]
 ROW = {
@@ -35,7 +36,7 @@ HOST = {
 @unittest.skipUnless(
     os.environ.get("NYARLATHACK_GAME_TESTS") == "1", "real game opt-in"
 )
-class NextUseFountainTests(unittest.TestCase):
+class NextUseFountainTests(RetainOnFailure):
     @classmethod
     def setUpClass(cls):
         cls.root = Path(tempfile.mkdtemp(prefix="nyarl-next-use-fountain-"))
@@ -88,7 +89,9 @@ class NextUseFountainTests(unittest.TestCase):
         return self.run_mode(fate, "admit" if admit else "none")
 
     def run_mode(self, fate, mode):
-        folder = Path(tempfile.mkdtemp(prefix="nyarl-next-use-fountain-run-"))
+        folder = Path(
+            track(self, tempfile.mkdtemp(prefix="nyarl-next-use-fountain-run-"))
+        )
         os.chmod(folder, 0o700)
         host = dict(HOST)
         host["run"] = engine_run_hex(folder)

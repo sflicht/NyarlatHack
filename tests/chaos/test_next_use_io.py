@@ -4,7 +4,7 @@ import json
 from pathlib import Path
 import subprocess
 import tempfile
-import unittest
+from artifact_hygiene import RetainOnFailure, track
 
 ROOT = Path(__file__).resolve().parents[2]
 SOURCE = (
@@ -16,7 +16,7 @@ SOURCE = (
 )
 
 
-class NextUseIoTests(unittest.TestCase):
+class NextUseIoTests(RetainOnFailure):
     @classmethod
     def setUpClass(cls):
         cls.tmp = tempfile.TemporaryDirectory(prefix="nyarl-next-use-io-")
@@ -51,7 +51,7 @@ class NextUseIoTests(unittest.TestCase):
             raise RuntimeError(result.stderr.decode())
 
     def run_dir(self, mode, source: bytes | None = SOURCE, extra=None):
-        folder = Path(tempfile.mkdtemp(prefix="nyarl-next-use-io-run-"))
+        folder = Path(track(self, tempfile.mkdtemp(prefix="nyarl-next-use-io-run-")))
         if source is not None:
             target = folder / "next_use.lua"
             target.write_bytes(source)
