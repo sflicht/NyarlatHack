@@ -39,7 +39,8 @@ TERMINATION = {
     6: "invalid_callback",
     7: "identity_unsafe",
 }
-W_ARMED, W_WITNESSED, F_REMAPPED = 1, 3, 12
+W_ARMED, W_CAPTURE_SUPPRESSED, W_WITNESSED, F_REMAPPED = 1, 2, 3, 12
+FAMILY_OPERATION = {"W": "whistling", "F": "fountain_drink"}
 ORIGIN_TTL = 100  # engine: origin expiry is move + 100
 
 
@@ -59,25 +60,42 @@ def _director_statuses(run):
     ]
 
 
-def _publication_loss(events, envelope, origin_turn):
-    """Why a published envelope was not admitted, from public timing only.
+def _publication_loss(events, envelope, qualifying):
+    """Likely reason a published envelope was not admitted. INFERRED, not the
+    engine's recorded rejection reason (the engine does not log one).
 
-    The engine checks an envelope once, at the safe point whose index equals
-    envelope["at"], and rejects it if that safe point is on another level or
-    more than 100 moves after the origin. Events carry `turn` (moves), which
-    this inference uses in place of the engine's monstermoves.
+    The engine checks an envelope at the safe point whose index equals
+    envelope["at"]; it rejects it if any origin is on another level, older than
+    100 monster moves, or no longer the bound origin for its family (a newer
+    qualifying notice replaces it). This uses public `turn` for monstermoves,
+    and the safe_point event's budget, which is read before ordinary whisper
+    admission and so may exceed the budget at the next-use debit. Every label
+    is prefixed "inferred:".
     """
     at = envelope["at"]
-    for e in events:
-        if e["event"] == "safe_point" and e["safe"] == at:
-            if e["detail"] == "level_enter":
-                return "level_changed_before_safe_point"
-            if origin_turn is not None and e["turn"] > origin_turn + ORIGIN_TTL:
-                return "origin_expired_before_safe_point"
-            if e["budget"] < envelope["cost"]:
-                return "budget"
-            return "rejected_at_safe_point_other"
-    return "no_safe_point_before_game_end"
+    target = next(
+        (e for e in events if e["event"] == "safe_point" and e["safe"] == at), None
+    )
+    if target is None:
+        return "inferred:no_safe_point_before_game_end"
+    by_seq = {e["seq"]: e for e in events}
+    for origin in envelope["origin_refs"]:
+        op = FAMILY_OPERATION.get(origin.get("family"))
+        if any(
+            origin["end_seq"] < q["seq"] < target["seq"]
+            and q["observation"]["operation"] == op
+            for q in qualifying
+        ):
+            return "inferred:origin_superseded_before_safe_point"
+    if target["detail"] == "level_enter":
+        return "inferred:level_changed_before_safe_point"
+    for origin in envelope["origin_refs"]:
+        start = by_seq.get(origin["end_seq"])
+        if start is not None and target["turn"] > start["turn"] + ORIGIN_TTL:
+            return "inferred:origin_expired_before_safe_point"
+    if target["budget"] < envelope["cost"]:
+        return "inferred:budget"
+    return "inferred:rejected_at_safe_point_other"
 
 
 def analyse(game_root):
@@ -121,7 +139,7 @@ def analyse(game_root):
     envelope = json.loads(envelope_path.read_text()) if envelope_path.exists() else None
     receipts = _rows(run / "next_use-receipt.jsonl")
 
-    journal_status = None
+    journal_status = "missing"
     private, transitions = [], []
     journal = run / "next_use-journal.jsonl"
     if journal.exists():
@@ -162,12 +180,13 @@ def analyse(game_root):
         "delivered": len(delivered),
     }
 
-    origin_turn = None
-    if envelope is not None:
-        origin = envelope["origin_refs"][0]
-        by_seq = {e["seq"]: e for e in events}
-        if origin["end_seq"] in by_seq:
-            origin_turn = by_seq[origin["end_seq"]]["turn"]
+    # Later stages come only from the journal. Absent or partial evidence is
+    # unknown, not zero: a game is a definite zero-delivery game only when it
+    # was never admitted, or its journal is structurally complete.
+    if not counts["admitted"] or counts["delivered"]:
+        delivery_known = True
+    else:
+        delivery_known = journal_status == "structurally_complete"
 
     if not counts["qualifying_history"]:
         loss = "no_qualifying_action"
@@ -182,13 +201,21 @@ def analyse(game_root):
             else "not_published_before_game_end"
         )
     elif not counts["admitted"]:
-        loss = _publication_loss(events, envelope, origin_turn)
-    elif not counts["trigger"]:
-        loss = "admitted_no_trigger:" + (
-            TERMINATION.get(terminations[0]["data"]["reason"], "?")
-            if terminations
-            else "game_ended"
+        loss = _publication_loss(events, envelope, qualifying)
+    elif not delivery_known:
+        loss = "admitted_trace_" + (
+            "invalid" if journal_status.startswith("invalid") else journal_status
         )
+    elif not counts["trigger"]:
+        if any(e["data"]["outcome"] == W_CAPTURE_SUPPRESSED for e in effects):
+            # Engine skips the callback when there is not exactly one target.
+            loss = "admitted_no_trigger:whistle_capture_suppressed"
+        else:
+            loss = "admitted_no_trigger:" + (
+                TERMINATION.get(terminations[0]["data"]["reason"], "?")
+                if terminations
+                else "no_termination_record"
+            )
     elif not counts["native_effect"]:
         loss = "trigger_no_native_effect"
     elif not counts["delivered"]:
@@ -200,6 +227,7 @@ def analyse(game_root):
     ordinary_whispers = _rows(run / "whispers.jsonl")
     return {
         "counts": counts,
+        "delivery_known": delivery_known,
         "loss": loss,
         "first_admission_move": first_admission,
         "qualifying_actions": actions,

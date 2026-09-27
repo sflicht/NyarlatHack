@@ -27,7 +27,7 @@ sys.path[:0] = [str(ROOT), str(ROOT / "tests/chaos")]
 import sweep_funnel  # noqa: E402
 import sweep_player  # noqa: E402
 
-REPORT_V = 1
+REPORT_V = 2
 
 
 def sha256(path):
@@ -106,7 +106,13 @@ def aggregate(games):
             "games_reaching_stage": reached,
             "stage_totals": totals,
             "zero_delivered_games": sum(
-                1 for g in rows if not g["funnel"]["counts"]["delivered"]
+                1
+                for g in rows
+                if g["funnel"]["delivery_known"]
+                and not g["funnel"]["counts"]["delivered"]
+            ),
+            "delivery_unknown_games": sum(
+                1 for g in rows if not g["funnel"]["delivery_known"]
             ),
             "loss_reasons": dict(
                 sorted(losses.items(), key=lambda kv: (-kv[1], kv[0]))
@@ -200,7 +206,11 @@ def markdown(report):
             "- Stage totals: "
             + ", ".join(f"{s} {a['stage_totals'][s]}" for s in sweep_funnel.STAGES)
         )
-        lines.append(f"- Zero delivered effects: {a['zero_delivered_games']}/{n}")
+        lines.append(
+            f"- Zero delivered effects: {a['zero_delivered_games']}/{n}; "
+            f"delivery unknown (admitted, journal missing/incomplete/invalid): "
+            f"{a['delivery_unknown_games']}"
+        )
         lines.append(
             "- Loss reasons (first lost stage per game): "
             + ", ".join(f"{k} {v}" for k, v in a["loss_reasons"].items())
@@ -221,8 +231,11 @@ def markdown(report):
         "## Limits",
         "",
         "- One simple fixed policy. Numbers describe this policy, not human play.",
-        "- The loss reason for a published-but-unadmitted envelope is inferred from public",
-        "  event timing (`turn`, not the engine's monstermoves).",
+        "- Loss reasons marked `inferred:` are guesses from public event timing (`turn`,",
+        "  not monstermoves; safe-point budget read before ordinary admission). The engine",
+        "  does not log its rejection reason.",
+        "- `whistle_capture_suppressed`: admitted, but the engine skipped the callback",
+        "  because there was not exactly one eligible target (by design).",
         "- A single one-shot next-use program per game (the launcher's current design).",
         "- The inherited start fixes one artifact (Vampire Killer); others are untested.",
         "- In-game mail is off (`!mail`): it reads the host mail spool, not the seed.",
@@ -253,8 +266,11 @@ def main():
             raise SystemExit(f"unknown start {start}")
     if (ROOT / ".chaos-build").read_text().strip() != "1":
         raise SystemExit("CHAOS=1 build required")
-    work = args.work or Path(tempfile.mkdtemp(prefix="nyarl-sweep-"))
-    work.mkdir(parents=True, exist_ok=False)
+    if args.work is None:
+        work = Path(tempfile.mkdtemp(prefix="nyarl-sweep-"))
+    else:
+        work = args.work
+        work.mkdir(parents=True, exist_ok=False)  # never reuse an occupied dir
     clock = build_clock(work)
     print(f"SWEEP_WORK={work}", flush=True)
 

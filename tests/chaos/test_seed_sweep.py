@@ -7,8 +7,10 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest import mock
 
 import sweep_funnel
+import sweep_player
 from sweep_screen import Screen, status
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -44,7 +46,9 @@ def _obs(seq, op, stage, root, fact=None, turn=1):
     return {"event": "observation", "seq": seq, "turn": turn, "observation": o}
 
 
-def _run(tmp, events, envelope=None, schedule=(), director=()):
+def _run(
+    tmp, events, envelope=None, schedule=(), director=(), receipts=(), journal=None
+):
     run = Path(tmp) / "run"
     run.mkdir(parents=True)
     (run / "events.jsonl").write_text("".join(json.dumps(e) + "\n" for e in events))
@@ -54,6 +58,12 @@ def _run(tmp, events, envelope=None, schedule=(), director=()):
         )
     if envelope is not None:
         (run / "next_use-envelope.json").write_text(json.dumps(envelope))
+    if receipts:
+        (run / "next_use-receipt.jsonl").write_text(
+            "".join(json.dumps(r) + "\n" for r in receipts)
+        )
+    if journal is not None:
+        (run / "next_use-journal.jsonl").write_text(journal)
     (run / "director.log").write_text(
         "".join(f"chaos: next-use: {d}\n" for d in director)
     )
@@ -133,11 +143,135 @@ class FunnelTest(unittest.TestCase):
     def test_published_origin_expired_before_safe_point(self):
         a = self._published(safe_turn=500)
         self.assertEqual(a["counts"]["published"], 1)
-        self.assertEqual(a["loss"], "origin_expired_before_safe_point")
+        self.assertEqual(a["loss"], "inferred:origin_expired_before_safe_point")
 
     def test_published_level_changed(self):
         a = self._published(safe_turn=30, detail="level_enter")
-        self.assertEqual(a["loss"], "level_changed_before_safe_point")
+        self.assertEqual(a["loss"], "inferred:level_changed_before_safe_point")
+
+    def test_published_origin_superseded(self):
+        envelope = {
+            "at": 2,
+            "cost": 1,
+            "origin_refs": [{"end_seq": 4, "family": "W"}],
+        }
+        safe = {
+            "event": "safe_point",
+            "seq": 20,
+            "safe": 2,
+            "turn": 30,
+            "detail": "pray",
+            "budget": 2,
+        }
+        events = [
+            SESSION,
+            *_whistle(2, "sound_high", 20),
+            *_whistle(10, "sound_shrill", 25),
+            safe,
+        ]
+        a = self.analyse(events=events, envelope=envelope, schedule=[{"row": 1}])
+        self.assertEqual(a["loss"], "inferred:origin_superseded_before_safe_point")
+
+    def test_published_later_origin_expired(self):
+        envelope = {
+            "at": 2,
+            "cost": 1,
+            "origin_refs": [
+                {"end_seq": 12, "family": "F"},
+                {"end_seq": 4, "family": "W"},
+            ],
+        }
+        events = [
+            SESSION,
+            *_whistle(2, "sound_high", 20),
+            {"event": "observation", "seq": 12, "turn": 140, "observation": {}},
+            {
+                "event": "safe_point",
+                "seq": 20,
+                "safe": 2,
+                "turn": 150,
+                "detail": "pray",
+                "budget": 2,
+            },
+        ]
+        a = self.analyse(events=events, envelope=envelope, schedule=[{"row": 1}])
+        self.assertEqual(a["loss"], "inferred:origin_expired_before_safe_point")
+
+    # Admitted games: later stages come only from the journal.
+    ADMITTED = dict(
+        events=[SESSION, *_whistle(2, "sound_high", 5)],
+        envelope={"at": 2, "cost": 1, "origin_refs": [{"end_seq": 4}]},
+        schedule=[{"row": 1}],
+        receipts=[{"kind": 2}],
+    )
+
+    def _decoded(self, status, private):
+        records = [
+            {"kind": "transition", "data": {"private_records": private}},
+        ]
+        return {"status": status, "records": records}
+
+    def _admitted(self, decoded=None, journal=None):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = _run(tmp, journal=journal, **self.ADMITTED)
+            if decoded is None:
+                return sweep_funnel.analyse(root)
+            with mock.patch.object(sweep_funnel, "read_journal", return_value=decoded):
+                return sweep_funnel.analyse(root)
+
+    def test_admitted_journal_missing_is_unknown(self):
+        a = self._admitted()
+        self.assertEqual(a["counts"]["admitted"], 1)
+        self.assertFalse(a["delivery_known"])
+        self.assertEqual(a["loss"], "admitted_trace_missing")
+
+    def test_admitted_journal_invalid_is_unknown(self):
+        a = self._admitted(journal='{"payload":{"v":1\n')
+        self.assertTrue(a["journal_status"].startswith("invalid"))
+        self.assertFalse(a["delivery_known"])
+        self.assertEqual(a["loss"], "admitted_trace_invalid")
+
+    def test_admitted_journal_incomplete_is_unknown(self):
+        a = self._admitted(self._decoded("incomplete", []), journal="x\n")
+        self.assertFalse(a["delivery_known"])
+        self.assertEqual(a["loss"], "admitted_trace_incomplete")
+
+    def test_incomplete_journal_with_delivery_is_known(self):
+        private = [
+            {"kind": 2, "at_move": 9, "data": {}},
+            {"kind": 3, "at_move": 12, "data": {}},
+            {"kind": 4, "at_move": 12, "data": {"outcome": 1}},
+            {"kind": 4, "at_move": 15, "data": {"outcome": 3}},
+        ]
+        a = self._admitted(self._decoded("incomplete", private), journal="x\n")
+        self.assertTrue(a["delivery_known"])
+        self.assertEqual(a["counts"]["trigger"], 1)
+        self.assertEqual(a["counts"]["native_effect"], 1)
+        self.assertEqual(a["counts"]["delivered"], 1)
+        self.assertIsNone(a["loss"])
+
+    def test_complete_journal_capture_suppressed(self):
+        private = [
+            {"kind": 2, "at_move": 14, "data": {}},
+            {"kind": 4, "at_move": 18, "data": {"outcome": 2}},
+            {"kind": 5, "at_move": 18, "data": {"reason": 1}},
+        ]
+        a = self._admitted(
+            self._decoded("structurally_complete", private), journal="x\n"
+        )
+        self.assertTrue(a["delivery_known"])
+        self.assertEqual(a["counts"]["trigger"], 0)
+        self.assertEqual(a["loss"], "admitted_no_trigger:whistle_capture_suppressed")
+
+    def test_complete_journal_no_trigger_termination(self):
+        private = [
+            {"kind": 2, "at_move": 14, "data": {}},
+            {"kind": 5, "at_move": 60, "data": {"reason": 4}},
+        ]
+        a = self._admitted(
+            self._decoded("structurally_complete", private), journal="x\n"
+        )
+        self.assertEqual(a["loss"], "admitted_no_trigger:origin_expired")
 
     def test_published_no_safe_point(self):
         envelope = {"at": 7, "cost": 1, "origin_refs": [{"end_seq": 4}]}
@@ -146,7 +280,35 @@ class FunnelTest(unittest.TestCase):
             envelope=envelope,
             schedule=[{"row": 1}],
         )
-        self.assertEqual(a["loss"], "no_safe_point_before_game_end")
+        self.assertEqual(a["loss"], "inferred:no_safe_point_before_game_end")
+
+
+class _FakeGame:
+    """A live game whose status line never becomes readable."""
+
+    def __init__(self):
+        self.raw = bytearray(b"\x1b[2J garbled")
+        self.sent = 0
+
+    def send(self, keys):
+        self.sent += 1
+        return ""
+
+
+class PlayerBoundTest(unittest.TestCase):
+    def test_unreadable_status_is_bounded(self):
+        p = sweep_player.Player.__new__(sweep_player.Player)
+        p.params = sweep_player.POLICIES["baseline-v1"]
+        p.game, p.screen, p.fed = _FakeGame(), Screen(), 0
+        p.commands, p.status_misses = 0, 0
+        p.settle = lambda text: None
+        p.exited = lambda: False
+        with self.assertRaises(sweep_player.HarnessError):
+            for _ in range(1000):
+                p.step()
+        self.assertEqual(p.status_misses, sweep_player.MAX_STATUS_MISSES + 1)
+        self.assertEqual(p.game.sent, sweep_player.MAX_STATUS_MISSES)
+        self.assertEqual(p.commands, sweep_player.MAX_STATUS_MISSES + 1)
 
 
 @unittest.skipUnless(
@@ -167,8 +329,7 @@ class ReproducibleSweepTest(unittest.TestCase):
                         "bard",
                         "--jobs",
                         "1",
-                        "--work",
-                        f"{tmp}/w{k}",
+                        *(["--work", f"{tmp}/w{k}"] if k == 0 else []),
                         "--out",
                         f"{tmp}/r{k}",
                     ],
@@ -176,6 +337,7 @@ class ReproducibleSweepTest(unittest.TestCase):
                     text=True,
                     timeout=300,
                     check=True,
+                    env=dict(os.environ, TMPDIR=tmp),
                 ).stdout
                 digests.append(
                     next(s for s in out.splitlines() if s.startswith("REPORT_SHA256="))

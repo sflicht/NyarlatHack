@@ -85,6 +85,10 @@ NEIGHBOURS_4 = ((1, 0), (-1, 0), (0, 1), (0, -1))
 NEIGHBOURS_8 = NEIGHBOURS_4 + ((1, 1), (1, -1), (-1, 1), (-1, -1))
 
 
+# Harness bound, not policy: consecutive unreadable status lines before failing.
+MAX_STATUS_MISSES = 20
+
+
 class HarnessError(Exception):
     pass
 
@@ -133,6 +137,7 @@ class Player:
         self.visited = {}
         self.last_turn = None
         self.same_turn_commands = 0
+        self.status_misses = 0
         self.saved = False
         self.restore_detail = None
         self.outcome = None
@@ -337,9 +342,15 @@ class Player:
     def step(self):
         """One policy decision. Returns a stop reason or None."""
         s = status(self.screen)
-        if s is None:
-            return self.settle(self.send("\x1b")) or None
         p = self.params
+        if s is None:
+            # Unreadable status line: bounded recovery, counted as inputs.
+            self.status_misses += 1
+            self.commands += 1
+            if self.status_misses > MAX_STATUS_MISSES:
+                raise HarnessError("status line unreadable after recovery")
+            return self.settle(self.send("\x1b")) or None
+        self.status_misses = 0
         if s["turn"] == self.last_turn:
             self.same_turn_commands += 1
             if self.same_turn_commands >= p["stall_commands"]:
