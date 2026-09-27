@@ -28,3 +28,19 @@ Limits beyond those in the report:
   and at night (`night()` true). This is reproducible but biases the
   population.
 - #164's per-1000-turn, per-level and budget-over-time views are not included.
+
+## Recorded-reasons re-run (#177)
+
+`baseline-v1-seeds-1-100-recorded-reasons.{json,md}` is the same sweep (same
+policy, seeds, starts and clock) at revision `5b1420a`, which only adds the
+engine's recorded rejection row. Report digest `a761389e…93be`. The admission
+rule is unchanged, so the stage counts match the baseline (177 published,
+5 admitted, 0 delivered); only the loss labels changed from `inferred:` to the
+engine's `rejected:` reasons. The Markdown was re-rendered from the committed
+JSON after correcting one stale limit line in `scripts/seed_sweep.py`; the JSON
+is the sweep's own output.
+
+Across the 153 rejection rows (the other 24 published envelopes were admitted (5) or never reached their safe point (19)): `origin_expired` 140, `origin_superseded` 121,
+`level_mismatch` 79, `origin_unbound` 14. No row reports `missed_index` or
+`budget`: every envelope was evaluated at its exact `at`, and the budget check
+was never reached.

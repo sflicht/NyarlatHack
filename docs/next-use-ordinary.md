@@ -91,6 +91,30 @@ Both inputs use the existing secure incremental reader: schedule limits are 16 K
 
 The engine writer uses a nonblocking file lock, private regular-file checks, bounded reads/appends, short-I/O handling, and file/directory synchronization. A failed append attempts to restore the old prefix. This is **not** a crash-atomic transaction: close or rollback failure can leave ambiguous bytes. Any writer failure disables further next-use scheduling/admission for that engine process without disabling observation logging. Publication is not admission: the production boundary still independently checks the engine-owned origin, run, level and native clock.
 
+## Recorded admission decision (#177)
+
+When the production safe-point check reads an envelope whose `at` has been
+reached and does not admit it, the engine appends one row to the existing
+`next_use-receipt.jsonl`:
+
+```json
+{"next_use_decision_v":1,"decision":"rejected","at":2,"safe":2,"move":307,"reasons":["level_mismatch","origin_expired","origin_superseded"]}
+```
+
+`reasons` lists every failing check in a fixed order: `schema`, `identity`,
+`run_unavailable`, `level_invalid`, `budget_state`, `missed_index`,
+`run_mismatch`, `level_mismatch`, `origin_expired` (more than 100 monster
+moves after the origin), `origin_unbound`, `origin_superseded` (a newer
+qualifying notice now holds the family's slot), `source`, `telegraph`,
+`budget`, `receipt`, `internal`. Admission keeps its existing kind-2 row and
+writes no decision row. Nothing is written for an empty mailbox, a pending
+envelope or a clock-range rejection, so stock and empty-mailbox output is
+unchanged. The row draws no random numbers and does not alter which checks
+pass. It is diagnostic: a failed append is a trace gap, not a game-state
+change. `tests/chaos/sweep_funnel.py` reports these recorded reasons and falls
+back to `inferred:` labels only when no row exists. The admission rule and
+the exact-index `at` contract are unchanged.
+
 ## Schedule/transport regression scope (#143)
 
 `test_next_use_schedule_robustness.py` reuses `episode_scopes.c` to generate real engine history and schedule bytes for two W origins and a W/F pair before polling. It passes the selected, unchanged envelope into `next_use_safe.c`'s production `on_safe` wrapper, checking exact source bytes, one admission, one charge and one telegraph callback, plus invalid origin/clock/run/level controls. Partial real schedule bytes complete once without a duplicate publication or charge. These helpers stub game-host state and delivery; they do **not** establish native gameplay consequences, delivery, consumption/expiry or replay required by #66.
