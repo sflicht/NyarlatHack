@@ -1,0 +1,320 @@
+#!/usr/bin/env python3
+"""Seeded scripted-player sweep with an engine-stage funnel report (#167).
+
+One command plays every (start, seed) pair with a declared policy through the
+ordinary launcher (`chaos play --ordinary --next-use`), then writes a JSON and
+a Markdown funnel report. Engine stages only: notice, attribution and changed
+decisions are human-only (#44) and are never inferred from these numbers.
+
+No model calls, no wizard mode, no hidden-state lookahead, no retries and no
+discarded seeds. Per-game artifacts stay under --work (not committed).
+"""
+
+import argparse
+from concurrent.futures import ProcessPoolExecutor
+import hashlib
+import json
+import os
+from pathlib import Path
+import statistics
+import subprocess
+import sys
+import tempfile
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path[:0] = [str(ROOT), str(ROOT / "tests/chaos")]
+
+import sweep_funnel  # noqa: E402
+import sweep_player  # noqa: E402
+
+REPORT_V = 2
+
+
+def sha256(path):
+    return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+
+
+def build_clock(directory):
+    out = Path(directory) / "sweep_clock.so"
+    subprocess.run(
+        [
+            "cc",
+            "-shared",
+            "-fPIC",
+            "-Wall",
+            "-Wextra",
+            "-Werror",
+            str(ROOT / "tests/chaos/sweep_clock.c"),
+            "-ldl",
+            "-o",
+            str(out),
+        ],
+        check=True,
+        timeout=60,
+    )
+    return out
+
+
+def one(job):
+    start, seed, policy, work, clock, gamedir = job
+    root = Path(work) / f"{start}-{seed:05d}"
+    # One immutable asset pool per worker process: concurrent hardlinking into
+    # a shared pool changes inode ctime mid-hash and is rejected by the harness.
+    pool = Path(work) / f".assets-{os.getpid()}"
+    played = sweep_player.play(gamedir, clock, root, seed, start, policy, pool)
+    return {
+        "start": start,
+        "seed": seed,
+        **played,
+        "funnel": sweep_funnel.analyse(root),
+    }
+
+
+def _dist(values):
+    if not values:
+        return None
+    values = sorted(values)
+    return {
+        "n": len(values),
+        "min": values[0],
+        "median": statistics.median(values),
+        "max": values[-1],
+    }
+
+
+def aggregate(games):
+    out = {}
+    for start in sorted({g["start"] for g in games}):
+        rows = [g for g in games if g["start"] == start]
+        reached = {
+            s: sum(1 for g in rows if g["funnel"]["counts"][s] > 0)
+            for s in sweep_funnel.STAGES
+        }
+        totals = {
+            s: sum(g["funnel"]["counts"][s] for g in rows) for s in sweep_funnel.STAGES
+        }
+        losses = {}
+        for g in rows:
+            key = g["funnel"]["loss"] or "delivered"
+            losses[key] = losses.get(key, 0) + 1
+        outcomes = {}
+        for g in rows:
+            outcomes[g["outcome"]] = outcomes.get(g["outcome"], 0) + 1
+        out[start] = {
+            "games": len(rows),
+            "outcomes": dict(sorted(outcomes.items())),
+            "games_reaching_stage": reached,
+            "stage_totals": totals,
+            "zero_delivered_games": sum(
+                1
+                for g in rows
+                if g["funnel"]["delivery_known"]
+                and not g["funnel"]["counts"]["delivered"]
+            ),
+            "delivery_unknown_games": sum(
+                1 for g in rows if not g["funnel"]["delivery_known"]
+            ),
+            "loss_reasons": dict(
+                sorted(losses.items(), key=lambda kv: (-kv[1], kv[0]))
+            ),
+            "first_admission_move": _dist(
+                [
+                    g["funnel"]["first_admission_move"]
+                    for g in rows
+                    if g["funnel"]["first_admission_move"] is not None
+                ]
+            ),
+            "start_budget": sorted(
+                {
+                    g["funnel"]["start_budget"]
+                    for g in rows
+                    if g["funnel"]["start_budget"] is not None
+                }
+            ),
+            "start_sanity": sorted(
+                {
+                    g["funnel"]["start_sanity"]
+                    for g in rows
+                    if g["funnel"]["start_sanity"] is not None
+                }
+            ),
+            "last_turn": _dist(
+                [
+                    g["funnel"]["last_turn"]
+                    for g in rows
+                    if g["funnel"]["last_turn"] is not None
+                ]
+            ),
+            "max_dlvl": _dist(
+                [
+                    g["final_status"].get("dlvl")
+                    for g in rows
+                    if g["final_status"].get("dlvl")
+                ]
+            ),
+            "qualifying_actions": {
+                op: sum(g["funnel"]["qualifying_actions"][op] for g in rows)
+                for op in sweep_funnel.QUALIFYING
+            },
+            "save_restore": {
+                "attempted": sum(1 for g in rows if g["save_restore"]["attempted"]),
+                "restored": sum(
+                    1 for g in rows if g["save_restore"]["session_detail"] == "restore"
+                ),
+            },
+            "nonzero_exit": sum(1 for g in rows if g["exit_code"] not in (0, None)),
+            "harness_errors": sum(1 for g in rows if g["outcome"] == "harness_error"),
+            "director_sync_timeouts": sum(g["sync_timeouts"] for g in rows),
+            "ordinary_whispers_admitted": sum(
+                g["funnel"]["ordinary_whispers_admitted"] for g in rows
+            ),
+        }
+    return out
+
+
+def markdown(report):
+    ident, agg = report["identity"], report["aggregate"]
+    lines = [
+        f"# Seed sweep funnel: {ident['policy']}, seeds {ident['seeds'][0]}-{ident['seeds'][1]}",
+        "",
+        "Engine stages only, from a scripted player (not an AI and not a human proxy).",
+        "Player notice, attribution and changed decisions are not measured (#44).",
+        "",
+        f"- Revision: `{ident['revision']}`; `dnethack` sha256 `{ident['dnethack_sha256'][:16]}`",
+        f"- Policy `{ident['policy']}`: `{json.dumps(ident['policy_params'], sort_keys=True)}`",
+        f"- Command: `{ident['command']}`",
+        f"- Report digest (sha256 of canonical JSON without this field): `{report['report_sha256']}`",
+        "",
+        "Stages: qualifying history, engine candidate (schedule row), published envelope,",
+        "admitted, trigger (Lua callback ran), native effect (W armed or F remapped),",
+        "delivered (W witnessed or F remapped).",
+        "",
+    ]
+    for start, a in agg.items():
+        n = a["games"]
+        lines += [
+            f"## {start} ({n} games; start Sanity {a['start_sanity']}, budget {a['start_budget']})",
+            "",
+        ]
+        lines.append(
+            "- Games reaching each stage: "
+            + ", ".join(
+                f"{s} {a['games_reaching_stage'][s]}" for s in sweep_funnel.STAGES
+            )
+        )
+        lines.append(
+            "- Stage totals: "
+            + ", ".join(f"{s} {a['stage_totals'][s]}" for s in sweep_funnel.STAGES)
+        )
+        lines.append(
+            f"- Zero delivered effects: {a['zero_delivered_games']}/{n}; "
+            f"delivery unknown (admitted, journal missing/incomplete/invalid): "
+            f"{a['delivery_unknown_games']}"
+        )
+        lines.append(
+            "- Loss reasons (first lost stage per game): "
+            + ", ".join(f"{k} {v}" for k, v in a["loss_reasons"].items())
+        )
+        lines.append(f"- First admission move: {a['first_admission_move']}")
+        lines.append(
+            "- Outcomes: " + ", ".join(f"{k} {v}" for k, v in a["outcomes"].items())
+        )
+        lines.append(f"- Last turn: {a['last_turn']}; final Dlvl: {a['max_dlvl']}")
+        lines.append(f"- Qualifying-action attempts: {a['qualifying_actions']}")
+        lines.append(
+            f"- Save/restore: {a['save_restore']['restored']}/{a['save_restore']['attempted']} restored; "
+            f"nonzero exits {a['nonzero_exit']}; harness errors {a['harness_errors']}; "
+            f"director sync timeouts {a['director_sync_timeouts']}"
+        )
+        lines.append("")
+    lines += [
+        "## Limits",
+        "",
+        "- One simple fixed policy. Numbers describe this policy, not human play.",
+        "- Loss reasons marked `inferred:` are guesses from public event timing (`turn`,",
+        "  not monstermoves; safe-point budget read before ordinary admission). The engine",
+        "  does not log its rejection reason.",
+        "- `whistle_capture_suppressed`: admitted, but the engine skipped the callback",
+        "  because there was not exactly one eligible target (by design).",
+        "- A single one-shot next-use program per game (the launcher's current design).",
+        "- The inherited start fixes one artifact (Vampire Killer); others are untested.",
+        "- In-game mail is off (`!mail`): it reads the host mail spool, not the seed.",
+        "",
+    ]
+    return "\n".join(lines)
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--seeds", required=True, help="inclusive range, e.g. 1-100")
+    parser.add_argument(
+        "--policy", default="baseline-v1", choices=sorted(sweep_player.POLICIES)
+    )
+    parser.add_argument("--starts", default="bard,madman,bard-inherited")
+    parser.add_argument("--jobs", type=int, default=max(1, (os.cpu_count() or 2) - 1))
+    parser.add_argument("--work", type=Path, help="per-game artifacts; default mkdtemp")
+    parser.add_argument(
+        "--out", type=Path, required=True, help="report path stem (.json/.md added)"
+    )
+    parser.add_argument("--game-dir", type=Path, default=ROOT / "dnethackdir")
+    args = parser.parse_args()
+
+    lo, hi = (int(x) for x in args.seeds.split("-"))
+    starts = args.starts.split(",")
+    for start in starts:
+        if start not in sweep_player.START_OPTIONS:
+            raise SystemExit(f"unknown start {start}")
+    if (ROOT / ".chaos-build").read_text().strip() != "1":
+        raise SystemExit("CHAOS=1 build required")
+    if args.work is None:
+        work = Path(tempfile.mkdtemp(prefix="nyarl-sweep-"))
+    else:
+        work = args.work
+        work.mkdir(parents=True, exist_ok=False)  # never reuse an occupied dir
+    clock = build_clock(work)
+    print(f"SWEEP_WORK={work}", flush=True)
+
+    jobs = [
+        (s, seed, args.policy, str(work), str(clock), str(args.game_dir))
+        for s in starts
+        for seed in range(lo, hi + 1)
+    ]
+    with ProcessPoolExecutor(max_workers=args.jobs) as pool:
+        games = list(pool.map(one, jobs))
+
+    identity = {
+        "report_v": REPORT_V,
+        "revision": subprocess.check_output(
+            ["git", "rev-parse", "HEAD"], cwd=ROOT, text=True
+        ).strip(),
+        "dnethack_sha256": sha256(args.game_dir / "dnethack"),
+        "nhdat_sha256": sha256(args.game_dir / "nhdat"),
+        "clock_source_sha256": sha256(ROOT / "tests/chaos/sweep_clock.c"),
+        "player_source_sha256": sha256(ROOT / "tests/chaos/sweep_player.py"),
+        "funnel_source_sha256": sha256(ROOT / "tests/chaos/sweep_funnel.py"),
+        "policy": args.policy,
+        "policy_params": sweep_player.POLICIES[args.policy],
+        "starts": {
+            s: (sweep_player.START_OPTIONS[s] or "chaos.ordinary_start.OPTIONS")
+            + sweep_player.NO_HOST_MAIL
+            for s in starts
+        },
+        "seeds": [lo, hi],
+        "launcher": sweep_player.LAUNCHER,
+        "command": f"python3 scripts/seed_sweep.py --seeds {lo}-{hi} --policy {args.policy} "
+        f"--starts {','.join(starts)} --out <stem>",
+    }
+    report = {"identity": identity, "aggregate": aggregate(games), "games": games}
+    canonical = json.dumps(report, sort_keys=True, separators=(",", ":")).encode()
+    report["report_sha256"] = hashlib.sha256(canonical).hexdigest()
+    args.out.parent.mkdir(parents=True, exist_ok=True)
+    args.out.with_suffix(".json").write_text(
+        json.dumps(report, indent=1, sort_keys=True) + "\n"
+    )
+    args.out.with_suffix(".md").write_text(markdown(report))
+    print(f"REPORT_SHA256={report['report_sha256']}", flush=True)
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
