@@ -41,7 +41,7 @@ TERMINATION = {
 }
 W_ARMED, W_CAPTURE_SUPPRESSED, W_WITNESSED, F_REMAPPED = 1, 2, 3, 12
 FAMILY_OPERATION = {"W": "whistling", "F": "fountain_drink"}
-ORIGIN_TTL = 100  # engine: origin expiry is move + 100
+ORIGIN_TTL = 300  # engine: CHAOS_NEXT_USE_ORIGIN_LIFETIME
 
 
 def _rows(path):
@@ -61,12 +61,13 @@ def _director_statuses(run):
 
 
 def _publication_loss(events, envelope, qualifying):
-    """Likely reason a published envelope was not admitted. INFERRED, not the
-    engine's recorded rejection reason (the engine does not log one).
+    """Likely reason a published envelope was not admitted. INFERRED; used
+    only when the engine wrote no decision row (the envelope was never
+    evaluated, or the run predates #177's recorded reasons).
 
     The engine checks an envelope at the safe point whose index equals
     envelope["at"]; it rejects it if any origin is on another level, older than
-    100 monster moves, or no longer the bound origin for its family (a newer
+    ORIGIN_TTL monster moves, or no longer the bound origin for its family (a newer
     qualifying notice replaces it). This uses public `turn` for monstermoves,
     and the safe_point event's budget, which is read before ordinary whisper
     admission and so may exceed the budget at the next-use debit. Every label
@@ -138,6 +139,7 @@ def analyse(game_root):
     envelope_path = run / "next_use-envelope.json"
     envelope = json.loads(envelope_path.read_text()) if envelope_path.exists() else None
     receipts = _rows(run / "next_use-receipt.jsonl")
+    decisions = [r for r in receipts if "next_use_decision_v" in r]
 
     journal_status = "missing"
     private, transitions = [], []
@@ -201,7 +203,13 @@ def analyse(game_root):
             else "not_published_before_game_end"
         )
     elif not counts["admitted"]:
-        loss = _publication_loss(events, envelope, qualifying)
+        # #177: the engine writes a decision row with every failing check.
+        # Only games without one (not yet evaluated) fall back to inference.
+        loss = (
+            "rejected:" + "+".join(decisions[-1]["reasons"])
+            if decisions
+            else _publication_loss(events, envelope, qualifying)
+        )
     elif not delivery_known:
         loss = "admitted_trace_" + (
             "invalid" if journal_status.startswith("invalid") else journal_status
@@ -247,5 +255,8 @@ def analyse(game_root):
         "ordinary_whispers_admitted": sum(
             1 for w in ordinary_whispers if w.get("status") == "admitted"
         ),
+        "recorded_decisions": [
+            {k: d[k] for k in ("at", "safe", "move", "reasons")} for d in decisions
+        ],
         "last_turn": events[-1]["turn"] if events else None,
     }

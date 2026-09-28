@@ -59,8 +59,8 @@ not program age. Do not assume `moves == monstermoves` or a constant offset.
 
 Admission records `at_move` from that native clock and sets
 `program_expiry = at_move + ttl` with TTL 100. Origin freshness is
-`at_move > origin.move + 100` (exclusive after the inclusive deadline
-`origin.move + 100`). Unrepresentable clocks (`monstermoves < 0` or
+`at_move > origin.move + CHAOS_NEXT_USE_ORIGIN_LIFETIME` (300 since #177;
+exclusive after the inclusive deadline `origin.move + 300`). Unrepresentable clocks (`monstermoves < 0` or
 `> 2147483547`) reject without retiming to 0 or INT_MAX. Origin capture
 is skipped when the native clock cannot be stored. Do not treat a later
 observation sequence, the safe index, or `moves` as a substitute.

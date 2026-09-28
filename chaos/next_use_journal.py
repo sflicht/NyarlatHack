@@ -18,6 +18,8 @@ MAX_LINE = 32768
 MAX_RECORDS = 4096
 I32 = 2147483647
 I64 = 9223372036854775807
+# Native moves an origin stays admissible (CHAOS_NEXT_USE_ORIGIN_LIFETIME).
+ORIGIN_LIFETIME = 300
 
 
 class JournalError(ValueError):
@@ -109,7 +111,7 @@ invalid pending_w_capture f_inflight manifest_success active remap consumed
 reason_present intent_present intent_sha256_present failure_code_present delay_used_after""".split()
 )
 _RANGES = {
-    "snapshot_v": (5, 5),
+    "snapshot_v": (6, 6),
     "journal_state": (0, 0),
     "journal_bytes": (0, 0),
     "capture_incomplete": (0, 0),
@@ -239,16 +241,30 @@ def _private(r, s, seq):
     elif kind == 2:
         _scalars(
             d,
-            "at_safe cost operation_count program_expiry envelope_b64 envelope_sha256 operations origin_roots",
-            ("envelope_b64", "operations", "origin_roots"),
+            "at_safe cost operation_count program_expiry envelope_b64 envelope_sha256 "
+            "operations origin_roots bound_roots bound_moves",
+            (
+                "envelope_b64",
+                "operations",
+                "origin_roots",
+                "bound_roots",
+                "bound_moves",
+            ),
         )
-        for key in ("operations", "origin_roots"):
+        for key in ("operations", "origin_roots", "bound_roots"):
             _require(
                 type(d[key]) is list and len(d[key]) == d["operation_count"],
                 "admission counts",
             )
             for item in d[key]:
                 _integer(item, 1)
+        _require(
+            type(d["bound_moves"]) is list
+            and len(d["bound_moves"]) == d["operation_count"],
+            "admission counts",
+        )
+        for item in d["bound_moves"]:
+            _integer(item)
         _require(
             d["operations"] in ([1], [2], [1, 2]) and d["cost"] == d["operation_count"],
             "admission operations",
@@ -385,14 +401,27 @@ def _envelope(d, s, source):
             "origin family",
         )
         key = "origin_" + family.lower()
+        bound, bound_move = d["bound_roots"][i], d["bound_moves"][i]
+        # #177 option 1: the engine may bind a strictly newer origin of the
+        # same family that it observed; the published origin stays recorded.
+        rebound = bound != origin["root"]
         _require(
-            origin["root"] == s[key] == d["origin_roots"][i]
-            and origin["move"] + 100 == s[key + "_deadline"]
-            and origin["move"] <= s["admission_move"] <= s[key + "_deadline"],
+            origin["root"] == d["origin_roots"][i]
+            and bound == s[key]
+            and bound_move + ORIGIN_LIFETIME == s[key + "_deadline"]
+            and bound_move <= s["admission_move"] <= s[key + "_deadline"]
+            and (
+                (bound > origin["root"] and bound_move >= origin["move"])
+                if rebound
+                else bound_move == origin["move"]
+            ),
             "origin binding",
         )
+        # A rebound origin is on the admission level by construction; the
+        # published one keeps its level only when it is the bound origin.
         _require(
-            s["level_token"]
+            rebound
+            or s["level_token"]
             == (origin["level_dnum"] + 1) * 100000 + origin["level_dlevel"],
             "level binding",
         )
