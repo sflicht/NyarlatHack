@@ -392,6 +392,91 @@ class HauntLifecycleTests(unittest.TestCase):
                 self.assertIn(reason, (case / "diagnostics/paniclog").read_text())
                 self.assertNotIn("diagnostic escaped", p.stdout)
 
+    def fcfs(self, order):
+        """#165: first come, first served; no reservation, no precedence."""
+        from chaos.next_use_envelope import engine_run_hex, publish_envelope
+
+        run = self.root / ("fcfs-" + order)
+        run.mkdir(mode=0o700)
+        (run / "haunting.lua").write_bytes(
+            b"return function(c) return {dx=0,dy=0,state=c.state} end\n"
+        )
+        (run / "haunting.lua").chmod(0o600)
+        hexrun = engine_run_hex(run)
+        publish_envelope(
+            run,
+            {
+                "family": "W",
+                "op": "whistle_attention",
+                "origin": {
+                    "root_seq": 10,
+                    "notice_seq": 11,
+                    "end_seq": 12,
+                    "fact": "sound_high",
+                },
+            },
+            {
+                "at": 1,
+                "id": 1,
+                "level_dlevel": 1,
+                "level_dnum": 1,
+                "move": 10,
+                "run": hexrun,
+                "variant": 0,
+            },
+        )
+        env_backup = os.environ.get("FCFS_RUN_HEX")
+        os.environ["FCFS_RUN_HEX"] = hexrun
+        try:
+            p = self.run_native(run, ["--fcfs", order], run=run)
+        finally:
+            if env_backup is None:
+                os.environ.pop("FCFS_RUN_HEX", None)
+            else:
+                os.environ["FCFS_RUN_HEX"] = env_backup
+        self.assert_clean(p, run)
+        haunting = [
+            json.loads(line)
+            for line in (run / "events.jsonl").read_text().splitlines()
+            if json.loads(line)["event"] == "haunting"
+        ]
+        receipts = [
+            json.loads(line)
+            for line in (run / "next_use-receipt.jsonl").read_text().splitlines()
+        ]
+        return p.stdout, haunting, receipts
+
+    def test_fcfs_haunt_then_candidate_rejects_candidate_for_budget(self):
+        out, haunting, receipts = self.fcfs("haunt-first")
+        self.assertEqual(
+            [e["detail"] for e in haunting], ["pre_admitted", "accepted"]
+        )
+        self.assertEqual(haunting[-1]["spent"], 2)
+        self.assertEqual(
+            receipts,
+            [
+                {
+                    "next_use_decision_v": 1,
+                    "decision": "rejected",
+                    "at": 1,
+                    "safe": 1,
+                    "move": 10,
+                    "reasons": ["budget"],
+                }
+            ],
+        )
+        self.assertIn("order=haunt-first spent=2", out)
+        self.assertIn("admitted=0 reasons=8192 haunt_active=1", out)
+
+    def test_fcfs_candidate_then_haunt_rejects_haunt_for_budget(self):
+        out, haunting, receipts = self.fcfs("candidate-first")
+        # Logged once with the existing reason; no trial, spawn or debit.
+        self.assertEqual([e["detail"] for e in haunting], ["budget"])
+        self.assertEqual((haunting[0]["spent"], haunting[0]["budget"]), (1, 1))
+        self.assertEqual([r.get("kind") for r in receipts], [2])
+        self.assertIn("order=candidate-first spent=1", out)
+        self.assertIn("admitted=1 reasons=0 haunt_active=0", out)
+
     def test_absent_run_directory_keeps_lifecycle(self):
         self.check(False)
 
