@@ -73,6 +73,9 @@ int chaos_next_use_restore_bound(int fd, long run_token, long level_token);
 void chaos_next_use_safe_mark_restored(void);
 int chaos_next_use_safe_attempted(void);
 int chaos_next_use_safe_restore_attempted(int attempted);
+/* Post-mortem reveal (chaos_reveal_game.c): after final state, no RNG. */
+void chaos_reveal_end(int how);
+void chaos_reveal_xlog(FILE *rfile);
 #else
 #define chaos_shadow_active() (0)
 #define chaos_shadow_end(died) ((void)0)
@@ -116,5 +119,7 @@ int chaos_next_use_safe_restore_attempted(int attempted);
 #define chaos_next_use_save(fd) ((void)0)
 #define chaos_next_use_restore(fd) (1)
 #define chaos_next_use_safe_mark_restored() ((void)0)
+#define chaos_reveal_end(how) ((void)0)
+#define chaos_reveal_xlog(rfile) ((void)0)
 #endif
 #endif
