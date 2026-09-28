@@ -448,9 +448,7 @@ class HauntLifecycleTests(unittest.TestCase):
 
     def test_fcfs_haunt_then_candidate_rejects_candidate_for_budget(self):
         out, haunting, receipts = self.fcfs("haunt-first")
-        self.assertEqual(
-            [e["detail"] for e in haunting], ["pre_admitted", "accepted"]
-        )
+        self.assertEqual([e["detail"] for e in haunting], ["pre_admitted", "accepted"])
         self.assertEqual(haunting[-1]["spent"], 2)
         self.assertEqual(
             receipts,

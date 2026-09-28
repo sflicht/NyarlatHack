@@ -262,8 +262,7 @@ class RevealTests(unittest.TestCase):
     def test_haunting_budget_refusal_is_counted_never_narrated(self):
         # Only a budget refusal: no admission, so no section and no xlog.
         self.append(
-            event_row(1, 5, "session", "new")
-            + event_row(2, 20, "haunting", "budget")
+            event_row(1, 5, "session", "new") + event_row(2, 20, "haunting", "budget")
         )
         self.assertEqual(self.reveal_of(), ("", ""))
         # With an admitted whisper the refusal joins the count line only.
@@ -340,8 +339,7 @@ class RevealTests(unittest.TestCase):
     def test_haunt_expired_without_admission_is_ignored(self):
         # An expired row with no admitted haunt narrates and counts nothing.
         self.append(
-            event_row(1, 5, "session", "new")
-            + event_row(2, 90, "haunting", "expired")
+            event_row(1, 5, "session", "new") + event_row(2, 90, "haunting", "expired")
         )
         self.assertEqual(self.reveal_of(), ("", ""))
         self.transport(REQUEST)
@@ -352,8 +350,7 @@ class RevealTests(unittest.TestCase):
 
     def test_haunt_without_expired_row_keeps_host_ending(self):
         self.append(
-            event_row(1, 5, "session", "new")
-            + event_row(2, 30, "haunting", "accepted")
+            event_row(1, 5, "session", "new") + event_row(2, 30, "haunting", "accepted")
         )
         section, _ = self.reveal_of("haunt_active")
         self.assertIn("Ended: still hunting when the game ended.", section)
