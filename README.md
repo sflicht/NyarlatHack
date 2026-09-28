@@ -52,11 +52,11 @@ you can meet today:
   moves ago, after "Something has learned the rhythm of your footsteps." It
   is opt-in: start with `python3 -m chaos play --ordinary --haunt` (or
   `--haunt PACK` for another Lua pack; the default is
-  `chaos/packs/footsteps.lua`). To provoke it, pace back and forth in a large
-  room; if your starting room is small, leave it first. The game runs one hidden
-  trial of the hound, and only lets it in if you could get away from it.
-  That trial happens once per game, so pacing in a tiny room can use it up
-  with nothing to show. The hound can be killed, and it gives up after about
+  `chaos/packs/footsteps.lua`). To provoke it, pace back and forth in a
+  room; the starting room is fine. The game runs one hidden trial of the
+  hound, and only lets it in if you could get away from it. That trial
+  happens once per game; about one in eleven is refused, more often in a
+  cramped, cluttered room. The hound can be killed, and it gives up after about
   60 turns or when you leave the level. It costs the Chaos's whole budget at
   full Sanity, so in a `--next-use` game whichever of the two is admitted
   first takes it. See also
