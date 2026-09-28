@@ -12986,6 +12986,69 @@
       ],
       "count": 1,
       "chaos0": "Present in CHAOS-off; helper is a no-op."
+    },
+    {
+      "id": "hook-0408",
+      "file": "src/end.c",
+      "symbol": "done",
+      "kind": "call-or-declaration",
+      "purpose": "done: post-mortem reveal prompt and dumplog section, after disclosure and before bones/topten",
+      "signature": [
+        ";",
+        "}",
+        "#",
+        "endif",
+        "}",
+        "chaos_reveal_end",
+        "(",
+        "how",
+        ")",
+        ";",
+        "if"
+      ],
+      "guards": [],
+      "count": 1,
+      "chaos0": "No-op macro; arguments are not evaluated."
+    },
+    {
+      "id": "hook-0409",
+      "file": "src/topten.c",
+      "symbol": "<file>",
+      "kind": "directive",
+      "purpose": "<file>: include upstream-facing API \"chaos.h\"",
+      "signature": [
+        "#",
+        "include",
+        "\"chaos.h\""
+      ],
+      "guards": [],
+      "count": 1,
+      "chaos0": "Include remains; header supplies off-mode types/stubs."
+    },
+    {
+      "id": "hook-0410",
+      "file": "src/topten.c",
+      "symbol": "<file>",
+      "kind": "call-or-declaration",
+      "purpose": "write_xlentry: append chaos_* xlogfile fields only when a whisper was admitted",
+      "signature": [
+        "filecode",
+        ")",
+        ";",
+        "#",
+        "endif",
+        "chaos_reveal_xlog",
+        "(",
+        "rfile",
+        ")",
+        ";",
+        "("
+      ],
+      "guards": [
+        "ifdef XLOGFILE"
+      ],
+      "count": 1,
+      "chaos0": "No-op macro; arguments are not evaluated."
     }
   ],
   "build_blocks": [
@@ -13000,7 +13063,7 @@
     ],
     [
       "ifeq ($(CHAOS),1)",
-      "SRCOBJ += chaos_protocol.o chaos_io.o chaos_engine.o chaos_presentation.o chaos_lua.o chaos_next_use.o chaos_next_use_admission.o chaos_next_use_runtime.o chaos_next_use_journal.o chaos_next_use_io.o chaos_next_use_safe.o chaos_shadow.o chaos_haunt.o chaos_curio.o",
+      "SRCOBJ += chaos_protocol.o chaos_io.o chaos_engine.o chaos_presentation.o chaos_lua.o chaos_next_use.o chaos_next_use_admission.o chaos_next_use_runtime.o chaos_next_use_journal.o chaos_next_use_io.o chaos_next_use_safe.o chaos_shadow.o chaos_haunt.o chaos_curio.o chaos_reveal.o chaos_reveal_game.o",
       "chaos_next_use.o: src/chaos_next_use.c include/chaos_next_use.h",
       "chaos_next_use_admission.o: src/chaos_next_use_admission.c include/chaos_next_use_admission.h",
       "chaos_next_use_runtime.o: src/chaos_next_use_runtime.c include/chaos_next_use_runtime.h",

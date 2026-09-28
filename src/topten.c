@@ -4,6 +4,7 @@
 
 #include "hack.h"
 #include "dlb.h"
+#include "chaos.h"
 #ifdef SHORT_FILENAMES
 #include "patchlev.h"
 #else
@@ -364,6 +365,7 @@ struct toptenentry *tt;
           aligns[1 - galign(u.ugodbase[UGOD_ORIGINAL])].filecode);
 #endif
 
+  chaos_reveal_xlog(rfile);
   (void)fprintf(rfile, "\n");
 
 }

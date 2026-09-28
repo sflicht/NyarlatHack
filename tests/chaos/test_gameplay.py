@@ -141,6 +141,23 @@ class GameplayTests(RetainOnFailure):
             g.wait_turns(12)
             self.assertEqual(g.quit(), 0)
             games.append(g)
+
+        def dumps(g):
+            # The banner names each build's own revision and build date; that
+            # one line is build identity, not game output.
+            banner = re.compile(rb"^Playing dNetHack .*, last build .*$", re.M)
+            return {
+                p.name: banner.subn(b"BUILD", p.read_bytes(), count=1)
+                for p in sorted((g.game / "dumplog").iterdir())
+            }
+
+        self.assertTrue(dumps(games[0]))
+        self.assertTrue(all(n == 1 for _, n in dumps(games[0]).values()))
+        # Inactive and empty-mailbox builds are the same binary: exact bytes.
+        self.assertEqual(
+            [p.read_bytes() for p in sorted((games[1].game / "dumplog").iterdir())],
+            [p.read_bytes() for p in sorted((games[2].game / "dumplog").iterdir())],
+        )
         for g in games[1:]:
             self.assertEqual(g.inputs, games[0].inputs)
             self.assertEqual(g.raw, games[0].raw)
@@ -148,8 +165,47 @@ class GameplayTests(RetainOnFailure):
                 (g.game / "xlogfile").read_bytes(),
                 (games[0].game / "xlogfile").read_bytes(),
             )
+            # #163: no admission, so no reveal section or xlogfile fields.
+            self.assertEqual(dumps(g), dumps(games[0]))
         self.assertTrue(games[2].events())
         self.assertFalse(any(e["event"] == "ack" for e in games[2].events()))
+
+    def test_post_mortem_reveal_of_admitted_whisper(self):
+        """#163: one admitted ambient whisper is asked about (default n) and
+        written to the dumplog and xlogfile; the inactive twin shows none."""
+        games = []
+        for name, observe in (("reveal", True), ("reveal-inactive", False)):
+            g = self.game(name, observe=observe)
+            if observe:
+                g.request("ambient", 1, 1)
+            g.start()
+            g.wait_turns(3)
+            self.assertEqual(g.quit(), 0)
+            games.append(g)
+        seen, blind = games
+        acks = [e for e in seen.events() if e["event"] == "ack"]
+        self.assertEqual([a["status"] for a in acks], ["accepted"])
+        prompt = b"Do you want to know what watched you? [ynq] (n) "
+        self.assertEqual(bytes(seen.raw).count(prompt), 1)
+        self.assertNotIn(prompt, bytes(blind.raw))
+        # The default answer n does not show the window.
+        self.assertNotIn(b"The Crawling Chaos remembers.", bytes(seen.raw))
+        xlog = (seen.game / "xlogfile").read_text()
+        self.assertTrue(
+            xlog.endswith(":chaos_admitted=1:chaos_delivered=1:chaos_spent=0\n"),
+            xlog,
+        )
+        self.assertNotIn("chaos_", (blind.game / "xlogfile").read_text())
+        dumps = sorted((seen.game / "dumplog").iterdir())
+        self.assertTrue(dumps)
+        text = dumps[-1].read_text(errors="replace")
+        section = text[text.index("The Crawling Chaos remembers.") :]
+        self.assertIn("whisper 1 (ambient) was admitted.", section)
+        self.assertIn("Delivered: yes", section)
+        self.assertIn("Admitted 1, delivered 1; cruelty spent 0.", section)
+        self.assertNotIn("refused", section)
+        for p in sorted((blind.game / "dumplog").iterdir()):
+            self.assertNotIn("Crawling Chaos", p.read_text(errors="replace"))
 
     def test_real_save_active_and_pending_roundtrip(self):
         g = self.game("save-roundtrip", wizard=True)
