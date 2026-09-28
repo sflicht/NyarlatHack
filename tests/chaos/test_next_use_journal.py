@@ -175,7 +175,7 @@ class NextUseJournalTests(RetainOnFailure):
         trace = read_journal(folder / "next_use-journal.jsonl")
         snapshot = trace["records"][0]["data"]["snapshot"]
         self.assertEqual(
-            (snapshot["admission_move"], snapshot["program_expiry"]), (140, 240)
+            (snapshot["admission_move"], snapshot["program_expiry"]), (340, 440)
         )
         self.assertEqual(
             bytes.fromhex(snapshot["source_hex"]), envelope["source"].encode()
@@ -183,7 +183,7 @@ class NextUseJournalTests(RetainOnFailure):
         self.assertEqual(trace["status"], "structurally_complete")
         self.assertEqual(row["cursor"], 2)
         effect = trace["records"][-2]["data"]
-        self.assertEqual((effect["at_move"], effect["fountain_outcome"]), (140, 6))
+        self.assertEqual((effect["at_move"], effect["fountain_outcome"]), (340, 6))
         # Engine consumes its bound copy, not the driver's original token.
         self.assertEqual(effect["expected_token"]["consumed"], 1)
 
@@ -622,6 +622,7 @@ class NextUseJournalTests(RetainOnFailure):
             ((0, "snapshot", "binding_sha256"), "0" * 64),
             ((0, "snapshot", "snapshot_v"), 3),
             ((0, "snapshot", "snapshot_v"), 4),
+            ((0, "snapshot", "snapshot_v"), 5),
             ((0, "snapshot", "journal_state"), 1),
             ((0, "snapshot", "journal_bytes"), 1),
             ((0, "snapshot", "journal_sha256"), "0" * 64),
@@ -708,7 +709,7 @@ class NextUseJournalTests(RetainOnFailure):
         self.assertEqual(read_journal(p)["status"], "incomplete")
         for bad in (
             payload.replace(b'"v": 1', b'"v": 1, "v": 1', 1),
-            payload.replace(b'"snapshot_v": 5', b'"snapshot_v": 5, "snapshot_v": 5', 1),
+            payload.replace(b'"snapshot_v": 6', b'"snapshot_v": 6, "snapshot_v": 6', 1),
             payload.replace(b'"phase": 3', b'"phase": NaN', 1),
         ):
             p.write_bytes(outer(bad))

@@ -124,6 +124,12 @@ static void private_record(const struct chaos_next_use_runtime_private_record *p
         put("],\"origin_roots\":[");
         for (i = 0; !journal.bad && i < p->data.admission.operation_count; ++i)
             put("%s%ld", i ? "," : "", p->data.admission.origin_roots[i]);
+        put("],\"bound_roots\":[");
+        for (i = 0; !journal.bad && i < p->data.admission.operation_count; ++i)
+            put("%s%ld", i ? "," : "", p->data.admission.bound_roots[i]);
+        put("],\"bound_moves\":[");
+        for (i = 0; !journal.bad && i < p->data.admission.operation_count; ++i)
+            put("%s%ld", i ? "," : "", p->data.admission.bound_moves[i]);
         put("],");
         break;
     case CHAOS_RUNTIME_PRIVATE_INTENT:

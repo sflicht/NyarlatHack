@@ -182,6 +182,7 @@ static int admission_common(struct chaos_next_use_private_record *record,
 
 static int admission_record(struct chaos_next_use_private_record *record,
                             const struct chaos_next_use_envelope *envelope,
+                            const struct chaos_next_use_origin_ref *bound,
                             const char *canonical_envelope, size_t envelope_length,
                             int at_move)
 {
@@ -202,6 +203,10 @@ static int admission_record(struct chaos_next_use_private_record *record,
     for (index = 0; index < envelope->operation_count; ++index) {
         record->data.admission.operations[index] = envelope->operations[index];
         record->data.admission.origin_roots[index] = envelope->origin_refs[index].root;
+        record->data.admission.bound_roots[index] =
+            bound ? bound[index].root : envelope->origin_refs[index].root;
+        record->data.admission.bound_moves[index] =
+            bound ? bound[index].move : envelope->origin_refs[index].move;
     }
     admission_digest_hex(digest, record->data.admission.envelope_sha256);
     return 1;
@@ -220,6 +225,20 @@ int chaos_next_use_admit(struct chaos_next_use_admission *destination,
                          const char *canonical_envelope, size_t envelope_length,
                          int sanity, int at_move, int base_seq,
                          chaos_next_use_receipt_fn deliver, void *opaque)
+{
+    return chaos_next_use_admit_bound(destination, source, gate, envelope, NULL,
+                                      canonical_envelope, envelope_length,
+                                      sanity, at_move, base_seq, deliver, opaque);
+}
+
+int chaos_next_use_admit_bound(struct chaos_next_use_admission *destination,
+                               const struct chaos_next_use_admission *source,
+                               struct chaos_next_use_attempt_gate *gate,
+                               const struct chaos_next_use_envelope *envelope,
+                               const struct chaos_next_use_origin_ref *bound,
+                               const char *canonical_envelope, size_t envelope_length,
+                               int sanity, int at_move, int base_seq,
+                               chaos_next_use_receipt_fn deliver, void *opaque)
 {
     enum {
         attempt = CHAOS_PRIVATE_ATTEMPT,
@@ -255,7 +274,7 @@ int chaos_next_use_admit(struct chaos_next_use_admission *destination,
         return rc;
     }
     if (!admission_common(&attempt_record, envelope, at_move) ||
-        !admission_record(&admission_value, envelope,
+        !admission_record(&admission_value, envelope, bound,
                           canonical_envelope, envelope_length, at_move) ||
         !admission_common(&termination_record, envelope, at_move))
         return CHAOS_NEXT_USE_ADMISSION_SCHEMA;

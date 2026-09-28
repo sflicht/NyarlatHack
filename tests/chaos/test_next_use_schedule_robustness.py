@@ -505,10 +505,9 @@ class ScheduleProductionFlowTests(unittest.TestCase):
         cases = (
             {"run": "cd" * 32},
             {"dlevel": 2},
-            {"at_move": 141},
+            {"at_move": 341},
             {"at_safe": 3},
             {"evidence": "missing"},
-            {"evidence": "schedule_ww"},
         )
         for changes in cases:
             with self.subTest(changes=changes), tempfile.TemporaryDirectory() as tmp:
@@ -530,6 +529,32 @@ class ScheduleProductionFlowTests(unittest.TestCase):
                 )
                 self.assertEqual(consumer.poll()["status"], "already_published")
                 self.assertEqual(consumer.selector.attempts, 1)
+
+    def test_production_rebinds_newer_engine_origin_not_schedule_choice(self):
+        # #177 option 1: the engine, not the schedule, binds its own newer
+        # delivered W origin; the receipt keeps the published origin too.
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.produce(root, "wf")
+            consumer = schedule.NextUseScheduler(root, seed=0)
+            self.assertEqual(
+                consumer.poll()["status"], "envelope_published_not_admitted"
+            )
+            envelope = json.loads((root / "next_use-envelope.json").read_text())
+            published = envelope["origin_refs"][0]["root"]
+            result = self.admit(root, "wf", evidence="schedule_ww")
+            self.assertEqual(
+                (result["admitted"], result["rebound"], result["telegraph"]),
+                (1, 1, 1),
+            )
+            receipt = [
+                json.loads(line)
+                for line in (root / "next_use-receipt.jsonl").read_text().splitlines()
+            ]
+            self.assertEqual(receipt[0]["origins"][0]["published"], published)
+            self.assertGreater(receipt[0]["origins"][0]["bound"], published)
+            self.assertEqual(consumer.poll()["status"], "already_published")
+            self.assertEqual(consumer.selector.attempts, 1)
 
     def test_partial_real_schedule_completes_before_one_admission(self):
         with tempfile.TemporaryDirectory() as tmp:

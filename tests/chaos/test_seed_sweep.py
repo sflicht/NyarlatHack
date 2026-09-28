@@ -140,6 +140,26 @@ class FunnelTest(unittest.TestCase):
         ]
         return self.analyse(events=events, envelope=envelope, schedule=[{"row": 1}])
 
+    def test_recorded_engine_decision_replaces_inference(self):
+        envelope = {"at": 2, "cost": 1, "origin_refs": [{"end_seq": 4}]}
+        decision = {
+            "next_use_decision_v": 1,
+            "decision": "rejected",
+            "at": 2,
+            "safe": 2,
+            "move": 30,
+            "reasons": ["level_mismatch", "origin_expired"],
+        }
+        a = self.analyse(
+            events=[SESSION, *_whistle(2, "sound_high", 20)],
+            envelope=envelope,
+            schedule=[{"row": 1}],
+            receipts=[decision],
+        )
+        self.assertEqual(a["counts"]["admitted"], 0)
+        self.assertEqual(a["loss"], "rejected:level_mismatch+origin_expired")
+        self.assertEqual(a["recorded_decisions"][0]["safe"], 2)
+
     def test_published_origin_expired_before_safe_point(self):
         a = self._published(safe_turn=500)
         self.assertEqual(a["counts"]["published"], 1)
@@ -184,12 +204,12 @@ class FunnelTest(unittest.TestCase):
         events = [
             SESSION,
             *_whistle(2, "sound_high", 20),
-            {"event": "observation", "seq": 12, "turn": 140, "observation": {}},
+            {"event": "observation", "seq": 12, "turn": 340, "observation": {}},
             {
                 "event": "safe_point",
                 "seq": 20,
                 "safe": 2,
-                "turn": 150,
+                "turn": 350,
                 "detail": "pray",
                 "budget": 2,
             },

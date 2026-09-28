@@ -833,7 +833,7 @@ class NextUseUnixSaveTests(unittest.TestCase):
                     )
                     version_at = marker + 4 + word
                     self.assertEqual(
-                        original[version_at : version_at + word], struct.pack("i", 5)
+                        original[version_at : version_at + word], struct.pack("i", 6)
                     )
                     changed_source = bytearray(original)
                     changed_source[source_at] ^= 1
@@ -921,7 +921,7 @@ class NextUseUnixSaveTests(unittest.TestCase):
                     damaged = prefix
                     if journal_damage == "tamper":
                         damaged = prefix.replace(
-                            b'"snapshot_v":5', b'"snapshot_v":4', 1
+                            b'"snapshot_v":6', b'"snapshot_v":5', 1
                         )
                     elif journal_damage == "truncated":
                         damaged = prefix[:-1]

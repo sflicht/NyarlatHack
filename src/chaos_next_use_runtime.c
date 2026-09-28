@@ -543,6 +543,10 @@ static int import_admission_carrier(
                     source->data.admission.operations[item];
                 target->data.admission.origin_roots[item] =
                     source->data.admission.origin_roots[item];
+                target->data.admission.bound_roots[item] =
+                    source->data.admission.bound_roots[item];
+                target->data.admission.bound_moves[item] =
+                    source->data.admission.bound_moves[item];
             }
             target->data.admission.program_expiry =
                 source->data.admission.program_expiry;
@@ -651,7 +655,18 @@ static int validate_admission_envelope(
         if (envelope.operations[index]
                 != record->data.admission.operations[index]
             || envelope.origin_refs[index].root
-                != record->data.admission.origin_roots[index])
+                != record->data.admission.origin_roots[index]
+            /* #177: the bound origin is the published one or a strictly
+             * newer origin of the same family noted no earlier. */
+            || record->data.admission.bound_roots[index]
+                < record->data.admission.origin_roots[index]
+            || record->data.admission.bound_moves[index]
+                < envelope.origin_refs[index].move
+            || (record->data.admission.bound_roots[index]
+                    == record->data.admission.origin_roots[index]
+                && record->data.admission.bound_moves[index]
+                    != envelope.origin_refs[index].move)
+            || record->data.admission.bound_moves[index] > record->at_move)
             return 0;
     return 1;
 }
@@ -717,7 +732,7 @@ int chaos_next_use_runtime_install(
     if (admission->program.slot_w == CHAOS_SLOT_PENDING) {
         if (admission->carrier.records[1].data.admission.operations[
                 operation_index] != CHAOS_NEXT_USE_FAMILY_W
-            || admission->carrier.records[1].data.admission.origin_roots[
+            || admission->carrier.records[1].data.admission.bound_roots[
                 operation_index] != origin_w)
             return 0;
         ++operation_index;
@@ -725,7 +740,7 @@ int chaos_next_use_runtime_install(
     if (admission->program.slot_f == CHAOS_SLOT_PENDING) {
         if (admission->carrier.records[1].data.admission.operations[
                 operation_index] != CHAOS_NEXT_USE_FAMILY_F
-            || admission->carrier.records[1].data.admission.origin_roots[
+            || admission->carrier.records[1].data.admission.bound_roots[
                 operation_index] != origin_f)
             return 0;
     }
@@ -1585,7 +1600,11 @@ static int private_record_equal(
             if (left->data.admission.operations[index]
                     != right->data.admission.operations[index]
                 || left->data.admission.origin_roots[index]
-                    != right->data.admission.origin_roots[index])
+                    != right->data.admission.origin_roots[index]
+                || left->data.admission.bound_roots[index]
+                    != right->data.admission.bound_roots[index]
+                || left->data.admission.bound_moves[index]
+                    != right->data.admission.bound_moves[index])
                 return 0;
         return 1;
     case CHAOS_RUNTIME_PRIVATE_INTENT:

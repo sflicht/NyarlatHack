@@ -230,8 +230,11 @@ static int run_case(const char *name, const char *dirpath)
     struct chaos_whistle_witness witness;
     int telegraphs = 0, rc, ox, oy, ready, arm, public_n, public2, f_action;
     int snapshot = 0, windowed = 0, pre_glyph = 0, restored = 0, spent2 = 0;
+    int rebind = !strcmp(name, "obsrebind") || !strcmp(name, "obsrebind_save")
+        || !strcmp(name, "obsrebind_level");
     int owned_start = !strcmp(name, "safehit") || !strcmp(name, "safemiss")
-        || !strcmp(name, "obsorigin") || !strcmp(name, "unequalclock");
+        || !strcmp(name, "obsorigin") || !strcmp(name, "unequalclock") || rebind;
+    long bound_root = 0;
     unsigned orig_id;
 
     test_rng_control();
@@ -257,7 +260,7 @@ static int run_case(const char *name, const char *dirpath)
     arm = 0;
     if (strcmp(name, "none") && strcmp(name, "bypass")
         && strcmp(name, "safemiss") && strcmp(name, "safehit")
-        && strcmp(name, "obsorigin") && strcmp(name, "unequalclock")) {
+        && strcmp(name, "obsorigin") && strcmp(name, "unequalclock") && !rebind) {
         arm = admit_and_act(dirpath, &pet, &telegraphs,
                             strcmp(name, "nonepet") != 0);
         if (arm < 0) return 2;
@@ -293,6 +296,52 @@ static int run_case(const char *name, const char *dirpath)
             int acted = chaos_next_use_on_action(CHAOS_NEXT_USE_FAMILY_W, 10, 0);
             if (acted)
                 chaos_next_use_capture_whistle(10, pet.m_id, monstermoves);
+            arm = acted ? 2 : 1;
+        }
+    }
+    if (rebind) {
+        /* #177: the envelope names the first whistle (root 10); a second,
+         * newer whistle replaces it before the safe point. The engine binds
+         * the newest same-family origin (or, on another level, refuses). */
+        long root;
+        int acted;
+
+        u.chaos.seq = 9;
+        root = chaos_observation_begin(CHAOS_OBS_OP_WHISTLING);
+        chaos_observation_arm(CHAOS_OBS_OP_WHISTLING, CHAOS_OBS_FACT_SOUND_HIGH);
+        You("produce a high whistling sound.");
+        chaos_observation_disarm();
+        chaos_observation_end(root);
+        /* A repeated identical top line is not re-rendered, so it would give
+         * no notice; the player's --More--/next turn clears it in play. */
+        clear_nhwindow(WIN_MESSAGE);
+        if (!strcmp(name, "obsrebind_level")) u.uz.dlevel = 2;
+        bound_root = chaos_observation_begin(CHAOS_OBS_OP_WHISTLING);
+        chaos_observation_arm(CHAOS_OBS_OP_WHISTLING, CHAOS_OBS_FACT_SOUND_HIGH);
+        You("produce a high whistling sound.");
+        chaos_observation_disarm();
+        chaos_observation_end(bound_root);
+        clear_nhwindow(WIN_MESSAGE);
+        if (!strcmp(name, "obsrebind_level")) u.uz.dlevel = 1;
+        setenv("NYARLATHACK_NEXT_USE_ADMIT", "1", 1);
+        u.chaos.safe = 6;
+        chaos_safe("level_enter");
+        if (u.chaos.spent == 1 && !strcmp(name, "obsrebind_save")) {
+            restored = persist_and_restore(dirpath);
+            if (!restored) return 2;
+            u.chaos.safe = 7;
+            chaos_safe("level_enter");
+            spent2 = u.chaos.spent;
+        }
+        /* The engine telegraph occupies the top line; the player's key
+         * acknowledges it before the companion's next move in play. */
+        clear_nhwindow(WIN_MESSAGE);
+        if (u.chaos.spent == 1) {
+            /* A later ordinary whistle triggers; its root is the trigger,
+             * the target is resolved from the one eligible companion. */
+            acted = chaos_next_use_on_action(CHAOS_NEXT_USE_FAMILY_W, 30, 0);
+            if (acted)
+                chaos_next_use_capture_whistle(30, pet.m_id, monstermoves);
             arm = acted ? 2 : 1;
         }
     }
@@ -388,7 +437,8 @@ static int run_case(const char *name, const char *dirpath)
             "\"displaced\":%d,\"delivered\":%d,\"pre_public\":%d,"
             "\"reseed\":%d,\"rng_next\":%d,\"snapshot\":%d,\"windowed\":%d,"
             "\"pre_glyph\":%d,\"post_glyph\":%d,\"invalid\":%d,\"classifier\":%d,"
-            "\"root\":%ld,\"notice\":%ld,\"spent\":%d,\"spent2\":%d,\"restored\":%d}\n",
+            "\"root\":%ld,\"notice\":%ld,\"spent\":%d,\"spent2\":%d,\"restored\":%d,"
+            "\"bound_root\":%ld}\n",
             name, ox, oy, pet.mx, pet.my, rc, arm, telegraphs, ready,
             chaos_next_use_whistle_decision_ready(pet.m_id),
             chaos_next_use_whistle_decision_ready(orig_id),
@@ -397,7 +447,8 @@ static int run_case(const char *name, const char *dirpath)
             witness.pre_public, reseed_count, rn2(100000),
             snapshot, windowed, pre_glyph, witness.post_glyph,
             witness.invalid, witness.classifier_ok,
-            witness.root, witness.notice_seq, u.chaos.spent, spent2, restored);
+            witness.root, witness.notice_seq, u.chaos.spent, spent2, restored,
+            bound_root);
         fclose(out);
     }
     return 0;

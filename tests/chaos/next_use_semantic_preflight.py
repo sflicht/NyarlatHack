@@ -52,7 +52,7 @@ def native_snapshot(save, source, destination, prefix, exported):
     """Locate one exact source in a trusted save; C subsequently reads its codec."""
     raw = save.read_bytes()
     assert raw.count(source) == 1, "ambiguous native snapshot source"
-    start = raw.index(source) - 355  # native v5: 40 int32 + three 65-byte hashes
+    start = raw.index(source) - 355  # native v6: 40 int32 + three 65-byte hashes
     assert start >= 0
     codec = raw[start : start + 355 + len(source)]
     values = dict(zip(SNAP, struct.unpack("=40I", codec[:160])))
@@ -61,7 +61,7 @@ def native_snapshot(save, source, destination, prefix, exported):
         b = codec[160 + index * 65 : 225 + index * 65]
         assert b[-1] == 0
         values[key] = b.rstrip(b"\0").decode("ascii")
-    assert values["snapshot_v"] == 5 and values["source_length"] == len(source)
+    assert values["snapshot_v"] == 6 and values["source_length"] == len(source)
     assert values["source_sha256"] == sha(source)
     for key in values.keys() & exported.keys():
         assert values[key] == exported[key], "native/export binding: " + key

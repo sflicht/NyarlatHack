@@ -329,8 +329,8 @@ class NextUseSnapshotTests(unittest.TestCase):
                     self.run_mode("checkpoint", *case), [{"valid": case[-1]}]
                 )
 
-    def test_explicit_v5_checkpoint_format(self):
-        self.assertEqual(self.run_mode("checkpoint_version")[0]["version"], 5)
+    def test_explicit_v6_checkpoint_format(self):
+        self.assertEqual(self.run_mode("checkpoint_version")[0]["version"], 6)
 
     def test_bad_version_does_not_overwrite_live(self):
         rows = self.run_mode("bad_version")

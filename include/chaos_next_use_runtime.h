@@ -122,6 +122,7 @@ struct chaos_next_use_runtime_private_record {
         struct { int outcome, reason, reason_present; } attempt;
         struct { int at_safe, cost, operation_count;
                  int operations[2]; long origin_roots[2];
+                 long bound_roots[2]; long bound_moves[2];
                  int program_expiry; char envelope_b64[10925];
                  char envelope_sha256[65]; } admission;
         struct { int callback_ordinal, trigger, validation, failure_code;
@@ -270,7 +271,7 @@ long chaos_next_use_fountain_completed_root(void);
 void chaos_next_use_fountain_result(const struct chaos_fountain_token *token,
                                     int outcome);
 
-#define CHAOS_NEXT_USE_SNAPSHOT_V 5
+#define CHAOS_NEXT_USE_SNAPSHOT_V 6
 #define CHAOS_NEXT_USE_JOURNAL_BYTES_MAX 8388608UL
 #define CHAOS_NEXT_USE_JOURNAL_RECORDS_MAX 4096UL
 enum chaos_next_use_journal_state {

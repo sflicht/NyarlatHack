@@ -212,7 +212,7 @@ class NextUseSafeAdmitTests(RetainOnFailure):
         self.assertEqual(row["spent"], 0)
 
     def test_stale_origin_is_rejected(self):
-        row = self.run_case(self.publish(), at_move=141)
+        row = self.run_case(self.publish(), at_move=341)
         self.assertEqual(row["rejected"], 1)
         self.assertEqual(row["admitted"], 0)
 
@@ -279,7 +279,7 @@ class NextUseSafeAdmitTests(RetainOnFailure):
         self.assertEqual(row["caller_spent"], 0)
 
     def test_production_stale_origin_clock_rejects(self):
-        row = self.run_case(self.publish(), wrapper="on_safe", at_move=141)
+        row = self.run_case(self.publish(), wrapper="on_safe", at_move=341)
         self.assertEqual(row["admitted"], 0)
         self.assertEqual(row["caller_spent"], 0)
 
@@ -371,16 +371,86 @@ class NextUseSafeAdmitTests(RetainOnFailure):
         self.assertEqual(row["telegraph"], 1)
         self.assertEqual(row["rejected"], 0)
 
-    def test_production_wrong_second_origin_rejects_before_telegraph(self):
-        row = self.run_case(
-            self.rewrite_wf(self.publish()),
-            wrapper="on_safe",
-            evidence="wf_wrong_f",
+    def test_production_newer_second_origin_rebinds_only_that_family(self):
+        # #177 option 1: the engine's newer F origin (root 20) replaces the
+        # published F origin (root 13); the matching W origin stays bound.
+        folder = self.rewrite_wf(self.publish())
+        row = self.run_case(folder, wrapper="on_safe", evidence="wf_wrong_f")
+        self.assertEqual(row["admitted"], 1)
+        self.assertEqual(row["rebound"], 2)
+        self.assertEqual(row["caller_spent"], 2)
+        self.assertEqual(row["telegraph"], 1)
+        receipt = (Path(folder) / "next_use-receipt.jsonl").read_text()
+        self.assertIn(
+            '"origins":[{"family":"W","published":10,"bound":10},'
+            '{"family":"F","published":13,"bound":20}]',
+            receipt,
         )
-        self.assertEqual(row["admitted"], 0)
-        self.assertEqual(row["caller_spent"], 0)
+
+    def rebind_case(self, evidence, **changes):
+        # The newer engine origin is at move 45; admit after it (move 50).
+        folder = self.publish()
+        changes.setdefault("at_move", 50)
+        row = self.run_case(folder, wrapper="on_safe", evidence=evidence, **changes)
+        return folder, row
+
+    def rows(self, folder):
+        path = Path(folder) / "next_use-receipt.jsonl"
+        if not path.exists():
+            return []
+        return [json.loads(line) for line in path.read_text().splitlines()]
+
+    def test_rebind_newer_same_family_admits_and_records_both_origins(self):
+        folder, row = self.rebind_case("rebind_w")
+        self.assertEqual(
+            (row["admitted"], row["rebound"], row["telegraph"], row["reasons"]),
+            (1, 1, 1, 0),
+        )
+        self.assertEqual(row["caller_spent"], 1)
+        rows = self.rows(folder)
+        self.assertEqual([row.get("kind") for row in rows], [2])
+        self.assertEqual(
+            rows[0]["origins"], [{"family": "W", "published": 10, "bound": 20}]
+        )
+
+    def test_rebind_rejects_origin_noted_after_the_safe_point(self):
+        _, row = self.rebind_case("rebind_w", at_move=44)
+        self.assertEqual((row["admitted"], row["rebound"], row["telegraph"]), (0, 0, 0))
+
+    def test_rebind_lifetime_is_measured_from_the_bound_origin(self):
+        # Published origin at move 40 has expired at 341; the newer origin
+        # (move 45) is still within its lifetime, so the engine rebinds.
+        _, row = self.rebind_case("rebind_w", at_move=341)
+        self.assertEqual((row["admitted"], row["rebound"]), (1, 1))
+        # Past the bound origin's own lifetime: expired, no rebind.
+        _, row = self.rebind_case("rebind_w", at_move=346)
+        self.assertEqual((row["admitted"], row["rebound"]), (0, 0))
         self.assertEqual(row["telegraph"], 0)
-        self.assertEqual(row["rejected"], 1)
+        self.assertEqual(row["caller_spent"], 0)
+
+    def test_no_rebind_cases_reject_before_telegraph(self):
+        cases = {
+            "rebind_other_level": "origin_superseded",
+            "rebind_not_delivered": "origin_unbound",
+            "rebind_wrong_family": "origin_superseded",
+            "rebind_wrong_fact": "origin_superseded",
+            "rebind_wrong_run": "origin_superseded",
+            "stale": "origin_superseded",
+        }
+        for evidence, reason in cases.items():
+            with self.subTest(evidence=evidence):
+                folder, row = self.rebind_case(evidence)
+                self.assertEqual(
+                    (row["admitted"], row["rebound"], row["telegraph"]),
+                    (0, 0, 0),
+                )
+                self.assertEqual(row["caller_spent"], 0)
+                self.assertEqual(row["rejected"], 1)
+                self.assertTrue(row["reasons"] & REASON_BITS[reason], row)
+                rows = self.rows(folder)
+                self.assertEqual([r.get("decision") for r in rows], ["rejected"], rows)
+                self.assertIn(reason, rows[0]["reasons"])
+                self.assertNotIn("origins", rows[0])
 
     def test_production_f_then_w_bind_order_admits(self):
         row = self.run_case(
@@ -496,3 +566,162 @@ class NextUseSafeAdmitTests(RetainOnFailure):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+REASON_BITS = {
+    "schema": 1 << 0,
+    "identity": 1 << 1,
+    "run_unavailable": 1 << 2,
+    "level_invalid": 1 << 3,
+    "budget_state": 1 << 4,
+    "missed_index": 1 << 5,
+    "run_mismatch": 1 << 6,
+    "level_mismatch": 1 << 7,
+    "origin_expired": 1 << 8,
+    "origin_unbound": 1 << 9,
+    "origin_superseded": 1 << 10,
+    "source": 1 << 11,
+    "telegraph": 1 << 12,
+    "budget": 1 << 13,
+    "receipt": 1 << 14,
+    "internal": 1 << 15,
+}
+
+
+class NextUseSafeRecordedDecisionTests(unittest.TestCase):
+    """#177: the engine records every failing admission check, not a guess."""
+
+    setUpClass = classmethod(NextUseSafeAdmitTests.setUpClass.__func__)
+    publish = NextUseSafeAdmitTests.publish
+    run_case = NextUseSafeAdmitTests.run_case
+
+    def receipt_bytes(self, folder):
+        path = Path(folder) / "next_use-receipt.jsonl"
+        return path.read_bytes() if path.exists() else None
+
+    def decisions(self, folder):
+        path = Path(folder) / "next_use-receipt.jsonl"
+        if not path.exists():
+            return []
+        rows = [json.loads(line) for line in path.read_text().splitlines()]
+        return [row for row in rows if "next_use_decision_v" in row]
+
+    def assert_reason(self, reason, folder=None, recorded=True, **kwargs):
+        folder = folder or self.publish()
+        before = self.receipt_bytes(folder)
+        row = self.run_case(folder, wrapper="on_safe", **kwargs)
+        self.assertEqual(row["admitted"], 0)
+        self.assertEqual(row["rejected"], 1)
+        self.assertTrue(row["reasons"] & REASON_BITS[reason], row)
+        if not recorded:
+            # Unparsed envelope or unowned transport: existing bytes untouched.
+            self.assertEqual(self.receipt_bytes(folder), before)
+            return None
+        decisions = self.decisions(folder)
+        self.assertEqual(len(decisions), 1, decisions)
+        self.assertEqual(decisions[0]["decision"], "rejected")
+        self.assertIn(reason, decisions[0]["reasons"])
+        self.assertEqual(decisions[0]["next_use_decision_v"], 1)
+        return decisions[0]
+
+    def test_admission_writes_no_rejection_row(self):
+        folder = self.publish()
+        row = self.run_case(folder, wrapper="on_safe")
+        self.assertEqual(row["admitted"], 1)
+        self.assertEqual(row["reasons"], 0)
+        self.assertEqual(self.decisions(folder), [])
+        rows = (Path(folder) / "next_use-receipt.jsonl").read_text().splitlines()
+        self.assertEqual([json.loads(r)["kind"] for r in rows], [2])
+
+    def test_pending_and_empty_mailbox_write_nothing(self):
+        folder = self.publish()
+        row = self.run_case(folder, wrapper="on_safe", at_safe=6)
+        self.assertEqual(row["pending"], 1)
+        self.assertFalse((Path(folder) / "next_use-receipt.jsonl").exists())
+        empty = tempfile.mkdtemp(prefix="nyarl-next-use-safe-empty-")
+        os.chmod(empty, 0o700)
+        row = self.run_case(empty, wrapper="on_safe")
+        self.assertEqual(row["loaded"], 0)
+        self.assertEqual(sorted(os.listdir(empty)), [])
+
+    def test_unparseable_envelope_is_schema_and_writes_nothing(self):
+        folder = self.publish()
+        (Path(folder) / "next_use-envelope.json").write_text("{}")
+        os.chmod(Path(folder) / "next_use-envelope.json", 0o600)
+        self.assert_reason("schema", folder, recorded=False)
+
+    def test_unowned_transport_is_identity_and_keeps_old_receipt(self):
+        folder = self.publish()
+        path = Path(folder) / "next_use-receipt.jsonl"
+        path.write_bytes(b'{"next_use_private_v":1,"kind":2,"seq":2}\n')
+        os.chmod(path, 0o600)
+        self.assert_reason("identity", folder, recorded=False, identity=0)
+
+    def test_run_unavailable(self):
+        self.assert_reason("run_unavailable", run="none")
+
+    def test_level_invalid(self):
+        self.assert_reason("level_invalid", dlevel=0)
+
+    def test_budget_state(self):
+        self.assert_reason("budget_state", budget="invalid")
+
+    def test_missed_index(self):
+        decision = self.assert_reason("missed_index", at_safe=8)
+        self.assertEqual((decision["at"], decision["safe"]), (7, 8))
+
+    def test_run_mismatch(self):
+        self.assert_reason("run_mismatch", run="cd" * 32)
+
+    def test_level_mismatch(self):
+        self.assert_reason("level_mismatch", dlevel=2)
+
+    def test_origin_expired(self):
+        decision = self.assert_reason("origin_expired", at_move=341)
+        self.assertEqual(decision["move"], 341)
+
+    def test_origin_unbound(self):
+        self.assert_reason("origin_unbound", evidence="missing")
+        self.assert_reason("origin_unbound", evidence="incomplete")
+
+    def test_origin_superseded(self):
+        self.assert_reason("origin_superseded", evidence="stale")
+
+    def test_tampered_source_digest_is_schema(self):
+        folder = self.publish()
+        path = Path(folder) / "next_use-envelope.json"
+        payload = json.loads(path.read_text())
+        payload["source"] = payload["source"] + " "
+        path.write_text(json.dumps(payload, separators=(",", ":"), sort_keys=True))
+        os.chmod(path, 0o600)
+        self.assert_reason("schema", folder, recorded=False)
+
+    def test_source(self):
+        import hashlib
+
+        folder = self.publish()
+        path = Path(folder) / "next_use-envelope.json"
+        payload = json.loads(path.read_text())
+        payload["source"] = "return ("
+        payload["source_sha256"] = hashlib.sha256(b"return (").hexdigest()
+        path.write_text(json.dumps(payload, separators=(",", ":"), sort_keys=True))
+        os.chmod(path, 0o600)
+        self.assert_reason("source", folder)
+
+    def test_telegraph(self):
+        self.assert_reason("telegraph", telegraph="fail")
+
+    def test_budget(self):
+        self.assert_reason("budget", budget="empty")
+
+    def test_receipt(self):
+        self.assert_reason("receipt", receipt="fail")
+
+    def test_all_failing_checks_are_listed(self):
+        decision = self.assert_reason(
+            "level_mismatch", at_safe=8, at_move=341, dlevel=2
+        )
+        self.assertEqual(
+            decision["reasons"],
+            ["missed_index", "level_mismatch", "origin_expired"],
+        )
