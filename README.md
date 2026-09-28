@@ -55,7 +55,7 @@ you can meet today:
   `chaos/packs/footsteps.lua`). To provoke it, pace back and forth in a
   room; the starting room is fine. The game runs one hidden trial of the
   hound, and only lets it in if you could get away from it. That trial
-  happens once per game; about one in eleven is refused, more often in a
+  happens once per game; fewer than one in ten is refused, more often in a
   cramped, cluttered room. The hound can be killed, and it gives up after about
   60 turns or when you leave the level. It costs the Chaos's whole budget at
   full Sanity, so in a `--next-use` game whichever of the two is admitted
