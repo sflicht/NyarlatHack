@@ -258,6 +258,107 @@ class RevealTests(unittest.TestCase):
         turns = [int(t) for t in re.findall(r"^  Turn (\d+)", section, re.M)]
         self.assertEqual(turns, sorted(turns))
 
+    # --- #165: FCFS budget refusal and haunt lifecycle end -----------------
+    def test_haunting_budget_refusal_is_counted_never_narrated(self):
+        # Only a budget refusal: no admission, so no section and no xlog.
+        self.append(
+            event_row(1, 5, "session", "new")
+            + event_row(2, 20, "haunting", "budget")
+        )
+        self.assertEqual(self.reveal_of(), ("", ""))
+        # With an admitted whisper the refusal joins the count line only.
+        self.transport(REQUEST)
+        section, xlog = self.reveal_of()
+        self.assertEqual(len(self.entries(section)), 1, section)
+        self.assertNotIn("haunting", section)
+        self.assertNotIn("hound", section)
+        self.assertNotIn("budget", section)
+        self.assertEqual(
+            [x for x in section.splitlines() if "refused" in x],
+            ["  1 other candidate was refused; none took effect."],
+        )
+        self.assertEqual(xlog, ":chaos_admitted=1:chaos_delivered=1:chaos_spent=3")
+
+    def test_haunting_budget_relogged_after_restore_counts_once(self):
+        # chaos_haunt.c's budget_logged guard is a process static, not saved:
+        # a restored game can log the same refusal again. One candidate.
+        self.append(
+            event_row(1, 5, "session", "new")
+            + event_row(2, 20, "haunting", "budget")
+            + event_row(3, 21, "session", "restore")
+            + event_row(4, 22, "haunting", "budget")
+        )
+        self.transport(REQUEST)
+        section, _ = self.reveal_of()
+        self.assertEqual(
+            [x for x in section.splitlines() if "refused" in x],
+            ["  1 other candidate was refused; none took effect."],
+        )
+        # A new game is a new candidate.
+        self.append(
+            event_row(5, 1, "session", "new") + event_row(6, 20, "haunting", "budget")
+        )
+        self.transport(REQUEST)
+        section, _ = self.reveal_of()
+        self.assertIn("  1 other candidate was refused; none took effect.", section)
+
+    def test_haunting_budget_then_admitted_is_not_refused(self):
+        # Budget refusals consume nothing; if Sanity loss later grows the
+        # budget and the same candidate is admitted, it was not refused.
+        self.append(
+            event_row(1, 5, "session", "new")
+            + event_row(2, 20, "haunting", "budget")
+            + event_row(3, 40, "haunting", "pre_admitted")
+            + event_row(4, 40, "haunting", "accepted")
+            + event_row(5, 41, "haunting", "budget")
+        )
+        section, xlog = self.reveal_of()
+        self.assertEqual(len(self.entries(section)), 1, section)
+        self.assertIn(
+            "  Turn 40, after you doubled back: a haunting was admitted.", section
+        )
+        self.assertNotIn("refused", section)
+        self.assertEqual(xlog, ":chaos_admitted=1:chaos_delivered=0:chaos_spent=3")
+
+    def test_haunt_expired_row_ends_the_haunt_entry_at_its_turn(self):
+        self.append(
+            event_row(1, 5, "session", "new")
+            + event_row(2, 30, "haunting", "pre_admitted")
+            + event_row(3, 30, "haunting", "accepted")
+            + event_row(4, 31, "haunt_step", "")
+            + event_row(5, 90, "haunting", "expired")
+        )
+        # The host still reports the haunt active: the engine row wins.
+        section, xlog = self.reveal_of("haunt_active")
+        self.assertEqual(len(self.entries(section)), 1, section)
+        self.assertIn("a haunting was admitted.", section)
+        self.assertIn("    Ended: its hunt ended on turn 90.", section)
+        self.assertNotIn("still hunting", section)
+        self.assertNotIn("refused", section)
+        self.assertEqual(xlog, ":chaos_admitted=1:chaos_delivered=1:chaos_spent=3")
+
+    def test_haunt_expired_without_admission_is_ignored(self):
+        # An expired row with no admitted haunt narrates and counts nothing.
+        self.append(
+            event_row(1, 5, "session", "new")
+            + event_row(2, 90, "haunting", "expired")
+        )
+        self.assertEqual(self.reveal_of(), ("", ""))
+        self.transport(REQUEST)
+        section, _ = self.reveal_of()
+        self.assertEqual(len(self.entries(section)), 1, section)
+        self.assertNotIn("haunting", section)
+        self.assertNotIn("refused", section)
+
+    def test_haunt_without_expired_row_keeps_host_ending(self):
+        self.append(
+            event_row(1, 5, "session", "new")
+            + event_row(2, 30, "haunting", "accepted")
+        )
+        section, _ = self.reveal_of("haunt_active")
+        self.assertIn("Ended: still hunting when the game ended.", section)
+        self.assertNotIn("its hunt ended on turn", section)
+
     def test_curio_application_before_placement_is_ignored(self):
         self.append(
             event_row(1, 20, "curio", "admitted")

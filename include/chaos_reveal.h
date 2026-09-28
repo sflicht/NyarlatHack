@@ -106,6 +106,7 @@ struct chaos_reveal {
     int receipt_ops;
     struct { int fountain; long published, bound; } receipt[2];
     int receipt_rejected;        /* recorded next-use rejection rows */
+    int haunt_budget_seen;       /* #165: 0 none, 1 counted refusal, 2 later admitted */
 };
 
 typedef void (*chaos_reveal_emit)(void *, const char *);
