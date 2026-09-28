@@ -12,6 +12,7 @@
 #include "hack.h"
 #include "chaos.h"
 #include "chaos_haunt.h"
+#include "mfndpos.h"
 #include <assert.h>
 #include <fcntl.h>
 #include <stdio.h>
@@ -39,24 +40,66 @@ static void room(int w,int h) {
  }
  viz_array=rows;
 }
+/* HAUNT_ROOM_MAP=file: a recorded map instead of the W x H room. One text row
+ * per level row from y=0, column x = level x. Glyphs: ' ' rock, '.' floor,
+ * '#' corridor, '-' '|' walls, 'D' doorless doorway, 'O' open door, '+'
+ * closed door, '~' pool, '{' fountain, '<' stairs, 'S' sink, '^' trap,
+ * '@' the player (on floor), 'd' the pet (on floor). Every non-rock square
+ * is lit and in sight. */
+static int mapped(const char *path,int *px,int *py,int *qx,int *qy) {
+ FILE *f=fopen(path,"r");char line[COLNO+4];int x,y=0,c;
+ assert(f);*px=*py=*qx=*qy=-1;
+ for(y=0;y<ROWNO;++y){rows[y]=visible[y];for(x=0;x<COLNO;++x){levl[x][y].typ=STONE;levl[x][y].lit=0;visible[y][x]=0;}}
+ for(y=0;y<ROWNO && fgets(line,sizeof line,f);++y)for(x=1;x<COLNO && line[x] && line[x]!='\n';++x) {
+  struct rm *l=&levl[x][y];c=line[x];
+  if(c==' ')continue;
+  l->lit=1;visible[y][x]=IN_SIGHT|COULD_SEE;
+  switch(c) {
+  case '.':l->typ=ROOM;break;
+  case '@':l->typ=ROOM;*px=x;*py=y;break;
+  case 'd':l->typ=ROOM;*qx=x;*qy=y;break;
+  case '#':l->typ=CORR;break;
+  case '-':l->typ=HWALL;break;
+  case '|':l->typ=VWALL;break;
+  case 'D':l->typ=DOOR;l->doormask=D_NODOOR;break;
+  case 'O':l->typ=DOOR;l->doormask=D_ISOPEN;break;
+  case '+':l->typ=DOOR;l->doormask=D_CLOSED;break;
+  case '~':l->typ=POOL;break;
+  case '{':l->typ=FOUNTAIN;break;
+  case '<':l->typ=STAIRS;break;
+  case 'S':l->typ=SINK;break;
+  case '^':l->typ=ROOM;(void)maketrap(x,y,SQKY_BOARD);break;
+  default:fprintf(stderr,"bad map glyph %c\n",c);exit(2);
+  }
+ }
+ fclose(f);viz_array=rows;
+ assert(*px>0);return 1;
+}
 int main(int argc,char **argv) {
- int w,h,px,py,seed,ticks=1,dir,i,count;long seq;
+ int w,h,px,py,seed,ticks=1,dir,i,count,qx=-1,qy=-1;long seq;const char *map=getenv("HAUNT_ROOM_MAP");
  if(argc!=6 && argc!=7){fprintf(stderr,"usage: haunt_room W H PX PY SEED [TICKS]\n");return 2;}
  w=atoi(argv[1]);h=atoi(argv[2]);px=atoi(argv[3]);py=atoi(argv[4]);seed=atoi(argv[5]);
  if(argc==7)ticks=atoi(argv[6]);
- assert(w>=1 && h>=1 && w<=40 && h<=12 && px>=0 && px<w && py>=0 && py<h && ticks>=1);
+ assert(w>=1 && h>=1 && w<=40 && h<=12 && ticks>=1 && (map || (px>=0 && px<w && py>=0 && py<h)));
  fqn_prefix[TROUBLEPREFIX]="./";
  test_rng_control();id_permonst();init_objects();init_gods();init_artifacts();
  memset(&u,0,sizeof u);urace=races[str2race("human")];urole=roles[str2role("Bard")];
  u.umonnum=u.umonster=PM_HUMAN;youmonst.data=&mons[PM_HUMAN];
- u.usanity=100;u.ulevel=1;u.uhp=u.uhpmax=14;u.ux=X0+px;u.uy=Y0+py;
+ u.usanity=100;u.ulevel=1;u.uhp=u.uhpmax=14;
  n_dgns=2;dungeons[1].depth_start=1;dungeons[1].num_dunlevs=20;
  u.uz.dnum=1;u.uz.dlevel=1;moves=monstermoves=10;flags.ident=1;
  windowprocs.win_print_glyph=quietglyph;
- vision_init();room(w,h);
+ vision_init();
+ if(map){(void)mapped(map,&px,&py,&qx,&qy);u.ux=px;u.uy=py;}
+ else{room(w,h);u.ux=X0+px;u.uy=Y0+py;}
  /* Real line-of-sight tables for monster-to-monster checks (clear_path);
   * the player's view stays the fixed lit room above. */
  vision_reset();viz_array=rows;
+ if(qx>0) {
+  struct monst *pet;test_rng_reset();
+  pet=makemon(&mons[PM_LITTLE_DOG],qx,qy,MM_NOGROUP|MM_NOWAIT|NO_MINVENT|MM_EDOG);
+  assert(pet);initedog(pet);
+ }
  /* Optional furniture, as in a real start room: an up staircase (not
   * simple_floor) and the starting pet, at 0-based room offsets. */
  if(getenv("HAUNT_ROOM_STAIRS")) {
@@ -69,6 +112,29 @@ int main(int argc,char **argv) {
   test_rng_reset();
   pet=makemon(&mons[PM_LITTLE_DOG],X0+qx,Y0+qy,MM_NOGROUP|MM_NOWAIT|NO_MINVENT|MM_EDOG);
   assert(pet);initedog(pet);
+ }
+ if(getenv("HAUNT_ROOM_PICK")) {
+  /* Direct handler check: an admitted hound at H, the footsteps trail aimed
+   * at T (room offsets), one real chaos_haunt_pick over the game's own
+   * mfndpos candidates. Prints the requested step and the chosen square. */
+  int hx,hy,tx,ty,cnt,choice,fd,draw;struct monst *m;coord poss[9];long info[9];ssize_t n;
+  assert(sscanf(getenv("HAUNT_ROOM_PICK"),"%d,%d,%d,%d",&hx,&hy,&tx,&ty)==4);
+  hx+=X0;hy+=Y0;tx+=X0;ty+=Y0;
+  test_rng_reset();
+  m=makemon(&mons[PM_JACKAL],hx,hy,MM_NOGROUP|MM_NOWAIT|NO_MINVENT);assert(m && m->mx==hx && m->my==hy);
+  setmangry(m);
+  fd=open(getenv("HAUNT_ROOM_PACK"),O_RDONLY);assert(fd>=0);
+  n=read(fd,u.haunt.source,CHAOS_LUA_SOURCE);close(fd);assert(n>0);u.haunt.source_len=(int)n;
+  u.haunt.active=1;u.haunt.target=m->m_id;u.haunt.until=moves+60;u.haunt.dnum=1;u.haunt.dlevel=1;
+  u.haunt.count=4;for(i=0;i<4;++i){u.haunt.history[i].x=tx;u.haunt.history[i].y=ty;}
+  cnt=mfndpos(m,poss,info,ALLOW_U);
+  draw=test_rng_begin();
+  choice=chaos_haunt_pick(m,(struct nhcoord *)poss,cnt);
+  test_rng_unchanged(draw);
+  printf("pick hound=%d,%d target=%d,%d cands=%d choice=%d square=%d,%d adjacent=%d\n",
+         hx-X0,hy-Y0,tx-X0,ty-Y0,cnt,choice,choice>=0?poss[choice].x-X0:-1,choice>=0?poss[choice].y-Y0:-1,
+         choice>=0 && distmin(poss[choice].x,poss[choice].y,u.ux,u.uy)<=1);
+  return 0;
  }
  chaos_state_init(&u.chaos);u.chaos.safe=1;
  chaos_start();

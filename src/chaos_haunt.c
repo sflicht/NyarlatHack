@@ -29,6 +29,10 @@ int chaos_haunt_valid(const struct chaos_haunt_state *h) {
  for(i=0;i<h->count;++i)if(!isok(h->history[i].x,h->history[i].y))return 0;
  return 1;
 }
+/* The one legality check for a scripted step: plain floor, empty, not the player. */
+static int legal_step(struct monst *m,int x,int y) {
+ (void)m;return simple_floor(x,y) && !m_at(x,y) && (x!=u.ux || y!=u.uy);
+}
 int chaos_haunt_pick(struct monst *m,const struct nhcoord *poss,int count) {
  struct chaos_haunt_state *h=&u.haunt;
  struct chaos_lua_context c;struct chaos_lua_intent intent;int i,x,y;
@@ -42,9 +46,25 @@ int chaos_haunt_pick(struct monst *m,const struct nhcoord *poss,int count) {
  if(!intent.dx && !intent.dy) {h->state=intent.state;return -1;}
  x=m->mx+intent.dx;y=m->my+intent.dy;
  /* Match the game's own legal candidates; never alter terrain, attack or teleport. */
- for(i=0;i<count;++i)if(poss[i].x==x && poss[i].y==y && simple_floor(x,y) &&
-    !m_at(x,y) && (x!=u.ux || y!=u.uy)) {
+ for(i=0;i<count;++i)if(poss[i].x==x && poss[i].y==y && legal_step(m,x,y)) {
   pending_state=intent.state;return i;
+ }
+ /* #190: the requested square holds another monster (in practice the
+  * player's pet standing on the trail). Take the legal candidate nearest to
+  * it instead, but only one that is strictly nearer than the hound is now
+  * (squared distance), and never one next to the player unless the
+  * requested square was. Ties keep the first in the game's own candidate
+  * order (mfndpos: x ascending, then y). No RNG, nothing the pick did not
+  * already see. Otherwise stay put, as before. */
+ if(isok(x,y) && m_at(x,y)) {
+  int best=-1,d,far=distmin(x,y,u.ux,u.uy)>1,bd=dist2(m->mx,m->my,x,y);
+  for(i=0;i<count;++i) {
+   if(!legal_step(m,poss[i].x,poss[i].y))continue;
+   if(far && distmin(poss[i].x,poss[i].y,u.ux,u.uy)<=1)continue;
+   d=dist2(poss[i].x,poss[i].y,x,y);
+   if(d<bd){bd=d;best=i;}
+  }
+  if(best>=0){pending_state=intent.state;return best;}
  }
  ++blocked_move;return -1;
 }
