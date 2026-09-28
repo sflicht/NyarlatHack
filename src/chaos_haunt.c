@@ -8,7 +8,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-static int pending_state, script_error, blocked_move;
+static int pending_state, script_error, blocked_move, budget_logged;
 static int simple_floor(int x,int y) {
  return isok(x,y) && (levl[x][y].typ==ROOM || levl[x][y].typ==CORR) && !t_at(x,y);
 }
@@ -140,7 +140,10 @@ void chaos_haunt_tick(int dir) {
  struct trial_input where={0,0};struct chaos_shadow_report report;char receipt[512];
  if(chaos_shadow_active())return;
  /* Admitted behavior and its lifecycle must not depend on transport health. */
- if(h->active && (moves>=h->until || h->dnum!=u.uz.dnum || h->dlevel!=u.uz.dlevel))h->active=0;
+ if(h->active && (moves>=h->until || h->dnum!=u.uz.dnum || h->dlevel!=u.uz.dlevel)) {
+  /* #165: the lifecycle end is logged; the event carries no game state. */
+  h->active=0;chaos_event("haunting","result","expired");
+ }
  if(h->last_turn!=moves) {
   if(h->dnum!=u.uz.dnum || h->dlevel!=u.uz.dlevel)h->count=0;
   if(h->count && (h->history[h->count-1].x!=u.ux || h->history[h->count-1].y!=u.uy))
@@ -150,7 +153,17 @@ void chaos_haunt_tick(int dir) {
   if(back){h->backtracks=1;chaos_event("backtrack","result","");}
  }
  recollect();
- if(dir<0 || h->checked || !h->backtracks || h->count<4 || !chaos_state_valid(&u.chaos) || chaos_budget(&u.chaos,u.usanity)<CHAOS_COST_HAUNT || multi<0)return;
+ if(dir<0 || h->checked || !h->backtracks || h->count<4 || !chaos_state_valid(&u.chaos) || multi<0)return;
+ if(chaos_budget(&u.chaos,u.usanity)<CHAOS_COST_HAUNT) {
+  /* #165 first come, first served: another spender got the budget first.
+   * Log the existing reason once per session, only for an installed
+   * candidate; nothing is consumed, so a later budget may still admit it. */
+  struct stat st;
+  if(!budget_logged && !fstatat(dir,"haunting.lua",&st,AT_SYMLINK_NOFOLLOW)) {
+   budget_logged=1;chaos_event("haunting","result","budget");
+  }
+  return;
+ }
  for(y=u.uy-5;y<=u.uy+5&&!found;++y)for(x=u.ux-5;x<=u.ux+5;++x)
   if(simple_floor(x,y) && cansee(x,y) && !m_at(x,y) && distmin(x,y,u.ux,u.uy)>=3 &&
      goodpos(x,y,NULL,0)){where.x=x;where.y=y;found=1;break;}

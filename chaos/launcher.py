@@ -37,6 +37,7 @@ SIGNALS = (signal.SIGINT, signal.SIGTERM, signal.SIGHUP)
 GRACE = 2.0
 RUN_PREFIX = "nyarlathack-"
 _SCAN_CAP = 4096
+HAUNT_DEFAULT = Path(__file__).resolve().parent / "packs" / "footsteps.lua"
 
 
 def add_parser(sub):
@@ -118,6 +119,16 @@ def add_parser(sub):
         "--next-use",
         action="store_true",
         help="host-built next-use selection from a ready origin schedule; RandomHistoryBackend seed 0; no model call",
+    )
+    p.add_argument(
+        "--haunt",
+        nargs="?",
+        const=HAUNT_DEFAULT,
+        type=Path,
+        metavar="PACK",
+        help="opt-in echo hound: install a Lua haunting candidate (default "
+        "chaos/packs/footsteps.lua) before fresh play, VERIFY ONLY on restore; "
+        "the game's shadow trial still decides admission",
     )
     p.add_argument(
         "game_args",
@@ -312,6 +323,11 @@ def _refuse_ordinary_over_save(args, root):
         command = ["python3", "-m", "chaos", "play", "--ordinary"]
         if args.next_use:
             command.append("--next-use")
+        haunt = getattr(args, "haunt", None)
+        if haunt is not None:
+            command.append("--haunt")
+            if Path(haunt).resolve() != HAUNT_DEFAULT:
+                command.append(str(haunt))
         default_root = (
             Path(__file__).resolve().parent.parent / "dnethackdir"
         ).resolve()
@@ -506,12 +522,38 @@ def _curio_install(directory, box, prepared, *, restore):
         store._install_locked(d, *prepared, "verify" if restore else "fresh")
 
 
+def _haunt_preflight(args):
+    """Read the pack before any directory exists; the game re-validates it."""
+    source = getattr(args, "haunt", None)
+    if source is None:
+        return None
+    from .haunt import read_source
+
+    return read_source(source)
+
+
+def _haunt_install(box, raw, *, restore):
+    """The existing `chaos haunt` publication, under the supervisor's own lock.
+
+    Fresh play publishes haunting.lua exactly once. Restore only verifies the
+    installed bytes: no repair, and a run that never had a candidate fails
+    closed before the game starts.
+    """
+    from . import haunt
+
+    if restore:
+        haunt.verify(box.path, raw)
+    else:
+        haunt.publish(box.path, raw)
+
+
 def play(args):
     backend, root, executable = _configuration(args)
     refused = _refuse_ordinary_over_save(args, root)
     if refused is not None:
         return refused
     curio = _curio_preflight(args)
+    haunt = _haunt_preflight(args)
     directory = _directory(args)
     print(
         "chaos: run directory " + json.dumps(str(directory)) + " (preserved on exit)",
@@ -553,6 +595,8 @@ def play(args):
                     curio,
                     restore=args.reuse_run_dir is not None,
                 )
+            if haunt is not None:
+                _haunt_install(box, haunt, restore=args.reuse_run_dir is not None)
             log = secure_open(
                 directory / "director.log", os.O_WRONLY | os.O_CREAT | os.O_APPEND
             )

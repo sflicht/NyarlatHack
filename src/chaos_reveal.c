@@ -224,11 +224,31 @@ static void haunting(struct chaos_reveal *r, const char *line, long turn)
     struct chaos_reveal_entry *e;
     if (is_str(line, "detail", CHAOS_STATUS_ACCEPTED)) {
         if ((e = add(r, CHAOS_REVEAL_HAUNT, turn))) e->cost = CHAOS_COST_HAUNT;
+        /* A budget refusal is not final: nothing is consumed, so the same
+         * candidate may be admitted once the budget grows. Then it was not
+         * refused after all. */
+        if (r->haunt_budget_seen == 1) { --r->rejected; r->haunt_budget_seen = 2; }
     } else if (is_str(line, "detail", CHAOS_STATUS_REJECTED)
                || is_str(line, "detail", "source_rejected")
                || is_str(line, "detail", "shadow_failed")
                || is_str(line, "detail", "spawn_failed")) {
         ++r->rejected;
+    } else if (is_str(line, "detail", "budget")) {
+        /* #165: a candidate refused because another spender was admitted
+         * first; a count, never a narrated haunting. The engine's once-only
+         * guard is per process, so each restore may log it again: it is
+         * still the same one candidate. */
+        if (!r->haunt_budget_seen) {
+            r->haunt_budget_seen = 1;
+            ++r->rejected;
+        }
+    } else if (is_str(line, "detail", "expired")) {
+        /* #165: the engine's lifecycle end (timeout or leaving the level)
+         * closes the latest still-open admitted haunt; nothing else. */
+        if ((e = latest(r, CHAOS_REVEAL_HAUNT)) && !e->ended) {
+            e->ended = 1;
+            e->end_turn = turn;
+        }
     }
 }
 
@@ -263,6 +283,7 @@ void chaos_reveal_event_line(struct chaos_reveal *r, const char *line)
         /* A fresh game starts its own record; never inherit another game's rows. */
         r->count = r->overflow = r->rejected = 0;
         r->origin_count = 0;
+        r->haunt_budget_seen = 0;
         r->last_why[0] = 0;
     } else if (is_str(line, "event", CHAOS_EVENT_SAFE_POINT)) {
         if (!get_str(line, "detail", r->last_why, sizeof r->last_why)) r->last_why[0] = 0;
@@ -496,7 +517,9 @@ static void haunt_entry(const struct chaos_reveal_entry *e, const struct chaos_r
             e->steps, e->steps == 1 ? "" : "s");
     else
         out(emit, arg, "    Delivered: no; you never saw it follow your trail.");
-    if (h->haunt_active && r->final_turn < h->haunt_until)
+    if (e->ended)
+        out(emit, arg, "    Ended: its hunt ended on turn %ld.", e->end_turn);
+    else if (h->haunt_active && r->final_turn < h->haunt_until)
         out(emit, arg, "    Ended: still hunting when the game ended.");
     else
         out(emit, arg, "    Ended: its hunt was over by the end (due turn %ld).",

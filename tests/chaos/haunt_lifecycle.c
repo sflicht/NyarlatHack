@@ -9,6 +9,8 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include "chaos_shadow.h"
+#include "chaos_next_use.h"
+#include "chaos_next_use_safe.h"
 #include "native_rng.h"
 #include <fcntl.h>
 #include <errno.h>
@@ -135,6 +137,57 @@ static int admission(const char *which, int prefixed) {
  printf("mode=%s spent=%d spawns=%d trials=%d rng_count=%d next_draw=%d seq=%ld\n",mode,u.chaos.spent,spawns,trials,count,next,seq);
  close(dir);return 0;
 }
+/* #165 recorded rule: first come, first served, no reservation. The real
+ * haunt tick and the real production next-use safe-point admission share
+ * u.chaos; whichever is admitted first spends it and the other fails closed
+ * with the logged `budget` reason. Trial outcome is controlled, as above. */
+static int fcfs_telegraphs;
+static int fcfs_warn(void *opaque,const char *text) {(void)opaque;if(!text||!text[0])return 0;++fcfs_telegraphs;return 1;}
+static int fcfs(const char *order) {
+ int x,y,dir,haunt_first=!strcmp(order,"haunt-first");
+ static char visible[ROWNO][COLNO],*rows[ROWNO];
+ struct chaos_next_use_origin_ref origin;struct chaos_next_use_safe_result res;
+ const char *run=getenv("FCFS_RUN_HEX");
+ mode="valid";test_rng_control();id_permonst();init_objects();init_gods();
+ memset(&u,0,sizeof u);urace=races[str2race("human")];urole=roles[str2role("Wizard")];
+ u.umonnum=u.umonster=PM_HUMAN;youmonst.data=&mons[PM_HUMAN];
+ u.usanity=100;u.ux=10;u.uy=10;u.ulevel=1;u.uhp=u.uhpmax=20;
+ n_dgns=2;dungeons[1].depth_start=1;dungeons[1].num_dunlevs=20;
+ u.uz.dnum=1;u.uz.dlevel=1;moves=monstermoves=10;flags.ident=1;
+ windowprocs.win_print_glyph=quietglyph;
+ for(y=0;y<ROWNO;++y){rows[y]=visible[y];for(x=1;x<COLNO;++x){levl[x][y].typ=ROOM;visible[y][x]=IN_SIGHT|COULD_SEE;}}
+ viz_array=rows;chaos_state_init(&u.chaos);u.chaos.safe=1;initial_spent=0;
+ chaos_start();
+ u.haunt.count=4;u.haunt.backtracks=1;u.haunt.last_turn=moves;u.haunt.dnum=1;u.haunt.dlevel=1;
+ for(x=0;x<4;++x){u.haunt.history[x].x=10;u.haunt.history[x].y=10;}
+ dir=open(getenv("NYARLATHACK_RUN_DIR"),O_RDONLY|O_DIRECTORY);assert(dir>=0 && run && strlen(run)==64);
+ /* The engine's own delivered W origin, exactly as next_use_bind_owned binds it. */
+ chaos_next_use_safe_bind_logical(1750000001L);chaos_next_use_safe_bind_run(run);
+ chaos_next_use_safe_bind_telegraph(fcfs_warn,NULL);
+ memset(&origin,0,sizeof origin);strcpy(origin.fact,"ordinary_whistle");
+ origin.family=CHAOS_NEXT_USE_FAMILY_W;origin.level_dnum=1;origin.level_dlevel=1;
+ origin.move=10;origin.root=10;origin.notice_seq=11;origin.end_seq=12;memcpy(origin.run,run,65);
+ chaos_next_use_safe_bind_origin(&origin,1);
+ if(haunt_first) {
+  chaos_haunt_tick(dir);assert(u.haunt.active && u.chaos.spent==2 && spawns==1);
+  (void)chaos_next_use_on_safe(dir,1,u.usanity,&u.chaos,1,1);
+  chaos_next_use_safe_last(&res);
+  assert(res.loaded && res.rejected && !res.admitted && res.reasons==CHAOS_NEXT_USE_SAFE_BUDGET);
+  assert(u.chaos.spent==2 && u.haunt.active);
+ } else {
+  (void)chaos_next_use_on_safe(dir,1,u.usanity,&u.chaos,1,1);
+  chaos_next_use_safe_last(&res);
+  assert(res.admitted && !res.rejected && u.chaos.spent==1);
+  chaos_haunt_tick(dir);
+  assert(!u.haunt.active && !u.haunt.checked && spawns==0 && trials==0 && spends==0);
+  assert(u.chaos.spent==1);
+  moves=11;chaos_haunt_tick(dir); /* logged once, never retried as a debit */
+  assert(!u.haunt.active && spawns==0 && u.chaos.spent==1);
+ }
+ printf("order=%s spent=%d telegraphs=%d admitted=%d reasons=%d haunt_active=%d\n",
+        order,u.chaos.spent,fcfs_telegraphs,res.admitted,res.reasons,u.haunt.active);
+ close(dir);return 0;
+}
 int main(int argc,char **argv) {
  struct monst m;struct stat target,opened;int fd,closed=0;
  /* Every process runs in its own diagnostic directory; never use a game prefix. */
@@ -151,6 +204,7 @@ int main(int argc,char **argv) {
   assert(argc==3 || !strcmp(argv[3],"--ambient-prefix"));
   return admission(argv[2],argc==4);
  }
+ if(argc==3 && !strcmp(argv[1],"--fcfs"))return fcfs(argv[2]);
  memset(&u,0,sizeof u);init_gods();
  urace.malenum=PM_HUMAN;urole.malenum=PM_WIZARD;
  u.umonnum=u.umonster=PM_HUMAN;youmonst.data=&mons[PM_HUMAN];
