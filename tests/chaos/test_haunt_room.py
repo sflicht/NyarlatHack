@@ -98,7 +98,11 @@ class HauntRoomTests(RetainOnFailure):
         self.assertEqual(p.stderr, "", case)
         report = run / "dreamlands.json"
         fields = dict(kv.split("=", 1) for kv in p.stdout.split() if "=" in kv)
-        return fields, (json.loads(report.read_text()) if report.exists() else None), run
+        return (
+            fields,
+            (json.loads(report.read_text()) if report.exists() else None),
+            run,
+        )
 
     def pick(self, name, player, hound, target, pet=None):
         """One real chaos_haunt_pick in a 5x5 room; offsets are in the room."""
@@ -170,9 +174,7 @@ class HauntRoomTests(RetainOnFailure):
         self.assertEqual(fields["spent"], "0")
         for room, player in (((4, 3), (0, 0)), ((6, 4), (2, 1)), ((12, 6), (5, 3))):
             with self.subTest(room=room, player=player):
-                _, report, _ = self.run_room(
-                    "bare-%dx%d" % room, [*room, *player, 1]
-                )
+                _, report, _ = self.run_room("bare-%dx%d" % room, [*room, *player, 1])
                 self.assertEqual(report["accepted"], 1, report)
 
 
