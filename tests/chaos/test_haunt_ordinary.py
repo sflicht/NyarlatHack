@@ -6,9 +6,11 @@ commands. Every key is chosen from the rendered screen alone
 pace back and forth in the first larger room. The run directory's event
 stream and receipts are read only for the assertions.
 
-Why leave first: the shadow trial runs once per game, and in the start room
-the trial's evasive player cannot get away from the hound, so pacing there
-spends the one trial on a rejection (#190).
+Why the lifecycle test leaves first: in this fixed replay-clock map the
+starting pet stands next to where the hound appears, and kills it on the
+next turn, so the live-hound checks (steps, restore mid-haunt, expiry) need
+the larger room. Pacing in the start room no longer wastes the one shadow
+trial (#190): test_start_room_first paces there first, and the trial passes.
 """
 
 import json
@@ -174,6 +176,46 @@ class OrdinaryHauntTests(RetainOnFailure):
             (game.game / "xlogfile").read_text(),
             r":chaos_admitted=2:chaos_delivered=2:chaos_spent=2\n$",
         )
+
+    def test_start_room_first(self):
+        # #190: pace in the start room FIRST, then in a larger room.
+        game = self.game(
+            "start-room", ["--ordinary", "--haunt", "--max-runtime", "300"]
+        )
+        game.start()
+        self.assertFalse(game.wizard)
+        player = Player(game)
+        self.assertEqual(len(player.start_room), 12, player.screen.text())
+
+        # 1. Pace in the start room: the one trial is decided there.
+        self.assertTrue(player.pace(lambda: self.decided(game)), self.haunting(game))
+        self.assertIn(player.me(), player.start_room)
+        report = json.loads((game.run / "dreamlands.json").read_text())
+        print("HAUNT_START_ROOM_TRIAL=" + json.dumps(report), flush=True)
+        self.assertEqual(report["sandboxed"], 1, report)
+        self.assertEqual((report["accepted"], report["escaped"]), (1, 1), report)
+        self.assertGreater(report["moved"], 8, report)
+        self.assertEqual(self.haunting(game), ["pre_admitted", "accepted"])
+        self.assertIn(TELEGRAPH, player.screen.line(0))
+        accepted = [e for e in game.events() if e["detail"] == "accepted"][0]
+        self.assertEqual(accepted["spent"], 2)
+
+        # 2. Then leave and pace in a larger room: no second trial, no
+        # second debit.
+        player.leave()
+        self.assertGreater(len(player.room(player.me())), len(player.start_room))
+        player.pace(lambda: False, limit=20)
+        self.assertEqual(
+            [d for d in self.haunting(game) if d != "expired"],
+            ["pre_admitted", "accepted"],
+        )
+        self.assertEqual(json.loads((game.run / "dreamlands.json").read_text()), report)
+        self.assertEqual(game.quit(), 0)
+        # Delivery is not pinned: in this map the pet kills the hound before
+        # its first live step. Admission and the one debit are.
+        xlog = (game.game / "xlogfile").read_text()
+        self.assertRegex(xlog, r":chaos_admitted=2:")
+        self.assertRegex(xlog, r":chaos_spent=2\n$")
 
     def test_without_haunt_flag_no_candidate_and_no_haunting(self):
         # The same screen-driven walk and pacing, without --haunt: stock play.
