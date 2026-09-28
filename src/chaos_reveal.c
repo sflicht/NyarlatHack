@@ -153,6 +153,13 @@ static void ack(struct chaos_reveal *r, const char *line, long turn)
     int id, kind;
     long expires = 0, safe = -1;
     if (!is_str(line, "status", CHAOS_STATUS_ACCEPTED)) {
+        /* The same mailbox file re-read at a later safe point is acknowledged
+         * as a duplicate of an admitted whisper: not another candidate. */
+        if (is_str(line, "detail", "duplicate") && get_int(line, "id", &id)) {
+            int i;
+            for (i = 0; i < r->count; ++i)
+                if (r->e[i].kind == CHAOS_REVEAL_WHISPER && r->e[i].id == id) return;
+        }
         ++r->rejected;
         return;
     }
@@ -561,12 +568,12 @@ static void origin_line(const struct chaos_reveal *r, int fountain, long root,
     else
         out(emit, arg, "    Origin: %s%s (record %ld).", act, where, root);
     if (rebound) {
+        /* #177: the model wrote about the published origin; the engine bound
+         * the program to a newer one. Both are engine records. */
         if (origin_turn(r, published, fountain, &turn))
-            out(emit, arg, "    (It was written about an earlier time, on turn %ld; the engine"
-                " bound it to this later one.)", turn);
+            out(emit, arg, "    Rebound: first written about an earlier one (turn %ld).", turn);
         else
-            out(emit, arg, "    (It was written about an earlier time; the engine bound it"
-                " to this later one.)");
+            out(emit, arg, "    Rebound: first written about an earlier one.");
     }
 }
 

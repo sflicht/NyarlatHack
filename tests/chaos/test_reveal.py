@@ -183,7 +183,8 @@ class RevealTests(unittest.TestCase):
         self.assertEqual(len(self.entries(section)), 1, section)
         self.assertNotIn("hunger_rate", section)
         self.assertNotIn("whisper 7", section)
-        self.assertIn("other candidates were refused; none took effect.", section)
+        # Only the forged row: the duplicate ack of whisper 1 is not a candidate.
+        self.assertIn("  1 other candidate was refused; none took effect.", section)
         self.assertEqual(xlog, ":chaos_admitted=1:chaos_delivered=0:chaos_spent=3")
 
     def test_rejected_curio_and_haunting_are_counted_not_narrated(self):
@@ -200,9 +201,11 @@ class RevealTests(unittest.TestCase):
         self.assertEqual(len(self.entries(section)), 1, section)
         self.assertNotIn("curio", section)
         self.assertNotIn("haunting", section)
-        # curio rejected, haunting spawn_failed and rejected, plus the
-        # transport's own duplicate acknowledgement at its second safe point.
-        self.assertIn("  4 other candidates were refused; none took effect.", section)
+        # curio rejected, haunting spawn_failed and rejected. The transport's
+        # duplicate acknowledgement of admitted whisper 1 at its second safe
+        # point is the same whisper, not another candidate.
+        self.assertIn('"detail":"duplicate"', (self.path / "events.jsonl").read_text())
+        self.assertIn("  3 other candidates were refused; none took effect.", section)
 
     # --- delivered is distinct from admitted -------------------------------
     def test_admitted_rule_change_is_never_delivered(self):
@@ -287,7 +290,7 @@ class RevealTests(unittest.TestCase):
         self.assertIn(
             "Delivered: yes, you saw your companion answer the whistle.", section
         )
-        self.assertNotIn("bound it", section)
+        self.assertNotIn("Rebound", section)
         self.assertEqual(xlog, ":chaos_admitted=1:chaos_delivered=1:chaos_spent=3")
 
     def test_next_use_w_armed_but_unwitnessed_is_not_delivered(self):
@@ -315,10 +318,9 @@ class RevealTests(unittest.TestCase):
         section, _ = self.reveal_of(nu(W_PENDING, 0, 0, 0, 60, 20, 0, 2))
         self.assertIn("    Origin: you whistled on DL2 on turn 55.", section)
         self.assertIn(
-            "    (It was written about an earlier time, on turn 30; the engine"
-            " bound it to this later one.)",
-            section,
+            "    Rebound: first written about an earlier one (turn 30).", section
         )
+        self.assertTrue(all(len(x) <= 79 for x in section.splitlines()), section)
         self.assertIn("still waiting for your next whistle", section)
         self.assertIn("Ended: still pending when the game ended.", section)
 
@@ -374,7 +376,7 @@ class RevealTests(unittest.TestCase):
         self.assertNotIn("origin_superseded", section)
         self.assertEqual(
             [x for x in section.splitlines() if "refused" in x],
-            ["  2 other candidates were refused; none took effect."],
+            ["  1 other candidate was refused; none took effect."],
         )
 
     def test_unqualified_origin_without_admission_is_not_narrated(self):
