@@ -31,6 +31,29 @@ def event_row(seq, turn, event, detail):
     )
 
 
+# enum chaos_next_use_slot_w / _f values (mirrored in include/chaos_reveal.h).
+W_PENDING, W_ARMED, W_EXPIRED = 1, 2, 7
+F_PENDING, F_APPLIED, F_NATIVE = 1, 2, 3
+
+
+def nu(w, f, witnessed, terminated, move, origin_w=0, origin_f=0, depth=0):
+    """Host fact: the engine's runtime snapshot values, as the game copies them."""
+    return f"nu={w},{f},{witnessed},{terminated},{move},{origin_w},{origin_f},{depth}"
+
+
+def observation_row(seq, turn, operation, stage="started"):
+    """A chaos_io_observation row (CHAOS_OBSERVATION_VERSION 3 fields)."""
+    return (
+        f'{{"v":3,"seq":{seq},"turn":{turn},"safe":1,"event":"observation",'
+        f'"phase":"result","detail":"","sanity":80,"insight":0,'
+        '"budget":2,"spent":0,"reserved":0,"last_id":0,'
+        '"vitals":{"hp":10,"hp_max":10,"power":2,"power_max":2},'
+        '"cosmetic":{"seen":0,"last_turn":0},'
+        f'"observation":{{"operation":"{operation}","stage":"{stage}",'
+        '"root_seq":0,"fact":"none"}}\n'
+    )
+
+
 class RevealTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -187,7 +210,9 @@ class RevealTests(unittest.TestCase):
         self.append(event_row(9, 15, "expiry", "ward_efficacy"))
         section, xlog = self.reveal_of()
         self.assertIn("whisper 1 (ward_efficacy) was admitted.", section)
-        self.assertIn('Telegraph: "The lines of your wards seem thin and uncertain."', section)
+        self.assertIn(
+            'Telegraph: "The lines of your wards seem thin and uncertain."', section
+        )
         self.assertIn("Delivered: no;", section)
         self.assertNotIn("Delivered: yes", section)
         self.assertIn("Ended: expired on turn 15.", section)
@@ -205,7 +230,7 @@ class RevealTests(unittest.TestCase):
             + event_row(2, 20, "curio", "admitted")
             + event_row(3, 30, "haunting", "accepted")
         )
-        section, xlog = self.reveal_of("next_use_undelivered", "haunt_active")
+        section, xlog = self.reveal_of(nu(W_ARMED, 0, 0, 1, 40), "haunt_active")
         self.assertEqual(len(self.entries(section)), 3, section)
         self.assertNotIn("Delivered: yes", section)
         self.assertEqual(section.count("Delivered: no"), 3, section)
@@ -221,7 +246,7 @@ class RevealTests(unittest.TestCase):
             + event_row(5, 30, "haunting", "accepted")
             + event_row(6, 31, "haunt_step", "")
         )
-        section, xlog = self.reveal_of("next_use_delivered", "curio_placed")
+        section, xlog = self.reveal_of(nu(W_ARMED, 0, 1, 1, 40), "curio_placed")
         self.assertNotIn("Delivered: no", section)
         self.assertIn("you applied it 1 time (Sanity -2 in total)", section)
         self.assertIn("you saw it follow your trail 1 time.", section)
@@ -237,6 +262,140 @@ class RevealTests(unittest.TestCase):
         )
         section, _ = self.reveal_of()
         self.assertIn("Delivered: no; you never applied it.", section)
+
+    # --- next-use W/F: engine snapshot, observation roots and receipt -------
+    def receipt(self, *rows):
+        with (self.path / "next_use-receipt.jsonl").open("a") as stream:
+            for row in rows:
+                stream.write(json.dumps(row, separators=(",", ":")) + "\n")
+
+    def test_next_use_w_delivered_names_its_origin(self):
+        self.append(
+            event_row(1, 5, "session", "new")
+            + observation_row(12, 30, "whistling")
+            + observation_row(13, 30, "whistling", "completed")
+        )
+        self.receipt({"next_use_private_v": 1, "kind": 1, "seq": 1})
+        self.receipt({"next_use_private_v": 1, "kind": 2, "seq": 2})
+        section, xlog = self.reveal_of(nu(W_ARMED, 0, 1, 1, 41, 12, 0, 3))
+        self.assertIn("  Turn 41: a next-use program was admitted.", section)
+        self.assertIn("    Origin: you whistled on DL3 on turn 30.", section)
+        self.assertIn(
+            'Telegraph: "The next whistle may call unusual attention."', section
+        )
+        self.assertIn("Effect: your next whistle armed it.", section)
+        self.assertIn(
+            "Delivered: yes, you saw your companion answer the whistle.", section
+        )
+        self.assertNotIn("bound it", section)
+        self.assertEqual(xlog, ":chaos_admitted=1:chaos_delivered=1:chaos_spent=3")
+
+    def test_next_use_w_armed_but_unwitnessed_is_not_delivered(self):
+        # Consumed and armed, but the engine never published a witness.
+        self.append(observation_row(12, 30, "whistling"))
+        section, xlog = self.reveal_of(nu(W_ARMED, 0, 0, 1, 41, 12))
+        self.assertIn("Effect: your next whistle armed it.", section)
+        self.assertIn("Delivered: no; no manifestation reached you.", section)
+        self.assertNotIn("Delivered: yes", section)
+        self.assertEqual(xlog, ":chaos_admitted=1:chaos_delivered=0:chaos_spent=3")
+
+    def test_next_use_rebind_shows_published_and_bound_origins(self):
+        # #177 receipt row: published origin 12, bound to the newer origin 20.
+        self.append(
+            observation_row(12, 30, "whistling") + observation_row(20, 55, "whistling")
+        )
+        self.receipt(
+            {
+                "next_use_private_v": 2,
+                "kind": 2,
+                "seq": 2,
+                "origins": [{"family": "W", "published": 12, "bound": 20}],
+            }
+        )
+        section, _ = self.reveal_of(nu(W_PENDING, 0, 0, 0, 60, 20, 0, 2))
+        self.assertIn("    Origin: you whistled on DL2 on turn 55.", section)
+        self.assertIn(
+            "    (It was written about an earlier time, on turn 30; the engine"
+            " bound it to this later one.)",
+            section,
+        )
+        self.assertIn("still waiting for your next whistle", section)
+        self.assertIn("Ended: still pending when the game ended.", section)
+
+    def test_next_use_f_applied_is_delivered_and_native_course_is_not(self):
+        self.append(observation_row(7, 18, "fountain_drink"))
+        section, xlog = self.reveal_of(nu(0, F_APPLIED, 0, 1, 25, 0, 7, 1))
+        self.assertIn(
+            "    Origin: you drank from a fountain on DL1 on turn 18.", section
+        )
+        self.assertIn(
+            'Telegraph: "The next fountain drink may take a different course."', section
+        )
+        self.assertIn("Delivered: yes, you drank the changed water.", section)
+        self.assertEqual(xlog, ":chaos_admitted=1:chaos_delivered=1:chaos_spent=3")
+        section, xlog = self.reveal_of(nu(0, F_NATIVE, 0, 1, 25, 0, 7, 1))
+        self.assertIn("your next fountain drink took its native course", section)
+        self.assertIn("Delivered: no;", section)
+        self.assertEqual(xlog, ":chaos_admitted=1:chaos_delivered=0:chaos_spent=3")
+
+    def test_next_use_wf_pending_program(self):
+        self.append(
+            observation_row(7, 18, "fountain_drink")
+            + observation_row(9, 22, "whistling")
+        )
+        section, _ = self.reveal_of(nu(W_PENDING, F_PENDING, 0, 0, 25, 9, 7))
+        self.assertIn(
+            'Telegraph: "The next whistle or fountain drink may not behave as usual."',
+            section,
+        )
+        self.assertIn("    Origin: you whistled on turn 22.", section)
+        self.assertIn("    Origin: you drank from a fountain on turn 18.", section)
+        self.assertIn("Delivered: no;", section)
+
+    def test_rejected_next_use_candidate_is_one_count_line(self):
+        # A refused next-use candidate is never an entry: no admission in the
+        # snapshot, only the engine's recorded decision rows.
+        self.append(observation_row(12, 30, "whistling"))
+        self.receipt(
+            {
+                "next_use_decision_v": 1,
+                "decision": "rejected",
+                "at": 2,
+                "safe": 2,
+                "move": 50,
+                "reasons": ["origin_superseded"],
+            }
+        )
+        self.assertEqual(self.reveal_of("next_use_rejected"), ("", ""))
+        self.transport(REQUEST)
+        section, _ = self.reveal_of("next_use_rejected")
+        self.assertEqual(len(self.entries(section)), 1, section)
+        self.assertNotIn("next-use", section)
+        self.assertNotIn("origin_superseded", section)
+        self.assertEqual(
+            [x for x in section.splitlines() if "refused" in x],
+            ["  2 other candidates were refused; none took effect."],
+        )
+
+    def test_unqualified_origin_without_admission_is_not_narrated(self):
+        # Origins alone (a whistle the Chaos watched) never become entries.
+        self.append(
+            observation_row(12, 30, "whistling")
+            + observation_row(14, 31, "fountain_drink")
+        )
+        self.receipt({"next_use_private_v": 2, "kind": 1, "seq": 1})
+        self.assertEqual(self.reveal_of(), ("", ""))
+
+    def test_model_rationale_is_never_rendered(self):
+        # Director-side files are not engine records; nothing from them shows.
+        (self.path / "next_use-schedule.jsonl").write_text(
+            '{"rationale":"I will make the dog betray them"}\n'
+        )
+        (self.path / "next_use-envelope.json").write_text('{"note":"intent"}')
+        self.transport(REQUEST)
+        section, _ = self.reveal_of()
+        self.assertNotIn("betray", section)
+        self.assertNotIn("intent", section)
 
     # --- record ownership and game boundaries ------------------------------
     def test_new_session_discards_earlier_games_rows(self):
@@ -265,9 +424,7 @@ class RevealTests(unittest.TestCase):
     def test_reveal_sources_draw_no_rng(self):
         for name in ("src/chaos_reveal.c", "src/chaos_reveal_game.c"):
             text = (ROOT / name).read_text()
-            self.assertIsNone(
-                re.search(r"\b(rn\w*|rnd|d)\(", text), name
-            )
+            self.assertIsNone(re.search(r"\b(rn\w*|rnd|d)\(", text), name)
 
 
 if __name__ == "__main__":

@@ -17,38 +17,28 @@ extern FILE *dump_fp;       /* end.c: open only while the dumplog is written */
 static struct chaos_reveal reveal;
 static int computed;
 
-static const char *w_outcome(int slot)
-{
-    switch (slot) {
-    case CHAOS_SLOT_W_PENDING: return "it was still waiting for your next whistle";
-    case CHAOS_SLOT_W_CONSUMED_ARMED: return "your next whistle armed it";
-    case CHAOS_SLOT_W_CONSUMED_QUIET: return "at your next whistle it chose to stay quiet";
-    case CHAOS_SLOT_W_CONSUMED_DELAY: return "at your next whistle it chose to wait";
-    case CHAOS_SLOT_W_CONSUMED_INVALID: return "its program failed at your next whistle; nothing changed";
-    case CHAOS_SLOT_W_CONSUMED_SUPPRESSED: return "a guard suppressed it at your next whistle; nothing changed";
-    case CHAOS_SLOT_W_TERMINATED_EXPIRY: return "it expired before you whistled again";
-    case CHAOS_SLOT_W_TERMINATED_LEVEL: return "it ended when you left the level";
-    case CHAOS_SLOT_W_TERMINATED_TRANSPORT: return "it ended when its record could not be written";
-    }
-    return 0;
-}
-
-static const char *f_outcome(int slot)
-{
-    switch (slot) {
-    case CHAOS_SLOT_F_PENDING: return "it was still waiting for your next fountain drink";
-    case CHAOS_SLOT_F_CONSUMED_APPLIED: return "your next fountain drink was turned into a refreshing one";
-    case CHAOS_SLOT_F_CONSUMED_NONREMAPPABLE: return "your next fountain drink took its native course";
-    case CHAOS_SLOT_F_CONSUMED_QUIET: return "at your next fountain drink it chose to stay quiet";
-    case CHAOS_SLOT_F_CONSUMED_DELAY: return "at your next fountain drink it chose to wait";
-    case CHAOS_SLOT_F_CONSUMED_INVALID: return "its program failed at your next fountain drink; nothing changed";
-    case CHAOS_SLOT_F_CONSUMED_SUPPRESSED: return "a guard suppressed it at your next fountain drink; nothing changed";
-    case CHAOS_SLOT_F_TERMINATED_EXPIRY: return "it expired before you drank again";
-    case CHAOS_SLOT_F_TERMINATED_LEVEL: return "it ended when you left the level";
-    case CHAOS_SLOT_F_TERMINATED_TRANSPORT: return "it ended when its record could not be written";
-    }
-    return 0;
-}
+/* The reveal core mirrors the runtime's slot values; keep them in step. */
+typedef char chaos_reveal_slot_mirror[
+    ((int)CHAOS_REVEAL_W_PENDING == (int)CHAOS_SLOT_W_PENDING
+     && (int)CHAOS_REVEAL_W_CONSUMED_ARMED == (int)CHAOS_SLOT_W_CONSUMED_ARMED
+     && (int)CHAOS_REVEAL_W_CONSUMED_QUIET == (int)CHAOS_SLOT_W_CONSUMED_QUIET
+     && (int)CHAOS_REVEAL_W_CONSUMED_DELAY == (int)CHAOS_SLOT_W_CONSUMED_DELAY
+     && (int)CHAOS_REVEAL_W_CONSUMED_INVALID == (int)CHAOS_SLOT_W_CONSUMED_INVALID
+     && (int)CHAOS_REVEAL_W_CONSUMED_SUPPRESSED == (int)CHAOS_SLOT_W_CONSUMED_SUPPRESSED
+     && (int)CHAOS_REVEAL_W_TERMINATED_EXPIRY == (int)CHAOS_SLOT_W_TERMINATED_EXPIRY
+     && (int)CHAOS_REVEAL_W_TERMINATED_LEVEL == (int)CHAOS_SLOT_W_TERMINATED_LEVEL
+     && (int)CHAOS_REVEAL_W_TERMINATED_TRANSPORT == (int)CHAOS_SLOT_W_TERMINATED_TRANSPORT
+     && (int)CHAOS_REVEAL_F_PENDING == (int)CHAOS_SLOT_F_PENDING
+     && (int)CHAOS_REVEAL_F_CONSUMED_APPLIED == (int)CHAOS_SLOT_F_CONSUMED_APPLIED
+     && (int)CHAOS_REVEAL_F_CONSUMED_NONREMAPPABLE == (int)CHAOS_SLOT_F_CONSUMED_NONREMAPPABLE
+     && (int)CHAOS_REVEAL_F_CONSUMED_QUIET == (int)CHAOS_SLOT_F_CONSUMED_QUIET
+     && (int)CHAOS_REVEAL_F_CONSUMED_DELAY == (int)CHAOS_SLOT_F_CONSUMED_DELAY
+     && (int)CHAOS_REVEAL_F_CONSUMED_INVALID == (int)CHAOS_SLOT_F_CONSUMED_INVALID
+     && (int)CHAOS_REVEAL_F_CONSUMED_SUPPRESSED == (int)CHAOS_SLOT_F_CONSUMED_SUPPRESSED
+     && (int)CHAOS_REVEAL_F_TERMINATED_EXPIRY == (int)CHAOS_SLOT_F_TERMINATED_EXPIRY
+     && (int)CHAOS_REVEAL_F_TERMINATED_LEVEL == (int)CHAOS_SLOT_F_TERMINATED_LEVEL
+     && (int)CHAOS_REVEAL_F_TERMINATED_TRANSPORT == (int)CHAOS_SLOT_F_TERMINATED_TRANSPORT)
+    ? 1 : -1];
 
 static int level_depth(long token)
 {
@@ -60,37 +50,24 @@ static int level_depth(long token)
     return depth(&lev);
 }
 
-/* Next-use facts come from the engine's own saved runtime snapshot. */
+/* Next-use facts are the engine's own runtime snapshot values, copied as-is.
+ * The origin roots are the bound origins (after any rebind); the published
+ * ones come from the receipt row the core reads. */
 static void next_use_facts(struct chaos_reveal_host *h)
 {
     static struct chaos_next_use_snapshot s;
     struct chaos_next_use_safe_result last;
-    const char *w, *f, *id;
-    char where[40];
-    int dl;
-    if (chaos_next_use_safe_last(&last) && last.rejected) ++reveal.rejected;
+    if (chaos_next_use_safe_last(&last) && last.rejected) h->next_use_last_rejected = 1;
     if (!chaos_next_use_snapshot_export(&s) || s.phase < CHAOS_ATTEMPT_COMMITTED) return;
-    h->next_use = 1;
-    h->next_use_turn = s.admission_move;
-    h->next_use_delivered = s.witnessed != 0;
-    w = s.slot_w != CHAOS_SLOT_W_UNDECLARED ? w_outcome(s.slot_w) : 0;
-    f = s.slot_f != CHAOS_SLOT_F_UNDECLARED ? f_outcome(s.slot_f) : 0;
-    id = w && f ? "next-use-v2-WF" : w ? "next-use-v2-W" : "next-use-v2-F";
-    Strcpy(h->next_use_telegraph, chaos_next_use_player_warning(id)
-           ? chaos_next_use_player_warning(id) : "");
-    dl = level_depth(s.level_token);
-    if (dl) Sprintf(where, " on DL%d", dl);
-    else where[0] = 0;
-    if (w && s.origin_w > 0 && s.origin_w_deadline >= 100)
-        Sprintf(h->next_use_origin, "after you whistled%s on turn %ld",
-                where, s.origin_w_deadline - 100);
-    else if (f && s.origin_f > 0 && s.origin_f_deadline >= 100)
-        Sprintf(h->next_use_origin, "after you drank from a fountain%s on turn %ld",
-                where, s.origin_f_deadline - 100);
-    Sprintf(h->next_use_effect, "%s%s%s.", w ? w : "", w && f ? "; " : "", f ? f : "");
-    Strcpy(h->next_use_ended, s.phase == CHAOS_ATTEMPT_TERMINATED
-           ? "consumed or ended before the game ended."
-           : "still pending when the game ended.");
+    h->nu.present = 1;
+    h->nu.terminated = s.phase == CHAOS_ATTEMPT_TERMINATED;
+    h->nu.slot_w = s.slot_w;
+    h->nu.slot_f = s.slot_f;
+    h->nu.witnessed = s.witnessed != 0;
+    h->nu.admission_move = s.admission_move;
+    h->nu.origin_w = s.origin_w;
+    h->nu.origin_f = s.origin_f;
+    h->nu.depth = level_depth(s.level_token);
 }
 
 /* Read-only reopen of this process's run directory, with the ownership and

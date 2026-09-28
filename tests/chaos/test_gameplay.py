@@ -141,6 +141,23 @@ class GameplayTests(RetainOnFailure):
             g.wait_turns(12)
             self.assertEqual(g.quit(), 0)
             games.append(g)
+
+        def dumps(g):
+            # The banner names each build's own revision and build date; that
+            # one line is build identity, not game output.
+            banner = re.compile(rb"^Playing dNetHack .*, last build .*$", re.M)
+            return {
+                p.name: banner.subn(b"BUILD", p.read_bytes(), count=1)
+                for p in sorted((g.game / "dumplog").iterdir())
+            }
+
+        self.assertTrue(dumps(games[0]))
+        self.assertTrue(all(n == 1 for _, n in dumps(games[0]).values()))
+        # Inactive and empty-mailbox builds are the same binary: exact bytes.
+        self.assertEqual(
+            [p.read_bytes() for p in sorted((games[1].game / "dumplog").iterdir())],
+            [p.read_bytes() for p in sorted((games[2].game / "dumplog").iterdir())],
+        )
         for g in games[1:]:
             self.assertEqual(g.inputs, games[0].inputs)
             self.assertEqual(g.raw, games[0].raw)
@@ -148,6 +165,8 @@ class GameplayTests(RetainOnFailure):
                 (g.game / "xlogfile").read_bytes(),
                 (games[0].game / "xlogfile").read_bytes(),
             )
+            # #163: no admission, so no reveal section or xlogfile fields.
+            self.assertEqual(dumps(g), dumps(games[0]))
         self.assertTrue(games[2].events())
         self.assertFalse(any(e["event"] == "ack" for e in games[2].events()))
 

@@ -13,7 +13,10 @@ static void emit(void *unused, const char *line)
     printf("%s\n", line);
 }
 
-/* argv: DIR [host-fact ...]; host facts stand in for copied engine state. */
+/* argv: DIR [host-fact ...]; host facts stand in for values the game host
+ * copies from the engine's runtime snapshot and u.haunt/u.curio.
+ *   nu=W,F,witnessed,terminated,move,origin_w,origin_f,depth
+ *   next_use_rejected | haunt_active | curio_placed */
 int main(int argc, char **argv)
 {
     static struct chaos_reveal r;
@@ -24,14 +27,15 @@ int main(int argc, char **argv)
     chaos_reveal_init(&r, 1000, 3);
     ok = chaos_reveal_read(&r, dir);
     for (i = 2; i < argc; ++i) {
-        if (!strcmp(argv[i], "next_use_undelivered") || !strcmp(argv[i], "next_use_delivered")) {
-            r.host.next_use = 1;
-            r.host.next_use_turn = 40;
-            r.host.next_use_delivered = !strcmp(argv[i], "next_use_delivered");
-            strcpy(r.host.next_use_origin, "after you whistled on DL3 on turn 30");
-            strcpy(r.host.next_use_telegraph, "The next whistle may call unusual attention.");
-            strcpy(r.host.next_use_effect, "your next whistle armed it.");
-            strcpy(r.host.next_use_ended, "consumed or ended before the game ended.");
+        struct chaos_reveal_next_use *nu = &r.host.nu;
+        if (!strncmp(argv[i], "nu=", 3)) {
+            if (sscanf(argv[i] + 3, "%d,%d,%d,%d,%ld,%ld,%ld,%d", &nu->slot_w, &nu->slot_f,
+                       &nu->witnessed, &nu->terminated, &nu->admission_move,
+                       &nu->origin_w, &nu->origin_f, &nu->depth) != 8)
+                return 2;
+            nu->present = 1;
+        } else if (!strcmp(argv[i], "next_use_rejected")) {
+            r.host.next_use_last_rejected = 1;
         } else if (!strcmp(argv[i], "haunt_active")) {
             r.host.haunt_active = 1;
             r.host.haunt_until = 2000;

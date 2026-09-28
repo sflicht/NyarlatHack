@@ -225,6 +225,28 @@ static void haunting(struct chaos_reveal *r, const char *line, long turn)
     }
 }
 
+/* A "started" observation row is the root every next-use origin names. */
+static void observation(struct chaos_reveal *r, const char *line, long turn)
+{
+    const char *o = field(line, "observation");
+    long seq;
+    int fountain;
+    if (!o || *o != '{' || !get_long(line, "seq", &seq) || !is_str(o, "stage", "started"))
+        return;
+    if (is_str(o, "operation", "whistling")) fountain = 0;
+    else if (is_str(o, "operation", "fountain_drink")) fountain = 1;
+    else return;
+    if (r->origin_count >= CHAOS_REVEAL_ORIGINS) {
+        /* Keep the most recent roots: origins are bounded in lifetime. */
+        memmove(&r->origin[0], &r->origin[1], sizeof r->origin[0] * (CHAOS_REVEAL_ORIGINS - 1));
+        --r->origin_count;
+    }
+    r->origin[r->origin_count].seq = seq;
+    r->origin[r->origin_count].turn = turn;
+    r->origin[r->origin_count].fountain = fountain;
+    ++r->origin_count;
+}
+
 void chaos_reveal_event_line(struct chaos_reveal *r, const char *line)
 {
     long turn = 0;
@@ -233,6 +255,7 @@ void chaos_reveal_event_line(struct chaos_reveal *r, const char *line)
     if (is_str(line, "event", CHAOS_EVENT_SESSION) && is_str(line, "detail", "new")) {
         /* A fresh game starts its own record; never inherit another game's rows. */
         r->count = r->overflow = r->rejected = 0;
+        r->origin_count = 0;
         r->last_why[0] = 0;
     } else if (is_str(line, "event", CHAOS_EVENT_SAFE_POINT)) {
         if (!get_str(line, "detail", r->last_why, sizeof r->last_why)) r->last_why[0] = 0;
@@ -247,7 +270,38 @@ void chaos_reveal_event_line(struct chaos_reveal *r, const char *line)
     } else if (is_str(line, "event", CHAOS_EVENT_HAUNT_STEP)) {
         /* Emitted only for a committed scripted step the player could see. */
         if ((e = latest(r, CHAOS_REVEAL_HAUNT))) ++e->steps;
+    } else if (is_str(line, "event", "observation")) {
+        observation(r, line, turn);
     }
+}
+
+/* next_use-receipt.jsonl: kind 2 is the engine's admission receipt. Its
+ * "origins" list (when present) names the published and bound origin root
+ * per family; a decision row records a refused next-use candidate. */
+void chaos_reveal_receipt_line(struct chaos_reveal *r, const char *line)
+{
+    const char *o, *p;
+    int kind, n = 0;
+    long published, bound;
+    if (is_str(line, "decision", "rejected")) { ++r->receipt_rejected; return; }
+    if (!get_int(line, "kind", &kind) || kind != 2) return;
+    r->receipt_ops = 0;
+    if (!(o = field(line, "origins")) || *o != '[') return;
+    for (p = o + 1; *p == '{' && n < 2; ++n) {
+        const char *end = skip_value(p);
+        int fountain;
+        if (!end) return;
+        if (is_str(p, "family", "W")) fountain = 0;
+        else if (is_str(p, "family", "F")) fountain = 1;
+        else return;
+        if (!get_long(p, "published", &published) || !get_long(p, "bound", &bound)) return;
+        r->receipt[n].fountain = fountain;
+        r->receipt[n].published = published;
+        r->receipt[n].bound = bound;
+        p = end;
+        if (*p == ',') ++p;
+    }
+    r->receipt_ops = n;
 }
 
 /* Same ownership/no-follow rule as chaos_io.c; bounded bytes and line size. */
@@ -293,7 +347,8 @@ int chaos_reveal_read(struct chaos_reveal *r, int dir)
     int ok;
     if (dir < 0) return 0;
     ok = read_lines(r, dir, "whispers.jsonl", chaos_reveal_journal_line);
-    return read_lines(r, dir, "events.jsonl", chaos_reveal_event_line) && ok;
+    ok = read_lines(r, dir, "events.jsonl", chaos_reveal_event_line) && ok;
+    return read_lines(r, dir, "next_use-receipt.jsonl", chaos_reveal_receipt_line) && ok;
 }
 
 static int delivered(const struct chaos_reveal_entry *e, const struct chaos_reveal_host *h)
@@ -302,7 +357,8 @@ static int delivered(const struct chaos_reveal_entry *e, const struct chaos_reve
     case CHAOS_REVEAL_WHISPER: return e->mutation == CHAOS_AMBIENT;
     case CHAOS_REVEAL_CURIO: return e->uses > 0;
     case CHAOS_REVEAL_HAUNT: return e->steps > 0;
-    case CHAOS_REVEAL_NEXT_USE: return h->next_use_delivered;
+    case CHAOS_REVEAL_NEXT_USE:
+        return h->nu.witnessed != 0 || h->nu.slot_f == CHAOS_REVEAL_F_CONSUMED_APPLIED;
     }
     return 0;
 }
@@ -311,8 +367,12 @@ void chaos_reveal_finish(struct chaos_reveal *r)
 {
     struct chaos_reveal_entry tmp;
     int i, j;
-    if (r->host.next_use)
-        (void)add(r, CHAOS_REVEAL_NEXT_USE, r->host.next_use_turn);
+    if (r->host.nu.present)
+        (void)add(r, CHAOS_REVEAL_NEXT_USE, r->host.nu.admission_move);
+    /* A refused next-use candidate is one count: the receipt's recorded
+     * decision rows when present, otherwise the engine's last attempt. */
+    r->rejected += r->receipt_rejected ? r->receipt_rejected
+                                       : r->host.next_use_last_rejected != 0;
     for (i = 1; i < r->count; ++i)  /* stable chronological order */
         for (j = i; j > 0 && r->e[j - 1].turn > r->e[j].turn; --j) {
             tmp = r->e[j]; r->e[j] = r->e[j - 1]; r->e[j - 1] = tmp;
@@ -436,17 +496,110 @@ static void haunt_entry(const struct chaos_reveal_entry *e, const struct chaos_r
             h->haunt_until);
 }
 
-static void next_use_entry(const struct chaos_reveal_entry *e, const struct chaos_reveal_host *h,
+static const char *w_outcome(int slot)
+{
+    switch (slot) {
+    case CHAOS_REVEAL_W_PENDING: return "it was still waiting for your next whistle";
+    case CHAOS_REVEAL_W_CONSUMED_ARMED: return "your next whistle armed it";
+    case CHAOS_REVEAL_W_CONSUMED_QUIET: return "at your next whistle it chose to stay quiet";
+    case CHAOS_REVEAL_W_CONSUMED_DELAY: return "at your next whistle it chose to wait";
+    case CHAOS_REVEAL_W_CONSUMED_INVALID: return "its program failed at your next whistle; nothing changed";
+    case CHAOS_REVEAL_W_CONSUMED_SUPPRESSED: return "a guard suppressed it at your next whistle; nothing changed";
+    case CHAOS_REVEAL_W_TERMINATED_EXPIRY: return "it expired before you whistled again";
+    case CHAOS_REVEAL_W_TERMINATED_LEVEL: return "it ended when you left the level";
+    case CHAOS_REVEAL_W_TERMINATED_TRANSPORT: return "it ended when its record could not be written";
+    }
+    return 0;
+}
+
+static const char *f_outcome(int slot)
+{
+    switch (slot) {
+    case CHAOS_REVEAL_F_PENDING: return "it was still waiting for your next fountain drink";
+    case CHAOS_REVEAL_F_CONSUMED_APPLIED: return "your next fountain drink was turned into a refreshing one";
+    case CHAOS_REVEAL_F_CONSUMED_NONREMAPPABLE: return "your next fountain drink took its native course";
+    case CHAOS_REVEAL_F_CONSUMED_QUIET: return "at your next fountain drink it chose to stay quiet";
+    case CHAOS_REVEAL_F_CONSUMED_DELAY: return "at your next fountain drink it chose to wait";
+    case CHAOS_REVEAL_F_CONSUMED_INVALID: return "its program failed at your next fountain drink; nothing changed";
+    case CHAOS_REVEAL_F_CONSUMED_SUPPRESSED: return "a guard suppressed it at your next fountain drink; nothing changed";
+    case CHAOS_REVEAL_F_TERMINATED_EXPIRY: return "it expired before you drank again";
+    case CHAOS_REVEAL_F_TERMINATED_LEVEL: return "it ended when you left the level";
+    case CHAOS_REVEAL_F_TERMINATED_TRANSPORT: return "it ended when its record could not be written";
+    }
+    return 0;
+}
+
+/* The engine's "started" row for an origin root, or 0. */
+static int origin_turn(const struct chaos_reveal *r, long root, int fountain, long *turn)
+{
+    int i;
+    for (i = r->origin_count - 1; i >= 0; --i)
+        if (r->origin[i].seq == root && r->origin[i].fountain == fountain) {
+            *turn = r->origin[i].turn;
+            return 1;
+        }
+    return 0;
+}
+
+static void origin_line(const struct chaos_reveal *r, int fountain, long root,
+                        chaos_reveal_emit emit, void *arg)
+{
+    const char *act = fountain ? "you drank from a fountain" : "you whistled";
+    char where[24];
+    long turn, published = 0;
+    int i, rebound = 0;
+    if (r->host.nu.depth > 0) snprintf(where, sizeof where, " on DL%d", r->host.nu.depth);
+    else where[0] = 0;
+    for (i = 0; i < r->receipt_ops; ++i)
+        if (r->receipt[i].fountain == fountain && r->receipt[i].bound == root
+            && r->receipt[i].published != root) {
+            rebound = 1;
+            published = r->receipt[i].published;
+        }
+    if (origin_turn(r, root, fountain, &turn))
+        out(emit, arg, "    Origin: %s%s on turn %ld.", act, where, turn);
+    else
+        out(emit, arg, "    Origin: %s%s (record %ld).", act, where, root);
+    if (rebound) {
+        if (origin_turn(r, published, fountain, &turn))
+            out(emit, arg, "    (It was written about an earlier time, on turn %ld; the engine"
+                " bound it to this later one.)", turn);
+        else
+            out(emit, arg, "    (It was written about an earlier time; the engine bound it"
+                " to this later one.)");
+    }
+}
+
+static void next_use_entry(const struct chaos_reveal_entry *e, const struct chaos_reveal *r,
                            chaos_reveal_emit emit, void *arg)
 {
-    out(emit, arg, "  Turn %ld, %s: a next-use program was admitted.", e->turn,
-        h->next_use_origin[0] ? h->next_use_origin : "after an earlier action");
-    out(emit, arg, "    Telegraph: \"%s\"", h->next_use_telegraph[0] ? h->next_use_telegraph : "(unknown)");
-    out(emit, arg, "    Effect: %s", h->next_use_effect);
-    out(emit, arg, "    Delivered: %s", h->next_use_delivered
-        ? "yes, you saw your companion answer the whistle."
-        : "no; no manifestation reached you.");
-    out(emit, arg, "    Ended: %s", h->next_use_ended);
+    const struct chaos_reveal_next_use *nu = &r->host.nu;
+    const char *w = nu->slot_w != CHAOS_REVEAL_W_UNDECLARED ? w_outcome(nu->slot_w) : 0;
+    const char *f = nu->slot_f != CHAOS_REVEAL_F_UNDECLARED ? f_outcome(nu->slot_f) : 0;
+    const char *telegraph = w && f ? "The next whistle or fountain drink may not behave as usual."
+                            : w ? "The next whistle may call unusual attention."
+                            : f ? "The next fountain drink may take a different course."
+                            : 0;
+    out(emit, arg, "  Turn %ld: a next-use program was admitted.", e->turn);
+    if (w && nu->origin_w > 0) origin_line(r, 0, nu->origin_w, emit, arg);
+    if (f && nu->origin_f > 0) origin_line(r, 1, nu->origin_f, emit, arg);
+    out(emit, arg, "    Telegraph: \"%s\"", telegraph ? telegraph : "(unknown)");
+    out(emit, arg, "    Effect: %s%s%s.", w ? w : "", w && f ? "; " : "",
+        f ? f : (w ? "" : "(unknown)"));
+    /* Delivery needs the engine's own record: a published W witness, or the
+     * F slot the native fountain path marks as applied. */
+    if (nu->witnessed && nu->slot_f == CHAOS_REVEAL_F_CONSUMED_APPLIED)
+        out(emit, arg, "    Delivered: yes, you saw your companion answer the whistle,"
+            " and you drank the changed water.");
+    else if (nu->witnessed)
+        out(emit, arg, "    Delivered: yes, you saw your companion answer the whistle.");
+    else if (nu->slot_f == CHAOS_REVEAL_F_CONSUMED_APPLIED)
+        out(emit, arg, "    Delivered: yes, you drank the changed water.");
+    else
+        out(emit, arg, "    Delivered: no; no manifestation reached you.");
+    out(emit, arg, "    Ended: %s", nu->terminated
+        ? "consumed or ended before the game ended."
+        : "still pending when the game ended.");
 }
 
 void chaos_reveal_render(const struct chaos_reveal *r, chaos_reveal_emit emit, void *arg)
@@ -460,7 +613,7 @@ void chaos_reveal_render(const struct chaos_reveal *r, chaos_reveal_emit emit, v
         case CHAOS_REVEAL_WHISPER: whisper(e, emit, arg); break;
         case CHAOS_REVEAL_CURIO: curio_entry(e, &r->host, emit, arg); break;
         case CHAOS_REVEAL_HAUNT: haunt_entry(e, r, emit, arg); break;
-        case CHAOS_REVEAL_NEXT_USE: next_use_entry(e, &r->host, emit, arg); break;
+        case CHAOS_REVEAL_NEXT_USE: next_use_entry(e, r, emit, arg); break;
         }
     }
     if (r->overflow)
