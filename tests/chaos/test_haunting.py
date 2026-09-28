@@ -7,17 +7,20 @@ import subprocess
 import tempfile
 import unittest
 from gameplay_support import Game, ROOT
+from artifact_hygiene import RetainOnFailure
 
 
 @unittest.skipUnless(
     os.environ.get("NYARLATHACK_GAME_TESTS") == "1", "real game opt-in"
 )
-class HauntingTests(unittest.TestCase):
+class HauntingTests(RetainOnFailure):
     def setUp(self):
         self.assertTrue(
             (ROOT / "src/chaos_haunt.c").exists(), "haunting integration missing"
         )
-        self.tmp = Path(tempfile.mkdtemp(prefix="nyarl-haunting-test-"))
+        self.tmp = Path(
+            self.track_artifacts(tempfile.mkdtemp(prefix="nyarl-haunting-test-"))
+        )
         print("HAUNTING_ARTIFACTS=" + str(self.tmp), flush=True)
         self.clock = self.tmp / "clock.so"
         subprocess.run(

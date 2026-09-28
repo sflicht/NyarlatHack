@@ -11,6 +11,7 @@ import unittest
 
 import test_next_use_fountain as native
 from chaos.next_use_envelope import engine_run_hex, publish_envelope
+from artifact_hygiene import RetainOnFailure, track
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -18,7 +19,7 @@ ROOT = Path(__file__).resolve().parents[2]
 @unittest.skipUnless(
     os.environ.get("NYARLATHACK_GAME_TESTS") == "1", "real game opt-in"
 )
-class NextUseJournalTests(unittest.TestCase):
+class NextUseJournalTests(RetainOnFailure):
     @classmethod
     def setUpClass(cls):
         native.NextUseFountainTests.setUpClass()
@@ -76,7 +77,9 @@ class NextUseJournalTests(unittest.TestCase):
         )
 
     def run_native(self, fault=None, folder=None, escaped=False, mode=None, probe=None):
-        folder = folder or Path(tempfile.mkdtemp(prefix="nyarl-journal-run-"))
+        folder = folder or Path(
+            track(self, tempfile.mkdtemp(prefix="nyarl-journal-run-"))
+        )
         if not (folder / "next_use-envelope.json").exists():
             publish_envelope(
                 folder, native.ROW, dict(native.HOST, run=engine_run_hex(folder))
@@ -601,7 +604,7 @@ class NextUseJournalTests(unittest.TestCase):
         self.assertEqual((row["incomplete"], row["cursor"]), (1, 0))
 
     def test_symlink_does_not_touch_target(self):
-        folder = Path(tempfile.mkdtemp(prefix="nyarl-journal-run-"))
+        folder = Path(track(self, tempfile.mkdtemp(prefix="nyarl-journal-run-")))
         target = folder / "untouched"
         target.write_bytes(b"keep")
         (folder / "next_use-journal.jsonl").symlink_to(target)

@@ -8,6 +8,7 @@ import tempfile
 import unittest
 
 from chaos.next_use_envelope import publish_envelope
+from artifact_hygiene import RetainOnFailure, track
 
 ROOT = Path(__file__).resolve().parents[2]
 ROW = {
@@ -41,7 +42,7 @@ HOST = {
 }
 
 
-class NextUseSafeAdmitTests(unittest.TestCase):
+class NextUseSafeAdmitTests(RetainOnFailure):
     @classmethod
     def setUpClass(cls):
         cls.build = tempfile.TemporaryDirectory(prefix="nyarl-next-use-safe-")
@@ -81,7 +82,7 @@ class NextUseSafeAdmitTests(unittest.TestCase):
             raise RuntimeError(result.stderr.decode())
 
     def publish(self, move=40):
-        folder = tempfile.mkdtemp(prefix="nyarl-next-use-safe-run-")
+        folder = track(self, tempfile.mkdtemp(prefix="nyarl-next-use-safe-run-"))
         os.chmod(folder, 0o700)
         host = dict(HOST)
         host["move"] = move
@@ -89,7 +90,7 @@ class NextUseSafeAdmitTests(unittest.TestCase):
         return folder
 
     def publish_f(self, move=40):
-        folder = tempfile.mkdtemp(prefix="nyarl-next-use-safe-run-")
+        folder = track(self, tempfile.mkdtemp(prefix="nyarl-next-use-safe-run-"))
         os.chmod(folder, 0o700)
         host = dict(HOST)
         host["move"] = move
@@ -412,7 +413,7 @@ class NextUseSafeAdmitTests(unittest.TestCase):
     def test_saturating_native_clock_is_detected(self):
         import shutil
 
-        folder = Path(tempfile.mkdtemp(prefix="nyarl-safe-mutant-"))
+        folder = Path(track(self, tempfile.mkdtemp(prefix="nyarl-safe-mutant-")))
         source = folder / "chaos_next_use_safe.c"
         shutil.copy(ROOT / "src/chaos_next_use_safe.c", source)
         text = source.read_text()

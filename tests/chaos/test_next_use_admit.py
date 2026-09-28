@@ -4,7 +4,7 @@ import json
 from pathlib import Path
 import subprocess
 import tempfile
-import unittest
+from artifact_hygiene import RetainOnFailure, track
 
 ROOT = Path(__file__).resolve().parents[2]
 LUA = subprocess.check_output(
@@ -12,7 +12,7 @@ LUA = subprocess.check_output(
 ).split()
 
 
-class NextUseAdmitTests(unittest.TestCase):
+class NextUseAdmitTests(RetainOnFailure):
     @classmethod
     def setUpClass(cls):
         cls.tmp = tempfile.TemporaryDirectory(prefix="nyarl-admit-")
@@ -243,7 +243,7 @@ class NextUseAdmitTests(unittest.TestCase):
     def _compile_mutant(self, old, new):
         import shutil
 
-        folder = Path(tempfile.mkdtemp(prefix="nyarl-admit-mutant-"))
+        folder = Path(track(self, tempfile.mkdtemp(prefix="nyarl-admit-mutant-")))
         source = folder / "chaos_next_use_admission.c"
         shutil.copy(ROOT / "src/chaos_next_use_admission.c", source)
         text = source.read_text()
