@@ -106,6 +106,13 @@ int main(int argc,char **argv) {
   int sx,sy;assert(sscanf(getenv("HAUNT_ROOM_STAIRS"),"%d,%d",&sx,&sy)==2 && sx>=0 && sx<w && sy>=0 && sy<h);
   levl[X0+sx][Y0+sy].typ=STAIRS;
  }
+ if(getenv("HAUNT_ROOM_DOOR")) {
+  /* A doorless doorway in the room's wall: offsets -1 or w (x), -1 or h (y). */
+  int dx,dy;assert(sscanf(getenv("HAUNT_ROOM_DOOR"),"%d,%d",&dx,&dy)==2 && dx>=-1 && dx<=w && dy>=-1 && dy<=h &&
+                   (dx==-1 || dx==w || dy==-1 || dy==h));
+  levl[X0+dx][Y0+dy].typ=DOOR;levl[X0+dx][Y0+dy].doormask=D_NODOOR;
+  vision_reset();viz_array=rows;
+ }
  if(getenv("HAUNT_ROOM_PET")) {
   int qx,qy;struct monst *pet;
   assert(sscanf(getenv("HAUNT_ROOM_PET"),"%d,%d",&qx,&qy)==2 && qx>=0 && qx<w && qy>=0 && qy<h);

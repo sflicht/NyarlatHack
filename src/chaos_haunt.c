@@ -49,14 +49,18 @@ int chaos_haunt_pick(struct monst *m,const struct nhcoord *poss,int count) {
  for(i=0;i<count;++i)if(poss[i].x==x && poss[i].y==y && legal_step(m,x,y)) {
   pending_state=intent.state;return i;
  }
- /* #190: the requested square holds another monster (in practice the
-  * player's pet standing on the trail). Take the legal candidate nearest to
-  * it instead, but only one that is strictly nearer than the hound is now
-  * (squared distance), and never one next to the player unless the
-  * requested square was. Ties keep the first in the game's own candidate
-  * order (mfndpos: x ascending, then y). No RNG, nothing the pick did not
-  * already see. Otherwise stay put, as before. */
- if(isok(x,y) && m_at(x,y)) {
+ /* #190: the requested square is not a legal step: another monster stands
+  * on it (in practice the player's pet on the trail), or it is not plain
+  * floor (the up stairs the player started on, a doorway, furniture), or
+  * the game does not offer it (a diagonal into or out of a doorway).
+  * Take the legal candidate nearest to it instead, but only one that is
+  * strictly nearer than the hound is now (squared distance), and never one
+  * next to the player unless the requested square was. Candidates are only
+  * the game's own (mfndpos), so doorway diagonals stay illegal. Ties keep
+  * the first in mfndpos order (x ascending, then y). No RNG, nothing the
+  * pick did not already see. A request for the player's own square, or no
+  * qualifying candidate, stays put, as before. */
+ if(isok(x,y) && (x!=u.ux || y!=u.uy)) {
   int best=-1,d,far=distmin(x,y,u.ux,u.uy)>1,bd=dist2(m->mx,m->my,x,y);
   for(i=0;i<count;++i) {
    if(!legal_step(m,poss[i].x,poss[i].y))continue;

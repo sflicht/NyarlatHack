@@ -104,7 +104,7 @@ class HauntRoomTests(RetainOnFailure):
             run,
         )
 
-    def pick(self, name, player, hound, target, pet=None):
+    def pick(self, name, player, hound, target, pet=None, stairs=None, door=None):
         """One real chaos_haunt_pick in a 5x5 room; offsets are in the room."""
         env = dict(
             HAUNT_ROOM_PACK=str(PACK),
@@ -112,6 +112,10 @@ class HauntRoomTests(RetainOnFailure):
         )
         if pet:
             env["HAUNT_ROOM_PET"] = "%d,%d" % pet
+        if stairs:
+            env["HAUNT_ROOM_STAIRS"] = "%d,%d" % stairs
+        if door:
+            env["HAUNT_ROOM_DOOR"] = "%d,%d" % door
         fields, _, _ = self.run_room(name, [5, 5, *player, 1], **env)
         return fields
 
@@ -133,6 +137,40 @@ class HauntRoomTests(RetainOnFailure):
         # The pet is on the target itself, next to the hound: no legal square
         # is strictly nearer to it, so the hound stays put, as before #190.
         got = self.pick("pick-stay", (4, 4), (1, 1), (2, 1), pet=(2, 1))
+        self.assertEqual((got["choice"], got["square"]), ("-1", "-1,-1"), got)
+
+    def test_pick_request_for_player_square_stays_put(self):
+        # Asking for the player's own square never moves the hound: that
+        # would be an attack the step request cannot make.
+        got = self.pick("pick-player", (2, 2), (1, 1), (2, 2))
+        self.assertEqual((got["choice"], got["square"]), ("-1", "-1,-1"), got)
+
+    # --- the pick: a requested square that is not plain floor ----------------
+    def test_pick_steps_around_start_stairs(self):
+        # The trail target is the up staircase the player started on (2,2),
+        # next to the hound. Before #190 the hound refused and stayed put.
+        # Now it takes the nearer legal square; (1,2) and (2,1) tie and the
+        # candidate order keeps (1,2).
+        got = self.pick("pick-stairs", (4, 4), (1, 1), (2, 2), stairs=(2, 2))
+        self.assertEqual((got["square"], got["adjacent"]), ("1,2", "0"), got)
+
+    def test_pick_steps_around_stairs_on_the_way(self):
+        # The stairs are on the way to the target (3,3): step around them.
+        got = self.pick("pick-stairs-way", (4, 4), (1, 1), (3, 3), stairs=(2, 2))
+        self.assertEqual((got["square"], got["adjacent"]), ("1,2", "0"), got)
+
+    def test_pick_doorway_diagonal_stays_illegal(self):
+        # A doorway in the east wall at (5,2). The hound at (4,1) asks for the
+        # diagonal into it, which the game (mfndpos) does not offer; the
+        # engine takes the orthogonal square next to the doorway instead and
+        # never the doorway itself.
+        got = self.pick("pick-door-diag", (0, 4), (4, 1), (5, 2), door=(5, 2))
+        self.assertEqual((got["square"], got["adjacent"]), ("4,2", "0"), got)
+
+    def test_pick_doorway_straight_stays_put(self):
+        # Straight at the doorway from next to it: the doorway is not plain
+        # floor and no legal square is strictly nearer, so the hound stays.
+        got = self.pick("pick-door-straight", (0, 4), (4, 2), (5, 2), door=(5, 2))
         self.assertEqual((got["choice"], got["square"]), ("-1", "-1,-1"), got)
 
     def test_pick_free_request_unchanged(self):
@@ -160,6 +198,41 @@ class HauntRoomTests(RetainOnFailure):
                     ("1", "1", "2"),
                 )
                 self.assertEqual(fields["telegraphs"], "1")
+
+    def test_start_stairs_trial_passes(self):
+        # The player paces from the up staircase they started on, with the
+        # pet beside it, as in most real start rooms.
+        for room, player, pet in (
+            ((5, 4), (1, 1), (2, 2)),
+            ((6, 4), (2, 1), (3, 1)),
+        ):
+            with self.subTest(room=room, player=player, pet=pet):
+                fields, report, _ = self.run_room(
+                    "stairs-%dx%d" % room,
+                    [*room, *player, 1],
+                    HAUNT_ROOM_STAIRS="%d,%d" % player,
+                    HAUNT_ROOM_PET="%d,%d" % pet,
+                )
+                self.assertIsNotNone(report, fields)
+                self.assertEqual(report["accepted"], 1, report)
+                self.assertGreater(report["moved"], 8, report)
+
+    def test_cornered_residual_documented(self):
+        # Accepted residual (#190 option (c); #194 tracks the fix). The trial
+        # bot walks only plain floor, so in a 4x3 room the stairs and the pet
+        # leave it a pocket with no square 3 away from the hound: the hound
+        # moves, reaches it and the trial rejects. This pins the known
+        # behaviour; when #194 lets the bot use stairs, expect it to pass.
+        fields, report, _ = self.run_room(
+            "cornered-4x3",
+            [4, 3, 0, 1, 1],
+            HAUNT_ROOM_STAIRS="0,1",
+            HAUNT_ROOM_PET="1,1",
+        )
+        self.assertIsNotNone(report, fields)
+        self.assertEqual((report["accepted"], report["escaped"]), (0, 0), report)
+        self.assertGreater(report["moved"], 0, report)
+        self.assertGreater(report["contacts"], 0, report)
 
     def test_bare_rooms(self):
         # No hound can be placed 3 squares away in 3x3: nothing is spent or
