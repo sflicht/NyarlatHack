@@ -1,0 +1,23 @@
+{
+  "issue": 190,
+  "pr": 193,
+  "base": "337a1929c",
+  "gates_revision": "6921d2b6c35088761b6b8f70f05790404e4bada4",
+  "builds": {
+    "CHAOS=0": {"exit": 0, "warnings": 0},
+    "CHAOS=1": {"exit": 0, "warnings": 0}
+  },
+  "fast_suite": {"tests": 1429, "result": "OK", "skipped": 209},
+  "native_suite": {"tests": 1429, "result": "OK", "skipped": 13},
+  "linked_tests": {"file": "tests/chaos/test_haunt_room.py", "count": 13, "pick_rng_draws_asserted_zero": true},
+  "sweep_maps_paired": false,
+  "sweep": {
+    "main": {"trials": 113, "pass": 96, "stuck": 12, "cornered": 5},
+    "occupied_only": {"trials": 110, "pass": 99, "stuck": 11, "cornered": 0},
+    "widened": {"trials": 111, "pass": 102, "stuck": 3, "cornered": 6}
+  },
+  "residual": {"cornered": 6, "cornered_issue": 194, "stuck": 3},
+  "capture": {"start_room_squares": 12, "accepted": 1, "escaped": 1, "telegraph_on_screen": true, "live_haunt_steps": 1, "expired": true, "reveal_reached": false},
+  "live_model_calls": 0,
+  "raw_data": "~/.hermes/reports/nyarlathack-190/"
+}
