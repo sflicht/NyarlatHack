@@ -166,6 +166,9 @@ def wire(records, path):
         for r in t["private_records"]:
             fields(r, PRIVATE)
             fields(r["data"], {3: INTENT, 4: EFFECT, 5: TERMINATION}[r["kind"]])
+            if r["kind"] == 4:
+                # #196: absent on every row but a recorded suppression.
+                value(r["data"].get("suppression", 0))
             if r["kind"] == 3:
                 fields(r["data"]["intent"], ["op", "state"])
         for r in t["public_records"]:

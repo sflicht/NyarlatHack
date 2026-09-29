@@ -392,13 +392,17 @@ static void append_private_intent(
     runtime.private_records[runtime.private_count++] = *record;
 }
 
-static void append_effect(int family, int outcome, long root)
+static void append_effect_reason(int family, int outcome, long root,
+                                 int suppression)
 {
     struct chaos_next_use_runtime_private_record record;
     private_common(&record, CHAOS_RUNTIME_PRIVATE_EFFECT);
     record.data.effect.family = family;
     record.data.effect.outcome = outcome;
     record.data.effect.root = root;
+    if (family == CHAOS_NEXT_USE_FAMILY_W
+        && outcome == CHAOS_EFFECT_W_CAPTURE_SUPPRESSED)
+        record.data.effect.suppression = suppression;
     if (family == CHAOS_NEXT_USE_FAMILY_W
         && outcome != CHAOS_EFFECT_W_CAPTURE_SUPPRESSED) {
         record.data.effect.activation_monstermoves =
@@ -407,6 +411,11 @@ static void append_effect(int family, int outcome, long root)
     }
     runtime.private_records[runtime.private_count++] = record;
     runtime.last_root = root;
+}
+
+static void append_effect(int family, int outcome, long root)
+{
+    append_effect_reason(family, outcome, root, CHAOS_W_SUPPRESSED_UNRECORDED);
 }
 
 static int slots_terminal(void)
@@ -1110,15 +1119,16 @@ static boolean runtime_on_action_impl(int family, long completed_root,
     return FALSE;
 }
 
-static void runtime_whistle_unavailable_impl(long completed_root)
+static void runtime_whistle_unavailable_impl(long completed_root, int reason)
 {
     if (runtime.phase != CHAOS_ATTEMPT_COMMITTED
         || runtime.slot_w != CHAOS_SLOT_W_PENDING || completed_root <= 0)
         return;
     runtime.pending_w_capture = 0;
     runtime.slot_w = CHAOS_SLOT_W_CONSUMED_SUPPRESSED;
-    append_effect(CHAOS_NEXT_USE_FAMILY_W,
-                  CHAOS_EFFECT_W_CAPTURE_SUPPRESSED, completed_root);
+    append_effect_reason(CHAOS_NEXT_USE_FAMILY_W,
+                         CHAOS_EFFECT_W_CAPTURE_SUPPRESSED, completed_root,
+                         reason);
     maybe_append_termination(RUNTIME_TERMINATION_COMPLETED, 0);
 }
 
@@ -1408,14 +1418,28 @@ boolean chaos_next_use_on_action(int family, long completed_root,
     return result;
 }
 
-void chaos_next_use_whistle_unavailable(long completed_root)
+/* #196: the W_UNAVAILABLE replay record carries the suppression reason in
+ * its existing end_reason field (0 = unrecorded, as in older journals), so
+ * the journal format and replay_input_v are unchanged. */
+void chaos_next_use_whistle_suppressed(long completed_root, int reason)
 {
-    int entered = capture_enter(CHAOS_REPLAY_W_UNAVAILABLE);
+    int entered;
+    if (reason < CHAOS_W_SUPPRESSED_UNRECORDED
+        || reason > CHAOS_W_SUPPRESSED_RECHECK_FAILED)
+        reason = CHAOS_W_SUPPRESSED_UNRECORDED;
+    entered = capture_enter(CHAOS_REPLAY_W_UNAVAILABLE);
     if (entered && capture_depth == 1) {
         capture_record.root = completed_root;
+        capture_record.end_reason = reason;
     }
-    runtime_whistle_unavailable_impl(completed_root);
+    runtime_whistle_unavailable_impl(completed_root, reason);
     capture_leave(entered);
+}
+
+void chaos_next_use_whistle_unavailable(long completed_root)
+{
+    chaos_next_use_whistle_suppressed(completed_root,
+                                      CHAOS_W_SUPPRESSED_UNRECORDED);
 }
 
 void chaos_next_use_capture_whistle(long completed_root, unsigned m_id, long at_move)
@@ -1646,7 +1670,8 @@ static int private_record_equal(
             && left->data.effect.root == right->data.effect.root
             && left->data.effect.activation_monstermoves
                == right->data.effect.activation_monstermoves
-            && left->data.effect.m_id == right->data.effect.m_id;
+            && left->data.effect.m_id == right->data.effect.m_id
+            && left->data.effect.suppression == right->data.effect.suppression;
     case CHAOS_RUNTIME_PRIVATE_TERMINATION:
         return left->data.termination.failure_code
                    == right->data.termination.failure_code
@@ -1739,7 +1764,12 @@ static int replay_record_impl(
         if (!replay_token_equal(&token, &record->expected_token)) applied = 0;
         break;
     case CHAOS_REPLAY_W_UNAVAILABLE:
-        chaos_next_use_whistle_unavailable(record->root);
+        if (record->end_reason < CHAOS_W_SUPPRESSED_UNRECORDED
+            || record->end_reason > CHAOS_W_SUPPRESSED_RECHECK_FAILED) {
+            applied = 0;
+            break;
+        }
+        chaos_next_use_whistle_suppressed(record->root, record->end_reason);
         break;
     case CHAOS_REPLAY_W_CAPTURE:
         chaos_next_use_capture_whistle(record->root, record->m_id,

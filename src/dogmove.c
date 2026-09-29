@@ -1237,7 +1237,7 @@ dog_move(struct monst *mtmp, int after,
 
 	pre_public = witness && witness->production
 	    && canseemon(mtmp) && !Hallucination && !u.uswallow
-	    && chaos_presentation_snapshot(omx, omy, PM_LITTLE_DOG, &pre_glyph);
+	    && chaos_presentation_snapshot(omx, omy, mtmp->mtyp, &pre_glyph);
 	if (witness && witness->production
 	    && chaos_next_use_whistle_decision_ready(mtmp->m_id)) {
 	    if (chaos_observation_begin_exclusive(

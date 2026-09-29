@@ -310,11 +310,20 @@ def _private(r, s, seq):
                 d["state_after"] == d["state_before"], "invalid intent changed state"
             )
     elif kind == 4:
-        _scalars(d, "family outcome root activation_monstermoves m_id")
+        # #196: "suppression" (1-3) appears only on a W_CAPTURE_SUPPRESSED row
+        # that recorded its reason; rows without it (and pre-#196 journals)
+        # keep the original five keys.
+        names = "family outcome root activation_monstermoves m_id"
+        if "suppression" in d:
+            names += " suppression"
+        _scalars(d, names)
         _integer(d["family"], 1, 2)
         _integer(
             d["outcome"], 1 if d["family"] == 1 else 7, 6 if d["family"] == 1 else 12
         )
+        if "suppression" in d:
+            _integer(d["suppression"], 1, 3)
+            _require(d["family"] == 1 and d["outcome"] == 2, "suppression reason owner")
         # Only autonomous W endings can carry the NULL-root sentinel;
         # operation/reason and pre/poststate are checked in _transition.
         _require(
@@ -547,6 +556,16 @@ def _transition(t, s, seq, prior):
             state = d["state_after"]
         elif r["kind"] == 4 and d["family"] == 1 and d["root"] == 0:
             _autonomous_w_end(t, s, prior, d)
+        elif r["kind"] == 4 and d["family"] == 1 and d["outcome"] == 2:
+            # #196: a top-level W_UNAVAILABLE carries its reason in end_reason
+            # (0 = unrecorded); the effect row must say the same.
+            if t["operation"] == 2:
+                _require(
+                    t["end_reason"] == d.get("suppression", 0),
+                    "suppression reason binding",
+                )
+            else:
+                _require("suppression" not in d, "nested suppression reason")
         elif r["kind"] == 4 and d["family"] == 2:
             _require(
                 t["operation"] == 6

@@ -46,6 +46,15 @@ static int telegraph_fail(void *opaque, const char *text)
     return 0;
 }
 
+/* #196 (C3): NYARLATHACK_TEST_COMPANION=absent|present binds a fixed
+ * companion answer; unset leaves the check unbound, as before. */
+static int companion_calls;
+static int companion_fixed(void *opaque)
+{
+    ++companion_calls;
+    return opaque != NULL;
+}
+
 static int receipt_ok(void *opaque, const struct chaos_next_use_private_record *record)
 {
     (void)opaque;
@@ -215,6 +224,10 @@ int main(int argc, char **argv)
         /* receipt=ok leaves the production writer; fail injects transport loss. */
         if (!strcmp(receipt_mode, "fail"))
             chaos_next_use_safe_bind_receipt(receipt_fail, NULL);
+        if (getenv("NYARLATHACK_TEST_COMPANION"))
+            chaos_next_use_safe_bind_companion(companion_fixed,
+                !strcmp(getenv("NYARLATHACK_TEST_COMPANION"), "present")
+                    ? (void *)&companion_calls : NULL);
     }
     memset(&req, 0, sizeof req);
     req.dir = dir;
@@ -239,6 +252,12 @@ int main(int argc, char **argv)
         req.receipt = receipt_ok;
     else if (!strcmp(receipt_mode, "fail"))
         req.receipt = receipt_fail;
+    if (getenv("NYARLATHACK_TEST_COMPANION")) {
+        req.companion = companion_fixed;
+        req.companion_opaque =
+            !strcmp(getenv("NYARLATHACK_TEST_COMPANION"), "present")
+                ? (void *)&companion_calls : NULL;
+    }
     memset(&first, 0, sizeof first);
     memset(&second, 0, sizeof second);
     before = budget.spent;
@@ -266,7 +285,8 @@ int main(int argc, char **argv)
            "\"second_caller_spent\":%d,\"telegraph_spent\":%d,"
            "\"budget_valid\":%d,\"reserved\":%d,\"hunger_value\":%d,"
            "\"hunger_cost\":%d,\"hunger_expires\":%ld,\"run_token\":%ld,"
-           "\"level_token\":%ld,\"reasons\":%d,\"rebound\":%d}\n",
+           "\"level_token\":%ld,\"reasons\":%d,\"rebound\":%d,"
+           "\"companion_calls\":%d}\n",
            first.loaded, first.rejected, first.admitted, first.active,
            first.pending, first.telegraph_count, first.spent,
            second.admitted, second.telegraph_count, second.spent,
@@ -276,6 +296,7 @@ int main(int argc, char **argv)
            budget.effects[CHAOS_HUNGER].cost,
            budget.effects[CHAOS_HUNGER].expires,
            chaos_next_use_runtime_run_token(),
-           chaos_next_use_pack_level(dnum, dlevel), first.reasons, first.rebound);
+           chaos_next_use_pack_level(dnum, dlevel), first.reasons, first.rebound,
+           companion_calls);
     return 0;
 }

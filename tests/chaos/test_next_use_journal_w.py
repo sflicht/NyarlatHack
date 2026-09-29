@@ -137,6 +137,106 @@ class NextUseWhistleJournalTests(unittest.TestCase):
     def test_unpublished_delivery_and_zero_root_window_end(self):
         self.check_ending(True)
 
+    def run_suppressed(self, case):
+        folder = Path(tempfile.mkdtemp(prefix="nyarl-journal-w-suppress-"))
+        publish_envelope(
+            folder, native.ROW, dict(native.HOST, run=engine_run_hex(folder))
+        )
+        env = dict(os.environ, TERM="xterm", COLUMNS="80", LINES="24")
+        env.pop("JOURNAL_W_BLOCK", None)
+        result = subprocess.run(
+            [str(self.exe), case, str(folder)],
+            cwd=folder,
+            env=env,
+            capture_output=True,
+            text=True,
+            timeout=20,
+        )
+        (folder / "native.log").write_text(result.stdout + result.stderr)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        status = json.loads((folder / "journal-status.json").read_text())
+        capture = {
+            key: status[key]
+            for key in (
+                "sink_connected",
+                "incomplete",
+                "transaction_open",
+                "acknowledged_cursor",
+            )
+        }
+        trace = read_journal(folder / "next_use-journal.jsonl", capture_status=capture)
+        self.assertEqual(trace["status"], "acknowledged_complete")
+        rows = [
+            (t["data"], p)
+            for t in trace["records"]
+            if t["kind"] == "transition"
+            for p in t["data"]["private_records"]
+            if p["kind"] == 4 and p["data"]["outcome"] == 2
+        ]
+        self.assertEqual(len(rows), 1)
+        print("JOURNAL_W_ARTIFACT=" + str(folder), flush=True)
+        return folder, status, rows[0]
+
+    # #196: the W_CAPTURE_SUPPRESSED effect row records why (1 none in view,
+    # 2 in view but not eligible, 3 failed the capture recheck). Nothing is
+    # refunded: the one charge stays spent and the program ends at the whistle.
+    def test_suppressed_row_records_reason(self):
+        for case, reason in (
+            ("suppress_none", 1),
+            ("suppress_ineligible", 2),
+            ("suppress_recheck", 3),
+        ):
+            with self.subTest(case=case):
+                _, status, (transition, effect) = self.run_suppressed(case)
+                self.assertEqual(effect["data"]["suppression"], reason)
+                self.assertEqual(transition["end_reason"], reason)
+                self.assertEqual(status["spent"], 1)
+                self.assertEqual(status["attention_claimed"], 0)
+                self.assertEqual(status["termination_emitted"], 1)
+
+    # Old journals stay valid: the pre-#196 entry point writes no key.
+    def test_unrecorded_suppression_keeps_old_row_shape(self):
+        _, status, (transition, effect) = self.run_suppressed("suppress_unrecorded")
+        self.assertNotIn("suppression", effect["data"])
+        self.assertEqual(transition["end_reason"], 0)
+        self.assertEqual(status["spent"], 1)
+
+    def test_rehashed_suppression_reason_tampering_rejected(self):
+        folder, _, _ = self.run_suppressed("suppress_ineligible")
+        rows = [
+            json.loads(line)
+            for line in (folder / "next_use-journal.jsonl").read_text().splitlines()
+        ]
+        index = next(
+            i
+            for i, r in enumerate(rows)
+            if r["payload"]["kind"] == "transition"
+            and any(
+                p["kind"] == 4 and p["data"]["outcome"] == 2
+                for p in r["payload"]["data"]["private_records"]
+            )
+        )
+        for field, mutate in (
+            ("effect_reason", lambda t, e: e.__setitem__("suppression", 1)),
+            ("transition_reason", lambda t, e: t.__setitem__("end_reason", 3)),
+            ("out_of_range", lambda t, e: e.__setitem__("suppression", 4)),
+            ("zero_key", lambda t, e: e.__setitem__("suppression", 0)),
+        ):
+            with self.subTest(field=field):
+                bad = copy.deepcopy(rows)
+                t = bad[index]["payload"]["data"]
+                e = next(
+                    p["data"]
+                    for p in t["private_records"]
+                    if p["kind"] == 4 and p["data"]["outcome"] == 2
+                )
+                mutate(t, e)
+                target = journal_fixture.NextUseJournalTests.rehashed(
+                    folder / ("tampered-" + field + ".jsonl"), bad
+                )
+                with self.assertRaises(JournalError):
+                    read_journal(target)
+
     def test_rehashed_native_witness_and_ending_tampering_rejected(self):
         folder, _ = self.run_native()
         rows = [

@@ -58,6 +58,9 @@ void chaos_next_use_manifestation_end(long root, long notice_seq,
                                       long end_seq, int success);
 void chaos_next_use_manifestation_complete(const struct chaos_whistle_witness *,
                                            long end_seq, int published);
+void chaos_next_use_whistle_suppressed(long completed_root, int reason);
+struct monst *chaos_next_use_companion_pick(int *reason_out);
+int chaos_next_use_companion_in_view(void *opaque);
 boolean chaos_whistle_attention_message(struct chaos_whistle_witness *witness);
 void chaos_whistle_witness_finalize(struct monst *mtmp,
                                     struct chaos_whistle_witness *witness);
@@ -110,6 +113,8 @@ void chaos_reveal_xlog(FILE *rfile);
 #define chaos_next_use_manifestation_notice(root,notice_seq) ((void)0)
 #define chaos_next_use_manifestation_end(root,notice_seq,end_seq,success) ((void)0)
 #define chaos_next_use_manifestation_complete(witness,end_seq,published) ((void)0)
+#define chaos_next_use_whistle_suppressed(completed_root,reason) ((void)0)
+#define chaos_next_use_companion_pick(reason_out) ((struct monst *) 0)
 #define chaos_whistle_attention_message(witness) (FALSE)
 #define chaos_whistle_witness_finalize(mtmp,witness) ((void)0)
 #define chaos_next_use_on_manifestation(witness,end_seq) ((void)0)

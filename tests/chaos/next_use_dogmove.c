@@ -27,6 +27,20 @@ static void setup_tty(int *argc, char **argv)
     display_nhwindow(WIN_MESSAGE, FALSE);
 }
 
+/* #196 (A2): NYARLATHACK_TEST_PET selects the companion's species; unset is
+ * the little dog every earlier case used. Unknown names fail the run. */
+static int pet_type(void)
+{
+    const char *name = getenv("NYARLATHACK_TEST_PET");
+    if (!name || !*name || !strcmp(name, "little_dog")) return PM_LITTLE_DOG;
+    if (!strcmp(name, "dog")) return PM_DOG;
+    if (!strcmp(name, "large_dog")) return PM_LARGE_DOG;
+    if (!strcmp(name, "kitten")) return PM_KITTEN;
+    if (!strcmp(name, "housecat")) return PM_HOUSECAT;
+    if (!strcmp(name, "pony")) return PM_PONY;
+    exit(3);
+}
+
 static void setup_level(struct monst *pet)
 {
     int x, y;
@@ -71,8 +85,8 @@ static void setup_level(struct monst *pet)
     chaos_state_init(&u.chaos);
     u.chaos.safe = 7;
     memset(pet, 0, sizeof *pet);
-    pet->data = &mons[PM_LITTLE_DOG];
-    pet->mtyp = PM_LITTLE_DOG;
+    pet->data = &mons[pet_type()];
+    pet->mtyp = pet_type();
     pet->mhp = pet->mhpmax = 10;
     pet->m_id = 7;
     pet->mtame = 10;
@@ -262,8 +276,19 @@ static int run_case(const char *name, const char *dirpath)
         && strcmp(name, "safemiss") && strcmp(name, "safehit")
         && strcmp(name, "obsorigin") && strcmp(name, "unequalclock") && !rebind) {
         arm = admit_and_act(dirpath, &pet, &telegraphs,
-                            strcmp(name, "nonepet") != 0);
+                            strcmp(name, "nonepet") != 0
+                            && strncmp(name, "suppress_", 9) != 0);
         if (arm < 0) return 2;
+        /* #196: the whistle found no companion to bind; record why. The
+         * "unrecorded" case is the pre-#196 entry point (reason 0). */
+        if (arm == 2 && !strcmp(name, "suppress_unrecorded"))
+            chaos_next_use_whistle_unavailable(10);
+        else if (arm == 2 && !strcmp(name, "suppress_none"))
+            chaos_next_use_whistle_suppressed(10, CHAOS_W_SUPPRESSED_NONE_IN_VIEW);
+        else if (arm == 2 && !strcmp(name, "suppress_ineligible"))
+            chaos_next_use_whistle_suppressed(10, CHAOS_W_SUPPRESSED_NOT_ELIGIBLE);
+        else if (arm == 2 && !strcmp(name, "suppress_recheck"))
+            chaos_next_use_whistle_suppressed(10, CHAOS_W_SUPPRESSED_RECHECK_FAILED);
     }
     restored = 0;
     spent2 = 0;
@@ -438,7 +463,8 @@ static int run_case(const char *name, const char *dirpath)
             "\"reseed\":%d,\"rng_next\":%d,\"snapshot\":%d,\"windowed\":%d,"
             "\"pre_glyph\":%d,\"post_glyph\":%d,\"invalid\":%d,\"classifier\":%d,"
             "\"root\":%ld,\"notice\":%ld,\"spent\":%d,\"spent2\":%d,\"restored\":%d,"
-            "\"bound_root\":%ld}\n",
+            "\"bound_root\":%ld,\"mtyp\":%d,\"mtame\":%d,\"mpeaceful\":%d,"
+            "\"alive\":%d,\"ux\":%d,\"uy\":%d,\"dist_before\":%d,\"dist_after\":%d}\n",
             name, ox, oy, pet.mx, pet.my, rc, arm, telegraphs, ready,
             chaos_next_use_whistle_decision_ready(pet.m_id),
             chaos_next_use_whistle_decision_ready(orig_id),
@@ -448,9 +474,86 @@ static int run_case(const char *name, const char *dirpath)
             snapshot, windowed, pre_glyph, witness.post_glyph,
             witness.invalid, witness.classifier_ok,
             witness.root, witness.notice_seq, u.chaos.spent, spent2, restored,
-            bound_root);
+            bound_root, pet.mtyp, (int)pet.mtame, (int)pet.mpeaceful,
+            !DEADMONSTER(&pet), u.ux, u.uy, dist2(ox, oy, u.ux, u.uy),
+            dist2(pet.mx, pet.my, u.ux, u.uy));
         fclose(out);
     }
+    return 0;
+}
+
+/* #196 (B1): the production pick over several companions.
+ * NYARLATHACK_TEST_PICK="x,y,kind[,m_id];..." places them in fmon list order
+ * (m_id defaults to 7, 8, ...). kind is a species name for pet_type(), or
+ * "hostile" (an untamed dog) or "leashed" (a leashed tame dog). Prints the
+ * picked square/m_id, the recorded reason, and the RNG draw after the pick
+ * next to a control draw with no pick. */
+static int run_pick(void)
+{
+    static struct monst pets[8];
+    const char *spec = getenv("NYARLATHACK_TEST_PICK");
+    char buf[256], *entry, *save = 0;
+    struct monst *picked, *prev = 0;
+    int n = 0, reason = -1, after_pick, control, seen_draws;
+    FILE *out;
+
+    if (!spec || strlen(spec) >= sizeof buf) return 2;
+    unsetenv("NYARLATHACK_TEST_PET");
+    test_rng_control();
+    test_rng_reset();
+    setup_level(&pets[0]);
+    remove_monster(pets[0].mx, pets[0].my);
+    fmon = 0;
+    strcpy(buf, spec);
+    for (entry = strtok_r(buf, ";", &save); entry && n < 8;
+         entry = strtok_r(0, ";", &save), ++n) {
+        struct monst *m = &pets[n];
+        char kind[32];
+        int x, y, id = 7 + n, got;
+        got = sscanf(entry, "%d,%d,%31[a-z_],%d", &x, &y, kind, &id);
+        if (got < 3 || !isok(x, y) || m_at(x, y)) return 2;
+        if (!strcmp(kind, "hostile") || !strcmp(kind, "leashed"))
+            setenv("NYARLATHACK_TEST_PET", "dog", 1);
+        else
+            setenv("NYARLATHACK_TEST_PET", kind, 1);
+        memset(m, 0, sizeof *m);
+        m->mtyp = pet_type();
+        m->data = &mons[m->mtyp];
+        m->mhp = m->mhpmax = 10;
+        m->m_id = (unsigned)id;
+        m->mtame = strcmp(kind, "hostile") ? 10 : 0;
+        m->mpeaceful = m->mtame ? 1 : 0;
+        m->mleashed = !strcmp(kind, "leashed");
+        m->mcanmove = 1;
+        m->mcansee = 1;
+        if (m->mtame) {
+            add_mx(m, MX_EDOG);
+            EDOG(m)->hungrytime = monstermoves + 10000;
+        }
+        place_monster(m, x, y);
+        if (prev) prev->nmon = m; else fmon = m;
+        prev = m;
+    }
+    unsetenv("NYARLATHACK_TEST_PET");
+    vision_recalc(0);
+    docrt();
+    flush_screen(1);
+    test_rng_reset();
+    seen_draws = reseed_count;
+    picked = chaos_next_use_companion_pick(&reason);
+    seen_draws = reseed_count - seen_draws; /* before the comparison draw */
+    after_pick = rn2(100000);
+    test_rng_reset();
+    control = rn2(100000);
+    out = fopen("result.json", "w");
+    if (!out) return 2;
+    fprintf(out, "{\"case\":\"pick\",\"picked\":%d,\"px\":%d,\"py\":%d,"
+            "\"m_id\":%u,\"reason\":%d,\"after_pick\":%d,\"control\":%d,"
+            "\"reseed_delta\":%d,\"ux\":%d,\"uy\":%d,\"count\":%d}\n",
+            picked != 0, picked ? picked->mx : -1, picked ? picked->my : -1,
+            picked ? picked->m_id : 0, reason, after_pick, control,
+            seen_draws, u.ux, u.uy, n);
+    fclose(out);
     return 0;
 }
 
@@ -464,5 +567,9 @@ int main(int argc, char **argv)
     dirpath = argv[2];
     fqn_prefix[TROUBLEPREFIX] = "./";
     setup_tty(&argc, argv);
+    if (!strcmp(name, "pick")) {
+        setenv("NYARLATHACK_RUN_DIR", dirpath, 1);
+        return run_pick();
+    }
     return run_case(name, dirpath);
 }

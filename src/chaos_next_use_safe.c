@@ -20,6 +20,9 @@ static char owned_run[65];
 static int owned_run_set;
 static int (*owned_warn)(void *, const char *);
 static void *owned_warn_opaque;
+int chaos_next_use_companion_in_view(void *) __attribute__((weak));
+static int (*owned_companion)(void *);
+static void *owned_companion_opaque;
 static chaos_next_use_receipt_fn owned_receipt;
 static void *owned_receipt_opaque;
 static struct {
@@ -45,6 +48,8 @@ void chaos_next_use_safe_reset_for_test(void)
     owned_run[0] = '\0';
     owned_warn = 0;
     owned_warn_opaque = 0;
+    owned_companion = 0;
+    owned_companion_opaque = 0;
     owned_receipt = 0;
     owned_receipt_opaque = 0;
     memset(origin_evidence, 0, sizeof origin_evidence);
@@ -74,6 +79,12 @@ void chaos_next_use_safe_bind_telegraph(int (*fn)(void *, const char *), void *o
 {
     owned_warn = fn;
     owned_warn_opaque = opaque;
+}
+
+void chaos_next_use_safe_bind_companion(int (*fn)(void *), void *opaque)
+{
+    owned_companion = fn;
+    owned_companion_opaque = opaque;
 }
 
 void chaos_next_use_safe_bind_receipt(chaos_next_use_receipt_fn fn, void *opaque)
@@ -338,7 +349,7 @@ static const char *const reason_names[] = {
     "schema", "identity", "run_unavailable", "level_invalid", "budget_state",
     "missed_index", "run_mismatch", "level_mismatch", "origin_expired",
     "origin_unbound", "origin_superseded", "source", "telegraph", "budget",
-    "receipt", "internal"
+    "receipt", "internal", "no_companion_in_view"
 };
 
 /* #177 recorded decision: one row appended to the existing receipt file when
@@ -427,6 +438,11 @@ int chaos_next_use_on_safe(int dir, long at_safe, int sanity,
         req.run_hex = owned_run;
     req.telegraph = owned_warn;
     req.telegraph_opaque = owned_warn_opaque;
+    /* #196 (C3): a bound check (fixtures) wins; otherwise the engine's own,
+     * resolved weakly so harnesses linked without the game skip it. */
+    req.companion = owned_companion ? owned_companion
+                                    : chaos_next_use_companion_in_view;
+    req.companion_opaque = owned_companion_opaque;
     if (owned_receipt) {
         req.receipt = owned_receipt;
         req.receipt_opaque = owned_receipt_opaque;
@@ -492,6 +508,15 @@ int chaos_next_use_safe_try(const struct chaos_next_use_safe_request *request,
         reasons |= CHAOS_NEXT_USE_SAFE_BUDGET_STATE;
     memset(bound, 0, sizeof bound);
     reasons |= envelope_origin_reasons(&envelope, request, bound, &rebound);
+    /* #196 (C3): a W program needs a qualifying companion on screen now.
+     * Checked with the other cheap checks, before telegraph and charge. */
+    if (request->companion) {
+        int i, has_w = 0;
+        for (i = 0; i < envelope.operation_count && i < 2; ++i)
+            if (envelope.operations[i] == CHAOS_NEXT_USE_FAMILY_W) has_w = 1;
+        if (has_w && !request->companion(request->companion_opaque))
+            reasons |= CHAOS_NEXT_USE_SAFE_NO_COMPANION;
+    }
     /* The sandboxed source check runs only when every cheaper check passed,
      * exactly as before; it draws no game RNG. */
     if (!reasons

@@ -131,9 +131,14 @@ class NextUseSafeAdmitTests(RetainOnFailure):
         evidence="valid",
         clock="native",
         identity=1750000001,
+        companion=None,
     ):
         if run is None:
             run = HOST["run"]
+        env = dict(os.environ)
+        env.pop("NYARLATHACK_TEST_COMPANION", None)
+        if companion is not None:
+            env["NYARLATHACK_TEST_COMPANION"] = companion
         p = subprocess.run(
             [
                 str(self.binary),
@@ -156,6 +161,7 @@ class NextUseSafeAdmitTests(RetainOnFailure):
             capture_output=True,
             text=True,
             timeout=5,
+            env=env,
         )
         self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
         return json.loads(p.stdout)
@@ -585,6 +591,7 @@ REASON_BITS = {
     "budget": 1 << 13,
     "receipt": 1 << 14,
     "internal": 1 << 15,
+    "no_companion_in_view": 1 << 16,
 }
 
 
@@ -593,6 +600,7 @@ class NextUseSafeRecordedDecisionTests(unittest.TestCase):
 
     setUpClass = classmethod(NextUseSafeAdmitTests.setUpClass.__func__)
     publish = NextUseSafeAdmitTests.publish
+    publish_f = NextUseSafeAdmitTests.publish_f
     run_case = NextUseSafeAdmitTests.run_case
 
     def receipt_bytes(self, folder):
@@ -686,6 +694,53 @@ class NextUseSafeRecordedDecisionTests(unittest.TestCase):
 
     def test_origin_superseded(self):
         self.assert_reason("origin_superseded", evidence="stale")
+
+    # #196 (C3): a W program is admitted only with a qualifying companion on
+    # screen at the safe point, checked before the telegraph and the charge.
+    def test_no_companion_in_view_rejects_before_telegraph_or_charge(self):
+        folder = self.publish()
+        decision = self.assert_reason(
+            "no_companion_in_view", folder, companion="absent"
+        )
+        self.assertEqual(decision["reasons"], ["no_companion_in_view"])
+        row = self.run_case(self.publish(), wrapper="on_safe", companion="absent")
+        self.assertEqual(row["telegraph"], 0)
+        self.assertEqual(row["active"], 0)
+        self.assertEqual(row["caller_spent"], row["caller_spent_before"])
+        self.assertEqual(row["telegraph_spent"], -1)
+        self.assertEqual(row["reasons"], REASON_BITS["no_companion_in_view"])
+
+    def test_companion_in_view_admits_as_before(self):
+        plain = self.run_case(self.publish(), wrapper="on_safe")
+        seen = self.run_case(self.publish(), wrapper="on_safe", companion="present")
+        self.assertEqual(seen["companion_calls"], 1)
+        self.assertEqual(plain["companion_calls"], 0)
+        for key in (
+            "admitted",
+            "active",
+            "telegraph",
+            "spent",
+            "caller_spent",
+            "reasons",
+            "hunger_cost",
+        ):
+            self.assertEqual(seen[key], plain[key], key)
+        self.assertEqual(seen["admitted"], 1)
+
+    def test_companion_check_ignores_fountain_only_programs(self):
+        row = self.run_case(
+            self.publish_f(), wrapper="on_safe", evidence="valid_f", companion="absent"
+        )
+        self.assertEqual(row["companion_calls"], 0)
+        self.assertEqual(row["admitted"], 1)
+
+    def test_companion_check_joins_other_reasons(self):
+        decision = self.assert_reason(
+            "no_companion_in_view", companion="absent", evidence="stale"
+        )
+        self.assertEqual(
+            decision["reasons"], ["origin_superseded", "no_companion_in_view"]
+        )
 
     def test_tampered_source_digest_is_schema(self):
         folder = self.publish()

@@ -147,6 +147,10 @@ static void private_record(const struct chaos_next_use_runtime_private_record *p
         N((&p->data.effect), family); N((&p->data.effect), outcome);
         N((&p->data.effect), root); N((&p->data.effect), activation_monstermoves);
         N((&p->data.effect), m_id);
+        /* #196: only a recorded suppression reason adds a key, so every
+         * other effect row, and every pre-#196 journal, is byte-identical. */
+        if (p->data.effect.suppression)
+            N((&p->data.effect), suppression);
         break;
     case CHAOS_RUNTIME_PRIVATE_TERMINATION:
         N((&p->data.termination), failure_code); N((&p->data.termination), reason);

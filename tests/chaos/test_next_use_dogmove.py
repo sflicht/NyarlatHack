@@ -95,7 +95,7 @@ class NextUseDogMoveTests(RetainOnFailure):
         if result.returncode:
             raise RuntimeError(result.stderr.decode())
 
-    def run_case(self, name, row=ROW, move=40):
+    def run_case(self, name, row=ROW, move=40, pet=None):
         folder = Path(
             track(self, tempfile.mkdtemp(prefix="nyarl-next-use-dogmove-run-"))
         )
@@ -111,6 +111,9 @@ class NextUseDogMoveTests(RetainOnFailure):
         env["TERM"] = "xterm"
         env["COLUMNS"] = "80"
         env["LINES"] = "24"
+        env.pop("NYARLATHACK_TEST_PET", None)
+        if pet is not None:
+            env["NYARLATHACK_TEST_PET"] = pet
         p = subprocess.run(
             [str(self.exe), name, str(folder)],
             # The tty fixture may wait for a key at --More--; an inherited
@@ -170,6 +173,100 @@ class NextUseDogMoveTests(RetainOnFailure):
         self.assertEqual((control["mx"], control["my"]), (bypass["mx"], bypass["my"]))
         self.assertEqual(control["rng_next"], bypass["rng_next"])
         self.assertEqual(control["reseed"], bypass["reseed"])
+
+    # #196 (A2): the extra-attention move (dog_goal via dog_move) was only
+    # validated on the little dog. Every companion type with dog data must
+    # take the same visible, player-ward, still-tame move and deliver it.
+    def test_extra_attention_move_on_other_companion_types(self):
+        for pet in ("dog", "large_dog", "kitten", "housecat", "pony"):
+            with self.subTest(pet=pet):
+                control = self.run_case("none", pet=pet)
+                bypass = self.run_case("bypass", pet=pet)
+                row = self.run_case("admit", pet=pet)
+                self.assertEqual(row["mtyp"], control["mtyp"])
+                self.assertEqual(row["alive"], 1)
+                self.assertEqual(row["mtame"], 10)
+                self.assertEqual(row["mpeaceful"], 1)
+                self.assertEqual(row["arm"], 2)
+                self.assertEqual(row["telegraph"], 1)
+                self.assertEqual(row["ready_before"], 1)
+                self.assertEqual(row["ready_after"], 0)
+                self.assertEqual(row["classifier"], 1)
+                self.assertEqual(row["pre_public"], 1)
+                self.assertEqual(row["displaced"], 1)
+                self.assertEqual(row["delivered"], 1)
+                self.assertEqual(row["invalid"], 0)
+                # The move is the one the player sees: published on the map,
+                # same glyph before and after, and toward the player.
+                self.assertEqual(row["public"], 1)
+                self.assertEqual(row["public2"], 1)
+                self.assertEqual(row["post_glyph"], row["pre_glyph"])
+                self.assertLess(row["dist_after"], row["dist_before"])
+                # No-whisper equals stock: without a program, no extra draw.
+                self.assertEqual(control["ready_before"], 0)
+                self.assertEqual(
+                    (control["mx"], control["my"]), (bypass["mx"], bypass["my"])
+                )
+                self.assertEqual(control["rng_next"], bypass["rng_next"])
+                self.assertEqual(control["reseed"], bypass["reseed"])
+
+    def pick(self, spec):
+        os.environ["NYARLATHACK_TEST_PICK"] = spec
+        try:
+            return self.run_case("pick")
+        finally:
+            del os.environ["NYARLATHACK_TEST_PICK"]
+
+    # #196 (B1): the player is at (10, 10). Nearest by squared distance wins;
+    # ties go to the top row, then the leftmost column. List order and m_id
+    # never decide, and the pick draws no RNG.
+    def test_pick_nearest_wins_regardless_of_list_order(self):
+        for spec in ("13,10,dog;11,11,kitten", "11,11,kitten;13,10,dog"):
+            with self.subTest(spec=spec):
+                row = self.pick(spec)
+                self.assertEqual((row["px"], row["py"]), (11, 11), row)
+                self.assertEqual(row["reason"], 0)
+
+    def test_pick_tie_goes_to_top_row_then_leftmost(self):
+        cases = {
+            "10,12,dog;10,8,dog": (10, 8),
+            "10,8,dog;10,12,dog": (10, 8),
+            "12,10,pony;8,10,housecat": (8, 10),
+            "8,10,housecat;12,10,pony": (8, 10),
+            "12,12,dog;8,12,dog;12,8,dog;8,8,dog": (8, 8),
+        }
+        for spec, square in cases.items():
+            with self.subTest(spec=spec):
+                row = self.pick(spec)
+                self.assertEqual((row["px"], row["py"]), square, row)
+
+    def test_pick_ignores_m_id(self):
+        low = self.pick("12,10,dog,7;8,10,dog,99")
+        high = self.pick("12,10,dog,99;8,10,dog,7")
+        self.assertEqual((low["px"], low["py"]), (8, 10))
+        self.assertEqual((high["px"], high["py"]), (8, 10))
+        self.assertEqual((low["m_id"], high["m_id"]), (99, 7))
+
+    def test_pick_draws_no_rng(self):
+        for spec in (
+            "13,10,dog;11,11,kitten",
+            "10,8,dog;10,12,dog",
+            "11,10,hostile",
+            "11,10,leashed",
+        ):
+            with self.subTest(spec=spec):
+                row = self.pick(spec)
+                self.assertEqual(row["after_pick"], row["control"], row)
+                self.assertEqual(row["reseed_delta"], 0, row)
+
+    # #196: the recorded reason. A hostile dog shows no pet glyph, so no
+    # companion is in view (1); a leashed pet is in view but excluded (2).
+    def test_pick_records_why_nothing_qualified(self):
+        self.assertEqual(self.pick("11,10,hostile")["reason"], 1)
+        row = self.pick("11,10,leashed")
+        self.assertEqual((row["picked"], row["reason"]), (0, 2))
+        row = self.pick("11,10,leashed;14,10,large_dog")
+        self.assertEqual((row["px"], row["py"], row["reason"]), (14, 10, 0))
 
     def test_changed_presentation_target_or_level_cannot_certify_old_event(self):
         for name in ("postid", "postlevel"):

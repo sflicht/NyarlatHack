@@ -34,4 +34,14 @@ enum chaos_next_use_fountain_outcome {
 void chaos_next_use_mark_identity_unsafe(void);
 int chaos_next_use_take_identity_unsafe(void);
 
+/* #196: why a whistle suppressed the W capture, recorded in the
+ * W_CAPTURE_SUPPRESSED effect row. 0 is "not recorded" (journals written
+ * before #196, and the runtime's own defensive path). */
+enum chaos_next_use_w_suppression {
+    CHAOS_W_SUPPRESSED_UNRECORDED = 0,
+    CHAOS_W_SUPPRESSED_NONE_IN_VIEW = 1,
+    CHAOS_W_SUPPRESSED_NOT_ELIGIBLE = 2,
+    CHAOS_W_SUPPRESSED_RECHECK_FAILED = 3
+};
+
 #endif

@@ -40,6 +40,13 @@ TERMINATION = {
     7: "identity_unsafe",
 }
 W_ARMED, W_CAPTURE_SUPPRESSED, W_WITNESSED, F_REMAPPED = 1, 2, 3, 12
+# #196: chaos_next_use_w_suppression, recorded on the W_CAPTURE_SUPPRESSED row.
+W_SUPPRESSION = {
+    0: "unrecorded",
+    1: "none_in_view",
+    2: "not_eligible",
+    3: "recheck_failed",
+}
 FAMILY_OPERATION = {"W": "whistling", "F": "fountain_drink"}
 ORIGIN_TTL = 300  # engine: CHAOS_NEXT_USE_ORIGIN_LIFETIME
 
@@ -248,6 +255,13 @@ def analyse(game_root):
         "session_details": [e["detail"] for e in sessions],
         "journal_status": journal_status,
         "effect_outcomes": sorted(e["data"]["outcome"] for e in effects),
+        # #196: why each W capture was suppressed (the effect row's recorded
+        # reason; "unrecorded" for journals written before #196).
+        "w_suppressions": [
+            W_SUPPRESSION.get(e["data"].get("suppression", 0), "?")
+            for e in effects
+            if e["data"]["outcome"] == W_CAPTURE_SUPPRESSED
+        ],
         "terminations": [
             TERMINATION.get(t["data"]["reason"], "?") for t in terminations
         ],

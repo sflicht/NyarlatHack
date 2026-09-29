@@ -107,7 +107,8 @@ reached and does not admit it, the engine appends one row to the existing
 `CHAOS_NEXT_USE_ORIGIN_LIFETIME` = 300 monster moves after the origin),
 `origin_unbound`, `origin_superseded` (a newer origin holds the family's slot
 and the engine could not rebind to it; see below), `source`, `telegraph`,
-`budget`, `receipt`, `internal`. Admission keeps its existing kind-2 row and
+`budget`, `receipt`, `internal`, `no_companion_in_view` (#196: a W program
+with no qualifying companion on screen; see `docs/next-use-whistle.md`). Admission keeps its existing kind-2 row and
 writes no decision row. Nothing is written for an empty mailbox, a pending
 or unparseable envelope, a clock-range rejection, or a transport directory this
 game does not own (a new game reusing an old run directory leaves that
@@ -143,8 +144,8 @@ The engine chooses; the director never retimes or re-publishes. The engine
 holds one origin per family, so the "newest" origin is simply that slot. The
 envelope, its source digest, the telegraph id and text, the cost and the
 program TTL are unchanged. The W target is still resolved by the engine at
-the triggering whistle (exactly one visible eligible little dog, otherwise
-`whistle_capture_suppressed`), now keyed to the bound root. No random numbers
+the triggering whistle (the nearest visible qualifying companion, #196;
+otherwise `whistle_capture_suppressed`), now keyed to the bound root. No random numbers
 are drawn and nothing is written when the mailbox is empty or inactive.
 
 The admission receipt row now records both origins per operation:

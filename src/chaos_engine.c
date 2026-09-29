@@ -509,7 +509,8 @@ void chaos_whistle_witness_finalize(struct monst *mtmp,
     long end_seq = 0;
     if (witness && witness->active && !witness->finalized) {
         witness->finalized = TRUE;
-        if (!mtmp || DEADMONSTER(mtmp) || mtmp->mtyp != PM_LITTLE_DOG
+        /* #196 (A2): any companion with dog data, not only a little dog. */
+        if (!mtmp || DEADMONSTER(mtmp)
             || !mtmp->mtame || !get_mx(mtmp, MX_EDOG)
             || mtmp == u.usteed || mtmp == u.urider
             || mon_attacktype(mtmp, AT_EXPL) || !isok(mtmp->mx, mtmp->my)) {
@@ -539,12 +540,68 @@ void chaos_whistle_witness_finalize(struct monst *mtmp,
     }
 }
 
+/* #196 (A2): a companion a next-use whistle may bind. Any tame monster with
+ * dog data; every other guard is the one the little-dog rule used. */
+static boolean companion_qualifies(struct monst *mtmp) {
+    return mtmp && !DEADMONSTER(mtmp) && mtmp->mtame && get_mx(mtmp, MX_EDOG)
+        && mtmp != u.usteed && mtmp != u.urider
+        && !mtmp->mleashed && !get_mx(mtmp, MX_ESUM)
+        && !mon_attacktype(mtmp, AT_EXPL)
+        && !Conflict && !mtmp->mberserk;
+}
+
+/* On screen only: the map shows this monster's own pet glyph at its square,
+ * in a projectable TTY map cell. Nothing the player cannot see. */
+static boolean companion_on_screen(struct monst *mtmp) {
+    if (DEADMONSTER(mtmp) || !canseemon(mtmp) || !isok(mtmp->mx, mtmp->my))
+        return FALSE;
+    return glyph_is_pet(glyph_at(mtmp->mx, mtmp->my))
+        && chaos_presentation_snapshot(mtmp->mx, mtmp->my, mtmp->mtyp, 0);
+}
+
+/* #196 (B1): the qualifying companion in view nearest the player (squared
+ * distance); ties go to the top row, then the leftmost column. Squares are
+ * unique, so the monster-list order and m_id never decide. No RNG. When none
+ * qualifies, *reason_out says whether any tame companion was in view. */
+struct monst *chaos_next_use_companion_pick(int *reason_out) {
+    struct monst *mtmp, *best = (struct monst *) 0;
+    int seen = 0, d, best_d = 0;
+
+    if (!Hallucination && !u.uswallow)
+        for (mtmp = fmon; mtmp; mtmp = mtmp->nmon) {
+            if (!companion_on_screen(mtmp)) continue;
+            ++seen;
+            if (!companion_qualifies(mtmp)) continue;
+            d = dist2(mtmp->mx, mtmp->my, u.ux, u.uy);
+            if (!best || d < best_d
+                || (d == best_d
+                    && (mtmp->my < best->my
+                        || (mtmp->my == best->my && mtmp->mx < best->mx)))) {
+                best = mtmp;
+                best_d = d;
+            }
+        }
+    if (reason_out)
+        *reason_out = best ? CHAOS_W_SUPPRESSED_UNRECORDED
+                    : seen ? CHAOS_W_SUPPRESSED_NOT_ELIGIBLE
+                           : CHAOS_W_SUPPRESSED_NONE_IN_VIEW;
+    return best;
+}
+
+/* #196 (C3): the safe-point admission check. chaos_next_use_safe.c refers to
+ * it weakly, so objects linked without the game (episode-scope fixtures)
+ * never pull in the map/monster symbols this needs. */
+int chaos_next_use_companion_in_view(void *opaque) {
+    (void)opaque;
+    return chaos_next_use_companion_pick((int *) 0) != (struct monst *) 0;
+}
+
 void chaos_next_use_whistle_completed(struct obj *obj, long completed_root) {
     struct obj *otmp;
-    struct monst *mtmp, *candidate, *resident, *id_owner;
+    struct monst *candidate, *resident, *id_owner;
     boolean tool_member, valid_whistle, current_member, captured;
     unsigned captured_id;
-    int candidates, id_count;
+    int reason, id_count;
 
     if (!obj || completed_root <= 0) return;
     tool_member = FALSE;
@@ -556,21 +613,11 @@ void chaos_next_use_whistle_completed(struct obj *obj, long completed_root) {
     if (valid_whistle
         && chaos_next_use_action_preflight(CHAOS_NEXT_USE_FAMILY_W,
                                             completed_root)) {
-        candidate = (struct monst *) 0;
-        candidates = 0;
-        if (!Hallucination && !u.uswallow)
-            for (mtmp = fmon; mtmp; mtmp = mtmp->nmon) {
-                if (DEADMONSTER(mtmp) || !canseemon(mtmp)
-                    || !isok(mtmp->mx, mtmp->my)) continue;
-                if (chaos_presentation_snapshot(mtmp->mx, mtmp->my,
-                                                 PM_LITTLE_DOG, 0)) {
-                    candidate = mtmp;
-                    ++candidates;
-                }
-            }
-        if (candidates == 1
-            && chaos_next_use_on_action(CHAOS_NEXT_USE_FAMILY_W,
-                                        completed_root, 0)) {
+        candidate = chaos_next_use_companion_pick(&reason);
+        if (!candidate) {
+            chaos_next_use_whistle_suppressed(completed_root, reason);
+        } else if (chaos_next_use_on_action(CHAOS_NEXT_USE_FAMILY_W,
+                                            completed_root, 0)) {
             current_member = FALSE;
             for (resident = fmon; resident; resident = resident->nmon)
                 if (resident == candidate && !DEADMONSTER(resident)) {
@@ -578,13 +625,7 @@ void chaos_next_use_whistle_completed(struct obj *obj, long completed_root) {
                     break;
                 }
             captured = FALSE;
-            if (current_member
-                && candidate->mtyp == PM_LITTLE_DOG
-                && candidate->mtame && get_mx(candidate, MX_EDOG)
-                && candidate != u.usteed && candidate != u.urider
-                && !candidate->mleashed && !get_mx(candidate, MX_ESUM)
-                && !mon_attacktype(candidate, AT_EXPL)
-                && !Conflict && !candidate->mberserk) {
+            if (current_member && companion_qualifies(candidate)) {
                 captured_id = candidate->m_id;
                 id_count = 0;
                 id_owner = (struct monst *) 0;
@@ -602,9 +643,8 @@ void chaos_next_use_whistle_completed(struct obj *obj, long completed_root) {
                 }
             }
             if (!captured)
-                chaos_next_use_whistle_unavailable(completed_root);
-        } else if (candidates != 1) {
-            chaos_next_use_whistle_unavailable(completed_root);
+                chaos_next_use_whistle_suppressed(
+                    completed_root, CHAOS_W_SUPPRESSED_RECHECK_FAILED);
         }
     }
 }

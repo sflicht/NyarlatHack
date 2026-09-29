@@ -130,8 +130,9 @@ struct chaos_next_use_runtime_private_record {
                  char context_sha256[65]; int intent_present;
                  struct chaos_next_use_intent intent; char intent_sha256[65];
                  int intent_sha256_present, failure_code_present; } intent;
+        /* suppression: #196 reason on W_CAPTURE_SUPPRESSED, else 0. */
         struct { int family, outcome; long root, activation_monstermoves;
-                 unsigned m_id; } effect;
+                 unsigned m_id; int suppression; } effect;
         struct { int failure_code, reason, slot_f, slot_w, w_runtime; } termination;
     } data;
 };
@@ -257,6 +258,8 @@ int chaos_next_use_replay_legacy_fixture(const struct chaos_next_use_replay_inpu
 void chaos_next_use_mark_identity_unsafe(void);
 int chaos_next_use_take_identity_unsafe(void);
 void chaos_next_use_whistle_unavailable(long completed_root);
+/* #196: as whistle_unavailable, recording why (chaos_next_use_w_suppression). */
+void chaos_next_use_whistle_suppressed(long completed_root, int reason);
 void chaos_next_use_capture_whistle(long completed_root, unsigned m_id,
                                     long at_move);
 boolean chaos_next_use_whistle_decision_ready(unsigned m_id);
