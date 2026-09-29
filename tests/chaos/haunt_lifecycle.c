@@ -143,6 +143,10 @@ static int admission(const char *which, int prefixed) {
  * with the logged `budget` reason. Trial outcome is controlled, as above. */
 static int fcfs_telegraphs;
 static int fcfs_warn(void *opaque,const char *text) {(void)opaque;if(!text||!text[0])return 0;++fcfs_telegraphs;return 1;}
+/* #196 (C3): this map holds no monsters, so the engine's own companion check
+ * would refuse the W program for no_companion_in_view before budget is ever
+ * compared. The subject here is budget contention, so a companion is in view. */
+static int fcfs_companion(void *opaque) {(void)opaque;return 1;}
 static int fcfs(const char *order) {
  int x,y,dir,haunt_first=!strcmp(order,"haunt-first");
  static char visible[ROWNO][COLNO],*rows[ROWNO];
@@ -164,6 +168,8 @@ static int fcfs(const char *order) {
  /* The engine's own delivered W origin, exactly as next_use_bind_owned binds it. */
  chaos_next_use_safe_bind_logical(1750000001L);chaos_next_use_safe_bind_run(run);
  chaos_next_use_safe_bind_telegraph(fcfs_warn,NULL);
+ /* "no-companion" leaves the engine's own check live on this empty map. */
+ if(strcmp(order,"no-companion"))chaos_next_use_safe_bind_companion(fcfs_companion,NULL);
  memset(&origin,0,sizeof origin);strcpy(origin.fact,"ordinary_whistle");
  origin.family=CHAOS_NEXT_USE_FAMILY_W;origin.level_dnum=1;origin.level_dlevel=1;
  origin.move=10;origin.root=10;origin.notice_seq=11;origin.end_seq=12;memcpy(origin.run,run,65);
@@ -174,6 +180,14 @@ static int fcfs(const char *order) {
   chaos_next_use_safe_last(&res);
   assert(res.loaded && res.rejected && !res.admitted && res.reasons==CHAOS_NEXT_USE_SAFE_BUDGET);
   assert(u.chaos.spent==2 && u.haunt.active);
+ } else if(!strcmp(order,"no-companion")) {
+  /* #196 (C3), production check: no companion on screen, so refused before
+   * any charge or telegraph; the haunt then gets the budget as usual. */
+  (void)chaos_next_use_on_safe(dir,1,u.usanity,&u.chaos,1,1);
+  chaos_next_use_safe_last(&res);
+  assert(res.loaded && res.rejected && !res.admitted
+         && res.reasons==CHAOS_NEXT_USE_SAFE_NO_COMPANION);
+  assert(u.chaos.spent==0 && fcfs_telegraphs==0);
  } else {
   (void)chaos_next_use_on_safe(dir,1,u.usanity,&u.chaos,1,1);
   chaos_next_use_safe_last(&res);

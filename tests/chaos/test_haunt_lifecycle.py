@@ -475,6 +475,27 @@ class HauntLifecycleTests(unittest.TestCase):
         self.assertIn("order=candidate-first spent=1", out)
         self.assertIn("admitted=1 reasons=0 haunt_active=0", out)
 
+    def test_no_companion_in_view_refuses_w_before_budget(self):
+        """#196 (C3) with the engine's own check on an empty map: the W
+        program is refused before any charge or telegraph, so the haunt is not
+        blocked by it and nothing is spent on the refused whisper."""
+        out, _, receipts = self.fcfs("no-companion")
+        self.assertEqual(
+            receipts,
+            [
+                {
+                    "next_use_decision_v": 1,
+                    "decision": "rejected",
+                    "at": 1,
+                    "safe": 1,
+                    "move": 10,
+                    "reasons": ["no_companion_in_view"],
+                }
+            ],
+        )
+        self.assertIn("order=no-companion spent=0 telegraphs=0 admitted=0", out)
+        self.assertIn(f"reasons={1 << 16} ", out)
+
     def test_absent_run_directory_keeps_lifecycle(self):
         self.check(False)
 

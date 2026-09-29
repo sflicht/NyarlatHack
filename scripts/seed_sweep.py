@@ -103,6 +103,20 @@ def aggregate(games):
         outcomes = {}
         for g in rows:
             outcomes[g["outcome"]] = outcomes.get(g["outcome"], 0) + 1
+        # #196: recorded W suppression reasons, and safe-point refusals whose
+        # recorded reasons include no_companion_in_view (C3).
+        suppressions = {}
+        for g in rows:
+            for why in g["funnel"].get("w_suppressions", []):
+                suppressions[why] = suppressions.get(why, 0) + 1
+        c3 = [
+            sum(
+                1
+                for d in g["funnel"].get("recorded_decisions", [])
+                if "no_companion_in_view" in d["reasons"]
+            )
+            for g in rows
+        ]
         out[start] = {
             "games": len(rows),
             "outcomes": dict(sorted(outcomes.items())),
@@ -120,6 +134,11 @@ def aggregate(games):
             "loss_reasons": dict(
                 sorted(losses.items(), key=lambda kv: (-kv[1], kv[0]))
             ),
+            "w_suppressions_by_reason": dict(sorted(suppressions.items())),
+            "no_companion_refusals": {
+                "games": sum(1 for n in c3 if n),
+                "decisions": sum(c3),
+            },
             "first_admission_move": _dist(
                 [
                     g["funnel"]["first_admission_move"]
@@ -218,6 +237,18 @@ def markdown(report):
             "- Loss reasons (first lost stage per game): "
             + ", ".join(f"{k} {v}" for k, v in a["loss_reasons"].items())
         )
+        lines.append(
+            "- W capture suppressions by recorded reason: "
+            + (
+                ", ".join(f"{k} {v}" for k, v in a["w_suppressions_by_reason"].items())
+                or "none"
+            )
+        )
+        lines.append(
+            "- Safe-point refusals for no companion in view: "
+            f"{a['no_companion_refusals']['decisions']} decisions in "
+            f"{a['no_companion_refusals']['games']} games"
+        )
         lines.append(f"- First admission move: {a['first_admission_move']}")
         lines.append(
             "- Outcomes: " + ", ".join(f"{k} {v}" for k, v in a["outcomes"].items())
@@ -237,8 +268,10 @@ def markdown(report):
         "- `rejected:` loss reasons are the engine's recorded decision row (every failing",
         "  check, #177). Reasons marked `inferred:` are guesses from public event timing",
         "  (`turn`, not monstermoves), used only where the engine wrote no decision row.",
-        "- `whistle_capture_suppressed`: admitted, but the engine skipped the callback",
-        "  because there was not exactly one eligible target (by design).",
+        "- `whistle_capture_suppressed`: admitted, but at the first whistle no qualifying",
+        "  companion was in view, so the engine skipped the callback (by design, #196).",
+        "  The recorded reason says whether none was in view, only ineligible ones were,",
+        "  or the chosen one stopped qualifying before capture.",
         "- A single one-shot next-use program per game (the launcher's current design).",
         "- The inherited start fixes one artifact (Vampire Killer); others are untested.",
         "- In-game mail is off (`!mail`): it reads the host mail spool, not the seed.",
