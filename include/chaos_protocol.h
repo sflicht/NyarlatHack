@@ -166,9 +166,10 @@ struct chaos_state {
     struct chaos_effect effects[CHAOS_KINDS];
     int cosmetic_seen;
     long cosmetic_last_turn;
-    /* State v3, #164 prototype pacing. With pacing 0 (the default) every
-     * field below is zero and capacity is exactly the policy-2 formula. */
-    int pacing;       /* 0 policy 2; 1 #164 prototype pacing, chosen at new game */
+    /* State v3, #164 pacing. A new game paces by default (pacing 1);
+     * NYARLATHACK_PACING=0 chooses pacing 0, where every field below is zero
+     * and capacity is exactly the policy-2 formula. Saved with the game. */
+    int pacing;       /* 1 #164 pacing (default); 0 policy 2; chosen at new game */
     int deepest;      /* deepest level reached; only ever grows */
     int credited;     /* CHAOS_PACING_SRC_* bits: sources with a delivery */
     int level_spent;  /* points spent since `deepest` last grew (per-level cap) */
@@ -190,7 +191,7 @@ int chaos_budget(const struct chaos_state *, int);
 /* Fixed-price lifetime debit: only spent changes; failures leave state intact. */
 int chaos_spend_non_effect(struct chaos_state *, int, int);
 void chaos_expire(struct chaos_state *, long);
-/* #164 prototype pacing; all are no-ops on a policy-2 (pacing 0) state. */
+/* #164 pacing; all are no-ops on a policy-2 (pacing 0) state. */
 void chaos_charge(struct chaos_state *, int);
 void chaos_commit_charge(struct chaos_state *, const struct chaos_state *);
 void chaos_pacing_level(struct chaos_state *, int);

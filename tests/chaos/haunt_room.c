@@ -76,7 +76,7 @@ static int mapped(const char *path,int *px,int *py,int *qx,int *qy) {
  assert(*px>0);return 1;
 }
 int main(int argc,char **argv) {
- int w,h,px,py,seed,ticks=1,dir,i,count,qx=-1,qy=-1;long seq;const char *map=getenv("HAUNT_ROOM_MAP");
+ int w,h,px,py,seed,ticks=1,dir,i,count,qx=-1,qy=-1,away_tick=0,away_x=0,away_y=0,checked_before=-1;long seq;const char *map=getenv("HAUNT_ROOM_MAP");
  if(argc!=6 && argc!=7){fprintf(stderr,"usage: haunt_room W H PX PY SEED [TICKS]\n");return 2;}
  w=atoi(argv[1]);h=atoi(argv[2]);px=atoi(argv[3]);py=atoi(argv[4]);seed=atoi(argv[5]);
  if(argc==7)ticks=atoi(argv[6]);
@@ -120,6 +120,10 @@ int main(int argc,char **argv) {
   pet=makemon(&mons[PM_LITTLE_DOG],X0+qx,Y0+qy,MM_NOGROUP|MM_NOWAIT|NO_MINVENT|MM_EDOG);
   assert(pet);initedog(pet);
  }
+ if(getenv("HAUNT_ROOM_PET_AWAY")) {
+  /* #201: before tick K (1-based), the pet walks to room offset X,Y. */
+  assert(sscanf(getenv("HAUNT_ROOM_PET_AWAY"),"%d,%d,%d",&away_tick,&away_x,&away_y)==3 && away_tick>=1);
+ }
  if(getenv("HAUNT_ROOM_PICK")) {
   /* Direct handler check: an admitted hound at H, the footsteps trail aimed
    * at T (room offsets), one real chaos_haunt_pick over the game's own
@@ -151,9 +155,17 @@ int main(int argc,char **argv) {
  dir=open(getenv("NYARLATHACK_RUN_DIR"),O_RDONLY|O_DIRECTORY);assert(dir>=0);
  reseed_period=INT_MAX;reseed_count=0;srandom((unsigned)seed);
  seq=u.chaos.seq;
- for(i=0;i<ticks;++i){chaos_haunt_tick(dir);u.haunt.last_turn=moves;}
+ for(i=0;i<ticks;++i) {
+  if(i+1==away_tick) {
+   struct monst *pet;
+   checked_before=u.haunt.checked;
+   for(pet=fmon;pet && !pet->mtame;pet=pet->nmon);
+   assert(pet);remove_monster(pet->mx,pet->my);place_monster(pet,X0+away_x,Y0+away_y);
+  }
+  chaos_haunt_tick(dir);u.haunt.last_turn=moves;
+ }
  count=reseed_count;
- printf("room=%dx%d at=%d,%d seed=%d checked=%d active=%d spent=%d telegraphs=%d events=%ld rng=%d\n",
-        w,h,px,py,seed,u.haunt.checked,u.haunt.active,u.chaos.spent,telegraphs,u.chaos.seq-seq,count);
+ printf("room=%dx%d at=%d,%d seed=%d checked=%d active=%d spent=%d telegraphs=%d events=%ld rng=%d checked_before_away=%d\n",
+        w,h,px,py,seed,u.haunt.checked,u.haunt.active,u.chaos.spent,telegraphs,u.chaos.seq-seq,count,checked_before);
  close(dir);return 0;
 }

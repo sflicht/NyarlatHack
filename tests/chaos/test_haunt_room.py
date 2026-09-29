@@ -178,61 +178,94 @@ class HauntRoomTests(RetainOnFailure):
         self.assertEqual(got["square"], "2,2", got)
 
     # --- the whole trial -------------------------------------------------------
-    def test_pet_on_hound_target_trial_passes(self):
-        # Before #190 these rejected the one trial: moved 1, blocked 63.
+    # --- #201: never spawn within the pet's reach -------------------------------
+    def assert_nothing_spent(self, fields, report, run):
+        self.assertEqual(fields["checked"], "0", fields)
+        self.assertIsNone(report)
+        self.assertFalse((run / "haunting-used.lua").exists())
+        self.assertFalse((run / "dreamlands.json").exists())
+        events = (run / "events.jsonl").read_text().splitlines()
+        self.assertFalse([e for e in events if '"event":"haunting"' in e], events)
+        self.assertEqual(
+            (fields["spent"], fields["active"], fields["telegraphs"], fields["rng"]),
+            ("0", "0", "0", "0"),
+            fields,
+        )
+
+    def test_pet_near_every_candidate_no_spend(self):
+        # Every square that could hold the hound (in view, 3 to 5 from the
+        # player) is within 4 of the pet. The tick returns before the one
+        # trial: nothing is spent or written, no RNG is drawn, and repeating
+        # the tick changes nothing. These are the #190 rooms whose trial used
+        # to run with the pet beside the hound's path.
         for room, player, pet in (
             ((4, 4), (0, 2), (1, 2)),
             ((5, 4), (0, 2), (1, 2)),
             ((5, 5), (4, 3), (3, 3)),
+            ((12, 6), (1, 2), (2, 2)),
         ):
             with self.subTest(room=room, player=player, pet=pet):
-                name = "pet-%dx%d" % room
                 fields, report, run = self.run_room(
-                    name, [*room, *player, 1], HAUNT_ROOM_PET="%d,%d" % pet
+                    "pet-near-%dx%d" % room,
+                    [*room, *player, 1, 5],
+                    HAUNT_ROOM_PET="%d,%d" % pet,
                 )
-                self.assertEqual(report["accepted"], 1, report)
-                self.assertGreater(report["moved"], 8, report)
-                self.assertEqual(report["escaped"], 1, report)
-                self.assertEqual(
-                    (fields["checked"], fields["active"], fields["spent"]),
-                    ("1", "1", "2"),
-                )
-                self.assertEqual(fields["telegraphs"], "1")
+                self.assert_nothing_spent(fields, report, run)
+
+    def test_pet_moves_off_then_trial_runs_later(self):
+        # Same 12x6 room: nothing qualifies while the pet is beside the
+        # player. Before the third tick the pet walks to the far corner; that
+        # tick places the hound more than 4 from it and runs the one trial.
+        fields, report, run = self.run_room(
+            "pet-away-12x6",
+            [12, 6, 1, 2, 1, 3],
+            HAUNT_ROOM_PET="2,2",
+            HAUNT_ROOM_PET_AWAY="3,11,5",
+        )
+        self.assertEqual(fields["checked_before_away"], "0", fields)
+        self.assertIsNotNone(report, fields)
+        self.assertEqual((report["accepted"], report["escaped"]), (1, 1), report)
+        self.assertEqual(
+            (
+                fields["checked"],
+                fields["active"],
+                fields["spent"],
+                fields["telegraphs"],
+            ),
+            ("1", "1", "2", "1"),
+        )
 
     def test_start_stairs_trial_passes(self):
-        # The player paces from the up staircase they started on, with the
-        # pet beside it, as in most real start rooms.
-        for room, player, pet in (
-            ((5, 4), (1, 1), (2, 2)),
-            ((6, 4), (2, 1), (3, 1)),
-        ):
-            with self.subTest(room=room, player=player, pet=pet):
+        # #190: the player paces from the up staircase they started on. The
+        # pet is out of the way (#201 would not place the hound near it).
+        for room, player in (((5, 4), (1, 1)), ((6, 4), (2, 1))):
+            with self.subTest(room=room, player=player):
                 fields, report, _ = self.run_room(
                     "stairs-%dx%d" % room,
                     [*room, *player, 1],
                     HAUNT_ROOM_STAIRS="%d,%d" % player,
-                    HAUNT_ROOM_PET="%d,%d" % pet,
                 )
                 self.assertIsNotNone(report, fields)
                 self.assertEqual(report["accepted"], 1, report)
                 self.assertGreater(report["moved"], 8, report)
 
-    def test_cornered_residual_documented(self):
-        # Accepted residual (#190 option (c); #194 tracks the fix). The trial
-        # bot walks only plain floor, so in a 4x3 room the stairs and the pet
-        # leave it a pocket with no square 3 away from the hound: the hound
-        # moves, reaches it and the trial rejects. This pins the known
-        # behaviour; when #194 lets the bot use stairs, expect it to pass.
-        fields, report, _ = self.run_room(
-            "cornered-4x3",
-            [4, 3, 0, 1, 1],
-            HAUNT_ROOM_STAIRS="0,1",
-            HAUNT_ROOM_PET="1,1",
-        )
-        self.assertIsNotNone(report, fields)
-        self.assertEqual((report["accepted"], report["escaped"]), (0, 0), report)
-        self.assertGreater(report["moved"], 0, report)
-        self.assertGreater(report["contacts"], 0, report)
+    def test_start_stairs_with_pet_waits(self):
+        # The #190 start rooms with the pet beside the stairs, and the 4x3
+        # "cornered" pocket (#194): the pet is within 4 of every candidate,
+        # so since #201 the trial is not spent there at all.
+        for room, player, pet in (
+            ((5, 4), (1, 1), (2, 2)),
+            ((6, 4), (2, 1), (3, 1)),
+            ((4, 3), (0, 1), (1, 1)),
+        ):
+            with self.subTest(room=room, player=player, pet=pet):
+                fields, report, run = self.run_room(
+                    "stairs-pet-%dx%d" % room,
+                    [*room, *player, 1],
+                    HAUNT_ROOM_STAIRS="%d,%d" % player,
+                    HAUNT_ROOM_PET="%d,%d" % pet,
+                )
+                self.assert_nothing_spent(fields, report, run)
 
     def test_bare_rooms(self):
         # No hound can be placed 3 squares away in 3x3: nothing is spent or

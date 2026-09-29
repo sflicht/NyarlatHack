@@ -162,6 +162,20 @@ static void recollect(void) {
   h->echo_delivered=1;
  }
 }
+/* #201: the starting pet killed most hounds before the player saw them (the
+ * pet usually attacks first). A spawn square must be more than
+ * CHAOS_HAUNT_PET_CLEARANCE squares from every pet on the level; a steed is
+ * under the player and is not counted. When no square qualifies the tick
+ * returns before the trial is spent, exactly as for a room with no square 3
+ * away, so a later turn retries once the pet has wandered off. No RNG, no new
+ * state; the shadow trial and live play share this one placement. */
+#define CHAOS_HAUNT_PET_CLEARANCE 4
+static boolean near_pet(int x,int y) {
+ struct monst *m;
+ for(m=fmon;m;m=m->nmon)
+  if(!DEADMONSTER(m) && m->mtame && m!=u.usteed && distmin(m->mx,m->my,x,y)<=CHAOS_HAUNT_PET_CLEARANCE)return TRUE;
+ return FALSE;
+}
 void chaos_haunt_tick(int dir) {
  struct chaos_haunt_state *h=&u.haunt;int i,x,y,fd,found=0,back=0;ssize_t n;
  struct trial_input where={0,0};struct chaos_shadow_report report;char receipt[512];
@@ -193,7 +207,7 @@ void chaos_haunt_tick(int dir) {
  }
  for(y=u.uy-5;y<=u.uy+5&&!found;++y)for(x=u.ux-5;x<=u.ux+5;++x)
   if(simple_floor(x,y) && cansee(x,y) && !m_at(x,y) && distmin(x,y,u.ux,u.uy)>=3 &&
-     goodpos(x,y,NULL,0)){where.x=x;where.y=y;found=1;break;}
+     !near_pet(x,y) && goodpos(x,y,NULL,0)){where.x=x;where.y=y;found=1;break;}
  if(!found)return;
  fd=private_file(dir,"haunting.lua",O_RDONLY);if(fd<0)return;
  n=read(fd,h->source,CHAOS_LUA_SOURCE+1);close(fd);

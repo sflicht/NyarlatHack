@@ -267,7 +267,7 @@ def validate(d):
         "budget ceiling",
     )
 
-    # #164 prototype pacing (state v3). Credits and the per-level cap are
+    # #164 pacing (state v3, on by default). Credits and the per-level cap are
     # bounded so capacity never exceeds the unchanged lifetime ceiling logic.
     pacing = d["pacing"]
     require(
