@@ -9,7 +9,8 @@ All new engine code is under the NetHack General Public License (`dat/license`).
 
 ## Cosmetic pacing prototype and migration
 
-Current native state/save version is **2**, ordinary events **3**, opt-in
+Current native state/save version is **3** (#164 added the pacing fields,
+now on by default; policy and prices are unchanged), ordinary events **3**, opt-in
 observation events **4**, request grammar **1**, and admission-journal policy
 **2** (journal `v` remains request version 1). These are separate version axes.
 Historical ordinary v1/observation v2 readers retain their old prices and
@@ -219,13 +220,55 @@ admission. Existing `pre_admitted` and `admitted`/`accepted` events show the
 pre- and post-charge budget; no extra spend rows or whisper IDs are introduced.
 Expiry refunds none of these spenders.
 
+### Pacing (#164; on by default)
+
+Sam chose these values on 2026-09-29 from the #164 measurement
+(`docs/evidence/budget-v2-164/`): N = 4, K = 3, witnessed +1 per source capped
+at +2, ceiling 12. They are design choices, not a balance claim.
+
+Every new game records `pacing = 1` in its saved state for its whole life. A new
+game started with `NYARLATHACK_PACING=0` records `pacing = 0` instead and keeps
+the exact formula above, with all pacing fields zero; that opt-out is for
+measurement and comparison. Restore never switches it: a saved game keeps the
+choice it started with, whatever the environment says.
+
+With pacing on, capacity grows from public progress, each term capped:
+
+- **Sanity lost:** the existing `2 + floor((100 - Sanity) / 10)`.
+- **Descent (N = 4):** `+1` per level of the deepest level reached beyond DL2
+  (`deepest_lev_reached`, the depth the player sees), at most `+4`. The saved
+  `deepest` only grows, so going back up and down again earns nothing.
+- **Witnessed (+1, cap +2):** `+1` for each source that *delivered* at least
+  once: a hound step the player saw, a curio use, or a next-use effect that was
+  witnessed or applied. Once per source, at most `+2` in total. Display without
+  delivery earns nothing, and noticing is never inferred.
+- **Ceiling (12) unchanged:** capacity never exceeds `CHAOS_BUDGET_CEILING`.
+- **Per-level cap (K = 3):** at most 3 points are spent between one new deepest
+  level and the next. Only a new deepest level opens a fresh allowance, so
+  stair-bouncing cannot farm it. Hunger (3) fits; the ward effect (4) is priced
+  above K and therefore **cannot be admitted in a paced game**. Ward stays
+  available only with `NYARLATHACK_PACING=0`. This follows from K = 3 and is
+  stated here so nobody mistakes it for a bug.
+
+Available budget = `min(capacity, 12) - lifetime spent`, further limited to
+`3 - spent on this level`. Everything else is unchanged: no periodic refill,
+expiry is not a refund, cosmetics stay separate, over-budget fails closed and
+leaves state untouched. The constants live in `chaos/protocol_contract.json`
+under `pacing` and are regenerated, not edited by hand.
+
+**Save migration.** Pacing adds four saved integers (`pacing`, `deepest`,
+`credited`, `level_spent`), so the native state version is now **3**. As with
+the policy-2 change above, there is no automatic migration: a version-2 save is
+rejected by the structural check and preserved; finish it with the old binary.
+
 At most two active effects, at most one of each rule type; no stacking or refresh.
 An effect installed on turn T lasts for `[T, T+duration)`; rule queries check
 expiry even between safe points. No mutation deals immediate damage or changes
 raw player stats. No effect is admitted during death or negative-multi sleep.
 
 Save/restore includes spent/reserved, last ID, sequence and safe counters, active
-values and absolute expiry turns, cosmetic mask and last delivery turn. No state goes into bones. CHAOS-on and -off
+values and absolute expiry turns, cosmetic mask and last delivery turn, and the
+pacing fields (#164). No state goes into bones. CHAOS-on and -off
 save layouts have distinct version checks and are rejected across that boundary.
 The mailbox is external; replaying an already-consumed ID after restore cannot
 apply twice. A future request at the time of save remains pending until its

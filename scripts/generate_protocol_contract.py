@@ -175,7 +175,7 @@ def validate(d):
     require(
         set(d)
         == set(
-            "format legacy cosmetic observations versions limits budget non_effect_spenders request_fields mutations telegraphs ambient_messages results events phases ack_statuses journal_status event_numbers vitals ack_numbers ack_number_bounds reader_policy wire_order".split()
+            "format legacy cosmetic observations versions limits budget pacing non_effect_spenders request_fields mutations telegraphs ambient_messages results events phases ack_statuses journal_status event_numbers vitals ack_numbers ack_number_bounds reader_policy wire_order".split()
         ),
         "contract keys",
     )
@@ -207,6 +207,7 @@ def validate(d):
         "versions": "request event state",
         "limits": "max_int max_counter request_bytes event_input_cap event_detail_characters request_string_buffer admission_turn_headroom",
         "budget": "sanity_min sanity_max base step ceiling",
+        "pacing": "version descent_from descent_cap level_cap witnessed_credit witnessed_cap",
     }.items():
         require(
             type(d[section]) is dict and set(d[section]) == set(keys.split()),
@@ -239,7 +240,7 @@ def validate(d):
     require(
         type(d["reader_policy"].get("vitals_optional")) is bool, "reader policy type"
     )
-    for section in ("versions", "limits", "budget"):
+    for section in ("versions", "limits", "budget", "pacing"):
         require(
             all(type(v) is int and v >= 0 for v in d[section].values()),
             f"integer {section}",
@@ -249,7 +250,7 @@ def validate(d):
         and all(type(v) is int for v in d["cosmetic"].values()),
         "cosmetic policy",
     )
-    require(d["versions"] == dict(request=1, event=3, state=2), "current versions")
+    require(d["versions"] == dict(request=1, event=3, state=3), "current versions")
     validate_observations(d["observations"])
     limits = d["limits"]
     require(
@@ -264,6 +265,19 @@ def validate(d):
         == budget["base"]
         + (budget["sanity_max"] - budget["sanity_min"]) // budget["step"],
         "budget ceiling",
+    )
+
+    # #164 prototype pacing (state v3). Credits and the per-level cap are
+    # bounded so capacity never exceeds the unchanged lifetime ceiling logic.
+    pacing = d["pacing"]
+    require(
+        pacing["version"] == 1
+        and pacing["descent_from"] >= 1
+        and 0 < pacing["level_cap"] <= budget["ceiling"]
+        and pacing["descent_cap"] <= budget["ceiling"]
+        and pacing["witnessed_credit"] * 4 <= budget["ceiling"]
+        and pacing["witnessed_cap"] <= budget["ceiling"],
+        "pacing",
     )
 
     rows = d["non_effect_spenders"]
@@ -472,6 +486,7 @@ def render(d):
     }
     constants.update({"COSMETIC_" + k.upper(): v for k, v in d["cosmetic"].items()})
     constants.update({"BUDGET_" + k.upper(): v for k, v in d["budget"].items()})
+    constants.update({"PACING_" + k.upper(): v for k, v in d["pacing"].items()})
     for row in d["non_effect_spenders"]:
         constants["SPEND_" + row["name"].upper()] = row["id"]
         constants["COST_" + row["name"].upper()] = row["cost"]
@@ -683,6 +698,7 @@ def render(d):
     values = dict(
         LEGACY=d["legacy"],
         COSMETIC=d["cosmetic"],
+        PACING=d["pacing"],
         STATE_VERSION=d["versions"]["state"],
         OBSERVATION_VERSION=o["wire_version"],
         OBSERVATIONS=o,

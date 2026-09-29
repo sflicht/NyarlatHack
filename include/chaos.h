@@ -61,6 +61,7 @@ void chaos_next_use_manifestation_complete(const struct chaos_whistle_witness *,
 void chaos_next_use_whistle_suppressed(long completed_root, int reason);
 struct monst *chaos_next_use_companion_pick(int *reason_out);
 int chaos_next_use_companion_in_view(void *opaque);
+void chaos_pacing_delivered(int source); /* #164 prototype pacing credit */
 boolean chaos_whistle_attention_message(struct chaos_whistle_witness *witness);
 void chaos_whistle_witness_finalize(struct monst *mtmp,
                                     struct chaos_whistle_witness *witness);

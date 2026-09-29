@@ -21,7 +21,9 @@ class CosmeticContract(unittest.TestCase):
 
     def test_current_and_frozen_legacy(self):
         d = self.data
-        self.assertEqual(d["versions"], dict(request=1, event=3, state=2))
+        self.assertEqual(
+            d["versions"], dict(request=1, event=3, state=3)
+        )  # #164 pacing
         self.assertEqual(d["observations"]["wire_version"], 4)
         self.assertEqual(d["cosmetic"], dict(limit=3, spacing=50, mask=7, policy=2))
         self.assertEqual(

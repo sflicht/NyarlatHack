@@ -313,6 +313,9 @@ def main():
             env,
             NYARLATHACK_RUN_DIR=str(run_dir),
             NYARLATHACK_OBSERVATIONS=str(int(enabled)),
+            # #164: fixture budgets were recorded unpaced; pacing (the
+            # default) caps them at 3 per level, so these games opt out.
+            NYARLATHACK_PACING="0",
         )
         master, slave = pty.openpty()
         terminal = bytearray()

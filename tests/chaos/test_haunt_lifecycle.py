@@ -335,7 +335,8 @@ class HauntLifecycleTests(unittest.TestCase):
         # overwrite its object. The ordinary C checks/RNG still pass this mutant.
         original = ROOT / "src/chaos_haunt.c"
         source = original.read_text()
-        old = "u.chaos.spent=charged.spent;"
+        # #164: the accounting-only publication is now chaos_commit_charge.
+        old = "chaos_commit_charge(&u.chaos,&charged);"
         self.assertEqual(source.count(old), 1, "publication mutation seam changed")
         mutant = self.root / "whole-state-publication.c"
         mutant.write_text(source.replace(old, "u.chaos=charged;"))

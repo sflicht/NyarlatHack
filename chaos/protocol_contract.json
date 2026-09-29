@@ -3,7 +3,7 @@
   "versions": {
     "request": 1,
     "event": 3,
-    "state": 2
+    "state": 3
   },
   "limits": {
     "max_int": 2147483647,
@@ -20,6 +20,14 @@
     "base": 2,
     "step": 10,
     "ceiling": 12
+  },
+  "pacing": {
+    "version": 1,
+    "descent_from": 2,
+    "descent_cap": 4,
+    "level_cap": 3,
+    "witnessed_credit": 1,
+    "witnessed_cap": 2
   },
   "non_effect_spenders": [
     {

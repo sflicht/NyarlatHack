@@ -31,6 +31,8 @@ Ambient now costs **0 mechanical / 1 cosmetic**: at most three deliveries per
 game, each fixed value 1/2/3 once, at least 50 native moves apart. This is a
 prototype, not tuned pacing or continuous full-run presence. Mechanics retain
 the 12-point lifetime ceiling and Sanity gates: curio1, haunt2, hunger3, ward4.
+New games also pace spending by depth by default (#164; see
+[`docs/chaos-protocol.md`](../docs/chaos-protocol.md#pacing-164-on-by-default)).
 Expiry refunds no lifetime spending. Saved cosmetic mask/timestamp survive
 restore; restarting/changing directors or waiting cannot refill them.
 
@@ -214,13 +216,16 @@ has. For a reproducible demonstration, use the game's built-in wizard mode:
 ```sh
 RUN=$(mktemp -d)
 python3 -m chaos pack hunger --run-dir "$RUN" --at 2 --install-only
-(cd dnethackdir && NYARLATHACK_RUN_DIR="$RUN" ./dnethack -D -u wizard)
+(cd dnethackdir && NYARLATHACK_PACING=0 NYARLATHACK_RUN_DIR="$RUN" ./dnethack -D -u wizard)
 ```
 
 Choose a human Wizard, no inheritance. Type `#setsanity`, press Enter, then
 enter `60`. The observed Sanity change creates safe point 2 and admits the
 hunger request. Normal food consumption doubles for the pack's duration.
-Use `pack ward` instead for weakened ward protection. The available pack names
+Use `pack ward` instead for weakened ward protection. `NYARLATHACK_PACING=0`
+matters for ward: under the default pacing (#164) at most 3 points are spent
+per new deepest level, so the 4-point ward effect is never admitted in a paced
+game. Hunger (3) would work with or without it. The available pack names
 are `ambient`, `silence`, `ward`, and `hunger`; `silence` is a different fixed
 ambient message, not a command to mute the director.
 
