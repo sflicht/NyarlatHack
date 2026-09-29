@@ -1,5 +1,10 @@
 # Phase-one observation evidence and publication status
 
+> **Moved artifacts (#176).** The `/tmp` paths cited below were scratch space. Those that
+> still existed on 2026-09-27 were copied, hash-checked, to
+> `~/nyarlathack-evidence/tmp-2026-09/` on the project host; `MAPPING.json` there maps
+> each old path to its new one with per-file SHA-256. The rest were already gone.
+
 ## Current local acceptance — 8f317763a
 
 **Independent PASS for the stated local execution/behavioral gates at

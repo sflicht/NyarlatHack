@@ -13,6 +13,16 @@ that nobody will read.
 - **Keep evidence properly.** Anything worth keeping goes into committed Tier A
   evidence, or into `~/.hermes/reports/nyarlathack-*` with a pointer in the PR.
   Never cite a bare `/tmp` path as the record (see #176).
+- **No `/tmp` citations in `docs/`.** Small evidence (reviews, receipts, logs,
+  result JSON) goes under `docs/evidence/`; larger artifacts go to a durable
+  location outside Git, cited by path plus SHA-256. `scripts/check_docs_tmp.py`
+  (run in Quality CI) fails when a tracked file under `docs/` has a `/tmp`
+  path citation beyond `scripts/docs_tmp_allowlist.json`. That allowlist freezes the
+  historical citations, per file and count; their surviving artifacts were
+  moved to `~/nyarlathack-evidence/tmp-2026-09/` on the project host, mapped in
+  its `MAPPING.json`. Don't add allowlist entries for new evidence. Commands
+  that *create* scratch directories belong in the doc, but write them with
+  `$TMPDIR` rather than a literal `/tmp` path.
 - **Clones and build outputs** are removed once their branch is pushed and the
   tree is clean (no uncommitted changes, stashes or unpushed commits).
 - **Tests tidy up after themselves.** `tests/chaos/artifact_hygiene.py` removes

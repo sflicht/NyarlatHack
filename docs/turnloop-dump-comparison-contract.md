@@ -1,5 +1,10 @@
 # Supplemental turn-loop dump comparison contract
 
+> **Moved artifacts (#176).** The `/tmp` paths cited below were scratch space. Those that
+> still existed on 2026-09-27 were copied, hash-checked, to
+> `~/nyarlathack-evidence/tmp-2026-09/` on the project host; `MAPPING.json` there maps
+> each old path to its new one with per-file SHA-256. The rest were already gone.
+
 ## Narrow approval and status
 
 sflicht approved the separately labelled provenance/header comparison in Discord
