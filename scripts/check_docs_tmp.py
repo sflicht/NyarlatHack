@@ -2,8 +2,8 @@
 """Fail when a tracked file under docs/ cites a /tmp/ path (#176).
 
 /tmp is scratch space and is cleaned, so a /tmp path is not a record. Evidence
-goes under docs/evidence/ or into a durable location outside Git, cited by path
-plus SHA-256 (docs/workspace-hygiene.md). Historical citations that predate the
+goes under docs/evidence/ (Tier A) or docs/measurements/ (Tier B), or into a
+durable location outside Git, cited by path plus SHA-256 (docs/workspace-hygiene.md). Historical citations that predate the
 rule are listed in scripts/docs_tmp_allowlist.json, per file and per citation,
 with a count; their artifacts were moved as recorded in the allowlist's
 "mapping". Any citation beyond the allowlist, in a new or changed file, fails.
@@ -69,7 +69,8 @@ def main(argv=None):
         print("docs cite /tmp: " + line, file=sys.stderr)
     if found:
         print(
-            "Move the artifact under docs/evidence/ or a durable path cited with "
+            "Move the artifact under docs/evidence/ (Tier A), docs/measurements/ "
+            "(Tier B) or a durable path cited with "
             "its SHA-256 (docs/workspace-hygiene.md, #176).",
             file=sys.stderr,
         )

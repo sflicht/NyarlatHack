@@ -15,7 +15,7 @@ The same branch head played `baseline-v1` (300 games) as well. Its report matche
 - 300 of 300 games have identical commands, outcome, final status and funnel;
 - the aggregate is equal.
 
-The branch v1 report digest is `c996c467137ad6692d3b8428537eb8aba8b8eb05b1190ce159c4243cf9ecc80c`. The committed #196 report (`docs/evidence/seed-sweep/baseline-v1-seeds-1-100-196-lifetime-300.json`) differs from current main only in the madman's recorded `start_budget` (4 then, 3 now), because #164 (merged after it) made pacing the default. Commands, outcomes and stage counts are identical.
+The branch v1 report digest is `c996c467137ad6692d3b8428537eb8aba8b8eb05b1190ce159c4243cf9ecc80c`. The committed #196 report (`docs/measurements/seed-sweep/baseline-v1-seeds-1-100-196-lifetime-300.json`) differs from current main only in the madman's recorded `start_budget` (4 then, 3 now), because #164 (merged after it) made pacing the default. Commands, outcomes and stage counts are identical.
 
 ## Results (seeds 1–100)
 
@@ -63,9 +63,25 @@ Death causes (from each game's xlogfile):
 - `baseline-v2-seeds-1-100.json`, `.md`: the v2 report.
 - The v1 reproduction run, per-game directories, `summary.json` and `deaths.json` are kept under `~/.hermes/reports/nyarlathack-179/`.
 
-## Limits
+## Limits (accepted 2026-09-29)
+
+Sam accepted v2 on 2026-09-29 as the measuring stick as it stands. These limits
+are known and accepted; later sweeps are compared against this report, not
+against an improved policy.
+
+- **The inherited Bard still dies early:** 31 of 100 games end before turn 300.
+  The flee, rest and pray rules did not fix this.
+- **The madman rarely finds a whistle:** 2 of 100 games. His next-use numbers
+  measure almost nothing.
+- **New-moon clock bias:** the sweep clock is a fixed new-moon night (see
+  `docs/measurements/seed-sweep/README.md`), so moon- and night-dependent
+  behaviour is measured at one setting only.
+- **Two harness errors:** bard seeds 48 and 75 stop on an unhandled
+  `"I don't know you." "Please follow me."` message. They are counted in the
+  report, not discarded or re-run.
+
+## Other limits
 
 - Engine stages only, from a scripted player. Player notice, attribution and changed decisions are human-only (#44).
-- The sweep clock is still a new-moon night (see `docs/evidence/seed-sweep/README.md`).
 - No Wizard start.
 

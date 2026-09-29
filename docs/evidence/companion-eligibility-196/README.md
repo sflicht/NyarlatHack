@@ -25,7 +25,7 @@ Terms used here:
 
 Raw data, scripts and logs are on the VPS in
 `~/.hermes/reports/nyarlathack-196/`, with a `SHA256SUMS` file. Only the two
-sweep report files are copied into `docs/evidence/seed-sweep/`, as for earlier
+sweep report files are copied into `docs/measurements/seed-sweep/`, as for earlier
 sweeps; none of the raw data is copied.
 
 ## Commit tested
@@ -109,7 +109,7 @@ see.
 
 ## Fresh sweep (also the #164 baseline)
 
-The fresh sweep is `docs/evidence/seed-sweep/baseline-v1-seeds-1-100-196-lifetime-300.{json,md}`:
+The fresh sweep is `docs/measurements/seed-sweep/baseline-v1-seeds-1-100-196-lifetime-300.{json,md}`:
 
 - Policy `baseline-v1`, seeds 1–100, starts bard, madman and bard-inherited.
 - Origin lifetime 300, sweep clock unchanged, under `hermes-heavy`, at

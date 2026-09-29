@@ -15,7 +15,7 @@ keeps replay and no-whisper equality green.
 (RNG) consumption, admission and budget, native effect application, replay,
 and bones. This keeps the full standard: native tests, matched controls,
 save/restore, exact replay, and an evidence entry. Only Tier A PRs add files
-under `docs/evidence/`.
+under `docs/evidence/`; it holds Tier A proof only.
 
 **Tier B: director and presentation.** Covers director selection, prompts,
 post-mortem and chronicle output, telegraph wording, README and other docs,
@@ -26,7 +26,10 @@ validation. The standard is:
 - one smoke run of the changed path;
 - the existing no-whisper equality tests staying green.
 
-Tier B needs no per-PR evidence ledger and no multi-review cycle. A change that
+Tier B needs no per-PR evidence ledger and no multi-review cycle. Tier B
+measurement reports, such as seed sweeps and before/after sweep comparisons,
+go under `docs/measurements/`, one folder per report with a README that gives
+the command, revision and limits. A change that
 alters game state, RNG draws or saves is Tier A, whatever it is labelled.
 
 **Tier C: experiments.** The change sits behind an explicit off-by-default flag

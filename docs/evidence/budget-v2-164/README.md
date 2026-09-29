@@ -12,7 +12,7 @@ decision was taken from, then the final default-path sweep (E).
 ## Where the budget binds today (measured)
 
 - `baseline-v1` without the echo hound: **never.** The committed #196 sweep
-  (`docs/evidence/seed-sweep/baseline-v1-seeds-1-100-196-lifetime-300.*`) has no
+  (`docs/measurements/seed-sweep/baseline-v1-seeds-1-100-196-lifetime-300.*`) has no
   `budget` rejection. The launcher runs one next-use program per game (cost 1)
   and Bard Sanity stayed at 100 in 98 of 100 games, so capacity 2 is never used up.
 - With `--haunt` (hound cost 2): **always, on dungeon level 1.** The hound is

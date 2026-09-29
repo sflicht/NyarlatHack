@@ -14,9 +14,9 @@
   "companion_types_native_tested": ["little dog", "dog", "large dog", "kitten", "housecat", "pony"],
   "companion_type_misbehaviour": false,
   "sweep": {
-    "report": "docs/evidence/seed-sweep/baseline-v1-seeds-1-100-196-lifetime-300.json",
+    "report": "docs/measurements/seed-sweep/baseline-v1-seeds-1-100-196-lifetime-300.json",
     "report_sha256": "a6814c4bc8bcd4e801d1aca57ca92f7c5fe477468aa4dcc1e05d4d4befb29da6",
-    "compared_with": "docs/evidence/seed-sweep/baseline-v1-seeds-1-100-rebind-lifetime-300.json",
+    "compared_with": "docs/measurements/seed-sweep/baseline-v1-seeds-1-100-rebind-lifetime-300.json",
     "games_paired_by_seed": true,
     "games_reaching": {
       "published": {"before": 177, "after": 177},

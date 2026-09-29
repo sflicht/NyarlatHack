@@ -1,4 +1,4 @@
-# Seed sweep evidence (#167)
+# Seed sweep measurements (#167)
 
 `baseline-v1-seeds-1-100.{json,md}` is the first engine-stage funnel report:
 300 games (bard, madman, bard-inherited × seeds 1-100), scripted player,
