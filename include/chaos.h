@@ -60,6 +60,7 @@ void chaos_next_use_manifestation_complete(const struct chaos_whistle_witness *,
                                            long end_seq, int published);
 void chaos_next_use_whistle_suppressed(long completed_root, int reason);
 struct monst *chaos_next_use_companion_pick(int *reason_out);
+int chaos_next_use_companion_in_view(void *opaque);
 boolean chaos_whistle_attention_message(struct chaos_whistle_witness *witness);
 void chaos_whistle_witness_finalize(struct monst *mtmp,
                                     struct chaos_whistle_witness *witness);

@@ -23,9 +23,6 @@ void chaos_next_use_identity_boundary(long, long) __attribute__((weak));
 long chaos_next_use_pack_level(int, int) __attribute__((weak));
 void chaos_next_use_safe_bind_telegraph(int (*)(void *, const char *), void *)
     __attribute__((weak));
-void chaos_next_use_safe_bind_companion(int (*)(void *), void *)
-    __attribute__((weak));
-static int companion_in_view(void *);
 void chaos_next_use_safe_bind_origin(const struct chaos_next_use_origin_ref *,
                                     int) __attribute__((weak));
 static struct chaos_io io = { -1, -1, -1, 0, 0 };
@@ -183,8 +180,6 @@ static void next_use_bind_owned(void)
         chaos_next_use_safe_bind_run(run);
     if (chaos_next_use_safe_bind_telegraph)
         chaos_next_use_safe_bind_telegraph(next_use_warn, 0);
-    if (chaos_next_use_safe_bind_companion)
-        chaos_next_use_safe_bind_companion(companion_in_view, 0);
     if (!chaos_next_use_safe_bind_origin)
         return;
     for (slot = 0; slot < 2; ++slot) {
@@ -593,8 +588,10 @@ struct monst *chaos_next_use_companion_pick(int *reason_out) {
     return best;
 }
 
-/* #196 (C3): bound as the safe-point admission check. */
-static int companion_in_view(void *opaque) {
+/* #196 (C3): the safe-point admission check. chaos_next_use_safe.c refers to
+ * it weakly, so objects linked without the game (episode-scope fixtures)
+ * never pull in the map/monster symbols this needs. */
+int chaos_next_use_companion_in_view(void *opaque) {
     (void)opaque;
     return chaos_next_use_companion_pick((int *) 0) != (struct monst *) 0;
 }

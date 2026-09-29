@@ -20,6 +20,7 @@ static char owned_run[65];
 static int owned_run_set;
 static int (*owned_warn)(void *, const char *);
 static void *owned_warn_opaque;
+int chaos_next_use_companion_in_view(void *) __attribute__((weak));
 static int (*owned_companion)(void *);
 static void *owned_companion_opaque;
 static chaos_next_use_receipt_fn owned_receipt;
@@ -437,7 +438,10 @@ int chaos_next_use_on_safe(int dir, long at_safe, int sanity,
         req.run_hex = owned_run;
     req.telegraph = owned_warn;
     req.telegraph_opaque = owned_warn_opaque;
-    req.companion = owned_companion;
+    /* #196 (C3): a bound check (fixtures) wins; otherwise the engine's own,
+     * resolved weakly so harnesses linked without the game skip it. */
+    req.companion = owned_companion ? owned_companion
+                                    : chaos_next_use_companion_in_view;
     req.companion_opaque = owned_companion_opaque;
     if (owned_receipt) {
         req.receipt = owned_receipt;
