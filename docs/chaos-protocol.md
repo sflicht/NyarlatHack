@@ -29,7 +29,7 @@ Three/50/once is a conservative prototype, **not tuned balance or a claim of
 ongoing full-run presence**. It uses the three existing messages, not new prose.
 
 Mechanical lifetime ceiling remains **12**, with the same Sanity capacity and
-prices: curio 1, haunt 2, hunger 3, ward 4. Cosmetics neither debit nor reserve
+prices: curio 1, haunt 2, hunger 3, ward 3 (4 until 2026-09-29; v1 records keep 4). Cosmetics neither debit nor reserve
 mechanical capacity. This does not reserve capacity for signatures: earlier
 mechanics can still deny later curio/haunt or incidental requests.
 
@@ -184,7 +184,7 @@ a fixed pack before game startup, but it does not change an assigned index.
 | mutation | value | duration (game turns) | telegraph | cost | dynamic eligibility |
 |---|---|---|---|---|---|
 | `ambient` | 1, 2, or 3 | 0 | 1 | 0 mechanical / 1 cosmetic | conscious/living; unused value; 50-move spacing; lifetime cap 3 |
-| `ward_efficacy` | 50 | 1..50 | 2 | 4 | Sanity <=80; no active ward effect |
+| `ward_efficacy` | 50 | 1..50 | 2 | 3 | Sanity <=80; no active ward effect |
 | `hunger_rate` | 2 | 1..50 | 3 | 3 | Sanity <=90; ordinary food metabolism; no active hunger effect |
 
 `ward_efficacy` halves (rounding down) completed ward counts **only in the
@@ -248,10 +248,10 @@ With pacing on, capacity grows from public progress, each term capped:
 - **Ceiling (12) unchanged:** capacity never exceeds `CHAOS_BUDGET_CEILING`.
 - **Per-level cap (K = 3):** at most 3 points are spent between one new deepest
   level and the next. Only a new deepest level opens a fresh allowance, so
-  stair-bouncing cannot farm it. Hunger (3) fits; the ward effect (4) is priced
-  above K and therefore **cannot be admitted in a paced game**. Ward stays
-  available only with `NYARLATHACK_PACING=0`. This follows from K = 3 and is
-  stated here so nobody mistakes it for a bug.
+  stair-bouncing cannot farm it. Hunger (3) and the ward effect (3) each fit
+  exactly, so one of them uses a level's whole allowance: after a ward, nothing
+  else mechanical is admitted until the next new deepest level. (The ward cost
+  4, above K, until Sam lowered it on 2026-09-29.)
 
 Available budget = `min(capacity, 12) - lifetime spent`, further limited to
 `3 - spent on this level`. Everything else is unchanged: no periodic refill,

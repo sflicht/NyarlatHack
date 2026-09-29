@@ -22,7 +22,9 @@ ROWS = (
 )
 CURRENT_ROWS = (
     ("ambient", 1, 3, 0, 0, 1, 0, 100),
-    ("ward_efficacy", 50, 50, 1, 50, 2, 4, 80),
+    # Sam 2026-09-29: ward 4 -> 3 so it fits the paced per-level cap (#164).
+    # ROWS above is the frozen v1 table and keeps the ward at 4.
+    ("ward_efficacy", 50, 50, 1, 50, 2, 3, 80),
     ("hunger_rate", 2, 2, 1, 50, 3, 3, 90),
 )
 EVENTS = "eat read zap apply pray kill level_enter level_leave sanity insight death sleep session safe_point ack telegraph expiry haunting haunt_step backtrack curio".split()

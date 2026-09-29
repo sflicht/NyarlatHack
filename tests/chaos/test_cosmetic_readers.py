@@ -78,7 +78,7 @@ class CosmeticReaders(unittest.TestCase):
     def test_current_tariffs_rejected_and_sentinel(self):
         for name, value, duration, telegraph, cost, cosmetic_cost in (
             ("ambient", 1, 0, 1, 0, 1),
-            ("ward_efficacy", 50, 1, 2, 4, 0),
+            ("ward_efficacy", 50, 1, 2, 3, 0),
             ("hunger_rate", 2, 1, 3, 3, 0),
         ):
             row = current(

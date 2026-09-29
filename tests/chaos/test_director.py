@@ -66,7 +66,7 @@ def current_ack(seq=2, request=None, **kw):
     ambient = request["mutation"] == "ambient"
     row.update(
         v=3,
-        cost={"ambient": 0, "ward_efficacy": 4, "hunger_rate": 3}[request["mutation"]],
+        cost={"ambient": 0, "ward_efficacy": 3, "hunger_rate": 3}[request["mutation"]],
         cosmetic_cost=int(ambient),
         cosmetic=dict(
             seen=(1 << (request["value"] - 1)) if ambient and accepted else 0,

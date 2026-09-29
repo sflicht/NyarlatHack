@@ -96,7 +96,7 @@ class EngineTests(unittest.TestCase):
     def test_telegraph_before_real_rule_effect(self):
         r = dict(REQUEST, mutation="ward_efficacy", value=50, duration=5, telegraph=2)
         s = self.execute(r)
-        self.assertEqual((s["spent"], s["ward"], s["telegraphs"]), (4, 1, 1))
+        self.assertEqual((s["spent"], s["ward"], s["telegraphs"]), (3, 1, 1))
         self.assertEqual(
             [e["event"] for e in self.events],
             ["safe_point", "telegraph", "ack", "safe_point", "ack"],
@@ -202,5 +202,5 @@ class EngineTests(unittest.TestCase):
             dict(REQUEST, mutation="ward_efficacy", value=50, duration=5, telegraph=2),
             "restore",
         )
-        self.assertEqual((s["spent"], s["ward"], s["telegraphs"]), (4, 1, 1))
+        self.assertEqual((s["spent"], s["ward"], s["telegraphs"]), (3, 1, 1))
         self.assertEqual(self.events[-1]["detail"], "duplicate")

@@ -222,10 +222,9 @@ python3 -m chaos pack hunger --run-dir "$RUN" --at 2 --install-only
 Choose a human Wizard, no inheritance. Type `#setsanity`, press Enter, then
 enter `60`. The observed Sanity change creates safe point 2 and admits the
 hunger request. Normal food consumption doubles for the pack's duration.
-Use `pack ward` instead for weakened ward protection. `NYARLATHACK_PACING=0`
-matters for ward: under the default pacing (#164) at most 3 points are spent
-per new deepest level, so the 4-point ward effect is never admitted in a paced
-game. Hunger (3) would work with or without it. The available pack names
+Use `pack ward` instead for weakened ward protection. Under the default pacing (#164) at most 3
+points are spent per new deepest level; ward and hunger each cost 3, so either
+fits on its own but not both on one level. The available pack names
 are `ambient`, `silence`, `ward`, and `hunger`; `silence` is a different fixed
 ambient message, not a command to mute the director.
 
@@ -397,7 +396,7 @@ publication, whole-phase sign-off or consequential-vision (#26) completion.
 ## Safety and lifecycle limits
 
 - The engine currently allows at most 12 lifetime mechanical cruelty points;
-  ambient costs 0 mechanical / 1 cosmetic, hunger 3 and ward weakening 4.
+  ambient costs 0 mechanical / 1 cosmetic, hunger 3 and ward weakening 3.
   Mechanical capacity starts at 2 and gains one for each
   ten Sanity points lost. Expiry releases active reservation but **does not refund
   lifetime spending**. This is conservative prototype policy, not tuned balance.

@@ -37,7 +37,7 @@ enum chaos_result { CHAOS_OK = 0, CHAOS_SCHEMA = 1, CHAOS_OVERSIZE = 2, CHAOS_DU
 enum chaos_contract_rule { CHAOS_RULE_NONE, CHAOS_RULE_HALVE, CHAOS_RULE_DOUBLE };
 #define CHAOS_MUTATION_ROWS(X) \
     X(CHAOS_AMBIENT, "ambient", 0, 1, 1, 3, 0, 0, 1, -1, 0, 0, CHAOS_RULE_NONE) \
-    X(CHAOS_WARD, "ward_efficacy", 4, 0, 50, 50, 1, 50, 2, 80, 0, 1, CHAOS_RULE_HALVE) \
+    X(CHAOS_WARD, "ward_efficacy", 3, 0, 50, 50, 1, 50, 2, 80, 0, 1, CHAOS_RULE_HALVE) \
     X(CHAOS_HUNGER, "hunger_rate", 3, 0, 2, 2, 1, 50, 3, 90, 1, 1, CHAOS_RULE_DOUBLE)
 
 #define CHAOS_RESULT_ROWS(X) \
