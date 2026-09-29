@@ -276,8 +276,19 @@ static int run_case(const char *name, const char *dirpath)
         && strcmp(name, "safemiss") && strcmp(name, "safehit")
         && strcmp(name, "obsorigin") && strcmp(name, "unequalclock") && !rebind) {
         arm = admit_and_act(dirpath, &pet, &telegraphs,
-                            strcmp(name, "nonepet") != 0);
+                            strcmp(name, "nonepet") != 0
+                            && strncmp(name, "suppress_", 9) != 0);
         if (arm < 0) return 2;
+        /* #196: the whistle found no companion to bind; record why. The
+         * "unrecorded" case is the pre-#196 entry point (reason 0). */
+        if (arm == 2 && !strcmp(name, "suppress_unrecorded"))
+            chaos_next_use_whistle_unavailable(10);
+        else if (arm == 2 && !strcmp(name, "suppress_none"))
+            chaos_next_use_whistle_suppressed(10, CHAOS_W_SUPPRESSED_NONE_IN_VIEW);
+        else if (arm == 2 && !strcmp(name, "suppress_ineligible"))
+            chaos_next_use_whistle_suppressed(10, CHAOS_W_SUPPRESSED_NOT_ELIGIBLE);
+        else if (arm == 2 && !strcmp(name, "suppress_recheck"))
+            chaos_next_use_whistle_suppressed(10, CHAOS_W_SUPPRESSED_RECHECK_FAILED);
     }
     restored = 0;
     spent2 = 0;

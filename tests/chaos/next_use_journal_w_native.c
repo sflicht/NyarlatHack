@@ -49,8 +49,21 @@ int main(int argc, char **argv)
     struct chaos_next_use_capture_status status;
     FILE *out;
     int rc = historical_dogmove_main(argc, argv);
+    int suppressed = argc > 1 && !strncmp(argv[1], "suppress_", 9);
     if (rc) return rc;
     assert(chaos_next_use_snapshot_export(&s));
+    /* #196: a suppressed capture ends the program at the whistle. */
+    if (suppressed) {
+        chaos_next_use_capture_status(&status);
+        out = fopen("journal-status.json", "w");
+        assert(out);
+        fprintf(out, "{\"phase\":%d,\"witnessed\":%d,\"attention_claimed\":%d,\"w_runtime\":%d,\"termination_emitted\":%d,\"spent\":%d,\"sink_connected\":%d,\"incomplete\":%d,\"transaction_open\":%d,\"acknowledged_cursor\":%lu}\n",
+            s.phase, s.witnessed, s.attention_claimed, s.w_runtime,
+            s.termination_emitted, u.chaos.spent, status.sink_connected,
+            status.incomplete, status.transaction_open, status.acknowledged_cursor);
+        assert(!fclose(out));
+        return 0;
+    }
     assert(s.attention_claimed && s.callback_ordinal == 1);
     monstermoves = s.activation_monstermoves + 10;
     chaos_next_use_identity_boundary(s.run_token, s.level_token);
