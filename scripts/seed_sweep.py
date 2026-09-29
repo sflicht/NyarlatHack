@@ -65,11 +65,17 @@ def one(job):
     # a shared pool changes inode ctime mid-hash and is rejected by the harness.
     pool = Path(work) / f".assets-{os.getpid()}"
     played = sweep_player.play(gamedir, clock, root, seed, start, policy, pool)
+    v2 = "v2" in played
+    funnel = sweep_funnel.analyse(root, felt=v2)
+    if v2 and funnel["first_felt"] is not None:
+        funnel["first_felt"]["dlvl"] = sweep_funnel.dlvl_at(
+            played["v2"]["dlvl_timeline"], funnel["first_felt"]["turn"]
+        )
     return {
         "start": start,
         "seed": seed,
         **played,
-        "funnel": sweep_funnel.analyse(root),
+        "funnel": funnel,
     }
 
 
@@ -191,7 +197,53 @@ def aggregate(games):
                 g["funnel"]["ordinary_whispers_admitted"] for g in rows
             ),
         }
+        if all("v2" in g for g in rows):
+            out[start].update(aggregate_v2(rows))
     return out
+
+
+def aggregate_v2(rows):
+    """#179 (and #164's rates): only in baseline-v2 reports."""
+    felt = [g["funnel"]["first_felt"] for g in rows if g["funnel"]["first_felt"]]
+    turns = sum(g["funnel"]["last_turn"] or 0 for g in rows)
+    levels = sum(len({d for _, d in g["v2"]["dlvl_timeline"]}) for g in rows)
+    admitted = sum(g["funnel"]["counts"]["admitted"] for g in rows)
+    delivered = sum(g["funnel"]["counts"]["delivered"] for g in rows)
+    hound = sum(g["funnel"]["haunt"].get("accepted", 0) for g in rows)
+    return {
+        "first_felt": {
+            "games": len(felt),
+            "turn": _dist([f["turn"] for f in felt]),
+            "dlvl": _dist([f["dlvl"] for f in felt if f["dlvl"] is not None]),
+            "by_kind": {
+                k: sum(1 for f in felt if f["kind"] == k)
+                for k in ("hound", "next_use_W", "next_use_F")
+            },
+        },
+        "turns_played": turns,
+        "levels_visited": levels,
+        "per_1000_turns": {
+            "admitted": round(1000 * admitted / turns, 3) if turns else None,
+            "delivered": round(1000 * delivered / turns, 3) if turns else None,
+            "hound_accepted": round(1000 * hound / turns, 3) if turns else None,
+        },
+        "per_level": {
+            "admitted": round(admitted / levels, 3) if levels else None,
+            "delivered": round(delivered / levels, 3) if levels else None,
+            "hound_accepted": round(hound / levels, 3) if levels else None,
+        },
+        "hound": {
+            "games_accepted": sum(
+                1 for g in rows if g["funnel"]["haunt"].get("accepted")
+            ),
+            "steps": sum(g["funnel"]["haunt_steps"] for g in rows),
+        },
+        "policy": {
+            k: sum(g["v2"][k] for g in rows)
+            for k in ("prayers", "flees", "rests", "whistles_found")
+        },
+        "games_with_whistle": sum(1 for g in rows if g["whistle_in_inventory"]),
+    }
 
 
 def markdown(report):
@@ -254,6 +306,25 @@ def markdown(report):
             "- Outcomes: " + ", ".join(f"{k} {v}" for k, v in a["outcomes"].items())
         )
         lines.append(f"- Last turn: {a['last_turn']}; final Dlvl: {a['max_dlvl']}")
+        if "first_felt" in a:
+            f = a["first_felt"]
+            lines.append(
+                f"- First felt consequence (#179): {f['games']}/{n} games; "
+                f"turn {f['turn']}; Dlvl {f['dlvl']}; by kind {f['by_kind']}"
+            )
+            lines.append(
+                f"- Rates (#164): per 1000 turns {a['per_1000_turns']}; per level "
+                f"visited {a['per_level']} ({a['turns_played']} turns, "
+                f"{a['levels_visited']} levels)"
+            )
+            lines.append(
+                f"- Hound: accepted in {a['hound']['games_accepted']} games, "
+                f"{a['hound']['steps']} visible steps"
+            )
+            lines.append(
+                f"- Policy v2 actions: {a['policy']}; games holding a whistle: "
+                f"{a['games_with_whistle']}"
+            )
         lines.append(f"- Qualifying-action attempts: {a['qualifying_actions']}")
         lines.append(
             f"- Save/restore: {a['save_restore']['restored']}/{a['save_restore']['attempted']} restored; "
@@ -345,7 +416,8 @@ def tidy_work(work, owned, games, environ=None):
 def write_report(args, lo, hi, starts, games):
 
     identity = {
-        "report_v": REPORT_V,
+        "report_v": REPORT_V
+        + (1 if sweep_player.POLICIES[args.policy].get("version", 1) >= 2 else 0),
         "revision": subprocess.check_output(
             ["git", "rev-parse", "HEAD"], cwd=ROOT, text=True
         ).strip(),
@@ -363,6 +435,17 @@ def write_report(args, lo, hi, starts, games):
         },
         "seeds": [lo, hi],
         "launcher": sweep_player.LAUNCHER,
+        **(
+            {
+                "start_launchers": {
+                    s: sweep_player.START_LAUNCHER[s]
+                    for s in starts
+                    if s in sweep_player.START_LAUNCHER
+                }
+            }
+            if any(s in sweep_player.START_LAUNCHER for s in starts)
+            else {}
+        ),
         "command": f"python3 scripts/seed_sweep.py --seeds {lo}-{hi} --policy {args.policy} "
         f"--starts {','.join(starts)} --out <stem>",
     }

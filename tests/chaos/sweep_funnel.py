@@ -106,7 +106,49 @@ def _publication_loss(events, envelope, qualifying):
     return "inferred:rejected_at_safe_point_other"
 
 
-def analyse(game_root):
+def first_felt(events, effects):
+    """#179: the first delivered, on-screen consequence, from public events.
+
+    - "hound": a visible echo-hound step (haunt_step, written only when the
+      player can see the hound move, #164);
+    - "next_use_W": the whistle-attention notice the player sees (#196);
+    - "next_use_F": a delivered fountain remap (the engine's effect row; the
+      new result is what the player reads when drinking).
+    Returns {"turn", "kind"} or None. Dlvl is added by the sweep from the
+    player's public status-line timeline.
+    """
+    found = []
+    for e in events:
+        o = e.get("observation")
+        if e["event"] == "haunt_step":
+            found.append((e["turn"], "hound"))
+        elif (
+            o
+            and o["operation"] == "whistle_attention"
+            and o["stage"] == "notice"
+            and o.get("fact") == "attention"
+        ):
+            found.append((e["turn"], "next_use_W"))
+    for e in effects:
+        if e["data"]["outcome"] == F_REMAPPED:
+            found.append((e["at_move"], "next_use_F"))
+    if not found:
+        return None
+    turn, kind = min(found)
+    return {"turn": turn, "kind": kind}
+
+
+def dlvl_at(timeline, turn):
+    """Public Dlvl at `turn` from [(turn, dlvl), ...] status-line changes."""
+    level = None
+    for t, d in timeline:
+        if t > turn:
+            break
+        level = d
+    return level
+
+
+def analyse(game_root, felt=False):
     root = Path(game_root)
     run = root / "run"
     events = _rows(run / "events.jsonl")
@@ -240,7 +282,16 @@ def analyse(game_root):
 
     first_admission = min((a["at_move"] for a in admissions), default=None)
     ordinary_whispers = _rows(run / "whispers.jsonl")
+    extra = {}
+    if felt:  # v2 only, so v1 reports keep their exact shape
+        extra["first_felt"] = first_felt(events, effects)
+        extra["haunt"] = {
+            d: sum(1 for e in events if e["event"] == "haunting" and e["detail"] == d)
+            for d in sorted({e["detail"] for e in events if e["event"] == "haunting"})
+        }
+        extra["haunt_steps"] = sum(1 for e in events if e["event"] == "haunt_step")
     return {
+        **extra,
         "counts": counts,
         "delivery_known": delivery_known,
         "loss": loss,
