@@ -56,7 +56,8 @@ POLICIES = {
     }
 }
 
-LAUNCHER = ["--ordinary", "--next-use", "--max-runtime", "86400"]
+# #198: --ordinary now defaults the hound on; the baseline sweep keeps it off.
+LAUNCHER = ["--ordinary", "--next-use", "--no-haunt", "--max-runtime", "86400"]
 DIRECTOR_SETTLED = (
     b"envelope_published_not_admitted",
     b"abstained",

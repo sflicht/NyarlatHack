@@ -20,7 +20,10 @@ python3 -m chaos play --ordinary
 Run these from the repository root. `--ordinary` starts a human Bard with a dog
 and no wizard mode. Answer `n` to the inheritance question, then play normally.
 No model, network or account is needed: the director runs offline from
-hand-written packs. Save with `S` as usual; the launcher prints a private run
+hand-written packs. `--ordinary` turns on the echo hound and the next-use
+program by default (see below); `--no-haunt` and `--no-next-use` turn them off.
+The choice is recorded in the run directory, so resuming a game keeps the
+choice it started with. Save with `S` as usual; the launcher prints a private run
 directory, and `python3 -m chaos play --reuse-run-dir /that/path` resumes it.
 `--ordinary` always uses the same character name, so while a saved game exists
 a fresh `chaos play --ordinary` refuses to start: it exits with an error naming
@@ -37,8 +40,8 @@ you can meet today:
 - **An omen on arrival.** `chaos play` opens with a warning, "A distant whisper
   brushes against your thoughts.", then "The shadows lean closer." Both are in
   Ctrl-P message history if they scroll past.
-- **Your whistle, remembered.** Start with `python3 -m chaos play --ordinary
-  --next-use` and apply your tin whistle. At a later safe moment, such as a
+- **Your whistle, remembered.** Apply your tin whistle (on by default with
+  `--ordinary`; `--no-next-use` turns it off). At a later safe moment, such as a
   prayer, you may be warned "The next whistle may call unusual attention." The
   next whistle may then pull your companion to you. Fountains have a matching
   warning: "The next fountain drink may take a different course."
@@ -50,16 +53,16 @@ you can meet today:
   the [director guide](chaos/README.md#demonstrate-an-actual-rule-change).
 - **The echo hound.** A jackal-bodied hound that hunts where you stood a few
   moves ago, after "Something has learned the rhythm of your footsteps." It
-  is opt-in: start with `python3 -m chaos play --ordinary --haunt` (or
-  `--haunt PACK` for another Lua pack; the default is
-  `chaos/packs/footsteps.lua`). To provoke it, pace back and forth in a
-  room; the starting room is fine. The game runs one hidden trial of the
+  is on by default with `--ordinary` (`--no-haunt` turns it off; `--haunt PACK`
+  picks another Lua pack; the default is `chaos/packs/footsteps.lua`). To
+  provoke it, pace back and forth in a room; the starting room is fine. The game runs one hidden trial of the
   hound, and only lets it in if you could get away from it. That trial
   happens once per game; fewer than one in ten is refused, more often in a
   cramped, cluttered room. The hound can be killed, and it gives up after about
   60 turns or when you leave the level. It costs the Chaos's whole budget at
-  full Sanity, so in a `--next-use` game whichever of the two is admitted
-  first takes it. See also
+  full Sanity, so whichever of the hound and the whistle or fountain program
+  is admitted first takes it. The hound is usually decided within the first
+  dozen turns, so at full Sanity it usually wins (#164 measures this). See also
   [the First Haunting guide](docs/milestone2.md#play-it-with-no-model-call).
 - **Dreamland echoes.** After a hound's trial run, fragments such as "You
   recall footsteps on a path you never took." can appear in Ctrl-P history.

@@ -76,7 +76,8 @@ class OrdinaryHauntTests(RetainOnFailure):
         return any(d in ("accepted", "rejected") for d in self.haunting(game))
 
     def test_ordinary_haunt_trial_telegraph_hound_control_restore_expiry(self):
-        options = ["--ordinary", "--haunt", "--max-runtime", "300"]
+        # #198: next-use is default-on; this test is the hound alone.
+        options = ["--ordinary", "--haunt", "--no-next-use", "--max-runtime", "300"]
         game = self.game("haunt", options)
         game.start()
         self.assertFalse(game.wizard)
@@ -180,7 +181,8 @@ class OrdinaryHauntTests(RetainOnFailure):
     def test_start_room_first(self):
         # #190: pace in the start room FIRST, then in a larger room.
         game = self.game(
-            "start-room", ["--ordinary", "--haunt", "--max-runtime", "300"]
+            "start-room",
+            ["--ordinary", "--haunt", "--no-next-use", "--max-runtime", "300"],
         )
         game.start()
         self.assertFalse(game.wizard)
@@ -217,9 +219,13 @@ class OrdinaryHauntTests(RetainOnFailure):
         self.assertRegex(xlog, r":chaos_admitted=2:")
         self.assertRegex(xlog, r":chaos_spent=2\n$")
 
-    def test_without_haunt_flag_no_candidate_and_no_haunting(self):
-        # The same screen-driven walk and pacing, without --haunt: stock play.
-        game = self.game("control", ["--ordinary", "--max-runtime", "120"])
+    def test_no_haunt_flag_no_candidate_and_no_haunting(self):
+        # #198: was "without --haunt"; the hound is now default-on, so the
+        # same screen-driven walk and pacing opts out: stock play.
+        game = self.game(
+            "control",
+            ["--ordinary", "--no-haunt", "--no-next-use", "--max-runtime", "120"],
+        )
         game.start()
         player = Player(game)
         player.leave()
