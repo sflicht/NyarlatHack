@@ -9,7 +9,8 @@ All new engine code is under the NetHack General Public License (`dat/license`).
 
 ## Cosmetic pacing prototype and migration
 
-Current native state/save version is **2**, ordinary events **3**, opt-in
+Current native state/save version is **3** (#164 added the opt-in prototype
+pacing fields; policy and prices are unchanged), ordinary events **3**, opt-in
 observation events **4**, request grammar **1**, and admission-journal policy
 **2** (journal `v` remains request version 1). These are separate version axes.
 Historical ordinary v1/observation v2 readers retain their old prices and
@@ -219,13 +220,49 @@ admission. Existing `pre_admitted` and `admitted`/`accepted` events show the
 pre- and post-charge budget; no extra spend rows or whisper IDs are introduced.
 Expiry refunds none of these spenders.
 
+### Prototype pacing (#164; opt-in, not tuned balance)
+
+**Prototype pacing, not tuned balance.** The numbers below are starting values
+for a measurement (#164), awaiting Sam's decision; they are not a balance claim.
+A new game started with `NYARLATHACK_PACING=1` records `pacing = 1` in its saved
+state for its whole life; every other game (the default) keeps `pacing = 0` and
+the exact formula above, with all pacing fields zero. Restore never switches it.
+
+With pacing on, capacity grows from public progress, each term capped:
+
+- **Sanity lost:** the existing `2 + floor((100 - Sanity) / 10)`.
+- **Descent (N = 4):** `+1` per level of the deepest level reached beyond DL2
+  (`deepest_lev_reached`, the depth the player sees), at most `+4`. The saved
+  `deepest` only grows, so going back up and down again earns nothing.
+- **Witnessed (+1, cap +2):** `+1` for each source that *delivered* at least
+  once: a hound step the player saw, a curio use, or a next-use effect that was
+  witnessed or applied. Once per source, at most `+2` in total. Display without
+  delivery earns nothing, and noticing is never inferred.
+- **Ceiling (12) unchanged:** capacity never exceeds `CHAOS_BUDGET_CEILING`.
+- **Per-level cap (K = 2):** at most 2 points are spent between one new deepest
+  level and the next. Only a new deepest level opens a fresh allowance, so
+  stair-bouncing cannot farm it. Whisper effects priced above 2 (hunger 3,
+  ward 4) therefore cannot be admitted under pacing; this is a K decision.
+
+Available budget = `min(capacity, 12) - lifetime spent`, further limited to
+`2 - spent on this level`. Everything else is unchanged: no periodic refill,
+expiry is not a refund, cosmetics stay separate, over-budget fails closed and
+leaves state untouched. The constants live in `chaos/protocol_contract.json`
+under `pacing` and are regenerated, not edited by hand.
+
+**Save migration.** Pacing adds four saved integers (`pacing`, `deepest`,
+`credited`, `level_spent`), so the native state version is now **3**. As with
+the policy-2 change above, there is no automatic migration: a version-2 save is
+rejected by the structural check and preserved; finish it with the old binary.
+
 At most two active effects, at most one of each rule type; no stacking or refresh.
 An effect installed on turn T lasts for `[T, T+duration)`; rule queries check
 expiry even between safe points. No mutation deals immediate damage or changes
 raw player stats. No effect is admitted during death or negative-multi sleep.
 
 Save/restore includes spent/reserved, last ID, sequence and safe counters, active
-values and absolute expiry turns, cosmetic mask and last delivery turn. No state goes into bones. CHAOS-on and -off
+values and absolute expiry turns, cosmetic mask and last delivery turn, and the
+pacing fields (#164). No state goes into bones. CHAOS-on and -off
 save layouts have distinct version checks and are rejected across that boundary.
 The mailbox is external; replaying an already-consumed ID after restore cannot
 apply twice. A future request at the time of save remains pending until its

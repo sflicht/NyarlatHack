@@ -128,6 +128,7 @@ int chaos_curio_apply(struct obj *obj, int *move_result)
           intent.sanity_delta);
     pline("%s", intent.text);
     --u.curio.charges;
+    chaos_pacing_credit(&u.chaos, CHAOS_PACING_SRC_CURIO); /* #164: a use is a delivery */
     u.curio.state = intent.state;
     starting_sanity = u.usanity;
     /* FALSE suppresses the extra acute-madness check, not native glyphs or
@@ -327,7 +328,7 @@ void chaos_curio_safe(int dir)
     pline("An uncanny curio may appear on a later floor.");
     u.curio = next;
     /* Publish only accounting: warning hooks may advance event sequence. */
-    u.chaos.spent = charged.spent;
+    chaos_commit_charge(&u.chaos, &charged);
     /* A failed final receipt cannot reopen admission or refund the cost. */
     chaos_event("curio", "result", "admitted");
     busy = 0;

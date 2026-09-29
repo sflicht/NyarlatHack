@@ -150,6 +150,11 @@ class ProtocolTests(unittest.TestCase):
     def test_non_effect_spending(self):
         self.assertEqual(self.run_c(b"", "non-effect"), "non-effect ok")
 
+    def test_prototype_pacing(self):
+        # #164: over-budget fails closed, the per-level cap holds, and the
+        # descent credit uses the deepest level reached only.
+        self.assertEqual(self.run_c(b"", "pacing"), "pacing ok")
+
     def test_event_escaping(self):
         raw = b'quote" slash\\ newline\n tab\t ctrl\x01 utf8\xc3\xa9'
         self.assertEqual(json.loads(self.run_c(raw, "escape")), raw.decode())

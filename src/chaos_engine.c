@@ -243,6 +243,7 @@ void chaos_safe(const char *why) {
     if (busy || chaos_shadow_active()) return;
     busy = 1;
     before = u.chaos.safe;
+    chaos_pacing_level(&u.chaos, deepest_lev_reached(FALSE));
     if (started) {
         c = context();
         chaos_io_safe(&io, &u.chaos, &c, why, show, 0);
@@ -268,7 +269,12 @@ void chaos_start(void) {
     struct chaos_context c;
     if (started) return;
     observation_clear();
-    if (fresh) chaos_state_init(&u.chaos);
+    if (fresh) {
+        chaos_state_init(&u.chaos);
+        /* #164 prototype pacing: opt-in, fixed for the whole game (saved). */
+        flag = getenv("NYARLATHACK_PACING");
+        if (flag && !strcmp(flag, "1")) u.chaos.pacing = 1;
+    }
     oldsanity = u.usanity; oldinsight = u.uinsight;
     started = 1;
     (void)chaos_io_open(&io, getenv("NYARLATHACK_RUN_DIR"));

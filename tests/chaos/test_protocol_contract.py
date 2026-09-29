@@ -42,13 +42,17 @@ class Effect(C.Structure):
 
 def state_type(count=3):
     class NativeState(C.Structure):
-        _fields_ = [(k, C.c_int) for k in "version spent reserved last_id".split()] + [
-            ("seq", C.c_long),
-            ("safe", C.c_long),
-            ("effects", Effect * count),
-            ("cosmetic_seen", C.c_int),
-            ("cosmetic_last_turn", C.c_long),
-        ]
+        _fields_ = (
+            [(k, C.c_int) for k in "version spent reserved last_id".split()]
+            + [
+                ("seq", C.c_long),
+                ("safe", C.c_long),
+                ("effects", Effect * count),
+                ("cosmetic_seen", C.c_int),
+                ("cosmetic_last_turn", C.c_long),
+            ]
+            + [(k, C.c_int) for k in "pacing deepest credited level_spent".split()]
+        )
 
     return NativeState
 
@@ -300,7 +304,7 @@ class CompatibilityTests(unittest.TestCase):
             all(r["mutation"] in ("ward_efficacy", "hunger_rate") for r in choices)
         )
         self.assertEqual(eligible(s), ["ambient", "ward_efficacy"])
-        self.assertEqual(C.sizeof(state_type()), 96)
+        self.assertEqual(C.sizeof(state_type()), 112)  # #164: v3 adds 4 ints
 
     def test_legacy_event_openness(self):
         e = dict(

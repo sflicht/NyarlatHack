@@ -126,7 +126,7 @@ def decode_save(
         test.assertEqual(fields["spent"], 2)  # archived ambient1 + curio1
     elif policy == "current":
         test.assertEqual(fields["spent"], 1)  # current ambient0 + curio1
-        test.assertEqual(schema["chaos_state_version"], 2)
+        test.assertEqual(schema["chaos_state_version"], 3)  # #164 pacing fields
         test.assertEqual(schema["chaos_size"], schema["you"]["chaos"]["size"])
         base = schema["you"]["chaos"]["offset"]
         test.assertLessEqual(base + schema["chaos_size"], len(player))
@@ -139,7 +139,7 @@ def decode_save(
             native[name] = integer(
                 player, dict(offset=base + field["offset"], size=field["size"]), True
             )
-        test.assertEqual(native["version"], 2)
+        test.assertEqual(native["version"], schema["chaos_state_version"])
         fields["cosmetic"] = dict(
             seen=native["cosmetic_seen"], last_turn=native["cosmetic_last_turn"]
         )

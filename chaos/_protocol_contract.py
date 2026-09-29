@@ -94,7 +94,13 @@ LEGACY = {'versions': {'request': 1, 'event': 1, 'state': 1},
                               'expires'],
                 'journal_prefix': ['v', 'turn', 'safe']}}
 COSMETIC = {'limit': 3, 'spacing': 50, 'mask': 7, 'policy': 2}
-STATE_VERSION = 2
+PACING = {'version': 1,
+ 'descent_from': 2,
+ 'descent_cap': 4,
+ 'level_cap': 2,
+ 'witnessed_credit': 1,
+ 'witnessed_cap': 2}
+STATE_VERSION = 3
 OBSERVATION_VERSION = 4
 OBSERVATIONS = {'format': 1,
  'wire_version': 4,
