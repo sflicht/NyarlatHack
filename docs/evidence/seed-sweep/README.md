@@ -70,3 +70,16 @@ witnessed). `admitted_trace_incomplete` (7 games in both runs, all ending in the
 player's death) means the journal has no terminal record, so delivery is
 unknown, not zero. The madman 61 and bard-inherited 67 harness
 errors are the same as in the baseline.
+
+## Companion eligibility re-sweep (#196)
+
+`baseline-v1-seeds-1-100-196-lifetime-300.{json,md}` is the same policy,
+seeds, starts, clock and origin lifetime (300) at revision `4f0689c09`, after
+#196: any visible tame companion with dog data qualifies, the nearest is
+picked, and a whistle program is admitted only with one on screen at the safe
+point. Report digest `a6814c4b…9da6`. Games delivered 11 (the 9 above plus
+bard 60 and bard-inherited 55); admitted 46; armed 26; W capture suppressions
+4, all recorded as `none_in_view`; safe-point refusals that include
+`no_companion_in_view` in 53 games. This is the fresh baseline for #164. The
+comparison with the lifetime-300 report is in
+`docs/evidence/companion-eligibility-196/README.md`.
