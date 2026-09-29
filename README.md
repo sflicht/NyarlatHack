@@ -71,8 +71,9 @@ you can meet today:
   offers to show what it did; the same list goes into the dumplog. For a page
   you can keep or share, run `python3 -m chaos chronicle RUN_DIR --out
   chronicle.html` (or `--format md`) on that game's run directory. It reads
-  only the engine's record (`reveal.json`), works offline and writes nothing
-  into the run directory.
+  only the engine's own records (`reveal.json`, plus the game's xlogfile end
+  record for the character's name and cause of death), works offline and
+  writes nothing into the run directory.
 
 ## Design rules
 

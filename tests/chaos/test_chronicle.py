@@ -100,9 +100,15 @@ class ChronicleTests(unittest.TestCase):
             (self.run_dir / "reveal.json").write_text(record + "\n")
         return section
 
-    def chronicle(self, fmt="html", intent=None):
+    def chronicle(self, fmt="html", intent=None, xlogfile=None):
         out = self.out / f"page.{fmt}"
-        args = SimpleNamespace(run_dir=self.run_dir, format=fmt, out=out, intent=intent)
+        args = SimpleNamespace(
+            run_dir=self.run_dir,
+            format=fmt,
+            out=out,
+            intent=intent,
+            xlogfile=xlogfile or self.out / "no-xlogfile",
+        )
         self.assertEqual(chronicle.run(args), 0)
         return out.read_text()
 
@@ -285,6 +291,113 @@ class ChronicleTests(unittest.TestCase):
             p.unlink()
         p.write_text(json.dumps(record))
         return self.run_dir
+
+    # --- the character: the game's own xlogfile end record -------------------
+    def xlog_line(self, c, **over):
+        """An xlogfile line in the order src/topten.c writes it."""
+        f = dict(
+            version="DNH-3.26.0",
+            points=284,
+            deathdnum=0,
+            deathlev=1,
+            maxlvl=3,
+            hp=0,
+            maxhp=25,
+            deaths=1,
+            role="Brd",
+            race="Hum",
+            gender="Mal",
+            align="Neu",
+            name="Ivo",
+            death="killed by a jackal",
+            flags="0x0",
+            turns=c.final_turn,
+        )
+        f.update(over)
+        tail = ":chaos_admitted=%d:chaos_delivered=%d:chaos_spent=%d" % (
+            over.get("chaos_admitted", c.admitted),
+            c.delivered,
+            c.spent,
+        )
+        keep = {k: v for k, v in f.items() if k != "chaos_admitted"}
+        return ":".join(f"{k}={v}" for k, v in keep.items()) + tail + "\n"
+
+    def test_character_from_matching_xlogfile_line(self):
+        self.transport(REQUEST)
+        self.engine_record()
+        c = chronicle.load(self.run_dir)
+        xlog = self.out / "xlogfile"
+        xlog.write_text(
+            self.xlog_line(c, name="Other", turns=c.final_turn + 1)
+            + self.xlog_line(c)
+            + self.xlog_line(c, name="Late", chaos_admitted=c.admitted + 1)
+        )
+        for fmt in ("html", "md"):
+            page = self.chronicle(fmt, xlogfile=xlog)
+            want = "Ivo the Troubadour: killed by a jackal, deepest level 3."
+            self.assertIn(want if fmt == "html" else chronicle._md_text(want), page)
+            self.assertNotIn("Other", page)
+            self.assertNotIn("Late", page)
+        xlog.write_text(self.xlog_line(c, role="Pri", gender="Fem", death="quit"))
+        self.assertIn("Ivo the Priestess: quit", self.chronicle(xlogfile=xlog))
+
+    def test_character_unknown_is_said_not_guessed(self):
+        self.transport(REQUEST)
+        self.engine_record()
+        c = chronicle.load(self.run_dir)
+        xlog = self.out / "xlogfile"
+        for text, note in (
+            (None, "was not found"),
+            (self.xlog_line(c, turns=c.final_turn + 5), "No end record"),
+            (self.xlog_line(c) + self.xlog_line(c, name="Twin"), "Several"),
+        ):
+            with self.subTest(note=note):
+                if text is None:
+                    xlog.unlink(missing_ok=True)
+                else:
+                    xlog.write_text(text)
+                page = self.chronicle("html", xlogfile=xlog)
+                self.assertIn(note, page)
+                self.assertNotIn("Ivo", page)
+                self.assertNotIn("Twin", page)
+        real = self.out / "real-xlogfile"
+        real.write_text(self.xlog_line(c))
+        xlog.unlink()
+        xlog.symlink_to(real)
+        self.assertNotIn("Ivo", self.chronicle(xlogfile=xlog))
+
+    def test_character_strings_are_escaped(self):
+        self.transport(REQUEST)
+        self.engine_record()
+        c = chronicle.load(self.run_dir)
+        xlog = self.out / "xlogfile"
+        # The game munges ':' out of xlogfile strings; everything else is data.
+        hostile = HOSTILE.replace(":", "")
+        xlog.write_text(self.xlog_line(c, name=hostile, death=hostile))
+        page = self.chronicle("html", xlogfile=xlog)
+        self.assertNotIn("<script", page)
+        self.assertIsNone(re.search(r"<a\b|href\s*=", page))
+        md = self.chronicle("md", xlogfile=xlog)
+        self.assertNotIn("<script", md)
+        self.assertNotIn("](", md)
+
+    def test_role_names_match_the_game(self):
+        text = (ROOT / "src/role.c").read_text(errors="replace")
+        start = text.index("struct Role roles[] = {")
+        text = text[start : text.index("/* Array terminator */", start)]
+        pairs = re.findall(
+            r'\{\s*\{"([^"]+)",\s*(?:"([^"]+)"|0)\s*\},\s*\{.*?\n\s*"([A-Z][a-z]{2})",',
+            text,
+            re.S,
+        )
+        game = {code: (m, f or None) for m, f, code in pairs if m != "Undefined"}
+        self.assertGreaterEqual(len(game), 20)
+        for code, names in game.items():
+            self.assertEqual(chronicle.ROLES.get(code), names, code)
+
+    def test_intent_format_is_marked_provisional(self):
+        self.assertIn("PROVISIONAL", chronicle.attach_intent.__doc__)
+        self.assertIn("#23", chronicle.attach_intent.__doc__)
 
     def test_command_line_offline(self):
         self.transport(REQUEST)

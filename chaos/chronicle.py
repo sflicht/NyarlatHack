@@ -6,6 +6,11 @@ admitted. It holds the exact lines of the dumplog section "The Crawling Chaos
 remembers.", so this module re-derives nothing: it groups those lines and
 formats them. Stock and empty-mailbox games have no reveal.json and no page.
 
+The character's name, role and death reason come from the game's own
+xlogfile (the launcher's game root, or --xlogfile): the one line whose turn
+count and chaos_admitted/delivered/spent equal the record's. If no single line
+matches, the page says so and names nobody rather than guess.
+
 Optional intent (#23) comes from a separate file the caller names with
 --intent. It is untrusted editorial text: it is attached only to an admitted
 entry, always under the label "Intent, not proof", and never to the refused
@@ -26,6 +31,35 @@ RECORD = "reveal.json"
 RECORD_VERSION = 1
 MAX_BYTES = 1 << 20
 MAX_INTENT_BYTES = 256 * 1024
+MAX_XLOG_TAIL = 4 << 20
+MAX_FIELD = 200
+DEFAULT_XLOGFILE = Path(__file__).resolve().parent.parent / "dnethackdir" / "xlogfile"
+# (male or neutral, female) role names by xlogfile code, exactly as in
+# src/role.c; tests/chaos/test_chronicle.py checks this table against it.
+ROLES = {
+    "Arc": ("Archeologist", None),
+    "Ana": ("Anachrononaut", None),
+    "Bar": ("Barbarian", None),
+    "Bin": ("Binder", None),
+    "Cav": ("Caveman", "Cavewoman"),
+    "Con": ("Convict", None),
+    "Hea": ("Healer", None),
+    "Kni": ("Knight", None),
+    "Ken": ("Kensei", None),
+    "Mon": ("Monk", None),
+    "Mad": ("Madman", "Madwoman"),
+    "Nob": ("Nobleman", "Noblewoman"),
+    "Pri": ("Priest", "Priestess"),
+    "Pir": ("Pirate", None),
+    "Rog": ("Rogue", None),
+    "Ran": ("Ranger", None),
+    "Sam": ("Samurai", None),
+    "Tou": ("Tourist", None),
+    "Brd": ("Troubadour", None),
+    "Hnt": ("Undead Hunter", None),
+    "Val": ("Valkyrie", None),
+    "Wiz": ("Wizard", None),
+}
 MAX_INTENT_CHARS = 2000
 HEADER = "The Crawling Chaos remembers."
 INTENT_LABEL = "Intent, not proof"
@@ -47,6 +81,14 @@ class Entry:
 
 
 @dataclass
+class Character:
+    name: str
+    role: str
+    death: str
+    maxlvl: int | None
+
+
+@dataclass
 class Chronicle:
     final_turn: int
     admitted: int
@@ -56,6 +98,8 @@ class Chronicle:
     entries: list[Entry]
     notes: list[str]
     tally: list[str]
+    character: Character | None = None
+    character_note: str | None = None
 
 
 def _read_private(path: Path, limit: int) -> bytes:
@@ -143,10 +187,90 @@ def load(run_dir: Path) -> Chronicle:
     return Chronicle(entries=entries, notes=notes, tally=tally, **counts)
 
 
+def _xlog_fields(line: str) -> dict[str, str]:
+    fields = {}
+    for part in line.split(":"):
+        key, sep, value = part.partition("=")
+        if sep and key not in fields:
+            fields[key] = value
+    return fields
+
+
+def attach_character(chronicle: Chronicle, path: Path) -> None:
+    """Name the character from the game's xlogfile, or explain why not.
+
+    Only the end record the game itself wrote is used (no hidden state). A line
+    matches when its turns and chaos_admitted/delivered/spent equal the reveal
+    record's; exactly one match is required.
+    """
+    want = {
+        "turns": str(chronicle.final_turn),
+        "chaos_admitted": str(chronicle.admitted),
+        "chaos_delivered": str(chronicle.delivered),
+        "chaos_spent": str(chronicle.spent),
+    }
+    try:
+        fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_CLOEXEC)
+    except OSError:
+        chronicle.character_note = "The game's xlogfile was not found."
+        return
+    try:
+        st = os.fstat(fd)
+        if not stat.S_ISREG(st.st_mode):
+            chronicle.character_note = "The game's xlogfile is not a regular file."
+            return
+        os.lseek(fd, max(0, st.st_size - MAX_XLOG_TAIL), os.SEEK_SET)
+        data = b""
+        while chunk := os.read(fd, 1 << 16):
+            data += chunk
+            if len(data) > MAX_XLOG_TAIL:
+                break
+    finally:
+        os.close(fd)
+    matches = []
+    for raw in data.decode("utf-8", "replace").splitlines():
+        f = _xlog_fields(raw)
+        if all(f.get(k) == v for k, v in want.items()):
+            matches.append(f)
+    if len(matches) != 1:
+        chronicle.character_note = (
+            "No end record in the xlogfile matches this game."
+            if not matches
+            else "Several end records in the xlogfile match this game; none is named."
+        )
+        return
+    f = matches[0]
+    name = f.get("name", "").strip()[:MAX_FIELD]
+    death = f.get("death", "").strip()[:MAX_FIELD]
+    if not name or not death:
+        chronicle.character_note = "The matching xlogfile record has no name or death."
+        return
+    code = f.get("role", "")
+    male, female = ROLES.get(code, (code[:MAX_FIELD], None))
+    role = female if female and f.get("gender") == "Fem" else male
+    maxlvl = f.get("maxlvl", "")
+    chronicle.character = Character(
+        name=name,
+        role=role,
+        death=death,
+        maxlvl=int(maxlvl) if maxlvl.isdigit() else None,
+    )
+
+
+def _character_line(c: Chronicle) -> str | None:
+    ch = c.character
+    if ch is None:
+        return None
+    who = f"{ch.name} the {ch.role}" if ch.role else ch.name
+    depth = f", deepest level {ch.maxlvl}" if ch.maxlvl else ""
+    return f"{who}: {ch.death}{depth}."
+
+
 def attach_intent(chronicle: Chronicle, path: Path) -> None:
     """Attach author rationale by entry number (1-based, admitted entries only).
 
-    Format (provisional until #23 defines its record): a JSON object mapping
+    PROVISIONAL FORMAT, pending #23 (which will define the rationale record;
+    expect this to change): a JSON object mapping
     "1", "2", ... to a string. Numbers that name no admitted entry are an
     error, so rationale can never be shown for something that did not happen.
     """
@@ -183,6 +307,11 @@ def render_markdown(c: Chronicle) -> str:
         f"_{_md_text(HEADER)}_ The game ended on turn {c.final_turn}.",
         "",
     ]
+    who = _character_line(c)
+    if who is not None:
+        out += [f"**{_md_text(who)}**", ""]
+    elif c.character_note:
+        out += [f"_{_md_text(c.character_note)}_", ""]
     for i, e in enumerate(c.entries, 1):
         out.append(f"## {i}. {_md_text(e.heading)}")
         out.append("")
@@ -198,9 +327,9 @@ def render_markdown(c: Chronicle) -> str:
     out.extend(f"- {_md_text(t)}" for t in c.tally)
     out += [
         "",
-        "_Facts come from the engine's own records (`reveal.json`), the same"
-        " lines as the game's dumplog. Refused candidates are counted, never"
-        " described._",
+        "_Facts come from the engine's own records (`reveal.json`, the same"
+        " lines as the game's dumplog, and the game's xlogfile end record)."
+        " Refused candidates are counted, never described._",
         "",
     ]
     return "\n".join(out)
@@ -213,7 +342,7 @@ h1{font-weight:normal;letter-spacing:.04em}h2{font-size:1.05rem;margin:1.6rem 0 
 ul{margin:.2rem 0 .6rem;padding-left:1.2rem}.meta,.foot{color:#a49a82;font-size:.9rem}
 .intent{border-left:3px solid #7a5c2e;margin:.4rem 0 .8rem;padding:.2rem .8rem;
 background:#201b13}.intent .label{font-weight:bold;color:#d6a857}
-.intent .note{color:#a49a82;font-size:.85rem}.tally{border-top:1px solid #3a342a;
+.who{font-size:1.1rem}.intent .note{color:#a49a82;font-size:.85rem}.tally{border-top:1px solid #3a342a;
 margin-top:1.6rem;padding-top:.6rem}
 """
 
@@ -231,6 +360,11 @@ def render_html(c: Chronicle) -> str:
         "<h1>What watched you</h1>",
         f'<p class="meta"><em>{e_(HEADER)}</em> The game ended on turn {c.final_turn}.</p>',
     ]
+    who = _character_line(c)
+    if who is not None:
+        body.append(f'<p class="who">{e_(who)}</p>')
+    elif c.character_note:
+        body.append(f'<p class="meta">{e_(c.character_note)}</p>')
     for i, e in enumerate(c.entries, 1):
         body.append(f'<section class="entry"><h2>{i}. {e_(e.heading)}</h2><ul>')
         body.extend(f"<li>{e_(d)}</li>" for d in e.details)
@@ -247,9 +381,10 @@ def render_html(c: Chronicle) -> str:
     body.extend(f"<li>{e_(t)}</li>" for t in c.tally)
     body.append("</ul></div>")
     body.append(
-        '<p class="foot">Facts come from the engine\'s own records (reveal.json),'
-        " the same lines as the game's dumplog. Refused candidates are counted,"
-        " never described.</p></body></html>\n"
+        '<p class="foot">Facts come from the engine\'s own records (reveal.json,'
+        " the same lines as the game's dumplog, and the game's xlogfile end"
+        " record). Refused candidates are counted, never described.</p>"
+        "</body></html>\n"
     )
     return "\n".join(body)
 
@@ -267,13 +402,22 @@ def add_parser(sub) -> None:
     p.add_argument(
         "--intent",
         type=Path,
-        help='optional JSON {"1": "rationale", ...}; shown as intent, not proof',
+        help='optional JSON {"1": "rationale", ...}; shown as intent, not proof.'
+        " PROVISIONAL format pending #23",
+    )
+    p.add_argument(
+        "--xlogfile",
+        type=Path,
+        default=DEFAULT_XLOGFILE,
+        help="the game's xlogfile, for the character's name and death"
+        " (default: the launcher's game root)",
     )
 
 
 def run(args) -> int:
     try:
         c = load(args.run_dir)
+        attach_character(c, getattr(args, "xlogfile", DEFAULT_XLOGFILE))
         if args.intent is not None:
             attach_intent(c, args.intent)
         if args.out is not None:
