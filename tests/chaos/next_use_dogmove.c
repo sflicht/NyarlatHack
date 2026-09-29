@@ -38,6 +38,9 @@ static int pet_type(void)
     if (!strcmp(name, "kitten")) return PM_KITTEN;
     if (!strcmp(name, "housecat")) return PM_HOUSECAT;
     if (!strcmp(name, "pony")) return PM_PONY;
+    /* #196 evidence: a tame iguana was the companion in view in one sweep
+     * game (bard-inherited 56); #200 folds it into the linked matrix. */
+    if (!strcmp(name, "iguana")) return PM_IGUANA;
     exit(3);
 }
 
@@ -246,8 +249,10 @@ static int run_case(const char *name, const char *dirpath)
     int snapshot = 0, windowed = 0, pre_glyph = 0, restored = 0, spent2 = 0;
     int rebind = !strcmp(name, "obsrebind") || !strcmp(name, "obsrebind_save")
         || !strcmp(name, "obsrebind_level");
+    int obs = !strcmp(name, "obsorigin") || !strcmp(name, "unequalclock")
+        || !strcmp(name, "obslevel");
     int owned_start = !strcmp(name, "safehit") || !strcmp(name, "safemiss")
-        || !strcmp(name, "obsorigin") || !strcmp(name, "unequalclock") || rebind;
+        || obs || rebind;
     long bound_root = 0;
     unsigned orig_id;
 
@@ -274,7 +279,7 @@ static int run_case(const char *name, const char *dirpath)
     arm = 0;
     if (strcmp(name, "none") && strcmp(name, "bypass")
         && strcmp(name, "safemiss") && strcmp(name, "safehit")
-        && strcmp(name, "obsorigin") && strcmp(name, "unequalclock") && !rebind) {
+        && !obs && !rebind) {
         arm = admit_and_act(dirpath, &pet, &telegraphs,
                             strcmp(name, "nonepet") != 0
                             && strncmp(name, "suppress_", 9) != 0);
@@ -301,7 +306,7 @@ static int run_case(const char *name, const char *dirpath)
         chaos_safe("level_enter");
         spent2 = u.chaos.spent;
     }
-    if (!strcmp(name, "obsorigin") || !strcmp(name, "unequalclock")) {
+    if (obs) {
         long root;
 
         if (!strcmp(name, "unequalclock")) {
@@ -314,6 +319,9 @@ static int run_case(const char *name, const char *dirpath)
         You("produce a high whistling sound.");
         chaos_observation_disarm();
         chaos_observation_end(root);
+        /* #200 (A): the whistle was on level 1; the safe point is arriving
+         * on level 2, where the program is installed and its effect lands. */
+        if (!strcmp(name, "obslevel")) u.uz.dlevel = 2;
         setenv("NYARLATHACK_NEXT_USE_ADMIT", "1", 1);
         u.chaos.safe = 6;
         chaos_safe("level_enter");
@@ -327,7 +335,7 @@ static int run_case(const char *name, const char *dirpath)
     if (rebind) {
         /* #177: the envelope names the first whistle (root 10); a second,
          * newer whistle replaces it before the safe point. The engine binds
-         * the newest same-family origin (or, on another level, refuses). */
+         * the newest same-family origin, on any level (#200 C). */
         long root;
         int acted;
 

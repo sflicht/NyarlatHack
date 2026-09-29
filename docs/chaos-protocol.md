@@ -139,10 +139,13 @@ safe point, without waiting. A request is considered only at its exact
 assigned safe index (#5): earlier polls leave it pending and later ones reject
 it as missed; the engine never retimes it. For next-use envelopes the origin
 binding is engine-owned: if the named origin was replaced by a newer
-same-family, delivered, same-run origin on the current level within the origin
+same-family, delivered, same-run origin (on any level, #200 C) within the origin
 lifetime, the engine binds to that origin at the same safe index and records
 both the published and the bound origin in the receipt (#177 option 1; see
-[next-use ordinary path](next-use-ordinary.md#origin-binding-rebind-to-the-newest-origin-177-option-1)). Failed transport/journal writes fail closed for
+[next-use ordinary path](next-use-ordinary.md#origin-binding-rebind-to-the-newest-origin-177-option-1)).
+The origin's level is not compared with the safe point's: the program is
+installed on the level where it is admitted and ends when the player leaves it
+(#200 A; see [where the effect lands](next-use-ordinary.md#where-the-effect-lands-200-option-a)). Failed transport/journal writes fail closed for
 new admissions. Previously admitted effects continue until expiry. There is no
 crash-transaction guarantee across the OS filesystem and a game save: restore
 is rollback to the save, not recovery of an unsaved process. Journals may

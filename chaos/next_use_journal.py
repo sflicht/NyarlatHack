@@ -426,14 +426,9 @@ def _envelope(d, s, source):
             ),
             "origin binding",
         )
-        # A rebound origin is on the admission level by construction; the
-        # published one keeps its level only when it is the bound origin.
-        _require(
-            rebound
-            or s["level_token"]
-            == (origin["level_dnum"] + 1) * 100000 + origin["level_dlevel"],
-            "level binding",
-        )
+        # #200 (A, C): the program is installed on the admission level, where
+        # its effect lands; the published or rebound origin may be from an
+        # earlier level, so there is no origin-level binding to check here.
         _require(run is None or run == origin["run"], "origin run binding")
         run = origin["run"]
 

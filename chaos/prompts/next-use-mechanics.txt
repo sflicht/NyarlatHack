@@ -38,7 +38,9 @@ inputs in component fixtures are not evidence of nonzero production history.
 
 SOURCE: schema_envelope in src/chaos_next_use.c fixes TTL=100 and cost=number
 of admitted families (one each, WF costs two); canonical operation order is W,F.
-Telegraph ids are next-use-v2-W/F/WF; host-built origins bind run/level/schedule.
+Telegraph ids are next-use-v2-W/F/WF; host-built origins bind run/schedule.
+The origin's level is not checked: the engine installs the program on the
+safe point's level and ends it when the player leaves (#200).
 These are representation/authority limits, not a recommendation to spend more.
 SOURCE: chaos/history.py retains exact chronology for 32 roots, separate from
 the sampled public episode summary. chaos/next_use_history.py selects the latest

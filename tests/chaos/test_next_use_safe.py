@@ -201,10 +201,14 @@ class NextUseSafeAdmitTests(RetainOnFailure):
         self.assertEqual(row["admitted"], 0)
         self.assertEqual(row["spent"], 0)
 
-    def test_wrong_level_is_rejected(self):
+    # #200 (A): the origin may be from an earlier level; the program is
+    # installed on the level of the safe point, where its effect lands.
+    def test_origin_on_earlier_level_admits_on_this_level(self):
         row = self.run_case(self.publish(), dlevel=2)
-        self.assertEqual(row["rejected"], 1)
-        self.assertEqual(row["admitted"], 0)
+        self.assertEqual(
+            (row["rejected"], row["admitted"], row["telegraph"]), (0, 1, 1)
+        )
+        self.assertEqual(row["level_token"], 100002)
 
     def test_late_schedule_is_rejected(self):
         row = self.run_case(self.publish(), at_safe=8)
@@ -274,10 +278,11 @@ class NextUseSafeAdmitTests(RetainOnFailure):
         self.assertEqual(row["admitted"], 0)
         self.assertEqual(row["caller_spent"], 0)
 
-    def test_production_wrong_level_rejects(self):
-        row = self.run_case(self.publish(), wrapper="on_safe", dlevel=2)
-        self.assertEqual(row["admitted"], 0)
-        self.assertEqual(row["caller_spent"], 0)
+    def test_production_origin_on_earlier_level_admits(self):
+        folder = self.publish()
+        row = self.run_case(folder, wrapper="on_safe", dlevel=2)
+        self.assertEqual((row["admitted"], row["caller_spent"]), (1, 1))
+        self.assertEqual([r.get("kind") for r in self.rows(folder)], [2])
 
     def test_production_late_schedule_rejects(self):
         row = self.run_case(self.publish(), wrapper="on_safe", at_safe=8)
@@ -419,6 +424,24 @@ class NextUseSafeAdmitTests(RetainOnFailure):
             rows[0]["origins"], [{"family": "W", "published": 10, "bound": 20}]
         )
 
+    # #200 (C): a second whistle refreshes the origin on whatever level it
+    # happened; the program is installed on the safe point's level.
+    def test_rebind_to_newer_origin_on_other_level_admits(self):
+        folder, row = self.rebind_case("rebind_other_level")
+        self.assertEqual(
+            (row["admitted"], row["rebound"], row["telegraph"], row["reasons"]),
+            (1, 1, 1, 0),
+        )
+        self.assertEqual(
+            self.rows(folder)[0]["origins"],
+            [{"family": "W", "published": 10, "bound": 20}],
+        )
+        # A and C together: published and newer origins both on level 2, the
+        # safe point on level 3.
+        folder, row = self.rebind_case("rebind_other_level", dlevel=3)
+        self.assertEqual((row["admitted"], row["rebound"]), (1, 1))
+        self.assertEqual(row["level_token"], 100003)
+
     def test_rebind_rejects_origin_noted_after_the_safe_point(self):
         _, row = self.rebind_case("rebind_w", at_move=44)
         self.assertEqual((row["admitted"], row["rebound"], row["telegraph"]), (0, 0, 0))
@@ -436,7 +459,6 @@ class NextUseSafeAdmitTests(RetainOnFailure):
 
     def test_no_rebind_cases_reject_before_telegraph(self):
         cases = {
-            "rebind_other_level": "origin_superseded",
             "rebind_not_delivered": "origin_unbound",
             "rebind_wrong_family": "origin_superseded",
             "rebind_wrong_fact": "origin_superseded",
@@ -681,8 +703,14 @@ class NextUseSafeRecordedDecisionTests(unittest.TestCase):
     def test_run_mismatch(self):
         self.assert_reason("run_mismatch", run="cd" * 32)
 
-    def test_level_mismatch(self):
-        self.assert_reason("level_mismatch", dlevel=2)
+    def test_level_mismatch_is_never_raised(self):
+        # #200 (A): the bit stays in the row format for old receipts, but
+        # admission no longer checks the origin's level.
+        folder = self.publish()
+        row = self.run_case(folder, wrapper="on_safe", dlevel=2, at_move=341)
+        self.assertEqual(row["admitted"], 0)
+        self.assertFalse(row["reasons"] & REASON_BITS["level_mismatch"], row)
+        self.assertNotIn("level_mismatch", self.decisions(folder)[0]["reasons"])
 
     def test_origin_expired(self):
         decision = self.assert_reason("origin_expired", at_move=341)
@@ -774,9 +802,6 @@ class NextUseSafeRecordedDecisionTests(unittest.TestCase):
 
     def test_all_failing_checks_are_listed(self):
         decision = self.assert_reason(
-            "level_mismatch", at_safe=8, at_move=341, dlevel=2
+            "origin_expired", at_safe=8, at_move=341, dlevel=2
         )
-        self.assertEqual(
-            decision["reasons"],
-            ["missed_index", "level_mismatch", "origin_expired"],
-        )
+        self.assertEqual(decision["reasons"], ["missed_index", "origin_expired"])
