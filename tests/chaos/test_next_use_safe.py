@@ -715,8 +715,15 @@ class NextUseSafeRecordedDecisionTests(unittest.TestCase):
         seen = self.run_case(self.publish(), wrapper="on_safe", companion="present")
         self.assertEqual(seen["companion_calls"], 1)
         self.assertEqual(plain["companion_calls"], 0)
-        for key in ("admitted", "active", "telegraph", "spent", "caller_spent",
-                    "reasons", "hunger_cost"):
+        for key in (
+            "admitted",
+            "active",
+            "telegraph",
+            "spent",
+            "caller_spent",
+            "reasons",
+            "hunger_cost",
+        ):
             self.assertEqual(seen[key], plain[key], key)
         self.assertEqual(seen["admitted"], 1)
 

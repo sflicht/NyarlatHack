@@ -248,8 +248,12 @@ class NextUseDogMoveTests(RetainOnFailure):
         self.assertEqual((low["m_id"], high["m_id"]), (99, 7))
 
     def test_pick_draws_no_rng(self):
-        for spec in ("13,10,dog;11,11,kitten", "10,8,dog;10,12,dog",
-                     "11,10,hostile", "11,10,leashed"):
+        for spec in (
+            "13,10,dog;11,11,kitten",
+            "10,8,dog;10,12,dog",
+            "11,10,hostile",
+            "11,10,leashed",
+        ):
             with self.subTest(spec=spec):
                 row = self.pick(spec)
                 self.assertEqual(row["after_pick"], row["control"], row)

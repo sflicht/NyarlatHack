@@ -282,6 +282,32 @@ class FunnelTest(unittest.TestCase):
         self.assertTrue(a["delivery_known"])
         self.assertEqual(a["counts"]["trigger"], 0)
         self.assertEqual(a["loss"], "admitted_no_trigger:whistle_capture_suppressed")
+        self.assertEqual(a["w_suppressions"], ["unrecorded"])
+
+    def test_capture_suppressed_reports_recorded_reason(self):
+        # #196: the loss label is unchanged; the reason is reported beside it.
+        for code, name in (
+            (1, "none_in_view"),
+            (2, "not_eligible"),
+            (3, "recheck_failed"),
+        ):
+            with self.subTest(code=code):
+                private = [
+                    {"kind": 2, "at_move": 14, "data": {}},
+                    {
+                        "kind": 4,
+                        "at_move": 18,
+                        "data": {"outcome": 2, "suppression": code},
+                    },
+                    {"kind": 5, "at_move": 18, "data": {"reason": 1}},
+                ]
+                a = self._admitted(
+                    self._decoded("structurally_complete", private), journal="x\n"
+                )
+                self.assertEqual(
+                    a["loss"], "admitted_no_trigger:whistle_capture_suppressed"
+                )
+                self.assertEqual(a["w_suppressions"], [name])
 
     def test_complete_journal_no_trigger_termination(self):
         private = [

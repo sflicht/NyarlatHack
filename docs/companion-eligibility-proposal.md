@@ -1,7 +1,32 @@
 # Proposal: which companion a next-use whistle may bind
 
-Status: **design proposal only.** Nothing described here is implemented. Sam
-decides; see "Decisions for Sam" at the end.
+## Decided (Sam, 2026-09-28)
+
+Sam decided on 2026-09-28. Issue #196 is the implementation contract, and the
+pull request that fixes it implements these four choices. Where they differ
+from this proposal's recommendation, the decision wins.
+
+- **A2, which companions qualify.** Any visible tame companion with dog data
+  (`MX_EDOG`), not only the little dog. Every other guard stays: not the
+  steed or rider, not leashed, not summoned, not an exploder, not under
+  Conflict or berserk.
+- **C3, no qualifying companion in view at the safe point.** The program is
+  not admitted, and nothing is charged. Only what is on screen counts. The
+  decision row records the new reason `no_companion_in_view`.
+- **C0 at the whistle.** If no qualifying companion is in view when the player
+  whistles, the program is still suppressed with no refund. Sam did not
+  choose C1, so the program does not wait.
+- **B1, several in view.** The companion nearest the player wins, by squared
+  distance. A tie goes to the top row, then the leftmost column. Monster list
+  order, `m_id` and random numbers never decide.
+- **Recorded reasons: yes.** The `W_CAPTURE_SUPPRESSED` effect row records why
+  the capture was suppressed.
+
+The rest of this document is the design record as written before the
+decision.
+
+Status before the decision: **design proposal only.** The sections below
+describe options, not the implementation. See "Decisions for Sam" at the end.
 
 ## Terms used here
 

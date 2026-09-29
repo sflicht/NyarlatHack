@@ -323,9 +323,7 @@ def _private(r, s, seq):
         )
         if "suppression" in d:
             _integer(d["suppression"], 1, 3)
-            _require(
-                d["family"] == 1 and d["outcome"] == 2, "suppression reason owner"
-            )
+            _require(d["family"] == 1 and d["outcome"] == 2, "suppression reason owner")
         # Only autonomous W endings can carry the NULL-root sentinel;
         # operation/reason and pre/poststate are checked in _transition.
         _require(
