@@ -155,3 +155,12 @@ final message, run `python3 scripts/clean_workspace.py --apply
   mutation must use `rn2()` and friends so replay holds.
 - Balance is explicitly not a goal of upstream; do not "fix" role balance in
   passing.
+
+## Project skills
+
+Procedures specific to this repo live in `.hermes/skills/` here (loaded through
+`skills.external_dirs`), not in `~/.hermes/skills/`. Hermes saves newly created
+skills to `~/.hermes/skills/`; after creating one for this project, move its
+folder here and commit it with the work that produced it. Edit existing project
+skills in place; Git history is their only record. A skill is a procedure: no
+results, dates or status (those go in GitHub issues or `docs/`).
