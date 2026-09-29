@@ -329,6 +329,133 @@ class FunnelTest(unittest.TestCase):
         self.assertEqual(a["loss"], "inferred:no_safe_point_before_game_end")
 
 
+class FirstFeltTest(unittest.TestCase):
+    """#179: time to the first delivered, on-screen consequence."""
+
+    def _analyse(self, events, journal=None):
+        with tempfile.TemporaryDirectory() as tmp:
+            return sweep_funnel.analyse(
+                _run(tmp, events=events, journal=journal), felt=True
+            )
+
+    def test_none_without_consequence(self):
+        a = self._analyse([SESSION, *_whistle(2, "sound_high", 5)])
+        self.assertIsNone(a["first_felt"])
+        self.assertEqual(a["haunt_steps"], 0)
+
+    def test_visible_hound_step_counts(self):
+        a = self._analyse(
+            [
+                SESSION,
+                {"event": "haunting", "seq": 2, "turn": 13, "detail": "accepted"},
+                {"event": "haunt_step", "seq": 3, "turn": 14, "detail": ""},
+                {"event": "haunt_step", "seq": 4, "turn": 15, "detail": ""},
+            ]
+        )
+        self.assertEqual(a["first_felt"], {"turn": 14, "kind": "hound"})
+        self.assertEqual(a["haunt"], {"accepted": 1})
+        self.assertEqual(a["haunt_steps"], 2)
+
+    def test_whistle_attention_notice_counts_only_when_seen(self):
+        def attention(seq, turn, fact):
+            return _obs(seq, "whistle_attention", "notice", seq - 1, fact, turn=turn)
+
+        a = self._analyse([SESSION, attention(3, 40, "none")])
+        self.assertIsNone(a["first_felt"])
+        a = self._analyse(
+            [SESSION, attention(3, 40, "none"), attention(5, 90, "attention")]
+        )
+        self.assertEqual(a["first_felt"], {"turn": 90, "kind": "next_use_W"})
+
+    def test_earliest_kind_wins(self):
+        a = self._analyse(
+            [
+                SESSION,
+                _obs(3, "whistle_attention", "notice", 2, "attention", turn=50),
+                {"event": "haunt_step", "seq": 4, "turn": 60, "detail": ""},
+            ]
+        )
+        self.assertEqual(a["first_felt"]["kind"], "next_use_W")
+
+    def test_v1_shape_unchanged(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            a = sweep_funnel.analyse(_run(tmp, events=[SESSION]))
+        for key in ("first_felt", "haunt", "haunt_steps"):
+            self.assertNotIn(key, a)
+
+    def test_dlvl_at_uses_public_timeline(self):
+        timeline = [(1, 1), (326, 2), (700, 3)]
+        self.assertEqual(sweep_funnel.dlvl_at(timeline, 1), 1)
+        self.assertEqual(sweep_funnel.dlvl_at(timeline, 325), 1)
+        self.assertEqual(sweep_funnel.dlvl_at(timeline, 326), 2)
+        self.assertEqual(sweep_funnel.dlvl_at(timeline, 9999), 3)
+        self.assertIsNone(sweep_funnel.dlvl_at([], 5))
+
+
+class PolicyVersionTest(unittest.TestCase):
+    def test_baseline_v1_parameters_are_frozen(self):
+        # The committed v1 reports were produced by exactly these values.
+        self.assertEqual(
+            sweep_player.POLICIES["baseline-v1"],
+            {
+                "max_turns": 2000,
+                "max_dlvl": 5,
+                "max_commands": 8000,
+                "stall_commands": 200,
+                "no_food_retry_turns": 200,
+                "p_whistle": 0.03,
+                "p_fountain": 0.25,
+                "fountain_quaffs_per_level": 2,
+                "min_turns_per_level": 300,
+                "p_search": 0.05,
+                "p_travel_explore": 0.8,
+                "prayer_gap_turns": 1000,
+                "save_restore_turn": 700,
+            },
+        )
+
+    def test_v2_shares_v1_parameters(self):
+        v1, v2 = (sweep_player.POLICIES[k] for k in ("baseline-v1", "baseline-v2"))
+        self.assertEqual(v2["version"], 2)
+        for key, value in v1.items():
+            self.assertEqual(v2[key], value, key)
+
+    def test_default_path_start_uses_ordinary_default_launcher(self):
+        self.assertEqual(
+            sweep_player.START_LAUNCHER["bard-default-path"],
+            ["--ordinary", "--max-runtime", "86400"],
+        )
+        self.assertNotIn("--no-haunt", sweep_player.START_LAUNCHER["bard-default-path"])
+        self.assertIn("--no-haunt", sweep_player.LAUNCHER)
+
+
+class FleeTest(unittest.TestCase):
+    def _player(self, rows):
+        p = sweep_player.Player.__new__(sweep_player.Player)
+        p.screen = Screen()
+        for y, row in rows.items():
+            p.screen.rows[y][: len(row)] = list(row)
+        return p
+
+    def test_steps_away_from_the_only_monster(self):
+        # hero at (2, 5), jackal at (3, 5): the step must end 2+ squares away.
+        p = self._player(
+            {
+                4: "\u00b7\u00b7\u00b7\u00b7",
+                5: "\u00b7\u00b7@d",
+                6: "\u00b7\u00b7\u00b7\u00b7",
+            }
+        )
+        d = p.flee((2, 5), [(3, 5)])
+        dx, dy = sweep_player.DELTA[d]
+        self.assertGreaterEqual(max(abs(2 + dx - 3), abs(5 + dy - 5)), 2)
+
+    def test_no_safe_square_means_no_flee(self):
+        # walls ('|', '-') everywhere except the monster's square
+        p = self._player({4: "---", 5: "|@d", 6: "---"})
+        self.assertIsNone(p.flee((1, 5), [(2, 5)]))
+
+
 class _FakeGame:
     """A live game whose status line never becomes readable."""
 
