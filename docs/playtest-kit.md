@@ -79,14 +79,28 @@ Two existing read-only views of the run directory:
 
   If nothing was admitted, it says there is no `reveal.json`; record that.
 
-- **Where an opportunity was lost** (qualifying action, candidate, published,
-  admitted, trigger, native effect, delivered, plus the main loss reason). The
-  sweep's analyser reads a directory that contains the run as `run`:
+- **Where an opportunity was lost, and the first felt consequence**
+  (qualifying action, candidate, published, admitted, trigger, native effect,
+  delivered, the main loss reason, and the hound). The sweep's analyser reads
+  a directory that contains the run as `run`, so link it into a fresh
+  temporary directory for each session:
 
   ```sh
-  mkdir "$TMPDIR/pilot" && ln -s <run directory> "$TMPDIR/pilot/run"
-  PYTHONPATH=tests/chaos python3 -c 'import json, sys, sweep_funnel; a = sweep_funnel.analyse(sys.argv[1]); print(json.dumps({k: a[k] for k in ("counts", "loss", "qualifying_actions", "last_turn")}, indent=1))' "$TMPDIR/pilot"
+  pilot=$(mktemp -d) && ln -s <run directory> "$pilot/run"
+  PYTHONPATH=tests/chaos python3 -c 'import json, sys, sweep_funnel; a = sweep_funnel.analyse(sys.argv[1], felt=True); print(json.dumps({k: a[k] for k in ("counts", "loss", "qualifying_actions", "last_turn", "first_felt", "haunt", "haunt_steps")}, indent=1))' "$pilot"
   ```
+
+  How the output maps onto the form:
+
+  - `haunt`: counts of the hound's recorded stages, for example
+    `{"accepted": 1, "pre_admitted": 1}`. `accepted` means the hound was let
+    in; `{}` means no hound stage was recorded. `haunt_steps`: hound steps the player
+    could see.
+  - `first_felt`: the turn and kind (`hound`, `next_use_W` or `next_use_F`) of
+    the first delivered, on-screen consequence, or `null` if there was none.
+    It has no Dlvl: the analyser does not know which level the player was on
+    at that turn. Leave the Dlvl to the facilitator's notes.
+  - `counts`, `loss` and `qualifying_actions`: the next-use line.
 
 A displayed line is not proof of notice, and delivery is not attribution. The
 last three stages on the form (noticed, attributed, changed decision) come only
@@ -116,7 +130,8 @@ Player's answers (verbatim, before any explanation)
   4. Understandable, frustrating, or easy to exploit?
 
 Record (from step 5; write "not observed" rather than leaving a gap)
-  Hound: accepted? turn     visible steps
+  Hound (haunt, haunt_steps): accepted?      visible steps
+  First felt consequence (first_felt): turn     kind      Dlvl (facilitator's notes, if known)
   Next-use: qualifying actions  W __ F __   admitted?   delivered?   turn
   Main loss reason (from the analyser):
   Chronicle: <admitted n, delivered n>
