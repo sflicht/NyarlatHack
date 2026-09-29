@@ -1,8 +1,13 @@
 # Prototype budget pacing (#164)
 
-Tier A evidence for the pull request on #164. **Prototype pacing, not tuned
-balance.** Sam decides the numbers (N, K, the witnessed credit, the ceiling);
-this entry reports what each one measurably did.
+Tier A evidence for the pull request on #164.
+
+**Decision (Sam, 2026-09-29):** K=3, pacing on by default for every new game;
+witnessed credit +1 per source (cap +2), N=4 and ceiling 12 unchanged.
+`NYARLATHACK_PACING=0` opts a new game out; the choice is saved with the game.
+State/save version 3: saves from earlier versions are refused, as with every
+version bump. The sections below keep the prototype measurement (A–D) that the
+decision was taken from, then the final default-path sweep (E).
 
 ## Where the budget binds today (measured)
 
@@ -32,7 +37,7 @@ the launcher options.
 | C | `--haunt`, pacing on: N=4, K=2, witnessed +1 cap +2, ceiling 12 | `dd20e099c` |
 | D | `--haunt`, pacing on, same but K=3 (scratch contract edit, not committed) | `554c3aa01` + `level_cap: 3` |
 
-Pacing is switched on per new game with `NYARLATHACK_PACING=1`.
+In A–D, pacing was opt-in (`NYARLATHACK_PACING=1`); it is now the default.
 
 ## Results
 
@@ -78,6 +83,43 @@ record; admitted and delivered counts come from the sweep report.
 - **Ceiling, prototype 12 unchanged.** Never approached: the largest lifetime
   spend was 3.
 
+## Final: default path, pacing on by default (E)
+
+E is the committed head of the pull request (K=3 in the contract, pacing on by
+default), Bard seeds 1–100, lifetime 300, on the **default launcher path**:
+`chaos play --ordinary` with no opt-out flags, so the hound and next-use are on
+(#198), and no `NYARLATHACK_PACING` in the environment. Every game's
+`ordinary-choice.json` records `haunt: true, next_use: true`. Script:
+`~/.hermes/reports/nyarlathack-164/default_sweep.py` (changes only the launcher
+options of the committed sweep player).
+
+| Bard, seeds 1–100 | #196 baseline (A) | today's rules + hound (B) | **E: default path** |
+|---|---:|---:|---:|
+| Games with an end record | 100 | 99 | 100 |
+| Turns | 147,195 | 153,357 | 154,568 |
+| Sum of deepest level reached | 227 | 242 | 243 |
+| Hounds accepted | 0 | 85 | 86 |
+| Next-use admitted | 17 | 2 | 12 |
+| Next-use delivered | 6 | 0 | 5 |
+| Refused for `budget` | 0 | 11 | 1 |
+| Admitted per 1000 turns | 0.115 | 0.013 | 0.078 |
+| Delivered per 1000 turns | 0.041 | 0 | 0.032 |
+| Admitted per dungeon level reached | 0.075 | 0.008 | 0.049 |
+| Delivered per dungeon level reached | 0.026 | 0 | 0.021 |
+| Largest lifetime spend in any game | 1 | 2 | 3 |
+
+- **E equals D game for game.** All 100 funnel rows are identical to the K=3
+  prototype sweep, and so are the turn and depth totals. The default launcher
+  path and the default pacing switch reproduce the opt-in prototype exactly;
+  nothing else in the merged `origin/main` (#198, #176) changed these games.
+- **By dungeon level.** All 12 admissions (5 delivered) come from whistles on
+  DL1; games reaching each level: DL1 100, DL2 79, DL3 47, DL4 12, DL5 5. The
+  sweep player uses its one next-use program on DL1, so deeper levels are not
+  measured for next-use; the descent credit (N) is still unexercised.
+- **Against the #196 baseline**, the hound now costs next-use 5 of 17
+  admissions (12 vs 17) and 1 of 6 deliveries (5 vs 6), instead of 15 and 6
+  under today's rules.
+
 ## Tests
 
 - `tests/chaos/protocol_harness.c` `pacing` case, run by
@@ -93,4 +135,4 @@ record; admitted and delivered counts come from the sweep report.
 
 `~/.hermes/reports/nyarlathack-164/` (with `SHA256SUMS`): `findings.md`,
 `comparison.json`, `sweep/` (B), `sweep-pacing/` (C), `sweep-pacing-k3/` (D),
-gate logs in `gates3/`.
+`sweep-default/` (E), gate logs in `gates3/` (prototype) and `gates5/` (final head).
