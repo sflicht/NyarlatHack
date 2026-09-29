@@ -53,11 +53,56 @@ POLICIES = {
         "p_travel_explore": 0.8,
         "prayer_gap_turns": 1000,
         "save_restore_turn": 700,
-    }
+    },
+    # #179 v2: v1's parameters plus survival and whistle seeking. Every v1
+    # code path is unchanged; the extra rules run only when "version" is 2.
+    "baseline-v2": {
+        "version": 2,
+        "max_turns": 2000,
+        "max_dlvl": 5,
+        "max_commands": 8000,
+        "stall_commands": 200,
+        "no_food_retry_turns": 200,
+        "p_whistle": 0.03,
+        "p_fountain": 0.25,
+        "fountain_quaffs_per_level": 2,
+        "min_turns_per_level": 300,
+        "p_search": 0.05,
+        "p_travel_explore": 0.8,
+        "prayer_gap_turns": 1000,
+        "save_restore_turn": 700,
+        # Pray at the game's own "major trouble" HP line (pray.c TROUBLE_HIT:
+        # HP <= 5 or HP <= half of max), not v1's stricter 1/7 line, and not
+        # before the starting prayer timeout (300, one per turn) is <= 200.
+        "min_prayer_turn": 100,
+        # In major trouble with a monster adjacent and no prayer available,
+        # step to a square no visible monster touches instead of meleeing.
+        "flee_in_trouble": True,
+        # Below this HP fraction, with nothing to fight, rest by searching.
+        "rest_below": 0.67,
+        "rest_command": "20s",
+        # A start with no whistle walks to seen tools ('(') and picks up a
+        # whistle if the floor text names one.
+        "p_seek_tool": 0.5,
+        # Without a whistle, walk to a seen fountain every time (still at most
+        # fountain_quaffs_per_level), so the F family is exercised on purpose.
+        "p_fountain_no_whistle": 1.0,
+        # A fountain, stair or tool that travel fails to reach this many times
+        # is skipped for the rest of the level (public memory; v1 retried forever).
+        "travel_retries": 3,
+        # Harness bound on --More-- pages in one settle (fainting loops).
+        "settle_pages": 400,
+    },
 }
 
 # #198: --ordinary now defaults the hound on; the baseline sweep keeps it off.
 LAUNCHER = ["--ordinary", "--next-use", "--no-haunt", "--max-runtime", "86400"]
+# #179: starts played on another launcher path. "bard-default-path" is the
+# ordinary default (#198: hound and next-use on; #164: pacing at its default),
+# so the hound's funnel and its budget contention with next-use are measured
+# together.
+START_LAUNCHER = {"bard-default-path": ["--ordinary", "--max-runtime", "86400"]}
+START_OPTIONS["bard-default-path"] = None
 DIRECTOR_SETTLED = (
     b"envelope_published_not_admitted",
     b"abstained",
@@ -119,7 +164,7 @@ class Player:
             observe=True,
             ordinary=True,
             launcher_fresh=True,
-            launcher_options=LAUNCHER,
+            launcher_options=START_LAUNCHER.get(start, LAUNCHER),
             root=root,
             asset_pool=asset_pool,
         )
@@ -144,6 +189,19 @@ class Player:
         self.saved = False
         self.restore_detail = None
         self.outcome = None
+        self.v2 = self.params.get("version", 1) >= 2
+        # (turn, dlvl) each time the status line shows a new level (v2 only;
+        # public). The first-felt-consequence metric reads its Dlvl here.
+        self.dlvl_timeline = []
+        self.tools_seen = set()
+        self.whistles_found = 0
+        self.prayers = 0
+        self.flees = 0
+        self.rests = 0
+        # v2 public memory of moves that did not move the hero: (turn, dir)
+        # flee failures, and per-(level, target) travel attempts that fell short.
+        self.flee_failed = set()
+        self.travel_short = {}
 
     # ---- terminal plumbing -------------------------------------------------
     def _feed(self):
@@ -200,14 +258,19 @@ class Player:
 
     def settle(self, text):
         """Dismiss pages, menus and unexpected prompts. Returns 'dead' or None."""
-        for _ in range(40):
+        v2 = getattr(self, "v2", False)
+        for _ in range(self.params["settle_pages"] if v2 else 40):
             if self.exited():
                 return "dead"
             if b"possessions identified" in text or b"DYWYPI" in text:
                 self.game.finish(text)
                 self._feed()
                 return "dead"
-            if b"--More--" in text:
+            if v2 and b"For what do you wish?" in text:
+                # #179: a fountain wish (bard-inherited seed 67 in v1). Wish
+                # for nothing: no policy-chosen object enters the game.
+                text = self.send("nothing\n")
+            elif b"--More--" in text:
                 text = self.send(" ")
             elif b"Really attack" in text:
                 text = self.send("n")
@@ -320,11 +383,19 @@ class Player:
         m = re.search(
             rb"([A-Za-z]) - (?:a|an) (?:uncursed |blessed |cursed )?tin whistle", page
         )
+        if not m and getattr(self, "v2", False):
+            # An unidentified found whistle reads "whistle"; so does a magic one.
+            m = re.search(
+                rb"([A-Za-z]) - (?:a|an) (?:uncursed |blessed |cursed )?"
+                rb"(?:tin |magic )?whistle",
+                page,
+            )
         self.whistle = m.group(1).decode() if m else None
         self.settle(self.send("\x1b"))
 
     def pray(self, turn):
         self.last_prayer = turn
+        self.prayers += 1
         text = self.send("#pray\n")
         if b"Are you sure you want to pray" in text:
             text = self.send("y")
@@ -384,6 +455,10 @@ class Player:
         self.level_since.setdefault(level, s["turn"])
         if self.hero():
             self.visited.setdefault(level, set()).add(self.hero())
+        if self.v2:
+            if not self.dlvl_timeline or self.dlvl_timeline[-1][1] != level:
+                self.dlvl_timeline.append((s["turn"], level))
+            return self.step_v2(s, level)
         low = s["hp"] < 5 or 7 * s["hp"] < s["hp_max"]
         weak = s["hunger"] in ("Weak", "Fainting", "Fainted")
         if (low or weak) and (
@@ -461,6 +536,194 @@ class Player:
             # Exhausted visible frontier: redraw (the tty port can leave the
             # remembered map undrawn after overlays), forget old targets once,
             # then search for hidden passages.
+            if not self.redrawn.get(level):
+                self.redrawn[level] = True
+                self.frontier_tried[level] = set()
+                self.send("\x12")
+                return None
+            self.redrawn[level] = False
+            return self.act("15s")
+        return self.act(self.rng.choice(DIRS).upper())
+
+    # ---- baseline-v2 (#179) --------------------------------------------------
+    def monsters(self, hero):
+        return [m for m in self.find(MONSTER) if m != hero]
+
+    def adjacent(self, hero, monsters):
+        return [
+            m for m in monsters if max(abs(m[0] - hero[0]), abs(m[1] - hero[1])) == 1
+        ]
+
+    def flee(self, hero, monsters, turn=None):
+        """Step to a walkable square no visible monster touches, preferring the
+        one farthest from them (DIRS order breaks ties). None if there is none.
+        A direction that already failed to move the hero this turn is skipped
+        (a diagonal through a doorway, say, costs no time and changes nothing)."""
+        best, best_d = None, 1
+        failed = getattr(self, "flee_failed", set())
+        for d in DIRS:
+            if (turn, d) in failed:
+                continue
+            x, y = hero[0] + DELTA[d][0], hero[1] + DELTA[d][1]
+            if not (0 <= x < COLS and 1 <= y <= 21):
+                continue
+            if self.screen.rows[y][x] not in WALKABLE:
+                continue
+            near = min(max(abs(m[0] - x), abs(m[1] - y)) for m in monsters)
+            if near > best_d:
+                best, best_d = d, near
+        return best
+
+    def seek_whistle(self, level, hero):
+        """Walk to the nearest unvisited tool glyph and pick up a whistle there.
+        Returns (handled, stop_reason)."""
+        tools = [
+            t for t in self.find("(") if (level, t) not in self.tools_seen and t != hero
+        ]
+        if not tools or self.rng.random() >= self.params["p_seek_tool"]:
+            return False, None
+        target = min(
+            tools, key=lambda t: (abs(t[0] - hero[0]) + abs(t[1] - hero[1]), t)
+        )
+        self.tools_seen.add((level, target))
+        dead = self.travel_v2(level, target)
+        if dead or self.hero() != target:
+            return True, dead
+        text = self.send(":")
+        self.commands += 1
+        seen = text
+        while b"--More--" in text or re.search(rb"\(\d+ of \d+\)", text):
+            text = self.send(" ")
+            seen += text
+        dead = self.settle(text)
+        if dead or b"whistle" not in seen:
+            return True, dead
+        text = self.send(",")
+        self.commands += 1
+        m = re.search(rb"([a-zA-Z]) - [^\n\r\x1b]*whistle", text)
+        if b"Pick up what?" in text and m:
+            text = self.send(m.group(1).decode() + "\r")
+        dead = self.settle(text)
+        if not dead:
+            before = self.whistle
+            self.learn_inventory()
+            if self.whistle and not before:
+                self.whistles_found += 1
+        return True, dead
+
+    def step_v2(self, s, level):
+        p = self.params
+        hero = self.hero()
+        monsters = self.monsters(hero) if hero else []
+        near = self.adjacent(hero, monsters) if hero else []
+        # pray.c TROUBLE_HIT: the god treats this as major trouble.
+        trouble = s["hp"] <= 5 or 2 * s["hp"] <= s["hp_max"]
+        weak = s["hunger"] in ("Weak", "Fainting", "Fainted")
+        can_pray = s["turn"] >= p["min_prayer_turn"] and (
+            self.last_prayer is None
+            or s["turn"] - self.last_prayer >= p["prayer_gap_turns"]
+        )
+        if (trouble or weak) and can_pray:
+            return self.pray(s["turn"])
+        if trouble and near and p["flee_in_trouble"]:
+            d = self.flee(hero, monsters, s["turn"])
+            if d:
+                self.flees += 1
+                dead = self.act(d)
+                if not dead and self.hero() == hero:
+                    self.flee_failed.add((s["turn"], d))
+                return dead
+        if s["hunger"] and s["turn"] >= self.no_food_until:
+            return self.eat()
+        if hero and not near and s["hp"] < p["rest_below"] * s["hp_max"]:
+            self.rests += 1
+            return self.act(p["rest_command"])
+        roll = self.rng.random()
+        if self.whistle and roll < p["p_whistle"]:
+            return self.act("a" + self.whistle)
+        if hero and not self.whistle and not near:
+            handled, dead = self.seek_whistle(level, hero)
+            if handled:
+                return dead
+        return self.explore(s, level, hero)
+
+    def reachable(self, level, target):
+        return self.travel_short.get((level, target), 0) < self.params["travel_retries"]
+
+    def travel_v2(self, level, target):
+        dead = self.travel(target)
+        if not dead and self.hero() != target:
+            key = (level, target)
+            self.travel_short[key] = self.travel_short.get(key, 0) + 1
+        return dead
+
+    def explore(self, s, level, hero):
+        """v1's fountain/fight/stairs/search/frontier tail; only the fountain
+        probability differs when the start holds no whistle."""
+        p = self.params
+        p_fountain = p["p_fountain"] if self.whistle else p["p_fountain_no_whistle"]
+        fountains = [
+            f
+            for f in self.find(FOUNTAIN)
+            if (level, f) not in self.not_fountains and self.reachable(level, f)
+        ]
+        if (
+            hero
+            and fountains
+            and self.quaffs.get(level, 0) < p["fountain_quaffs_per_level"]
+            and self.rng.random() < p_fountain
+        ):
+            target = min(
+                fountains, key=lambda f: (abs(f[0] - hero[0]) + abs(f[1] - hero[1]), f)
+            )
+            if target != hero:
+                dead = self.travel_v2(level, target)
+                if dead:
+                    return dead
+            if self.hero() == target:
+                self.quaffs[level] = self.quaffs.get(level, 0) + 1
+                text = self.send("q")
+                if b"Drink from the fountain" in text:
+                    text = self.send("y")
+                else:
+                    self.not_fountains.add((level, target))
+                self.commands += 1
+                dead = self.settle(text)
+                if not dead:
+                    self.sync_director()
+                return dead
+            return None
+        if hero:
+            for d in DIRS:
+                x, y = hero[0] + DELTA[d][0], hero[1] + DELTA[d][1]
+                if 0 <= x < COLS and 1 <= y <= 21 and self.screen.rows[y][x] in MONSTER:
+                    return self.act(d)
+        stairs = [t for t in self.find(">") if self.reachable(level, t)]
+        if (
+            hero
+            and stairs
+            and s["turn"] - self.level_since[level] >= p["min_turns_per_level"]
+        ):
+            target = min(stairs)
+            if target != hero:
+                dead = self.travel_v2(level, target)
+                if dead:
+                    return dead
+            if self.hero() == target:
+                return self.act(">")
+            return None
+        if self.rng.random() < p["p_search"]:
+            return self.act("10s")
+        frontier = self.frontier(level, hero)
+        if frontier and self.rng.random() < p["p_travel_explore"]:
+            best = min(abs(f[0] - hero[0]) + abs(f[1] - hero[1]) for f in frontier)
+            near = [
+                f for f in frontier if abs(f[0] - hero[0]) + abs(f[1] - hero[1]) == best
+            ]
+            target = self.rng.choice(near)
+            self.frontier_tried.setdefault(level, set()).add(target)
+            return self.travel(target)
+        if not frontier and hero:
             if not self.redrawn.get(level):
                 self.redrawn[level] = True
                 self.frontier_tried[level] = set()
@@ -558,7 +821,18 @@ def play(dnethackdir, clock, root, seed, start, policy, asset_pool):
         dnethackdir, clock, Path(root), seed, start, policy, asset_pool
     ).play()
     s = status(player.screen) or {}
+    extra = {}
+    if player.v2:
+        extra["v2"] = {
+            "dlvl_timeline": player.dlvl_timeline,
+            "prayers": player.prayers,
+            "flees": player.flees,
+            "rests": player.rests,
+            "whistles_found": player.whistles_found,
+            "launcher": START_LAUNCHER.get(start, LAUNCHER),
+        }
     return {
+        **extra,
         "outcome": player.outcome,
         "error": getattr(player, "error", None),
         "commands": player.commands,
