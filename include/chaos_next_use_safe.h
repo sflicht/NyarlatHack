@@ -25,6 +25,11 @@ struct chaos_next_use_safe_request {
     void *receipt_opaque;
     int (*telegraph)(void *, const char *);
     void *telegraph_opaque;
+    /* #196 (C3): nonzero when a qualifying companion is on screen now.
+     * Consulted only for envelopes with a W operation, before any charge;
+     * NULL (fixtures that do not model the map) skips the check. */
+    int (*companion)(void *);
+    void *companion_opaque;
 };
 
 /* Recorded admission decision (#177). Every failing check is a bit; the
@@ -47,7 +52,10 @@ enum chaos_next_use_safe_reason {
     CHAOS_NEXT_USE_SAFE_RECEIPT = 1 << 14,
     /* Carrier reservation or runtime install failed: defensive only, not
      * reachable from envelope, clock or budget inputs. */
-    CHAOS_NEXT_USE_SAFE_INTERNAL = 1 << 15
+    CHAOS_NEXT_USE_SAFE_INTERNAL = 1 << 15,
+    /* #196 (C3): a W program with no qualifying companion on screen at the
+     * safe point. Nothing is charged and no telegraph is shown. */
+    CHAOS_NEXT_USE_SAFE_NO_COMPANION = 1 << 16
 };
 
 struct chaos_next_use_safe_result {
@@ -71,6 +79,7 @@ void chaos_next_use_safe_reset_for_test(void);
 void chaos_next_use_safe_bind_run(const char *);
 void chaos_next_use_safe_bind_logical(long run_token);
 void chaos_next_use_safe_bind_telegraph(int (*)(void *, const char *), void *);
+void chaos_next_use_safe_bind_companion(int (*)(void *), void *);
 void chaos_next_use_safe_bind_receipt(chaos_next_use_receipt_fn, void *);
 void chaos_next_use_safe_bind_origin(const struct chaos_next_use_origin_ref *,
                                     int qualifying);

@@ -150,6 +150,7 @@ static int record_read(FILE *in, struct chaos_next_use_replay_input *r) {
     GET(p->data.effect.root, LONG_MAX);
     GET(p->data.effect.activation_monstermoves, LONG_MAX);
     GET(p->data.effect.m_id, UINT_MAX);
+    GET(p->data.effect.suppression, 3);
             break;
         case 5:
     GET(p->data.termination.failure_code, INT_MAX);
