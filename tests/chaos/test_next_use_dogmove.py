@@ -133,6 +133,7 @@ class NextUseDogMoveTests(RetainOnFailure):
             "unequalclock",
             "obsrebind",
             "obsrebind_level",
+            "obslevel",
         ):
             self.assertEqual((folder / "next_use-envelope.json").read_bytes(), original)
             self.assertFalse((folder / "fixture-envelope-held.json").exists())
@@ -178,7 +179,7 @@ class NextUseDogMoveTests(RetainOnFailure):
     # validated on the little dog. Every companion type with dog data must
     # take the same visible, player-ward, still-tame move and deliver it.
     def test_extra_attention_move_on_other_companion_types(self):
-        for pet in ("dog", "large_dog", "kitten", "housecat", "pony"):
+        for pet in ("dog", "large_dog", "kitten", "housecat", "pony", "iguana"):
             with self.subTest(pet=pet):
                 control = self.run_case("none", pet=pet)
                 bypass = self.run_case("bypass", pet=pet)
@@ -391,14 +392,40 @@ class NextUseDogMoveTests(RetainOnFailure):
         for key in ("mx", "my", "rng_next", "reseed", "bound_root", "public"):
             self.assertEqual(first[key], second[key], key)
 
-    def test_newer_origin_on_other_level_does_not_rebind(self):
+    # #200 (C): a newer whistle on another level refreshes the origin
+    # instead of superseding it; the program lands on the safe point's level.
+    def test_newer_origin_on_other_level_rebinds_and_delivers(self):
         row = self.run_case("obsrebind_level")
-        self.assertEqual(row["spent"], 0)
-        self.assertEqual(row["arm"], 0)
-        self.assertEqual(row["public"], 0)
+        self.assertGreater(row["bound_root"], 10)
+        self.assertEqual(row["spent"], 1)
+        self.assertEqual(row["arm"], 2)
+        self.assertEqual(row["public"], 1)
+        self.assertEqual(row["delivered"], 1)
         decisions = [r for r in self.receipt_rows() if "next_use_decision_v" in r]
-        self.assertEqual(len(decisions), 1)
-        self.assertIn("origin_superseded", decisions[0]["reasons"])
+        self.assertEqual(decisions, [])
+        admission = [r for r in self.receipt_rows() if r.get("kind") == 2]
+        self.assertEqual(
+            admission[0]["origins"],
+            [{"family": "W", "published": 10, "bound": row["bound_root"]}],
+        )
+
+    # #200 (A): whistle on level 1, safe point on arriving at level 2. The
+    # program is admitted there and the next whistle arms the companion
+    # exactly as in the same-level case (obsorigin); replay is identical.
+    # (This fixture path does not publish the move for either case; visible
+    # delivery across levels is covered by obsrebind_level above.)
+    def test_origin_from_previous_level_admits_on_arrival(self):
+        row = self.run_case("obslevel")
+        same = self.run_case("obsorigin")
+        self.assertEqual(row["spent"], 1)
+        self.assertEqual(row["arm"], 2)
+        self.assertEqual(row["ready_before"], 1)
+        self.assertEqual(row["displaced"], 1)
+        for key in ("mx", "my", "rc", "classifier", "rng_next", "reseed"):
+            self.assertEqual(row[key], same[key], key)
+        again = self.run_case("obslevel")
+        for key in ("mx", "my", "rng_next", "reseed", "public"):
+            self.assertEqual(row[key], again[key], key)
 
     def test_save_restore_mid_rebind_keeps_bound_origin(self):
         row = self.run_case("obsrebind_save")

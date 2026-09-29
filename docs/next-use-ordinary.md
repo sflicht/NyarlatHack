@@ -119,6 +119,25 @@ change. `tests/chaos/sweep_funnel.py` reports these recorded reasons and falls
 back to `inferred:` labels only when no row exists. The exact-index `at`
 contract is unchanged (see "Timing contract" below).
 
+## Where the effect lands (#200 option A)
+
+Before #200 an envelope was refused with `level_mismatch` whenever an origin it
+named was on a different level from the safe point. The first safe point
+after a whistle is very often arriving on the next level, so the rule mostly
+defeated itself (#200: 51 of 86 published Bard programs).
+
+Now admission does not compare the origin's level with the safe point's. The
+program is installed on the level of the safe point that admits it, which is
+where its effect can land, and it still ends the moment the player leaves that
+level (`level_departure`, unchanged). The origin keeps every other check: same
+run, lifetime, bound or rebound, companion in view. `level_mismatch` stays in
+the recorded row's reason list so older receipts still parse, but the engine
+no longer raises it.
+
+The telegraph is unchanged. "The next whistle may call unusual attention."
+names the player's next action, not the level the whistle happened on, so it
+stays true on a new level.
+
 ## Origin binding: rebind to the newest origin (#177 option 1)
 
 Before this change an envelope was admissible only while it named the exact
@@ -135,8 +154,9 @@ hold, and otherwise records `origin_superseded` exactly as before:
   end record (not a pending notice; that stays `origin_unbound`);
 - same run as the envelope, and strictly newer (root, notice and end sequence
   all larger; move no earlier);
-- on the current level (level binding is unchanged: a newer origin on another
-  level is not bound);
+- on any level (#200 C: a second whistle refreshes the origin even after the
+  player changed level; before #200 a newer origin on another level was not
+  bound);
 - within the origin lifetime, measured from the **bound** origin's move, and
   no later than the safe point.
 
