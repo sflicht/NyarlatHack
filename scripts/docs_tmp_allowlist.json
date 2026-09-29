@@ -1,0 +1,138 @@
+{
+ "issue": 176,
+ "note": "Historical /tmp citations in committed docs, frozen when the rule was added. Artifacts that still existed on 2026-09-27 were copied out of /tmp; the mapping lists old path, new path, citing files and per-file SHA-256. Instructions that create scratch directories (quality-control.md, workspace-hygiene.md, the phase-one plan) are listed too. Do not add entries for new evidence.",
+ "mapping": "~/nyarlathack-evidence/tmp-2026-09/MAPPING.json",
+ "files": {
+  "docs/engine-integration.md": {
+   "/tmp/nyarlathack-chaos-final-build.log": 1,
+   "/tmp/nyarlathack-chaos-off": 1,
+   "/tmp/nyarlathack-chaos-off-build.log": 1,
+   "/tmp/nyarlathack-chaos-on-build.log": 1,
+   "/tmp/nyarlathack-hooks-red.log": 1,
+   "/tmp/nyarlathack-smoke-final.log": 1,
+   "/tmp/nyarlathack-smoke-ke_wkcqj/": 1
+  },
+  "docs/evidence/history-pilot-development.json": {
+   "/tmp/nyarl-history-dev-5mhxkjjc/output": 1,
+   "/tmp/nyarl-history-dev-a6hgyq7f/output": 1,
+   "/tmp/nyarl-history-dev-ox6praig/output": 1
+  },
+  "docs/evidence/live-ack/full-tests.log": {
+   "/tmp/nyarl-haunting-test-6irxilsv": 1,
+   "/tmp/nyarl-haunting-test-fti2p377": 1,
+   "/tmp/nyarl-haunting-test-jdw07yc8": 1,
+   "/tmp/nyarl-haunting-test-ns7_ugbe": 1,
+   "/tmp/nyarl-haunting-test-w6gq4cuz": 1,
+   "/tmp/nyarl-launcher-gameplay-v542x9jz": 1,
+   "/tmp/nyarlathack-acceptance-k92xo04x": 1
+  },
+  "docs/evidence/live-ack/native-red.log": {
+   "/tmp/nyarl-launcher-gameplay-2t1ezjsl": 1
+  },
+  "docs/evidence/live-ack/runs/pack-restore/terminal.raw": {
+   "/tmp/nyarl-launcher-gameplay-v542x9jz/pack-restore/run": 2
+  },
+  "docs/evidence/live-ack/runs/short-director/terminal.raw": {
+   "/tmp/nyarl-launcher-gameplay-v542x9jz/short-director/run": 1
+  },
+  "docs/evidence/live-ack/targeted-green.log": {
+   "/tmp/nyarl-launcher-gameplay-dfxl1aor": 1
+  },
+  "docs/evidence/milestone1-tests.txt": {
+   "/tmp/nyarlathack-acceptance-o61fnz7b": 1
+  },
+  "docs/evidence/milestone2-extra-checks.json": {
+   "/tmp/nyarl-m2-extra-4g63y6r8": 1
+  },
+  "docs/evidence/milestone2-extra-checks.py": {
+   "/tmp/nyarlathack-m2-off": 1
+  },
+  "docs/evidence/milestone2-off-build.txt": {
+   "/tmp/nyarlathack-m2-off": 4,
+   "/tmp/nyarlathack-m2-off/dumplog": 1,
+   "/tmp/nyarlathack-m2-off/livelog": 1,
+   "/tmp/nyarlathack-m2-off/logfile": 1,
+   "/tmp/nyarlathack-m2-off/perm": 1,
+   "/tmp/nyarlathack-m2-off/record": 1,
+   "/tmp/nyarlathack-m2-off/save": 1,
+   "/tmp/nyarlathack-m2-off/xlogfile": 1
+  },
+  "docs/evidence/milestone2-tests.txt": {
+   "/tmp/nyarl-haunting-test-3lx09yr9": 1,
+   "/tmp/nyarl-haunting-test-fqtv_b7f": 1,
+   "/tmp/nyarl-haunting-test-k327amw_": 1,
+   "/tmp/nyarl-haunting-test-kleq4vly": 1,
+   "/tmp/nyarl-haunting-test-xsum_0i7": 1,
+   "/tmp/nyarlathack-acceptance-q3adf2y4": 1
+  },
+  "docs/evidence/review-foundations/launcher-partial-green.log": {
+   "/tmp/nyarl-launcher-gameplay-nvmaexr0": 1
+  },
+  "docs/evidence/review-foundations/launcher-partial-red.log": {
+   "/tmp/tmpcbn8w1g3/game": 1,
+   "/tmp/tmpcbn8w1g3/startup-partial": 1,
+   "/tmp/tmpy0hkg9l2/partial-0": 1,
+   "/tmp/tmpy0hkg9l2/partial-1": 1,
+   "/tmp/tmpy0hkg9l2/partial-2": 1
+  },
+  "docs/evidence/review-foundations/launcher-pending-green.log": {
+   "/tmp/nyarl-launcher-gameplay-t5k7ct1u": 1
+  },
+  "docs/evidence/review-foundations/launcher-pending-red.log": {
+   "/tmp/tmp2ndnkf4h/game": 1,
+   "/tmp/tmp2ndnkf4h/startup-conflict": 1,
+   "/tmp/tmpu56u5nqk/pending-conflict-0": 1,
+   "/tmp/tmpu56u5nqk/pending-conflict-1": 1,
+   "/tmp/tmpu56u5nqk/pending-conflict-2": 1,
+   "/tmp/tmpu56u5nqk/pending-conflict-3": 1,
+   "/tmp/tmpu56u5nqk/pending-conflict-4": 1
+  },
+  "docs/evidence/review-foundations/quality-initial.json": {
+   "/tmp/nyarl-launcher-pending-green.log": 1,
+   "/tmp/nyarl-launcher-pending-red.log": 1
+  },
+  "docs/evidence/review-foundations/runs/pack-restore/terminal.raw": {
+   "/tmp/nyarl-launcher-gameplay-awuyg7bo/pack-restore/run": 2
+  },
+  "docs/evidence/review-foundations/runs/short-director/terminal.raw": {
+   "/tmp/nyarl-launcher-gameplay-awuyg7bo/short-director/run": 1
+  },
+  "docs/evidence/review-foundations/spec-launcher-cleanup-initial.json": {
+   "/tmp/nyarl-launcher-partial-green.log": 1,
+   "/tmp/nyarl-launcher-partial-red.log": 1
+  },
+  "docs/evidence/review-foundations/tests.log": {
+   "/tmp/nyarl-haunting-test-7_ry60ld": 1,
+   "/tmp/nyarl-haunting-test-jv354dld": 1,
+   "/tmp/nyarl-haunting-test-pals_f90": 1,
+   "/tmp/nyarl-haunting-test-u62afm7j": 1,
+   "/tmp/nyarl-haunting-test-w2s626ng": 1,
+   "/tmp/nyarl-launcher-gameplay-awuyg7bo": 1,
+   "/tmp/nyarlathack-acceptance-5day9i1h": 1
+  },
+  "docs/haunting-observations-evidence.md": {
+   "/tmp/nyarl-episode-turnloop-work/final/result.json": 1,
+   "/tmp/nyarl-mode-fresh-acceptance-review.md": 2,
+   "/tmp/nyarl-mode-fresh-build.json": 2,
+   "/tmp/nyarl-mode-fresh-postvalidation.json": 1,
+   "/tmp/nyarl-mode-fresh-qo070gz1/output": 1,
+   "/tmp/nyarl-provenance-fresh-2rohguef/output/full_suite.log": 1,
+   "/tmp/nyarl-reaping-fresh-706xxlsi/output/full_suite.log": 1
+  },
+  "docs/quality-control.md": {
+   "/tmp/nyarl-native-ci.XXXXXX": 1
+  },
+  "docs/superpowers/plans/haunting-observations-phase1.md": {
+   "/tmp/curio9f-native-jgkwrnfo/tree": 1,
+   "/tmp/nyarl-observation-acceptance-XXXXXX": 1
+  },
+  "docs/turnloop-dump-comparison-contract.md": {
+   "/tmp/nyarl-episode-turnloop-work/final": 1,
+   "/tmp/nyarl-mode-fresh-acceptance-review.md": 1,
+   "/tmp/nyarl-turnloop-dump-contract-review.md:70–77": 1
+  },
+  "docs/workspace-hygiene.md": {
+   "/tmp/nyarlathack-work/": 3
+  }
+ }
+}

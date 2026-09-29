@@ -30,6 +30,11 @@ CHAOS layouts. Real-game save/restore acceptance remains to be exercised.
   request 1. Displayed fixed telegraph before ambient, recorded accepted ack,
   then confirmed quit and exited 0 with a death/result/quit event.
 
+> **Moved artifacts (#176).** The `/tmp` paths cited below were scratch space. Those that
+> still existed on 2026-09-27 were copied, hash-checked, to
+> `~/nyarlathack-evidence/tmp-2026-09/` on the project host; `MAPPING.json` there maps
+> each old path to its new one with per-file SHA-256. The rest were already gone.
+
 Local evidence (not portable test fixtures):
 `/tmp/nyarlathack-hooks-red.log`, `/tmp/nyarlathack-chaos-on-build.log`,
 `/tmp/nyarlathack-chaos-off-build.log`,
