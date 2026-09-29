@@ -119,15 +119,15 @@ static void non_effect_tests(void)
     assert(!memcmp(&s,&before,sizeof s));
     puts("non-effect ok");
 }
-/* #164 prototype pacing. Independent literals: base 2, descent from DL2
- * capped +4, level cap 2, witnessed +1 per source capped +2, ceiling 12. */
+/* #164 pacing. Independent literals: base 2, descent from DL2 capped +4,
+ * level cap 3, witnessed +1 per source capped +2, ceiling 12. */
 static void pacing_tests(void)
 {
     struct chaos_state s, before, v2;
     int d, i;
     assert(CHAOS_STATE_VERSION == 3 && CHAOS_PACING_VERSION == 1);
     assert(CHAOS_PACING_DESCENT_FROM == 2 && CHAOS_PACING_DESCENT_CAP == 4);
-    assert(CHAOS_PACING_LEVEL_CAP == 2 && CHAOS_PACING_WITNESSED_CREDIT == 1);
+    assert(CHAOS_PACING_LEVEL_CAP == 3 && CHAOS_PACING_WITNESSED_CREDIT == 1);
     assert(CHAOS_PACING_WITNESSED_CAP == 2 && CHAOS_BUDGET_CEILING == 12);
     /* Policy 2 (pacing 0) is unchanged: hooks are no-ops, formula identical. */
     chaos_state_init(&v2); before = v2;
@@ -151,22 +151,25 @@ static void pacing_tests(void)
     chaos_state_init(&s); s.pacing = 1;
     chaos_pacing_level(&s, 3);
     assert(chaos_spend_non_effect(&s, 100, CHAOS_SPEND_HAUNT) == CHAOS_OK);
-    assert(s.level_spent == 2 && chaos_budget(&s, 100) == 0);
+    assert(s.level_spent == 2 && chaos_budget(&s, 100) == 1); /* capacity 3 */
+    assert(chaos_spend_non_effect(&s, 100, CHAOS_SPEND_CURIO) == CHAOS_OK);
+    assert(s.level_spent == 3 && chaos_budget(&s, 100) == 0);
     for(i = 0; i < 20; ++i) {
         chaos_pacing_level(&s, i & 1 ? 2 : 3);
         chaos_pacing_level(&s, 1);
     }
-    assert(s.deepest == 3 && s.level_spent == 2 && chaos_pacing_extra(&s) == 1);
+    assert(s.deepest == 3 && s.level_spent == 3 && chaos_pacing_extra(&s) == 1);
     before = s;
     assert(chaos_spend_non_effect(&s, 100, CHAOS_SPEND_CURIO) == CHAOS_BUDGET);
     assert(!memcmp(&s, &before, sizeof s));
-    /* A new deepest level opens a fresh per-level allowance of 2. */
+    /* A new deepest level opens a fresh per-level allowance of 3. */
     chaos_pacing_level(&s, 4);
     assert(s.level_spent == 0 && chaos_pacing_extra(&s) == 2);
-    assert(chaos_budget(&s, 100) == 2);  /* 2 + 2 - 2 spent = 2, cap 2 */
+    assert(chaos_budget(&s, 100) == 1);  /* capacity 2 + 2 = 4, 3 spent */
     /* Per-level cap holds even with lifetime capacity to spare. */
     chaos_state_init(&s); s.pacing = 1; chaos_pacing_level(&s, 1);
-    assert(chaos_budget(&s, 0) == 2);    /* capacity 12, level cap 2 */
+    assert(chaos_budget(&s, 0) == 3);    /* capacity 12, level cap 3 */
+    assert(chaos_spend_non_effect(&s, 0, CHAOS_SPEND_CURIO) == CHAOS_OK);
     assert(chaos_spend_non_effect(&s, 0, CHAOS_SPEND_CURIO) == CHAOS_OK);
     assert(chaos_spend_non_effect(&s, 0, CHAOS_SPEND_CURIO) == CHAOS_OK);
     before = s;
@@ -196,13 +199,15 @@ static void pacing_tests(void)
     assert(chaos_budget(&s, 0) == 0);
     assert(chaos_spend_non_effect(&s, 0, CHAOS_SPEND_CURIO) == CHAOS_BUDGET);
     assert(!memcmp(&s, &before, sizeof s));
-    /* Effects: ward (4) and hunger (3) exceed the per-level cap of 2. */
+    /* Effects: ward (4) exceeds the per-level cap of 3 and is never admitted
+     * under pacing; hunger (3) fits exactly. */
     {
         struct chaos_request r = {1, 1, CHAOS_WARD, 50, 5, 2, 1};
         chaos_state_init(&s); s.pacing = 1; s.safe = 1; chaos_pacing_level(&s, 6);
         assert(chaos_admit(&s, &r, 10, 0, 1) == CHAOS_BUDGET && s.spent == 0);
         r.id = 2; r.kind = CHAOS_HUNGER; r.value = 2; r.telegraph = 3;
-        assert(chaos_admit(&s, &r, 10, 0, 1) == CHAOS_BUDGET && s.spent == 0);
+        assert(chaos_admit(&s, &r, 10, 0, 1) == CHAOS_OK);
+        assert(s.spent == 3 && s.level_spent == 3 && chaos_budget(&s, 10) == 0);
     }
     /* Invalid pacing fields are rejected by validation (save/restore). */
     chaos_state_init(&s); s.pacing = 1;

@@ -277,9 +277,10 @@ void chaos_start(void) {
     observation_clear();
     if (fresh) {
         chaos_state_init(&u.chaos);
-        /* #164 prototype pacing: opt-in, fixed for the whole game (saved). */
+        /* #164 pacing: on by default for every new game, fixed for the whole
+         * game (saved). NYARLATHACK_PACING=0 opts a new game out. */
         flag = getenv("NYARLATHACK_PACING");
-        if (flag && !strcmp(flag, "1")) u.chaos.pacing = 1;
+        u.chaos.pacing = !(flag && !strcmp(flag, "0"));
     }
     oldsanity = u.usanity; oldinsight = u.uinsight;
     started = 1;

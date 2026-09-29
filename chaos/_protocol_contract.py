@@ -97,7 +97,7 @@ COSMETIC = {'limit': 3, 'spacing': 50, 'mask': 7, 'policy': 2}
 PACING = {'version': 1,
  'descent_from': 2,
  'descent_cap': 4,
- 'level_cap': 2,
+ 'level_cap': 3,
  'witnessed_credit': 1,
  'witnessed_cap': 2}
 STATE_VERSION = 3

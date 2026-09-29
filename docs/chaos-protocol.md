@@ -9,8 +9,8 @@ All new engine code is under the NetHack General Public License (`dat/license`).
 
 ## Cosmetic pacing prototype and migration
 
-Current native state/save version is **3** (#164 added the opt-in prototype
-pacing fields; policy and prices are unchanged), ordinary events **3**, opt-in
+Current native state/save version is **3** (#164 added the pacing fields,
+now on by default; policy and prices are unchanged), ordinary events **3**, opt-in
 observation events **4**, request grammar **1**, and admission-journal policy
 **2** (journal `v` remains request version 1). These are separate version axes.
 Historical ordinary v1/observation v2 readers retain their old prices and
@@ -220,13 +220,17 @@ admission. Existing `pre_admitted` and `admitted`/`accepted` events show the
 pre- and post-charge budget; no extra spend rows or whisper IDs are introduced.
 Expiry refunds none of these spenders.
 
-### Prototype pacing (#164; opt-in, not tuned balance)
+### Pacing (#164; on by default)
 
-**Prototype pacing, not tuned balance.** The numbers below are starting values
-for a measurement (#164), awaiting Sam's decision; they are not a balance claim.
-A new game started with `NYARLATHACK_PACING=1` records `pacing = 1` in its saved
-state for its whole life; every other game (the default) keeps `pacing = 0` and
-the exact formula above, with all pacing fields zero. Restore never switches it.
+Sam chose these values on 2026-09-29 from the #164 measurement
+(`docs/evidence/budget-v2-164/`): N = 4, K = 3, witnessed +1 per source capped
+at +2, ceiling 12. They are design choices, not a balance claim.
+
+Every new game records `pacing = 1` in its saved state for its whole life. A new
+game started with `NYARLATHACK_PACING=0` records `pacing = 0` instead and keeps
+the exact formula above, with all pacing fields zero; that opt-out is for
+measurement and comparison. Restore never switches it: a saved game keeps the
+choice it started with, whatever the environment says.
 
 With pacing on, capacity grows from public progress, each term capped:
 
@@ -239,13 +243,15 @@ With pacing on, capacity grows from public progress, each term capped:
   witnessed or applied. Once per source, at most `+2` in total. Display without
   delivery earns nothing, and noticing is never inferred.
 - **Ceiling (12) unchanged:** capacity never exceeds `CHAOS_BUDGET_CEILING`.
-- **Per-level cap (K = 2):** at most 2 points are spent between one new deepest
+- **Per-level cap (K = 3):** at most 3 points are spent between one new deepest
   level and the next. Only a new deepest level opens a fresh allowance, so
-  stair-bouncing cannot farm it. Whisper effects priced above 2 (hunger 3,
-  ward 4) therefore cannot be admitted under pacing; this is a K decision.
+  stair-bouncing cannot farm it. Hunger (3) fits; the ward effect (4) is priced
+  above K and therefore **cannot be admitted in a paced game**. Ward stays
+  available only with `NYARLATHACK_PACING=0`. This follows from K = 3 and is
+  stated here so nobody mistakes it for a bug.
 
 Available budget = `min(capacity, 12) - lifetime spent`, further limited to
-`2 - spent on this level`. Everything else is unchanged: no periodic refill,
+`3 - spent on this level`. Everything else is unchanged: no periodic refill,
 expiry is not a refund, cosmetics stay separate, over-budget fails closed and
 leaves state untouched. The constants live in `chaos/protocol_contract.json`
 under `pacing` and are regenerated, not edited by hand.
