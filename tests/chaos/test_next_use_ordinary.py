@@ -286,7 +286,13 @@ class OrdinaryNextUseTests(unittest.TestCase):
             wizard=False,
             ordinary=True,
             launcher_fresh=fresh,
-            launcher_options=["--ordinary", "--next-use", "--max-runtime", "90"],
+            launcher_options=[
+                "--ordinary",
+                "--next-use",
+                "--no-haunt",  # #198: the hound is default-on; this test is next-use only.
+                "--max-runtime",
+                "90",
+            ],
             executable=self.exe,
             root=self.artifacts / name,
         )

@@ -8,6 +8,7 @@ No model modules are imported and the game inherits the caller's terminal.
 
 import argparse
 import fcntl
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -115,20 +116,34 @@ def add_parser(sub):
         action="store_true",
         help="start a human Bard with no wizard mode; sets NETHACKOPTIONS if unset",
     )
-    p.add_argument(
+    next_use = p.add_mutually_exclusive_group()
+    next_use.add_argument(
         "--next-use",
         action="store_true",
-        help="host-built next-use selection from a ready origin schedule; RandomHistoryBackend seed 0; no model call",
+        help="host-built next-use selection from a ready origin schedule; "
+        "RandomHistoryBackend seed 0; no model call (on by default with --ordinary)",
     )
-    p.add_argument(
+    next_use.add_argument(
+        "--no-next-use",
+        action="store_true",
+        help="--ordinary: turn off the default next-use program (#198)",
+    )
+    haunt = p.add_mutually_exclusive_group()
+    haunt.add_argument(
         "--haunt",
         nargs="?",
         const=HAUNT_DEFAULT,
         type=Path,
         metavar="PACK",
-        help="opt-in echo hound: install a Lua haunting candidate (default "
-        "chaos/packs/footsteps.lua) before fresh play, VERIFY ONLY on restore; "
-        "the game's shadow trial still decides admission",
+        help="echo hound: install a Lua haunting candidate (default "
+        "chaos/packs/footsteps.lua; on by default with --ordinary) before "
+        "fresh play, VERIFY ONLY on restore; the game's shadow trial still "
+        "decides admission",
+    )
+    haunt.add_argument(
+        "--no-haunt",
+        action="store_true",
+        help="--ordinary: turn off the default echo hound (#198)",
     )
     p.add_argument(
         "game_args",
@@ -323,11 +338,15 @@ def _refuse_ordinary_over_save(args, root):
         command = ["python3", "-m", "chaos", "play", "--ordinary"]
         if args.next_use:
             command.append("--next-use")
+        if getattr(args, "no_next_use", False):
+            command.append("--no-next-use")
         haunt = getattr(args, "haunt", None)
         if haunt is not None:
             command.append("--haunt")
             if Path(haunt).resolve() != HAUNT_DEFAULT:
                 command.append(str(haunt))
+        if getattr(args, "no_haunt", False):
+            command.append("--no-haunt")
         default_root = (
             Path(__file__).resolve().parent.parent / "dnethackdir"
         ).resolve()
@@ -350,6 +369,112 @@ def _refuse_ordinary_over_save(args, root):
     ]
     print("\n".join(lines), file=sys.stderr, flush=True)
     return 2
+
+
+CHOICE = "ordinary-choice.json"
+CHOICE_KEYS = {"v", "haunt", "haunt_pack", "haunt_sha256", "next_use"}
+
+
+def _explicit(args):
+    """Flags the player typed: True on, False off, None left to the default."""
+    haunt = None
+    if getattr(args, "haunt", None) is not None:
+        haunt = True
+    elif getattr(args, "no_haunt", False):
+        haunt = False
+    next_use = None
+    if getattr(args, "next_use", False):
+        next_use = True
+    elif getattr(args, "no_next_use", False):
+        next_use = False
+    return haunt, next_use
+
+
+def _read_choice(directory):
+    """The fresh game's recorded choice, or None for a pre-#198 run directory."""
+    try:
+        fd = secure_open(Path(directory) / CHOICE)
+    except FileNotFoundError:
+        return None
+    with os.fdopen(fd, "rb") as f:
+        raw = f.read(4097)
+    if len(raw) > 4096:
+        raise ValueError("ordinary choice record too large")
+    record = json.loads(raw)
+    if (
+        not isinstance(record, dict)
+        or set(record) != CHOICE_KEYS
+        or record["v"] != 1
+        or not isinstance(record["haunt"], bool)
+        or not isinstance(record["next_use"], bool)
+    ):
+        raise ValueError("invalid ordinary choice record")
+    pack, digest = record["haunt_pack"], record["haunt_sha256"]
+    if record["haunt"]:
+        if not (isinstance(pack, str) and isinstance(digest, str)):
+            raise ValueError("invalid ordinary choice record")
+    elif pack is not None or digest is not None:
+        raise ValueError("invalid ordinary choice record")
+    return record
+
+
+def _pack_digest(pack):
+    from .haunt import read_source
+
+    return hashlib.sha256(read_source(pack)).hexdigest()
+
+
+def _resolve_choice(args, restore_dir):
+    """#198: --ordinary turns the hound and next-use on by default.
+
+    Sets args.haunt / args.next_use to the effective choice. A fresh ordinary
+    run returns the record to write into its run directory; restore follows
+    that record and never re-reads today's defaults. A run directory from
+    before #198 has no record and keeps exactly its explicit flags.
+    """
+    haunt, next_use = _explicit(args)
+    if restore_dir is not None:
+        record = _read_choice(restore_dir)
+        if record is None:
+            args.next_use = next_use is True
+            return None
+        if (haunt is not None and haunt != record["haunt"]) or (
+            next_use is not None and next_use != record["next_use"]
+        ):
+            raise ValueError("restore options conflict with the run's recorded choice")
+        if record["haunt"]:
+            pack = args.haunt if args.haunt is not None else record["haunt_pack"]
+            if _pack_digest(pack) != record["haunt_sha256"]:
+                raise ValueError("haunt pack differs from the run's recorded pack")
+            args.haunt = Path(pack)
+        args.next_use = record["next_use"]
+        return None
+    if not args.ordinary:
+        args.next_use = next_use is True
+        return None
+    if haunt is None:
+        args.haunt = HAUNT_DEFAULT
+    args.next_use = next_use is not False
+    record = {"v": 1, "haunt": args.haunt is not None, "next_use": args.next_use}
+    record["haunt_pack"] = record["haunt_sha256"] = None
+    if args.haunt is not None:
+        pack = Path(args.haunt).resolve()
+        record["haunt_pack"] = str(pack)
+        record["haunt_sha256"] = _pack_digest(pack)
+    return record
+
+
+def _write_choice(directory, record):
+    """Exclusive, private and durable; never replaces an existing record."""
+    fd = os.open(
+        Path(directory) / CHOICE,
+        os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW,
+        0o600,
+    )
+    with os.fdopen(fd, "wb") as f:
+        f.write(json.dumps(record, sort_keys=True).encode() + b"\n")
+        f.flush()
+        os.fsync(f.fileno())
 
 
 def _validate_startup_pending(backend, state, pending):
@@ -553,8 +678,10 @@ def play(args):
     if refused is not None:
         return refused
     curio = _curio_preflight(args)
+    restore_dir = _directory(args) if args.reuse_run_dir is not None else None
+    choice = _resolve_choice(args, restore_dir)
     haunt = _haunt_preflight(args)
-    directory = _directory(args)
+    directory = restore_dir if restore_dir is not None else _directory(args)
     print(
         "chaos: run directory " + json.dumps(str(directory)) + " (preserved on exit)",
         file=sys.stderr,
@@ -595,6 +722,8 @@ def play(args):
                     curio,
                     restore=args.reuse_run_dir is not None,
                 )
+            if choice is not None:
+                _write_choice(directory, choice)
             if haunt is not None:
                 _haunt_install(box, haunt, restore=args.reuse_run_dir is not None)
             log = secure_open(
