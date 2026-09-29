@@ -75,7 +75,10 @@ reject an encounter instead of forcing a placement.
 
 The game considers one candidate when it has observed backtracking, has at
 least four recorded positions, has two available cruelty points, and can place
-a creature on visible, unoccupied, trap-free floor at least three squares away.
+a creature on visible, unoccupied, trap-free floor at least three squares away
+and more than four squares from every pet (#201: otherwise the starting pet
+usually killed the hound before the player saw it). When no square qualifies,
+nothing is spent and a later turn tries again.
 The candidate must pass its real shadow trial first. A fixed warning precedes
 the live spawn. The **echo hound** uses the existing jackal's body and ordinary
 attacks; its script changes only ordinary movement selection. It is not

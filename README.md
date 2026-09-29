@@ -55,7 +55,9 @@ you can meet today:
   moves ago, after "Something has learned the rhythm of your footsteps." It
   is on by default with `--ordinary` (`--no-haunt` turns it off; `--haunt PACK`
   picks another Lua pack; the default is `chaos/packs/footsteps.lua`). To
-  provoke it, pace back and forth in a room; the starting room is fine. The game runs one hidden trial of the
+  provoke it, pace back and forth in a room. It only appears more than four
+  squares from your pet, so in a small starting room with the pet beside you
+  it waits until the pet wanders off or you pace somewhere roomier. The game runs one hidden trial of the
   hound, and only lets it in if you could get away from it. That trial
   happens once per game; fewer than one in ten is refused, more often in a
   cramped, cluttered room. The hound can be killed, and it gives up after about

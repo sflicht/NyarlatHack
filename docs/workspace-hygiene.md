@@ -45,6 +45,21 @@ python3 scripts/clean_workspace.py      # dry run: other leftovers older than 7 
 
 Report the freed space it prints in the final message or PR comment.
 
+A daily job on the VPS backs this up: the `hermes` user's crontab runs
+`/usr/bin/python3 ~/.local/share/nyarlathack/clean_workspace.py --apply --max-age 7`
+at 04:23 UTC (scan mode, so failed-run evidence younger than 7 days, `KEEP`
+directories and anything in use survive), appending to
+`~/.hermes/reports/nyarlathack-cleanup.log`. It runs a stable copy, not a
+worktree's, so it survives worktree removal; the crontab comment names the
+`main` commit it was copied from. When `scripts/clean_workspace.py` changes on
+`main`, refresh the copy and that comment:
+
+```
+git show origin/main:scripts/clean_workspace.py > ~/.local/share/nyarlathack/clean_workspace.py
+git rev-parse --short origin/main > ~/.local/share/nyarlathack/clean_workspace.COMMIT
+crontab -e      # update the commit in the "NyarlatHack daily /tmp cleanup" comment
+```
+
 `scripts/clean_workspace.py` only considers:
 
 - children of `/tmp/nyarlathack-work/`;

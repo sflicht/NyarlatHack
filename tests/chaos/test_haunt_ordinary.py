@@ -179,7 +179,9 @@ class OrdinaryHauntTests(RetainOnFailure):
         )
 
     def test_start_room_first(self):
-        # #190: pace in the start room FIRST, then in a larger room.
+        # #190 paced the start room first; #201: in this 12-square start room
+        # every square that could hold the hound is within 4 of the pet, so
+        # the one trial waits: nothing is spent, written or telegraphed there.
         game = self.game(
             "start-room",
             ["--ordinary", "--haunt", "--no-next-use", "--max-runtime", "300"],
@@ -189,23 +191,29 @@ class OrdinaryHauntTests(RetainOnFailure):
         player = Player(game)
         self.assertEqual(len(player.start_room), 12, player.screen.text())
 
-        # 1. Pace in the start room: the one trial is decided there.
-        self.assertTrue(player.pace(lambda: self.decided(game)), self.haunting(game))
+        # 1. Pace in the start room: backtracks are seen, the trial waits.
+        player.pace(lambda: False, limit=20)
         self.assertIn(player.me(), player.start_room)
-        report = json.loads((game.run / "dreamlands.json").read_text())
-        print("HAUNT_START_ROOM_TRIAL=" + json.dumps(report), flush=True)
-        self.assertEqual(report["sandboxed"], 1, report)
-        self.assertEqual((report["accepted"], report["escaped"]), (1, 1), report)
-        self.assertGreater(report["moved"], 8, report)
-        self.assertEqual(self.haunting(game), ["pre_admitted", "accepted"])
-        self.assertIn(TELEGRAPH, player.screen.line(0))
-        accepted = [e for e in game.events() if e["detail"] == "accepted"][0]
-        self.assertEqual(accepted["spent"], 2)
+        self.assertGreater(self.count(game, "backtrack"), 0)
+        self.assertEqual(self.haunting(game), [])
+        self.assertFalse((game.run / "haunting-used.lua").exists())
+        self.assertFalse((game.run / "dreamlands.json").exists())
+        self.assertNotIn(TELEGRAPH.encode(), bytes(game.raw))
 
-        # 2. Then leave and pace in a larger room: no second trial, no
-        # second debit.
+        # 2. Leave and pace in a larger room: the waiting trial is decided
+        # there, once, and admitted with the one debit.
         player.leave()
         self.assertGreater(len(player.room(player.me())), len(player.start_room))
+        self.assertTrue(
+            player.pace(lambda: self.decided(game), limit=120), self.haunting(game)
+        )
+        report = json.loads((game.run / "dreamlands.json").read_text())
+        print("HAUNT_LATER_ROOM_TRIAL=" + json.dumps(report), flush=True)
+        self.assertEqual(report["sandboxed"], 1, report)
+        self.assertEqual((report["accepted"], report["escaped"]), (1, 1), report)
+        self.assertEqual(self.haunting(game)[:2], ["pre_admitted", "accepted"])
+        accepted = [e for e in game.events() if e["detail"] == "accepted"][0]
+        self.assertEqual(accepted["spent"], 2)
         player.pace(lambda: False, limit=20)
         self.assertEqual(
             [d for d in self.haunting(game) if d != "expired"],
@@ -213,8 +221,6 @@ class OrdinaryHauntTests(RetainOnFailure):
         )
         self.assertEqual(json.loads((game.run / "dreamlands.json").read_text()), report)
         self.assertEqual(game.quit(), 0)
-        # Delivery is not pinned: in this map the pet kills the hound before
-        # its first live step. Admission and the one debit are.
         xlog = (game.game / "xlogfile").read_text()
         self.assertRegex(xlog, r":chaos_admitted=2:")
         self.assertRegex(xlog, r":chaos_spent=2\n$")
