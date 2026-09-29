@@ -1,0 +1,101 @@
+{
+ "baseline": {
+  "games": 50,
+  "errors": 2,
+  "admitted": 45,
+  "rejected": 2,
+  "undecided": 1,
+  "median": 1,
+  "mean": 1.31,
+  "ci": [
+   0.98,
+   1.69
+  ],
+  "steps_0_1_2_3plus": [
+   11,
+   20,
+   7,
+   7
+  ],
+  "life10": 2,
+  "median_life": 3,
+  "who": {
+   "pet": 41,
+   "player": 3,
+   "expired alive": 1
+  },
+  "how_pet_or_player_death_seen": {
+   "unseen": 34,
+   "seen": 3,
+   "corpse": 7
+  },
+  "accepted_turn_median": 6,
+  "accepted_turn_max": 14
+ },
+ "scratch_A": {
+  "games": 25,
+  "errors": 0,
+  "admitted": 20,
+  "rejected": 0,
+  "undecided": 5,
+  "median": 2.0,
+  "mean": 2.9,
+  "ci": [
+   1.9,
+   4
+  ],
+  "steps_0_1_2_3plus": [
+   1,
+   6,
+   4,
+   9
+  ],
+  "life10": 7,
+  "median_life": 6.5,
+  "who": {
+   "pet": 15,
+   "player": 3,
+   "expired alive": 2
+  },
+  "how_pet_or_player_death_seen": {
+   "unseen": 12,
+   "corpse": 3,
+   "seen": 3
+  },
+  "accepted_turn_median": 7.0,
+  "accepted_turn_max": 21
+ },
+ "after_A": {
+  "games": 50,
+  "errors": 1,
+  "admitted": 36,
+  "rejected": 1,
+  "undecided": 12,
+  "median": 2.0,
+  "mean": 2.25,
+  "ci": [
+   1.69,
+   2.89
+  ],
+  "steps_0_1_2_3plus": [
+   0,
+   17,
+   8,
+   11
+  ],
+  "life10": 7,
+  "median_life": 6.0,
+  "who": {
+   "pet": 26,
+   "player": 9,
+   "expired alive": 1
+  },
+  "how_pet_or_player_death_seen": {
+   "unseen": 20,
+   "seen": 9,
+   "corpse": 6
+  },
+  "accepted_turn_median": 9.0,
+  "accepted_turn_max": 23
+ }
+}
