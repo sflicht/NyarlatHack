@@ -361,7 +361,11 @@ def main():
     parser.add_argument("--jobs", type=int, default=max(1, (os.cpu_count() or 2) - 1))
     parser.add_argument("--work", type=Path, help="per-game artifacts; default mkdtemp")
     parser.add_argument(
-        "--out", type=Path, required=True, help="report path stem (.json/.md added)"
+        "--out",
+        type=Path,
+        required=True,
+        help="report path stem (.json/.md added); committed reports go under "
+        "docs/measurements/<name>/",
     )
     parser.add_argument("--game-dir", type=Path, default=ROOT / "dnethackdir")
     args = parser.parse_args()

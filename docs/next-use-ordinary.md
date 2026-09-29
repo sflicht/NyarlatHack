@@ -207,7 +207,7 @@ mirrors. Games reaching each stage, all three starts together:
 lifetime is **300 monster moves**. It is one constant with two Python mirrors
 that must change together: `ORIGIN_LIFETIME` in `chaos/next_use_journal.py` and
 `ORIGIN_TTL` in `tests/chaos/sweep_funnel.py`. Reports:
-`docs/evidence/seed-sweep/baseline-v1-seeds-1-100-rebind-lifetime-{100,300}.md`.
+`docs/measurements/seed-sweep/baseline-v1-seeds-1-100-rebind-lifetime-{100,300}.md`.
 
 ## Schedule/transport regression scope (#143)
 
