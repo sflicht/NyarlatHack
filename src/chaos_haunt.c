@@ -75,7 +75,10 @@ int chaos_haunt_pick(struct monst *m,const struct nhcoord *poss,int count) {
 void chaos_haunt_commit(struct monst *m) {
  if(u.haunt.active && m->m_id==u.haunt.target) {
   u.haunt.state=pending_state;
-  if(!chaos_shadow_active() && canseemon(m))chaos_event("haunt_step","result","");
+  if(!chaos_shadow_active() && canseemon(m)){
+   chaos_pacing_credit(&u.chaos,CHAOS_PACING_SRC_HAUNT); /* #164: delivered */
+   chaos_event("haunt_step","result","");
+  }
  }
 }
 /* Headless callbacks are installed only in the fork child. */
@@ -232,7 +235,7 @@ void chaos_haunt_tick(int dir) {
   m=spawn_hound(where.x,where.y);
   /* Native spawn may emit events; never restore the whole staged state.
    * A failed spawn discards its debit, without refunding or retrying. */
-  if(m){h->target=m->m_id;h->active=1;h->until=moves+60;u.chaos.spent=charged.spent;chaos_event("haunting","result","accepted");}
+  if(m){h->target=m->m_id;h->active=1;h->until=moves+60;chaos_commit_charge(&u.chaos,&charged);chaos_event("haunting","result","accepted");}
   else chaos_event("haunting","result","spawn_failed");
  } else chaos_event("haunting","result","rejected");
  recollect();

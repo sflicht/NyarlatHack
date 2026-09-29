@@ -69,6 +69,8 @@ class CosmeticCore(unittest.TestCase):
             assert C.sizeof(State) == cls.c.cosmetic_layout(0)
             assert State.cosmetic_seen.offset == cls.c.cosmetic_layout(1)
             assert State.cosmetic_last_turn.offset == cls.c.cosmetic_layout(2)
+        if cls.c.cosmetic_layout(3):  # #164 state v3 pacing fields
+            assert State.level_spent.offset == cls.c.cosmetic_layout(3)
 
     @classmethod
     def tearDownClass(cls):

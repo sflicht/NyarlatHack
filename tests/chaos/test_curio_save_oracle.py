@@ -60,8 +60,10 @@ def fixture(policy):
     data[144:168] = b"Offline counter".ljust(24, b"\0")
     data[168:196] = source.ljust(28, b"\0")
     if policy == "current":
+        # Synthetic control: only the version word moves to v3 (#164); the
+        # compiled layout is checked by test_current_compiled_layout_reporter.
         schema.update(
-            chaos_state_version=2,
+            chaos_state_version=3,
             chaos_size=96,
             chaos_fields={
                 "version": dict(offset=0, size=4),
@@ -69,7 +71,7 @@ def fixture(policy):
                 "cosmetic_last_turn": dict(offset=88, size=8),
             },
         )
-        put(12, 2)
+        put(12, 3)
         put(92, 1)
         put(100, 1, 8)
     return bytes(data), schema, source
@@ -99,7 +101,7 @@ class CurioSaveOracleTests(unittest.TestCase):
                 timeout=30,
             )
             schema = json.loads(subprocess.check_output([str(exe)], timeout=5))
-        self.assertEqual(schema["chaos_state_version"], 2)
+        self.assertEqual(schema["chaos_state_version"], 3)  # #164 pacing fields
         self.assertEqual(schema["chaos_size"], schema["you"]["chaos"]["size"])
         previous = 0
         for name in ("version", "cosmetic_seen", "cosmetic_last_turn"):

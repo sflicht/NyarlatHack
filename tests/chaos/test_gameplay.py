@@ -208,6 +208,10 @@ class GameplayTests(RetainOnFailure):
             self.assertNotIn("Crawling Chaos", p.read_text(errors="replace"))
 
     def test_real_save_active_and_pending_roundtrip(self):
+        # #164: ward (4) is above the paced per-level cap of 3, so this save
+        # round trip of an active ward uses an unpaced game (saved choice).
+        os.environ["NYARLATHACK_PACING"] = "0"
+        self.addCleanup(os.environ.pop, "NYARLATHACK_PACING", None)
         g = self.game("save-roundtrip", wizard=True)
         g.request("ambient", 1, 1)
         g.start()

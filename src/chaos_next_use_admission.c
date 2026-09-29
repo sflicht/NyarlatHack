@@ -104,7 +104,7 @@ int chaos_next_use_debit(struct chaos_next_use_admission *destination,
     commit = *source;
     if (commit.budget_state.reserved != source->budget_state.reserved)
         return CHAOS_NEXT_USE_ADMISSION_SCHEMA;
-    commit.budget_state.spent += cost;
+    chaos_charge(&commit.budget_state, cost);
     commit.program.phase = CHAOS_ATTEMPT_COMMITTED;
     commit.program.admitted = 1;
     commit.program.state = 0;

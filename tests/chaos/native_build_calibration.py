@@ -574,7 +574,11 @@ def _cosmetic_init(ops, layout, header_version):
         ]
     )
     _sequence(ops, patterns, "chaos initializer")
-    _require(version == header_version == 2, "unsupported chaos initializer policy")
+    # #164: state v3 adds the opt-in pacing fields; same initializer shape.
+    _require(
+        version == header_version and version in (2, 3),
+        "unsupported chaos initializer policy",
+    )
     return version
 
 
@@ -603,7 +607,7 @@ def _measure(inputs):
     curio_version = _macro(curio_header, "CHAOS_CURIO_VERSION")
     policy_header = _read(root / "include/chaos_protocol.h", 65536).decode("ascii")
     policy_version = _macro(policy_header, "CHAOS_STATE_VERSION")
-    _require(policy_version in (1, 2), "unsupported chaos state policy")
+    _require(policy_version in (1, 2, 3), "unsupported chaos state policy")
     source_limit = _macro(curio_header, "CHAOS_CURIO_SOURCE")
     _require(
         curio_version == 1 and source_limit == 4096,
@@ -615,7 +619,7 @@ def _measure(inputs):
         limit=512 * 1024 * 1024,
     )
     try:
-        dwarf = _dwarf(lines, str(root), cosmetic=policy_version == 2)
+        dwarf = _dwarf(lines, str(root), cosmetic=policy_version >= 2)
     finally:
         close = getattr(lines, "close", None)
         if close:
@@ -781,7 +785,7 @@ def _measure(inputs):
         "save_header_values": version,
     }
     policy_evidence = {"schema": "legacy-state1"}
-    if policy_version == 2:
+    if policy_version >= 2:
         chaos = layouts["chaos_state"]
         init_ops = _disassemble(path, image, "chaos_state_init")[1]
         measured.update(
@@ -789,7 +793,10 @@ def _measure(inputs):
             chaos_size=chaos["size"],
             chaos_fields={k: v for k, v in chaos["fields"].items() if k != "spent"},
         )
-        policy_evidence = {"schema": "cosmetic-state2", "initializer": init_ops}
+        policy_evidence = {
+            "schema": f"cosmetic-state{policy_version}",
+            "initializer": init_ops,
+        }
     evidence = {
         "policy": policy_evidence,
         "dwarf": dwarf,
