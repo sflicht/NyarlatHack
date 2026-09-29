@@ -183,11 +183,13 @@ static int origin_evidence_reason(const struct chaos_next_use_origin_ref *origin
     return 0;
 }
 
-/* #177 option 1: the engine's own newest origin for the published origin's
- * family replaces it when it is strictly newer, completed and noted by the
- * engine (qualifying), from this run, on the current level and within the
- * origin lifetime at this safe point. The director never chooses or retimes;
- * no game state or RNG is read beyond the engine's recorded evidence. */
+/* #177 option 1, widened by #200 (C): the engine's own newest origin for the
+ * published origin's family replaces it when it is strictly newer, completed
+ * and noted by the engine (qualifying), from this run, and within the origin
+ * lifetime at this safe point, on whatever level it happened: a second
+ * whistle refreshes the origin instead of superseding it. The director never
+ * chooses or retimes; no game state or RNG is read beyond the engine's
+ * recorded evidence. */
 static int origin_rebind(const struct chaos_next_use_origin_ref *published,
                          const struct chaos_next_use_safe_request *request,
                          struct chaos_next_use_origin_ref *out)
@@ -213,8 +215,6 @@ static int origin_rebind(const struct chaos_next_use_origin_ref *published,
              && newest->notice_seq < newest->end_seq)
         || newest->move < published->move
         || newest->move < 0 || newest->move > 2147483547
-        || newest->level_dnum != request->level_dnum
-        || newest->level_dlevel != request->level_dlevel
         || request->at_move < newest->move
         || request->at_move > newest->move + CHAOS_NEXT_USE_ORIGIN_LIFETIME)
         return 0;
@@ -253,9 +253,10 @@ static int envelope_origin_reasons(const struct chaos_next_use_envelope *envelop
         }
         if (hex64(request->run_hex) && strcmp(origin->run, request->run_hex))
             own |= CHAOS_NEXT_USE_SAFE_RUN_MISMATCH;
-        if (origin->level_dnum != request->level_dnum
-            || origin->level_dlevel != request->level_dlevel)
-            own |= CHAOS_NEXT_USE_SAFE_LEVEL_MISMATCH;
+        /* #200 (A): no level check here. The program is installed on the
+         * level of this safe point, where its effect lands, and ends if the
+         * player leaves it (runtime boundary); the origin may be from an
+         * earlier level. level_mismatch keeps its bit for the row format. */
         if (request->at_move > origin->move + CHAOS_NEXT_USE_ORIGIN_LIFETIME)
             own |= CHAOS_NEXT_USE_SAFE_ORIGIN_EXPIRED;
         own |= origin_evidence_reason(origin);
