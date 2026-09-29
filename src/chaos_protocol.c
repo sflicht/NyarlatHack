@@ -174,6 +174,11 @@ int chaos_state_valid(const struct chaos_state *s) {
        s->cosmetic_seen < 0 || s->cosmetic_seen > CHAOS_COSMETIC_MASK ||
        s->cosmetic_last_turn < 0 || s->cosmetic_last_turn > CHAOS_MAX_COUNTER ||
        (!s->cosmetic_seen && s->cosmetic_last_turn)) return 0;
+    if(s->pacing != 0 && s->pacing != 1) return 0;
+    if(!s->pacing && (s->deepest || s->credited || s->level_spent)) return 0;
+    if(s->deepest < 0 || s->deepest > CHAOS_PACING_MAX_DEPTH ||
+       s->credited < 0 || s->credited > CHAOS_PACING_SRC_ALL ||
+       s->level_spent < 0 || s->level_spent > s->spent) return 0;
     for(i = 0; i < CHAOS_KINDS; ++i) {
         const struct chaos_effect *e = &s->effects[i];
         if(e->value) {
@@ -184,12 +189,57 @@ int chaos_state_valid(const struct chaos_state *s) {
     }
     return reserved == s->reserved && reserved <= s->spent;
 }
+/* #164 prototype pacing: public progress credits on top of Sanity capacity.
+ * Descent: +1 per deepest level beyond DESCENT_FROM, at most DESCENT_CAP;
+ * `deepest` only grows, so revisiting levels earns nothing. Per-level cap:
+ * at most LEVEL_CAP points spent since the deepest level last grew. Witnessed: +1 per
+ * source (haunt, curio, next-use) that delivered, at most WITNESSED_CAP. */
+int chaos_pacing_extra(const struct chaos_state *s) {
+    int descent, witnessed, bits;
+    if(!s || !s->pacing) return 0;
+    descent = s->deepest - CHAOS_PACING_DESCENT_FROM;
+    if(descent < 0) descent = 0;
+    if(descent > CHAOS_PACING_DESCENT_CAP) descent = CHAOS_PACING_DESCENT_CAP;
+    for(bits = s->credited, witnessed = 0; bits; bits &= bits - 1)
+        witnessed += CHAOS_PACING_WITNESSED_CREDIT;
+    if(witnessed > CHAOS_PACING_WITNESSED_CAP) witnessed = CHAOS_PACING_WITNESSED_CAP;
+    return descent + witnessed;
+}
 int chaos_budget(const struct chaos_state *s, int sanity) {
     int n;
     if(sanity < CHAOS_BUDGET_SANITY_MIN) sanity = CHAOS_BUDGET_SANITY_MIN;
     if(sanity > CHAOS_BUDGET_SANITY_MAX) sanity = CHAOS_BUDGET_SANITY_MAX;
-    n = CHAOS_BUDGET_BASE + (CHAOS_BUDGET_SANITY_MAX - sanity) / CHAOS_BUDGET_STEP - s->spent;
+    n = CHAOS_BUDGET_BASE + (CHAOS_BUDGET_SANITY_MAX - sanity) / CHAOS_BUDGET_STEP;
+    if(s->pacing) {
+        /* Lifetime capacity never exceeds the unchanged ceiling; spending on
+         * one level never exceeds LEVEL_CAP since arriving there. */
+        n += chaos_pacing_extra(s);
+        if(n > CHAOS_BUDGET_CEILING) n = CHAOS_BUDGET_CEILING;
+        n -= s->spent;
+        if(n > CHAOS_PACING_LEVEL_CAP - s->level_spent)
+            n = CHAOS_PACING_LEVEL_CAP - s->level_spent;
+    } else n -= s->spent;
     return n > 0 ? n : 0;
+}
+void chaos_charge(struct chaos_state *s, int cost) {
+    s->spent += cost;
+    if(s->pacing) s->level_spent += cost;
+}
+/* Publish only a staged debit's accounting, never the whole staged state. */
+void chaos_commit_charge(struct chaos_state *dst, const struct chaos_state *src) {
+    dst->spent = src->spent;
+    dst->level_spent = src->level_spent;
+}
+/* Only a new deepest level opens a fresh per-level allowance: revisiting a
+ * shallower level, or bouncing on stairs, changes nothing (no farming). */
+void chaos_pacing_level(struct chaos_state *s, int deepest) {
+    if(!s || !s->pacing || deepest < 0) return;
+    if(deepest > CHAOS_PACING_MAX_DEPTH) deepest = CHAOS_PACING_MAX_DEPTH;
+    if(deepest > s->deepest) { s->deepest = deepest; s->level_spent = 0; }
+}
+void chaos_pacing_credit(struct chaos_state *s, int source) {
+    if(!s || !s->pacing || source <= 0 || (source & ~CHAOS_PACING_SRC_ALL)) return;
+    s->credited |= source;
 }
 int chaos_spend_non_effect(struct chaos_state *s, int sanity, int spender) {
     int cost;
@@ -202,7 +252,7 @@ int chaos_spend_non_effect(struct chaos_state *s, int sanity, int spender) {
     if(cost <= 0 || cost > CHAOS_BUDGET_CEILING) return CHAOS_SCHEMA;
     if(cost > chaos_budget(s, sanity) || cost > CHAOS_BUDGET_CEILING - s->spent)
         return CHAOS_BUDGET;
-    s->spent += cost;
+    chaos_charge(s, cost);
     return CHAOS_OK;
 }
 void chaos_expire(struct chaos_state *s, long turn) {
@@ -240,7 +290,7 @@ int chaos_admit(struct chaos_state *s, const struct chaos_request *r, long turn,
     if(s->effects[r->kind].value) return CHAOS_ACTIVE;
     cost = chaos_cost(r->kind);
     if(cost > chaos_budget(s,sanity)) return CHAOS_BUDGET;
-    s->spent += cost;
+    chaos_charge(s, cost);
     if(mutations[r->kind].persistent) {
         s->reserved += cost;
         s->effects[r->kind].value = r->value;

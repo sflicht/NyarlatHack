@@ -76,7 +76,7 @@ class EpisodeScopesTests(unittest.TestCase):
             raise RuntimeError(result.stderr.decode())
         print(f"ENGINE-UNIT evidence: {cls.logs}")
 
-    def run_scope(self, commands, flag="1", directory=True, whisper=None):
+    def run_scope(self, commands, flag="1", directory=True, whisper=None, pacing=None):
         with tempfile.TemporaryDirectory(prefix="nyarl-obs5b-run-") as tmp:
             if whisper is not None:
                 (Path(tmp) / "whisper.json").write_text(json.dumps(whisper))
@@ -87,6 +87,8 @@ class EpisodeScopesTests(unittest.TestCase):
                 env["NYARLATHACK_RUN_DIR"] = tmp
             if flag is not None:
                 env["NYARLATHACK_OBSERVATIONS"] = flag
+            if pacing is not None:
+                env["NYARLATHACK_PACING"] = pacing
             result = subprocess.run(
                 [str(self.binary)],
                 input=commands.encode(),
@@ -137,9 +139,12 @@ class EpisodeScopesTests(unittest.TestCase):
             ("hunger_rate", 2, 1, 3),
         ]:
             with self.subTest(name=name, value=value):
+                # #164: ward (4) exceeds the paced per-level cap of 3, so the
+                # legacy message table is exercised in an unpaced game.
                 _, rows, output = self.run_scope(
                     "food start",
                     flag="0",
+                    pacing="0",
                     whisper=dict(
                         v=1,
                         id=1,
@@ -204,11 +209,13 @@ class EpisodeScopesTests(unittest.TestCase):
 
         for line in expected.splitlines():
             self.assertEqual(parse_event(line)["v"], 1)
+        # #164: a new game paces by default; Sanity 60 gives capacity 6,
+        # limited to the per-level cap of 3 (the v1 golden above keeps 6).
         current_expected = b"".join(
             (
                 '{"v":3,"seq":%d,"turn":1,"safe":%d,"event":"%s",'
                 '"phase":"result","detail":"%s","sanity":60,"insight":4,'
-                '"budget":6,"spent":0,"reserved":0,"last_id":0,'
+                '"budget":3,"spent":0,"reserved":0,"last_id":0,'
                 '"vitals":{"hp":7,"hp_max":20,"power":2,"power_max":10},'
                 '"cosmetic":{"seen":0,"last_turn":0}}\n' % (seq, safe, name, detail)
             ).encode()

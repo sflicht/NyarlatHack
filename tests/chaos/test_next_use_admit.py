@@ -279,7 +279,8 @@ class NextUseAdmitTests(RetainOnFailure):
 
     def test_debit_bypass_fails_price_oracle(self):
         exe = self._compile_mutant(
-            "commit.budget_state.spent += cost;",
+            # #164: the debit is now chaos_charge (spent and per-level spent).
+            "chaos_charge(&commit.budget_state, cost);",
             "/* bypass debit */",
         )
         p = subprocess.run(

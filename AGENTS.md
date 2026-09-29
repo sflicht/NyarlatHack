@@ -130,6 +130,11 @@ final message, run `python3 scripts/clean_workspace.py --apply
 /tmp/nyarlathack-work/<run-id>` and report the freed space. Full policy:
 [`docs/workspace-hygiene.md`](docs/workspace-hygiene.md).
 
+Files under `docs/` must not cite `/tmp` paths; `scripts/check_docs_tmp.py`
+enforces this in CI, and historical citations are frozen in
+`scripts/docs_tmp_allowlist.json` (moved artifacts:
+`~/nyarlathack-evidence/tmp-2026-09/MAPPING.json`).
+
 ## Git conventions
 
 - Commit identity in this repo is `Xiongmao (雄猫) <xiongmao@lichtens.cloud>`
@@ -155,3 +160,12 @@ final message, run `python3 scripts/clean_workspace.py --apply
   mutation must use `rn2()` and friends so replay holds.
 - Balance is explicitly not a goal of upstream; do not "fix" role balance in
   passing.
+
+## Project skills
+
+Procedures specific to this repo live in `.hermes/skills/` here (loaded through
+`skills.external_dirs`), not in `~/.hermes/skills/`. Hermes saves newly created
+skills to `~/.hermes/skills/`; after creating one for this project, move its
+folder here and commit it with the work that produced it. Edit existing project
+skills in place; Git history is their only record. A skill is a procedure: no
+results, dates or status (those go in GitHub issues or `docs/`).

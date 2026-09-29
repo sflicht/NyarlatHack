@@ -466,6 +466,9 @@ def main():
                     LD_PRELOAD=str(clock),
                     NYARLATHACK_RUN_DIR=str(g.run),
                     NYARLATHACK_OBSERVATIONS=str(int(enabled)),
+                    # #164: fixture budgets were recorded unpaced; pacing (the
+                    # default) caps them at 3 per level, so these games opt out.
+                    NYARLATHACK_PACING="0",
                     FOUNTAIN_SEED=str(row["seed"]),
                     FOUNTAIN_STATE=str(work / "state.json"),
                 )

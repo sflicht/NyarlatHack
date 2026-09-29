@@ -1,0 +1,78 @@
+{
+ "A no haunt (#196)": {
+  "games": 100,
+  "turns": 147195,
+  "levels": 227,
+  "haunts": 0,
+  "admitted": 17,
+  "delivered": 6,
+  "budget_rejected": 0,
+  "adm_1000t": 0.115,
+  "del_1000t": 0.041,
+  "adm_lvl": 0.075,
+  "del_lvl": 0.026,
+  "max_budget_after_haunt": {
+   "-1": 100
+  },
+  "digest": "a6814c4bc8bcd4e801d1aca57ca92f7c5fe477468aa4dcc1e05d4d4befb29da6"
+ },
+ "B haunt, policy 2": {
+  "games": 99,
+  "turns": 153357,
+  "levels": 242,
+  "haunts": 85,
+  "admitted": 2,
+  "delivered": 0,
+  "budget_rejected": 10,
+  "adm_1000t": 0.013,
+  "del_1000t": 0.0,
+  "adm_lvl": 0.008,
+  "del_lvl": 0.0,
+  "max_budget_after_haunt": {
+   "-1": 14,
+   "0": 85
+  },
+  "digest": "99a7a5a8e76b83c0b0a296213884a7551b142a3842de11a602f0d6a9e2293fa6"
+ },
+ "C haunt, pacing": {
+  "games": 99,
+  "turns": 153357,
+  "levels": 242,
+  "haunts": 85,
+  "admitted": 2,
+  "delivered": 0,
+  "budget_rejected": 10,
+  "adm_1000t": 0.013,
+  "del_1000t": 0.0,
+  "adm_lvl": 0.008,
+  "del_lvl": 0.0,
+  "max_budget_after_haunt": {
+   "-1": 14,
+   "0": 21,
+   "1": 31,
+   "2": 33
+  },
+  "digest": "eca9770ca7245a937229851e8fb900f8f86164b80b30beab5fd0c1976d5d2c2f"
+ },
+ "D haunt, pacing K=3": {
+  "games": 100,
+  "turns": 154568,
+  "levels": 243,
+  "haunts": 86,
+  "admitted": 12,
+  "delivered": 5,
+  "budget_rejected": 1,
+  "adm_1000t": 0.078,
+  "del_1000t": 0.032,
+  "adm_lvl": 0.049,
+  "del_lvl": 0.021,
+  "max_budget_after_haunt": {
+   "-1": 14,
+   "0": 7,
+   "1": 46,
+   "2": 24,
+   "3": 9
+  },
+  "digest": "59a6bf8a0caa3cfdb7a1221dd3ed73277bfd651488e4115cad4fec37d9fe7bea"
+ }
+}
