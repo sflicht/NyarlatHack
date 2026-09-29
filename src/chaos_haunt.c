@@ -12,6 +12,24 @@ static int pending_state, script_error, blocked_move, budget_logged;
 static int simple_floor(int x,int y) {
  return isok(x,y) && (levl[x][y].typ==ROOM || levl[x][y].typ==CORR) && !t_at(x,y);
 }
+/* #194: a square the shadow trial's evasive bot may step onto, from (fx,fy):
+ * the squares an ordinary player walks. Plain floor and corridor; floor-like
+ * ground (grass, soil, sand); stairs, ladders and furniture (fountain, forge,
+ * throne, sink, grave, altar); and doorways with no door, a broken door or an
+ * open door, entered or left orthogonally only. Never water, lava, ice, air,
+ * a closed or locked door, or any trap (the old rule; stricter than a player,
+ * who would walk onto a trap it has not seen). The hound's own steps and the
+ * spawn square keep simple_floor. Terrain only: no RNG, nothing hidden. */
+static int bot_square(int fx,int fy,int x,int y) {
+ int t;
+ if(!isok(x,y) || t_at(x,y))return 0;
+ t=levl[x][y].typ;
+ if(IS_DOOR(t)) {
+  if(levl[x][y].doormask & ~(D_NODOOR|D_BROKEN|D_ISOPEN))return 0;
+ } else if(!(t==ROOM || t==CORR || t==GRASS || t==SOIL || t==SAND || IS_FURNITURE(t)))return 0;
+ if((IS_DOOR(t) || IS_DOOR(levl[fx][fy].typ)) && fx!=x && fy!=y)return 0;
+ return 1;
+}
 static void remember_position(void) {
  struct chaos_haunt_state *h=&u.haunt;int i;
  if(h->count==CHAOS_TRAIL) {
@@ -121,7 +139,7 @@ static void trial(void *arg,struct chaos_shadow_report *r) {
   for(j=0;j<8;++j) {
    static const int xs[8]={1,1,0,-1,-1,-1,0,1},ys[8]={0,1,1,1,0,-1,-1,-1};
    dx=xs[(j+i)%8];dy=ys[(j+i)%8];
-   if(simple_floor(u.ux+dx,u.uy+dy) && !m_at(u.ux+dx,u.uy+dy) &&
+   if(bot_square(u.ux,u.uy,u.ux+dx,u.uy+dy) && !m_at(u.ux+dx,u.uy+dy) &&
       goodpos(u.ux+dx,u.uy+dy,&youmonst,0)) {
     score=dist2(u.ux+dx,u.uy+dy,m->mx,m->my);
     if(score>best){best=score;bx=u.ux+dx;by=u.uy+dy;}
