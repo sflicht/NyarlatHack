@@ -502,9 +502,11 @@ class ScheduleProductionFlowTests(unittest.TestCase):
                 )
 
     def test_production_revalidates_selected_origin_not_schedule_authority(self):
+        # #200 (A): the origin's level is no longer an admission check, so a
+        # safe point on another level is not in this list; see
+        # test_production_admits_on_a_new_level_without_schedule_retiming.
         cases = (
             {"run": "cd" * 32},
-            {"dlevel": 2},
             {"at_move": 341},
             {"at_safe": 3},
             {"evidence": "missing"},
@@ -529,6 +531,30 @@ class ScheduleProductionFlowTests(unittest.TestCase):
                 )
                 self.assertEqual(consumer.poll()["status"], "already_published")
                 self.assertEqual(consumer.selector.attempts, 1)
+
+    def test_production_admits_on_a_new_level_without_schedule_retiming(self):
+        # #200 (A): the same selected origins, admitted at the same safe index
+        # on another level; the schedule is not consulted again.
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.produce(root, "wf")
+            consumer = schedule.NextUseScheduler(root, seed=0)
+            self.assertEqual(
+                consumer.poll()["status"], "envelope_published_not_admitted"
+            )
+            result = self.admit(root, "wf", dlevel=2)
+            self.assertEqual(
+                (
+                    result["rejected"],
+                    result["admitted"],
+                    result["telegraph"],
+                    result["caller_spent"],
+                ),
+                (0, 1, 1, 1),
+            )
+            self.assertEqual(result["level_token"], 100002)
+            self.assertEqual(consumer.poll()["status"], "already_published")
+            self.assertEqual(consumer.selector.attempts, 1)
 
     def test_production_rebinds_newer_engine_origin_not_schedule_choice(self):
         # #177 option 1: the engine, not the schedule, binds its own newer
