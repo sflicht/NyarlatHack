@@ -130,6 +130,11 @@ final message, run `python3 scripts/clean_workspace.py --apply
 /tmp/nyarlathack-work/<run-id>` and report the freed space. Full policy:
 [`docs/workspace-hygiene.md`](docs/workspace-hygiene.md).
 
+Files under `docs/` must not cite `/tmp` paths; `scripts/check_docs_tmp.py`
+enforces this in CI, and historical citations are frozen in
+`scripts/docs_tmp_allowlist.json` (moved artifacts:
+`~/nyarlathack-evidence/tmp-2026-09/MAPPING.json`).
+
 ## Git conventions
 
 - Commit identity in this repo is `Xiongmao (雄猫) <xiongmao@lichtens.cloud>`
