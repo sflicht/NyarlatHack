@@ -236,6 +236,11 @@ int chaos_event_checked(const char *name, const char *phase, const char *detail)
 void chaos_event(const char *name, const char *phase, const char *detail) {
     (void)chaos_event_checked(name,phase,detail);
 }
+/* #164: fixtures that link the engine without the dungeon still link. */
+#pragma weak deepest_lev_reached
+void chaos_pacing_delivered(int source) {
+    chaos_pacing_credit(&u.chaos, source);
+}
 void chaos_safe(const char *why) {
     struct chaos_context c;
     long before;
@@ -243,7 +248,8 @@ void chaos_safe(const char *why) {
     if (busy || chaos_shadow_active()) return;
     busy = 1;
     before = u.chaos.safe;
-    chaos_pacing_level(&u.chaos, deepest_lev_reached(FALSE));
+    if (deepest_lev_reached)
+        chaos_pacing_level(&u.chaos, deepest_lev_reached(FALSE));
     if (started) {
         c = context();
         chaos_io_safe(&io, &u.chaos, &c, why, show, 0);

@@ -11,6 +11,10 @@
 #include <unistd.h>
 #include <signal.h>
 
+/* #164: credit a delivery to the saved pacing state. Defined by the game
+ * (chaos_engine.c); weak so runtime-only fixtures still link. */
+void chaos_pacing_delivered(int) __attribute__((weak));
+
 #define CHAOS_RUNTIME_PRIVATE_MAX 16
 #define CHAOS_RUNTIME_PUBLIC_MAX 1
 #define CHAOS_NEXT_USE_ORDINARY_CONTINUE 0
@@ -1291,8 +1295,8 @@ static void runtime_fountain_result_impl(const struct chaos_fountain_token *toke
         runtime.slot_f = CHAOS_SLOT_F_CONSUMED_APPLIED;
         effect = CHAOS_EFFECT_F_REMAPPED;
         /* #164: a delivered effect; idempotent, and never during replay. */
-        if (!runtime_staging)
-            chaos_pacing_credit(&u.chaos, CHAOS_PACING_SRC_NEXT_USE);
+        if (!runtime_staging && chaos_pacing_delivered)
+            chaos_pacing_delivered(CHAOS_PACING_SRC_NEXT_USE);
         break;
     default:
         return;
@@ -1335,8 +1339,8 @@ void chaos_next_use_on_manifestation(
                   witness->root);
     runtime.public_records[runtime.public_count++] = public_record;
     runtime.witnessed = 1;
-    if (!runtime_staging)  /* #164: a witnessed (delivered) effect */
-        chaos_pacing_credit(&u.chaos, CHAOS_PACING_SRC_NEXT_USE);
+    if (!runtime_staging && chaos_pacing_delivered)  /* #164: witnessed */
+        chaos_pacing_delivered(CHAOS_PACING_SRC_NEXT_USE);
     runtime.manifest_success = 0;
     runtime.expected_manifest_root = 0;
     runtime.expected_notice_seq = 0;
