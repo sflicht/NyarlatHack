@@ -172,6 +172,10 @@ class OrdinaryHauntTests(RetainOnFailure):
         section = dump[dump.index("The Crawling Chaos remembers.") :]
         self.assertIn("a haunting was admitted.", section)
         self.assertIn(f"Ended: its hunt ended on turn {expired['turn']}.", section)
+        # 9. #188: the engine's reveal record holds exactly the dumplog lines.
+        record = json.loads((game.run / "reveal.json").read_text())
+        lines = section.split("\n")[: len(record["lines"])]
+        self.assertEqual(record["lines"], lines)
         # The launcher's free arrival omen is the other admission (cost 0).
         self.assertRegex(
             (game.game / "xlogfile").read_text(),

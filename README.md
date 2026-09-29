@@ -69,6 +69,13 @@ you can meet today:
 - **Dreamland echoes.** After a hound's trial run, fragments such as "You
   recall footsteps on a path you never took." can appear in Ctrl-P history.
   `NYARLATHACK_ECHOES=0` turns them off.
+- **What watched you.** When a game ends after the Chaos did something, it
+  offers to show what it did; the same list goes into the dumplog. For a page
+  you can keep or share, run `python3 -m chaos chronicle RUN_DIR --out
+  chronicle.html` (or `--format md`) on that game's run directory. It reads
+  only the engine's own records (`reveal.json`, plus the game's xlogfile end
+  record for the character's name and cause of death), works offline and
+  writes nothing into the run directory.
 
 ## Design rules
 

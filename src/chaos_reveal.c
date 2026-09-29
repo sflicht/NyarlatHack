@@ -659,6 +659,58 @@ void chaos_reveal_render(const struct chaos_reveal *r, chaos_reveal_emit emit, v
     emit(arg, "");
 }
 
+struct json_buf { char *p; size_t cap, n; int bad, first; };
+
+static void json_raw(struct json_buf *b, const char *s)
+{
+    size_t k = strlen(s);
+    if (b->bad || b->n + k >= b->cap) { b->bad = 1; return; }
+    memcpy(b->p + b->n, s, k);
+    b->n += k;
+    b->p[b->n] = 0;
+}
+
+static void json_string(struct json_buf *b, const char *s)
+{
+    char esc[8];
+    json_raw(b, "\"");
+    for (; *s && !b->bad; ++s) {
+        unsigned char c = (unsigned char)*s;
+        if (c == '"' || c == '\\') { esc[0] = '\\'; esc[1] = (char)c; esc[2] = 0; json_raw(b, esc); }
+        else if (c < 0x20 || c == 0x7f) { snprintf(esc, sizeof esc, "\\u%04x", c); json_raw(b, esc); }
+        else { esc[0] = (char)c; esc[1] = 0; json_raw(b, esc); }
+    }
+    json_raw(b, "\"");
+}
+
+static void json_line(void *arg, const char *line)
+{
+    struct json_buf *b = arg;
+    if (!b->first) json_raw(b, ",");
+    b->first = 0;
+    json_string(b, line);
+}
+
+int chaos_reveal_json(const struct chaos_reveal *r, char *buf, size_t cap)
+{
+    struct json_buf b;
+    char head[256];
+    if (!cap) return 0;
+    buf[0] = 0;
+    if (!r || !r->admitted) return 1;
+    b.p = buf; b.cap = cap; b.n = 0; b.bad = 0; b.first = 1;
+    snprintf(head, sizeof head,
+             "{\"reveal_v\":%d,\"final_turn\":%ld,\"admitted\":%d,\"delivered\":%d,"
+             "\"spent\":%d,\"rejected\":%d,\"lines\":[",
+             CHAOS_REVEAL_JSON_VERSION, r->final_turn, r->admitted, r->delivered, r->spent,
+             r->rejected);
+    json_raw(&b, head);
+    chaos_reveal_render(r, json_line, &b);
+    json_raw(&b, "]}\n");
+    if (b.bad) { buf[0] = 0; return 0; }
+    return 1;
+}
+
 int chaos_reveal_xlog_fields(const struct chaos_reveal *r, char *buf, size_t cap)
 {
     int n;

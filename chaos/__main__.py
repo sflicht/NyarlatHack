@@ -168,6 +168,9 @@ def main(argv=None):
     from .launcher import add_parser
 
     add_parser(sub)
+    from .chronicle import add_parser as add_chronicle
+
+    add_chronicle(sub)
     _curio_parser(sub)
     _history_parser(sub)
     installer = sub.add_parser(
@@ -247,6 +250,10 @@ def main(argv=None):
             from .launcher import play
 
             return play(args)
+        if args.command == "chronicle":
+            from .chronicle import run as chronicle_run
+
+            return chronicle_run(args)
         if args.command == "haunt":
             from .haunt import install
 

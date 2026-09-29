@@ -131,6 +131,21 @@ class RevealTests(unittest.TestCase):
         self.assertIsNotNone(match, text)
         xlog = match.group(1)
         section = text[: text.index("XLOG[")]
+        # #188: the reveal record chronicle reads is the same lines, byte for
+        # byte, and exists exactly when the section does.
+        record = re.search(r"^JSON\[(.*)\]$", text, re.M)
+        self.assertIsNotNone(record, text)
+        if section:
+            doc = json.loads(record.group(1))
+            self.assertEqual(doc["reveal_v"], 1)
+            self.assertEqual(doc["lines"], section.split("\n")[:-1])
+            self.assertEqual(
+                xlog,
+                f":chaos_admitted={doc['admitted']}:chaos_delivered={doc['delivered']}"
+                f":chaos_spent={doc['spent']}",
+            )
+        else:
+            self.assertEqual(record.group(1), "")
         return section, xlog
 
     def entries(self, section):
