@@ -76,6 +76,9 @@ you can meet today:
   only the engine's own records (`reveal.json`, plus the game's xlogfile end
   record for the character's name and cause of death), works offline and
   writes nothing into the run directory.
+- **Playtesting.** To run a small human pilot on this default path, follow
+  [the playtest kit](docs/playtest-kit.md): one build id, one command, and a
+  short report form whose questions are asked before anything is explained.
 
 ## Design rules
 
