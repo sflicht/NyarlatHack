@@ -122,6 +122,13 @@ int chaos_reveal_read(struct chaos_reveal *, int dir);
 /* Apply host facts, order chronologically and compute the tallies. */
 void chaos_reveal_finish(struct chaos_reveal *);
 void chaos_reveal_render(const struct chaos_reveal *, chaos_reveal_emit, void *);
+/* #188: the rendered section as one JSON object for `chaos chronicle`:
+ * {"reveal_v":1,"final_turn":..,"admitted":..,"delivered":..,"spent":..,
+ *  "rejected":..,"lines":[...]} where lines are exactly the lines
+ * chaos_reveal_render emits. Empty string when nothing was admitted; 0 when
+ * the buffer is too small (nothing usable is left in it). */
+#define CHAOS_REVEAL_JSON_VERSION 1
+int chaos_reveal_json(const struct chaos_reveal *, char *, size_t);
 /* ":chaos_admitted=...", or "" when nothing was admitted. */
 int chaos_reveal_xlog_fields(const struct chaos_reveal *, char *, size_t);
 #endif

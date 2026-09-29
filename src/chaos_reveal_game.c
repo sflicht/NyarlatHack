@@ -106,6 +106,26 @@ static void compute(void)
     chaos_reveal_finish(&reveal);
 }
 
+/* #188: the rendered section, for `chaos chronicle`. Written into the run
+ * directory only after an admission, so stock and empty-mailbox runs gain no
+ * file. Presentation only: failure is silent and changes nothing else. */
+static void write_record(void)
+{
+    static char json[256 * 1024];
+    struct stat st;
+    size_t n;
+    int dir, fd;
+    if (!chaos_reveal_json(&reveal, json, sizeof json) || !json[0]) return;
+    if ((dir = open_run()) < 0) return;
+    fd = openat(dir, "reveal.json", O_WRONLY | O_CREAT | O_TRUNC | O_NOFOLLOW | O_CLOEXEC, 0600);
+    (void)close(dir);
+    if (fd < 0) return;
+    n = strlen(json);
+    if (!fstat(fd, &st) && S_ISREG(st.st_mode) && st.st_uid == getuid())
+        if (write(fd, json, n) == (ssize_t)n) (void)fsync(fd);
+    (void)close(fd);
+}
+
 static void to_dump(void *unused, const char *line)
 {
     (void)unused;
@@ -130,6 +150,7 @@ void chaos_reveal_end(int how)
     if (chaos_shadow_active()) return;
     compute();
     if (!reveal.admitted) return;
+    write_record();
     if (iflags.window_inited && !program_state.stopprint && how != PANICKED
         && strcmp(flags.end_disclose, "none")) {
         c = yn_function("Do you want to know what watched you?", ynqchars, 'n');

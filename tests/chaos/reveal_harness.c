@@ -51,6 +51,14 @@ int main(int argc, char **argv)
     if (!chaos_reveal_xlog_fields(&r, xlog, sizeof xlog)) return 3;
     printf("XLOG[%s]\n", xlog);
     printf("READ[%d]\n", ok);
+    {
+        static char json[256 * 1024];
+        size_t n;
+        if (!chaos_reveal_json(&r, json, sizeof json)) return 4;
+        n = strlen(json);
+        if (n && json[n - 1] == '\n') json[n - 1] = 0;
+        printf("JSON[%s]\n", json);
+    }
     if (dir >= 0) close(dir);
     return 0;
 }
