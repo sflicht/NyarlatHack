@@ -1,0 +1,1181 @@
+{
+ "director": [
+  "chaos: next-use: pending",
+  "chaos: next-use: no_eligible_origin",
+  "chaos: next-use: envelope_published_not_admitted",
+  "chaos: next-use: already_published"
+ ],
+ "envelope": {
+  "at": 2,
+  "cost": 1,
+  "id": 2,
+  "next_use_program_v": 2,
+  "operations": [
+   "W"
+  ],
+  "origin_refs": [
+   {
+    "end_seq": 26,
+    "fact": "ordinary_whistle",
+    "family": "W",
+    "level_dlevel": 1,
+    "level_dnum": 0,
+    "move": 62,
+    "notice_seq": 25,
+    "root": 24,
+    "run": "0000000000000801000000000000186d0000000000000801000000000000186d"
+   }
+  ],
+  "source": "return {\n  on_action = function(context)\n    return {next_use_intent_v=2, op=\"whistle_attention\", state=0}\n  end\n}\n",
+  "source_sha256": "9d256d10074b7a67073f9c87990f0375724b5e1212fdff45566479437ea0de1c",
+  "telegraph": "next-use-v2-W",
+  "ttl": 100,
+  "variant": 0
+ },
+ "events": [
+  {
+   "budget": 2,
+   "cosmetic": {
+    "last_turn": 0,
+    "seen": 0
+   },
+   "detail": "new",
+   "event": "session",
+   "insight": 0,
+   "last_id": 0,
+   "phase": "result",
+   "reserved": 0,
+   "safe": 0,
+   "sanity": 100,
+   "seq": 2,
+   "spent": 0,
+   "turn": 1,
+   "v": 3,
+   "vitals": {
+    "hp": 13,
+    "hp_max": 13,
+    "power": 9,
+    "power_max": 9
+   }
+  },
+  {
+   "budget": 2,
+   "cosmetic": {
+    "last_turn": 0,
+    "seen": 0
+   },
+   "detail": "level_enter",
+   "event": "safe_point",
+   "insight": 0,
+   "last_id": 0,
+   "phase": "result",
+   "reserved": 0,
+   "safe": 1,
+   "sanity": 100,
+   "seq": 4,
+   "spent": 0,
+   "turn": 1,
+   "v": 3,
+   "vitals": {
+    "hp": 13,
+    "hp_max": 13,
+    "power": 9,
+    "power_max": 9
+   }
+  },
+  {
+   "budget": 2,
+   "cosmetic": {
+    "last_turn": 1,
+    "seen": 1
+   },
+   "detail": "pre_admitted",
+   "event": "haunting",
+   "insight": 0,
+   "last_id": 1,
+   "phase": "result",
+   "reserved": 0,
+   "safe": 1,
+   "sanity": 100,
+   "seq": 8,
+   "spent": 0,
+   "turn": 6,
+   "v": 3,
+   "vitals": {
+    "hp": 11,
+    "hp_max": 13,
+    "power": 9,
+    "power_max": 9
+   }
+  },
+  {
+   "budget": 0,
+   "cosmetic": {
+    "last_turn": 1,
+    "seen": 1
+   },
+   "detail": "accepted",
+   "event": "haunting",
+   "insight": 0,
+   "last_id": 1,
+   "phase": "result",
+   "reserved": 0,
+   "safe": 1,
+   "sanity": 100,
+   "seq": 9,
+   "spent": 2,
+   "turn": 6,
+   "v": 3,
+   "vitals": {
+    "hp": 11,
+    "hp_max": 13,
+    "power": 9,
+    "power_max": 9
+   }
+  },
+  {
+   "budget": 1,
+   "cosmetic": {
+    "last_turn": 1,
+    "seen": 1
+   },
+   "detail": "",
+   "event": "haunt_step",
+   "insight": 0,
+   "last_id": 1,
+   "phase": "result",
+   "reserved": 0,
+   "safe": 1,
+   "sanity": 100,
+   "seq": 11,
+   "spent": 2,
+   "turn": 7,
+   "v": 3,
+   "vitals": {
+    "hp": 11,
+    "hp_max": 13,
+    "power": 9,
+    "power_max": 9
+   }
+  },
+  {
+   "budget": 1,
+   "cosmetic": {
+    "last_turn": 1,
+    "seen": 1
+   },
+   "detail": "",
+   "event": "haunt_step",
+   "insight": 0,
+   "last_id": 1,
+   "phase": "result",
+   "reserved": 0,
+   "safe": 1,
+   "sanity": 100,
+   "seq": 12,
+   "spent": 2,
+   "turn": 8,
+   "v": 3,
+   "vitals": {
+    "hp": 11,
+    "hp_max": 13,
+    "power": 9,
+    "power_max": 9
+   }
+  },
+  {
+   "budget": 1,
+   "cosmetic": {
+    "last_turn": 1,
+    "seen": 1
+   },
+   "detail": "",
+   "event": "observation",
+   "insight": 0,
+   "last_id": 1,
+   "observation": {
+    "fact": "none",
+    "operation": "whistling",
+    "root_seq": 0,
+    "stage": "started"
+   },
+   "phase": "attempt",
+   "reserved": 0,
+   "safe": 1,
+   "sanity": 100,
+   "seq": 24,
+   "spent": 2,
+   "turn": 62,
+   "v": 4,
+   "vitals": {
+    "hp": 11,
+    "hp_max": 13,
+    "power": 9,
+    "power_max": 9
+   }
+  },
+  {
+   "budget": 1,
+   "cosmetic": {
+    "last_turn": 1,
+    "seen": 1
+   },
+   "detail": "",
+   "event": "observation",
+   "insight": 0,
+   "last_id": 1,
+   "observation": {
+    "fact": "sound_high",
+    "operation": "whistling",
+    "root_seq": 24,
+    "stage": "notice"
+   },
+   "phase": "result",
+   "reserved": 0,
+   "safe": 1,
+   "sanity": 100,
+   "seq": 25,
+   "spent": 2,
+   "turn": 62,
+   "v": 4,
+   "vitals": {
+    "hp": 11,
+    "hp_max": 13,
+    "power": 9,
+    "power_max": 9
+   }
+  },
+  {
+   "budget": 1,
+   "cosmetic": {
+    "last_turn": 1,
+    "seen": 1
+   },
+   "detail": "",
+   "event": "observation",
+   "insight": 0,
+   "last_id": 1,
+   "observation": {
+    "fact": "none",
+    "operation": "whistling",
+    "root_seq": 24,
+    "stage": "completed"
+   },
+   "phase": "result",
+   "reserved": 0,
+   "safe": 1,
+   "sanity": 100,
+   "seq": 26,
+   "spent": 2,
+   "turn": 62,
+   "v": 4,
+   "vitals": {
+    "hp": 11,
+    "hp_max": 13,
+    "power": 9,
+    "power_max": 9
+   }
+  },
+  {
+   "budget": 1,
+   "cosmetic": {
+    "last_turn": 1,
+    "seen": 1
+   },
+   "detail": "expired",
+   "event": "haunting",
+   "insight": 0,
+   "last_id": 1,
+   "phase": "result",
+   "reserved": 0,
+   "safe": 1,
+   "sanity": 100,
+   "seq": 27,
+   "spent": 2,
+   "turn": 66,
+   "v": 3,
+   "vitals": {
+    "hp": 11,
+    "hp_max": 13,
+    "power": 9,
+    "power_max": 9
+   }
+  },
+  {
+   "budget": 1,
+   "cosmetic": {
+    "last_turn": 1,
+    "seen": 1
+   },
+   "detail": "",
+   "event": "observation",
+   "insight": 0,
+   "last_id": 1,
+   "observation": {
+    "fact": "none",
+    "operation": "fountain_drink",
+    "root_seq": 0,
+    "stage": "started"
+   },
+   "phase": "attempt",
+   "reserved": 0,
+   "safe": 1,
+   "sanity": 100,
+   "seq": 53,
+   "spent": 2,
+   "turn": 210,
+   "v": 4,
+   "vitals": {
+    "hp": 12,
+    "hp_max": 13,
+    "power": 9,
+    "power_max": 9
+   }
+  },
+  {
+   "budget": 1,
+   "cosmetic": {
+    "last_turn": 1,
+    "seen": 1
+   },
+   "detail": "",
+   "event": "observation",
+   "insight": 0,
+   "last_id": 1,
+   "observation": {
+    "fact": "none",
+    "operation": "fountain_drink",
+    "root_seq": 53,
+    "stage": "completed"
+   },
+   "phase": "result",
+   "reserved": 0,
+   "safe": 1,
+   "sanity": 100,
+   "seq": 54,
+   "spent": 2,
+   "turn": 210,
+   "v": 4,
+   "vitals": {
+    "hp": 12,
+    "hp_max": 13,
+    "power": 9,
+    "power_max": 9
+   }
+  },
+  {
+   "budget": 1,
+   "cosmetic": {
+    "last_turn": 1,
+    "seen": 1
+   },
+   "detail": "level_enter",
+   "event": "safe_point",
+   "insight": 0,
+   "last_id": 1,
+   "phase": "result",
+   "reserved": 0,
+   "safe": 2,
+   "sanity": 100,
+   "seq": 63,
+   "spent": 2,
+   "turn": 320,
+   "v": 3,
+   "vitals": {
+    "hp": 11,
+    "hp_max": 13,
+    "power": 9,
+    "power_max": 9
+   }
+  },
+  {
+   "budget": 0,
+   "cosmetic": {
+    "last_turn": 1,
+    "seen": 1
+   },
+   "detail": "",
+   "event": "observation",
+   "insight": 0,
+   "last_id": 1,
+   "observation": {
+    "fact": "none",
+    "operation": "whistling",
+    "root_seq": 0,
+    "stage": "started"
+   },
+   "phase": "attempt",
+   "reserved": 0,
+   "safe": 2,
+   "sanity": 100,
+   "seq": 69,
+   "spent": 3,
+   "turn": 339,
+   "v": 4,
+   "vitals": {
+    "hp": 11,
+    "hp_max": 13,
+    "power": 9,
+    "power_max": 9
+   }
+  },
+  {
+   "budget": 0,
+   "cosmetic": {
+    "last_turn": 1,
+    "seen": 1
+   },
+   "detail": "",
+   "event": "observation",
+   "insight": 0,
+   "last_id": 1,
+   "observation": {
+    "fact": "sound_high",
+    "operation": "whistling",
+    "root_seq": 69,
+    "stage": "notice"
+   },
+   "phase": "result",
+   "reserved": 0,
+   "safe": 2,
+   "sanity": 100,
+   "seq": 70,
+   "spent": 3,
+   "turn": 339,
+   "v": 4,
+   "vitals": {
+    "hp": 11,
+    "hp_max": 13,
+    "power": 9,
+    "power_max": 9
+   }
+  },
+  {
+   "budget": 0,
+   "cosmetic": {
+    "last_turn": 1,
+    "seen": 1
+   },
+   "detail": "",
+   "event": "observation",
+   "insight": 0,
+   "last_id": 1,
+   "observation": {
+    "fact": "none",
+    "operation": "whistling",
+    "root_seq": 69,
+    "stage": "completed"
+   },
+   "phase": "result",
+   "reserved": 0,
+   "safe": 2,
+   "sanity": 100,
+   "seq": 71,
+   "spent": 3,
+   "turn": 339,
+   "v": 4,
+   "vitals": {
+    "hp": 11,
+    "hp_max": 13,
+    "power": 9,
+    "power_max": 9
+   }
+  },
+  {
+   "budget": 0,
+   "cosmetic": {
+    "last_turn": 1,
+    "seen": 1
+   },
+   "detail": "",
+   "event": "observation",
+   "insight": 0,
+   "last_id": 1,
+   "observation": {
+    "fact": "none",
+    "operation": "whistle_attention",
+    "root_seq": 0,
+    "stage": "started"
+   },
+   "phase": "attempt",
+   "reserved": 0,
+   "safe": 2,
+   "sanity": 100,
+   "seq": 74,
+   "spent": 3,
+   "turn": 344,
+   "v": 4,
+   "vitals": {
+    "hp": 11,
+    "hp_max": 13,
+    "power": 9,
+    "power_max": 9
+   }
+  },
+  {
+   "budget": 0,
+   "cosmetic": {
+    "last_turn": 1,
+    "seen": 1
+   },
+   "detail": "",
+   "event": "observation",
+   "insight": 0,
+   "last_id": 1,
+   "observation": {
+    "fact": "attention",
+    "operation": "whistle_attention",
+    "root_seq": 74,
+    "stage": "notice"
+   },
+   "phase": "result",
+   "reserved": 0,
+   "safe": 2,
+   "sanity": 100,
+   "seq": 75,
+   "spent": 3,
+   "turn": 344,
+   "v": 4,
+   "vitals": {
+    "hp": 11,
+    "hp_max": 13,
+    "power": 9,
+    "power_max": 9
+   }
+  },
+  {
+   "budget": 0,
+   "cosmetic": {
+    "last_turn": 1,
+    "seen": 1
+   },
+   "detail": "",
+   "event": "observation",
+   "insight": 0,
+   "last_id": 1,
+   "observation": {
+    "fact": "none",
+    "operation": "whistle_attention",
+    "root_seq": 74,
+    "stage": "completed"
+   },
+   "phase": "result",
+   "reserved": 0,
+   "safe": 2,
+   "sanity": 100,
+   "seq": 76,
+   "spent": 3,
+   "turn": 344,
+   "v": 4,
+   "vitals": {
+    "hp": 11,
+    "hp_max": 13,
+    "power": 9,
+    "power_max": 9
+   }
+  },
+  {
+   "budget": 1,
+   "cosmetic": {
+    "last_turn": 1,
+    "seen": 1
+   },
+   "detail": "",
+   "event": "observation",
+   "insight": 0,
+   "last_id": 1,
+   "observation": {
+    "fact": "none",
+    "operation": "whistling",
+    "root_seq": 0,
+    "stage": "started"
+   },
+   "phase": "attempt",
+   "reserved": 0,
+   "safe": 2,
+   "sanity": 100,
+   "seq": 81,
+   "spent": 3,
+   "turn": 349,
+   "v": 4,
+   "vitals": {
+    "hp": 11,
+    "hp_max": 13,
+    "power": 9,
+    "power_max": 9
+   }
+  },
+  {
+   "budget": 1,
+   "cosmetic": {
+    "last_turn": 1,
+    "seen": 1
+   },
+   "detail": "",
+   "event": "observation",
+   "insight": 0,
+   "last_id": 1,
+   "observation": {
+    "fact": "sound_high",
+    "operation": "whistling",
+    "root_seq": 81,
+    "stage": "notice"
+   },
+   "phase": "result",
+   "reserved": 0,
+   "safe": 2,
+   "sanity": 100,
+   "seq": 82,
+   "spent": 3,
+   "turn": 349,
+   "v": 4,
+   "vitals": {
+    "hp": 11,
+    "hp_max": 13,
+    "power": 9,
+    "power_max": 9
+   }
+  },
+  {
+   "budget": 1,
+   "cosmetic": {
+    "last_turn": 1,
+    "seen": 1
+   },
+   "detail": "",
+   "event": "observation",
+   "insight": 0,
+   "last_id": 1,
+   "observation": {
+    "fact": "none",
+    "operation": "whistling",
+    "root_seq": 81,
+    "stage": "completed"
+   },
+   "phase": "result",
+   "reserved": 0,
+   "safe": 2,
+   "sanity": 100,
+   "seq": 83,
+   "spent": 3,
+   "turn": 349,
+   "v": 4,
+   "vitals": {
+    "hp": 11,
+    "hp_max": 13,
+    "power": 9,
+    "power_max": 9
+   }
+  },
+  {
+   "budget": 1,
+   "cosmetic": {
+    "last_turn": 1,
+    "seen": 1
+   },
+   "detail": "",
+   "event": "observation",
+   "insight": 0,
+   "last_id": 1,
+   "observation": {
+    "fact": "none",
+    "operation": "whistling",
+    "root_seq": 0,
+    "stage": "started"
+   },
+   "phase": "attempt",
+   "reserved": 0,
+   "safe": 2,
+   "sanity": 100,
+   "seq": 103,
+   "spent": 3,
+   "turn": 408,
+   "v": 4,
+   "vitals": {
+    "hp": 12,
+    "hp_max": 13,
+    "power": 9,
+    "power_max": 9
+   }
+  },
+  {
+   "budget": 1,
+   "cosmetic": {
+    "last_turn": 1,
+    "seen": 1
+   },
+   "detail": "",
+   "event": "observation",
+   "insight": 0,
+   "last_id": 1,
+   "observation": {
+    "fact": "sound_high",
+    "operation": "whistling",
+    "root_seq": 103,
+    "stage": "notice"
+   },
+   "phase": "result",
+   "reserved": 0,
+   "safe": 2,
+   "sanity": 100,
+   "seq": 104,
+   "spent": 3,
+   "turn": 408,
+   "v": 4,
+   "vitals": {
+    "hp": 12,
+    "hp_max": 13,
+    "power": 9,
+    "power_max": 9
+   }
+  },
+  {
+   "budget": 1,
+   "cosmetic": {
+    "last_turn": 1,
+    "seen": 1
+   },
+   "detail": "",
+   "event": "observation",
+   "insight": 0,
+   "last_id": 1,
+   "observation": {
+    "fact": "none",
+    "operation": "whistling",
+    "root_seq": 103,
+    "stage": "completed"
+   },
+   "phase": "result",
+   "reserved": 0,
+   "safe": 2,
+   "sanity": 100,
+   "seq": 105,
+   "spent": 3,
+   "turn": 408,
+   "v": 4,
+   "vitals": {
+    "hp": 12,
+    "hp_max": 13,
+    "power": 9,
+    "power_max": 9
+   }
+  },
+  {
+   "budget": 1,
+   "cosmetic": {
+    "last_turn": 1,
+    "seen": 1
+   },
+   "detail": "",
+   "event": "observation",
+   "insight": 0,
+   "last_id": 1,
+   "observation": {
+    "fact": "none",
+    "operation": "whistling",
+    "root_seq": 0,
+    "stage": "started"
+   },
+   "phase": "attempt",
+   "reserved": 0,
+   "safe": 2,
+   "sanity": 100,
+   "seq": 129,
+   "spent": 3,
+   "turn": 483,
+   "v": 4,
+   "vitals": {
+    "hp": 13,
+    "hp_max": 13,
+    "power": 9,
+    "power_max": 9
+   }
+  },
+  {
+   "budget": 1,
+   "cosmetic": {
+    "last_turn": 1,
+    "seen": 1
+   },
+   "detail": "",
+   "event": "observation",
+   "insight": 0,
+   "last_id": 1,
+   "observation": {
+    "fact": "sound_high",
+    "operation": "whistling",
+    "root_seq": 129,
+    "stage": "notice"
+   },
+   "phase": "result",
+   "reserved": 0,
+   "safe": 2,
+   "sanity": 100,
+   "seq": 130,
+   "spent": 3,
+   "turn": 483,
+   "v": 4,
+   "vitals": {
+    "hp": 13,
+    "hp_max": 13,
+    "power": 9,
+    "power_max": 9
+   }
+  },
+  {
+   "budget": 1,
+   "cosmetic": {
+    "last_turn": 1,
+    "seen": 1
+   },
+   "detail": "",
+   "event": "observation",
+   "insight": 0,
+   "last_id": 1,
+   "observation": {
+    "fact": "none",
+    "operation": "whistling",
+    "root_seq": 129,
+    "stage": "completed"
+   },
+   "phase": "result",
+   "reserved": 0,
+   "safe": 2,
+   "sanity": 100,
+   "seq": 131,
+   "spent": 3,
+   "turn": 483,
+   "v": 4,
+   "vitals": {
+    "hp": 13,
+    "hp_max": 13,
+    "power": 9,
+    "power_max": 9
+   }
+  },
+  {
+   "budget": 2,
+   "cosmetic": {
+    "last_turn": 1,
+    "seen": 1
+   },
+   "detail": "level_enter",
+   "event": "safe_point",
+   "insight": 0,
+   "last_id": 1,
+   "phase": "result",
+   "reserved": 0,
+   "safe": 3,
+   "sanity": 100,
+   "seq": 153,
+   "spent": 3,
+   "turn": 634,
+   "v": 3,
+   "vitals": {
+    "hp": 10,
+    "hp_max": 13,
+    "power": 9,
+    "power_max": 9
+   }
+  },
+  {
+   "budget": 2,
+   "cosmetic": {
+    "last_turn": 1,
+    "seen": 1
+   },
+   "detail": "died",
+   "event": "death",
+   "insight": 0,
+   "last_id": 1,
+   "phase": "result",
+   "reserved": 0,
+   "safe": 3,
+   "sanity": 100,
+   "seq": 156,
+   "spent": 3,
+   "turn": 658,
+   "v": 3,
+   "vitals": {
+    "hp": 0,
+    "hp_max": 13,
+    "power": 9,
+    "power_max": 9
+   }
+  }
+ ],
+ "expected": {
+  "counts": {
+   "admitted": 1,
+   "candidate": 5,
+   "delivered": 1,
+   "native_effect": 1,
+   "published": 1,
+   "qualifying_history": 5,
+   "trigger": 1
+  },
+  "delivery_known": true,
+  "effect_outcomes": [
+   1,
+   3,
+   4
+  ],
+  "first_admission_move": 320,
+  "first_felt": {
+   "kind": "hound",
+   "turn": 7
+  },
+  "haunt": {
+   "accepted": 1,
+   "expired": 1,
+   "pre_admitted": 1
+  },
+  "haunt_steps": 2,
+  "journal_status": "structurally_complete",
+  "last_turn": 658,
+  "loss": null,
+  "ordinary_whispers_admitted": 1,
+  "public_attention_completed": 1,
+  "qualifying_actions": {
+   "fountain_drink": 1,
+   "whistling": 5
+  },
+  "recorded_decisions": [],
+  "safe_points": {
+   "level_enter": 3
+  },
+  "session_details": [
+   "new"
+  ],
+  "start_budget": 2,
+  "start_sanity": 100,
+  "terminations": [
+   "completed"
+  ],
+  "w_suppressions": []
+ },
+ "private_records": [
+  {
+   "at_move": 320,
+   "data": {
+    "outcome": 1,
+    "reason": 0,
+    "reason_present": 0
+   },
+   "kind": 1,
+   "next_use_private_v": 2,
+   "program_id": 2,
+   "seq": 1,
+   "source_sha256": "9d256d10074b7a67073f9c87990f0375724b5e1212fdff45566479437ea0de1c"
+  },
+  {
+   "at_move": 320,
+   "data": {
+    "at_safe": 2,
+    "bound_moves": [
+     62
+    ],
+    "bound_roots": [
+     24
+    ],
+    "cost": 1,
+    "envelope_b64": "eyJhdCI6MiwiY29zdCI6MSwiaWQiOjIsIm5leHRfdXNlX3Byb2dyYW1fdiI6Miwib3BlcmF0aW9ucyI6WyJXIl0sIm9yaWdpbl9yZWZzIjpbeyJlbmRfc2VxIjoyNiwiZmFjdCI6Im9yZGluYXJ5X3doaXN0bGUiLCJmYW1pbHkiOiJXIiwibGV2ZWxfZGxldmVsIjoxLCJsZXZlbF9kbnVtIjowLCJtb3ZlIjo2Miwibm90aWNlX3NlcSI6MjUsInJvb3QiOjI0LCJydW4iOiIwMDAwMDAwMDAwMDAwODAxMDAwMDAwMDAwMDAwMTg2ZDAwMDAwMDAwMDAwMDA4MDEwMDAwMDAwMDAwMDAxODZkIn1dLCJzb3VyY2UiOiJyZXR1cm4ge1xuICBvbl9hY3Rpb24gPSBmdW5jdGlvbihjb250ZXh0KVxuICAgIHJldHVybiB7bmV4dF91c2VfaW50ZW50X3Y9Miwgb3A9XCJ3aGlzdGxlX2F0dGVudGlvblwiLCBzdGF0ZT0wfVxuICBlbmRcbn1cbiIsInNvdXJjZV9zaGEyNTYiOiI5ZDI1NmQxMDA3NGI3YTY3MDczZjljODc5OTBmMDM3NTcyNGI1ZTEyMTJmZGZmNDU1NjY0Nzk0MzdlYTBkZTFjIiwidGVsZWdyYXBoIjoibmV4dC11c2UtdjItVyIsInR0bCI6MTAwLCJ2YXJpYW50IjowfQ==",
+    "envelope_sha256": "d5a1b8ccd9285f0964d9035799afd718405f3b73dc38b778e99425e888f54c91",
+    "operation_count": 1,
+    "operations": [
+     1
+    ],
+    "origin_roots": [
+     24
+    ],
+    "program_expiry": 420
+   },
+   "kind": 2,
+   "next_use_private_v": 2,
+   "program_id": 2,
+   "seq": 2,
+   "source_sha256": "9d256d10074b7a67073f9c87990f0375724b5e1212fdff45566479437ea0de1c"
+  },
+  {
+   "at_move": 339,
+   "data": {
+    "callback_ordinal": 1,
+    "context_sha256": "f9a19dffb16d4e537662d174e58d16777a7c1cde0dcdafa2b145e52eee996f35",
+    "delay_used_after": 0,
+    "failure_code": 0,
+    "failure_code_present": 0,
+    "intent": {
+     "op": 2,
+     "state": 0
+    },
+    "intent_present": 1,
+    "intent_sha256": "2fea25883da6cf56c4a9da67098c8cc3e9e3936b53558c6fd174542caccfe7f3",
+    "intent_sha256_present": 1,
+    "root": 69,
+    "state_after": 0,
+    "state_before": 0,
+    "trigger": 1,
+    "validation": 0
+   },
+   "kind": 3,
+   "next_use_private_v": 2,
+   "program_id": 2,
+   "seq": 3,
+   "source_sha256": "9d256d10074b7a67073f9c87990f0375724b5e1212fdff45566479437ea0de1c"
+  },
+  {
+   "at_move": 339,
+   "data": {
+    "activation_monstermoves": 339,
+    "family": 1,
+    "m_id": 43,
+    "outcome": 1,
+    "root": 69
+   },
+   "kind": 4,
+   "next_use_private_v": 2,
+   "program_id": 2,
+   "seq": 4,
+   "source_sha256": "9d256d10074b7a67073f9c87990f0375724b5e1212fdff45566479437ea0de1c"
+  },
+  {
+   "at_move": 344,
+   "data": {
+    "activation_monstermoves": 339,
+    "family": 1,
+    "m_id": 43,
+    "outcome": 3,
+    "root": 74
+   },
+   "kind": 4,
+   "next_use_private_v": 2,
+   "program_id": 2,
+   "seq": 5,
+   "source_sha256": "9d256d10074b7a67073f9c87990f0375724b5e1212fdff45566479437ea0de1c"
+  },
+  {
+   "at_move": 349,
+   "data": {
+    "activation_monstermoves": 339,
+    "family": 1,
+    "m_id": 43,
+    "outcome": 4,
+    "root": 0
+   },
+   "kind": 4,
+   "next_use_private_v": 2,
+   "program_id": 2,
+   "seq": 6,
+   "source_sha256": "9d256d10074b7a67073f9c87990f0375724b5e1212fdff45566479437ea0de1c"
+  },
+  {
+   "at_move": 349,
+   "data": {
+    "failure_code": 0,
+    "reason": 1,
+    "slot_f": 0,
+    "slot_w": 2,
+    "w_runtime": 2
+   },
+   "kind": 5,
+   "next_use_private_v": 2,
+   "program_id": 2,
+   "seq": 7,
+   "source_sha256": "9d256d10074b7a67073f9c87990f0375724b5e1212fdff45566479437ea0de1c"
+  }
+ ],
+ "receipts": [
+  {
+   "kind": 2,
+   "next_use_private_v": 2,
+   "origins": [
+    {
+     "bound": 24,
+     "family": "W",
+     "published": 24
+    }
+   ],
+   "seq": 2
+  }
+ ],
+ "schedule": [
+  {
+   "end_seq": 26,
+   "family": "W",
+   "level_dlevel": 1,
+   "level_dnum": 0,
+   "move": 62,
+   "next_use_schedule_v": 1,
+   "notice_seq": 25,
+   "root": 24
+  },
+  {
+   "end_seq": 71,
+   "family": "W",
+   "level_dlevel": 2,
+   "level_dnum": 0,
+   "move": 339,
+   "next_use_schedule_v": 1,
+   "notice_seq": 70,
+   "root": 69
+  },
+  {
+   "end_seq": 83,
+   "family": "W",
+   "level_dlevel": 2,
+   "level_dnum": 0,
+   "move": 349,
+   "next_use_schedule_v": 1,
+   "notice_seq": 82,
+   "root": 81
+  },
+  {
+   "end_seq": 105,
+   "family": "W",
+   "level_dlevel": 2,
+   "level_dnum": 0,
+   "move": 408,
+   "next_use_schedule_v": 1,
+   "notice_seq": 104,
+   "root": 103
+  },
+  {
+   "end_seq": 131,
+   "family": "W",
+   "level_dlevel": 2,
+   "level_dnum": 0,
+   "move": 483,
+   "next_use_schedule_v": 1,
+   "notice_seq": 130,
+   "root": 129
+  }
+ ],
+ "source": {
+  "command": "python3 scripts/seed_sweep.py --seeds 1-100 --policy baseline-v2 --starts bard,madman,bard-inherited,bard-default-path --out <stem>",
+  "journal_sha256": "74546fe52757a2190a359278a0b744acc858e7ed8703cd3c08a11687e46b971f",
+  "journal_status": "structurally_complete",
+  "report": "docs/measurements/seed-sweep-v2-179/baseline-v2-seeds-1-100.json",
+  "revision": "003dbcb66930a443ad9466c9985194fbb2bc537b",
+  "seed": 21,
+  "start": "bard-default-path",
+  "trim": "events keep session, safe_point, haunting, haunt_step, whistling/fountain_drink/whistle_attention observations and the last event; the hash-chained journal is kept as its decoded private records (from every record kind, as sweep_funnel reads them); whispers.jsonl kept whole"
+ },
+ "whispers": [
+  {
+   "at": 1,
+   "cosmetic_cost": 1,
+   "cost": 0,
+   "duration": 0,
+   "expires": 0,
+   "id": 1,
+   "mutation": "ambient",
+   "policy": 2,
+   "safe": 1,
+   "status": "admitted",
+   "telegraph": 1,
+   "turn": 1,
+   "v": 1,
+   "value": 1
+  }
+ ]
+}

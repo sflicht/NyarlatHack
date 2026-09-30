@@ -1,0 +1,99 @@
+name: Seed sweep
+
+# #180: baseline-v2 seed sweep, outside the per-PR Quality gate. Manual only
+# (Sam, 2026-09-30): it runs on workflow_dispatch, never on a schedule; a
+# schedule can be added later.
+# - mode smoke: seeds 1-30 per start;
+# - mode full: seeds 1-100 per start, plus one reproducibility pass (seeds 1-10
+#   per start run again and compared).
+# The report is kept as an artifact.
+# Alerts (a failed job) only on: new harness errors, nonzero exits, director
+# sync timeouts, failed restores (scripts/sweep_alert.py). Deaths, turn limits
+# and delivery rates are measurements, never alerts. Nothing is committed.
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: smoke (seeds 1-30) or full (seeds 1-100 plus reproducibility)
+        type: choice
+        options: [smoke, full]
+        default: smoke
+
+permissions:
+  contents: read
+
+concurrency:
+  group: seed-sweep-${{ github.ref }}
+  cancel-in-progress: false
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  STARTS: bard,madman,bard-inherited,bard-default-path
+
+jobs:
+  sweep:
+    name: Seed sweep (${{ inputs.mode }})
+    runs-on: ubuntu-24.04
+    # Measured on the VPS: 400 v2 games took 65 min at --jobs 2. The runner has
+    # 4 cores (--jobs 3): smoke about 15 min, full about 45 min plus 5 min for
+    # the reproducibility pass, plus about 5 min to build.
+    timeout-minutes: ${{ inputs.mode == 'full' && 150 || 45 }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.11'
+      - name: Choose seeds
+        # Passed through env, never interpolated into the script.
+        env:
+          INPUT_MODE: ${{ inputs.mode }}
+        run: |
+          set -euo pipefail
+          if [ "$INPUT_MODE" = full ]; then
+            echo "MODE=full" >> "$GITHUB_ENV"; echo "SEEDS=1-100" >> "$GITHUB_ENV"
+          else
+            echo "MODE=smoke" >> "$GITHUB_ENV"; echo "SEEDS=1-30" >> "$GITHUB_ENV"
+          fi
+      - name: Install native dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends -y \
+            build-essential gcc-13 binutils bison flex libncursesw5-dev pkg-config liblua5.4-dev
+      - name: Build (CHAOS=1)
+        run: make -j4 install CHAOS=1
+      - name: Sweep
+        run: |
+          set -euo pipefail
+          out="$RUNNER_TEMP/report"
+          mkdir -p "$out"
+          python3 scripts/seed_sweep.py --seeds "$SEEDS" --policy baseline-v2 \
+            --starts "$STARTS" --jobs 3 --work "$RUNNER_TEMP/work" \
+            --out "$out/baseline-v2-seeds-$SEEDS"
+      - name: Alert check
+        run: python3 scripts/sweep_alert.py check "$RUNNER_TEMP/report/baseline-v2-seeds-$SEEDS.json"
+      - name: Reproducibility (full only)
+        if: env.MODE == 'full'
+        run: |
+          set -euo pipefail
+          out="$RUNNER_TEMP/report"
+          python3 scripts/seed_sweep.py --seeds 1-10 --policy baseline-v2 \
+            --starts "$STARTS" --jobs 3 --work "$RUNNER_TEMP/work-repeat" \
+            --out "$out/repeat-seeds-1-10"
+          python3 scripts/sweep_alert.py compare \
+            "$out/baseline-v2-seeds-$SEEDS.json" "$out/repeat-seeds-1-10.json"
+      - name: Keep the report
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: seed-sweep-${{ env.MODE }}-${{ github.run_id }}
+          path: ${{ runner.temp }}/report/
+          if-no-files-found: ignore
+          retention-days: ${{ env.MODE == 'full' && 90 || 14 }}

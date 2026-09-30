@@ -5,8 +5,8 @@ repository*.
 
 ## What this repo is
 
-A fork of dNetHack (dNAO, NetHack 3.4.3 lineage, ~370k lines of K&R-flavoured
-C across 119 files in `src/`). Upstream is the `upstream` remote, branch
+A fork of dNetHack (dNAO, NetHack 3.4.3 lineage, ~537k lines of K&R-flavoured
+C and headers in all, ~377k of them across 135 files in `src/`). Upstream is the `upstream` remote, branch
 `compat-3.26.0`. We branched at `a6f0a1c43`. All NyarlatHack work happens on
 `main` and feature branches off it.
 
