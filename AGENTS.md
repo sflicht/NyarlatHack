@@ -108,7 +108,9 @@ no keys so tests never need a model. Keep prompts in files, not in code.
 Each PR declares a verification tier (A: state and authority; B: director and
 presentation; C: flagged experiment) and a player-visible delta. See
 [verification tiers](docs/quality-control.md#verification-tiers) for what each
-tier requires. Only Tier A PRs add to `docs/evidence/`.
+tier requires. Only Tier A PRs add to `docs/evidence/`, which holds Tier A
+proof only. Tier B measurement reports (seed sweeps, before/after sweep
+comparisons) go under `docs/measurements/`.
 
 - The engine must build warning-clean under the flags in `GNUmakefile` plus
   whatever we add. New warnings in our files are failures.
