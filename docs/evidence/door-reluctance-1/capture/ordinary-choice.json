@@ -1,0 +1,11 @@
+{
+ "haunt": true,
+ "haunt_pack": "chaos/packs/footsteps.lua",
+ "haunt_sha256": "4e4f0154dc8830c753f13af25b592ef255ba97e1be6cf81e019d4568f6cfa9e9",
+ "next_use": true,
+ "v": 2,
+ "whispers": {
+  "backend": "m1",
+  "seed": 0
+ }
+}
