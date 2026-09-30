@@ -574,9 +574,10 @@ def _cosmetic_init(ops, layout, header_version):
         ]
     )
     _sequence(ops, patterns, "chaos initializer")
-    # #164: state v3 adds the opt-in pacing fields; same initializer shape.
+    # #164: state v3 adds the opt-in pacing fields; #1: state v4 adds the
+    # door_reluctance effect slot. Same initializer shape.
     _require(
-        version == header_version and version in (2, 3),
+        version == header_version and version in (2, 3, 4),
         "unsupported chaos initializer policy",
     )
     return version
