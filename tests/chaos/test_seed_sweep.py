@@ -395,6 +395,38 @@ class FirstFeltTest(unittest.TestCase):
         )
         self.assertEqual(a["first_felt"], {"turn": 60, "kind": "door"})
 
+    def test_aggregate_counts_door_first_felt(self):
+        # #1: a door first_felt must reach the report's by_kind, not vanish.
+        import importlib.util
+
+        spec = importlib.util.spec_from_file_location(
+            "seed_sweep_for_test", ROOT / "scripts/seed_sweep.py"
+        )
+        assert spec is not None and spec.loader is not None
+        seed_sweep = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(seed_sweep)
+        row = {
+            "funnel": {
+                "first_felt": {"turn": 60, "kind": "door", "dlvl": 2},
+                "last_turn": 100,
+                "counts": {"admitted": 0, "delivered": 0},
+                "haunt": {},
+                "haunt_steps": 0,
+            },
+            "v2": {
+                "dlvl_timeline": [(1, 1), (50, 2)],
+                "prayers": 0,
+                "flees": 0,
+                "rests": 0,
+                "whistles_found": 0,
+            },
+            "whistle_in_inventory": False,
+        }
+        by_kind = seed_sweep.aggregate_v2([row])["first_felt"]["by_kind"]
+        self.assertEqual(
+            by_kind, {"hound": 0, "next_use_W": 0, "next_use_F": 0, "door": 1}
+        )
+
     def test_earliest_kind_wins(self):
         a = self._analyse(
             [
