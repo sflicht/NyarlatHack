@@ -428,6 +428,45 @@ class PolicyVersionTest(unittest.TestCase):
         self.assertNotIn("--no-haunt", sweep_player.START_LAUNCHER["bard-default-path"])
         self.assertIn("--no-haunt", sweep_player.LAUNCHER)
 
+    def test_wizard_default_path_start(self):
+        self.assertEqual(
+            sweep_player.START_LAUNCHER["wizard-default-path"],
+            sweep_player.START_LAUNCHER["bard-default-path"],
+        )
+        opts = dict(
+            o.split(":", 1) if ":" in o else (o, True)
+            for o in sweep_player.START_OPTIONS["wizard-default-path"].split(",")
+        )
+        self.assertEqual(
+            {k: opts[k] for k in "role race gender align pettype windowtype".split()},
+            dict(
+                role="Wiz",
+                race="human",
+                gender="male",
+                align="neutral",
+                pettype="kitten",
+                windowtype="tty",
+            ),
+        )
+        for (
+            flag
+        ) in "!news !legacy time !splash_screen !perm_invent !autopickup".split():
+            self.assertIn(flag, opts)
+        self.assertNotIn("descendant", opts)
+        self.assertNotIn("inherited", opts)
+        _, full = sweep_player._with_options(
+            sweep_player.START_OPTIONS["wizard-default-path"]
+        )
+        self.assertTrue(full.endswith(",!mail"))
+
+    def test_existing_starts_unchanged(self):
+        self.assertIsNone(sweep_player.START_OPTIONS["bard"])
+        self.assertIsNone(sweep_player.START_OPTIONS["bard-default-path"])
+        self.assertEqual(
+            set(sweep_player.START_LAUNCHER),
+            {"bard-default-path", "wizard-default-path"},
+        )
+
 
 class FleeTest(unittest.TestCase):
     def _player(self, rows):
