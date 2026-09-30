@@ -1,17 +1,17 @@
 name: Seed sweep
 
-# #180: scheduled baseline-v2 seed sweep, outside the per-PR Quality gate.
-# - nightly smoke: seeds 1-30 per start;
-# - weekly full: seeds 1-100 per start, report kept as an artifact, plus one
-#   reproducibility pass (seeds 1-10 per start run again and compared).
+# #180: baseline-v2 seed sweep, outside the per-PR Quality gate. Manual only
+# (Sam, 2026-09-30): it runs on workflow_dispatch, never on a schedule; a
+# schedule can be added later.
+# - mode smoke: seeds 1-30 per start;
+# - mode full: seeds 1-100 per start, plus one reproducibility pass (seeds 1-10
+#   per start run again and compared).
+# The report is kept as an artifact.
 # Alerts (a failed job) only on: new harness errors, nonzero exits, director
 # sync timeouts, failed restores (scripts/sweep_alert.py). Deaths, turn limits
 # and delivery rates are measurements, never alerts. Nothing is committed.
 
 on:
-  schedule:
-    - cron: '0 2 * * *'   # nightly smoke, 02:00 UTC
-    - cron: '0 4 * * 0'   # weekly full, Sunday 04:00 UTC
   workflow_dispatch:
     inputs:
       mode:
@@ -36,12 +36,12 @@ env:
 
 jobs:
   sweep:
-    name: Seed sweep (${{ github.event.schedule == '0 4 * * 0' && 'full' || inputs.mode || 'smoke' }})
+    name: Seed sweep (${{ inputs.mode }})
     runs-on: ubuntu-24.04
     # Measured on the VPS: 400 v2 games took 65 min at --jobs 2. The runner has
     # 4 cores (--jobs 3): smoke about 15 min, full about 45 min plus 5 min for
     # the reproducibility pass, plus about 5 min to build.
-    timeout-minutes: ${{ (github.event.schedule == '0 4 * * 0' || inputs.mode == 'full') && 150 || 45 }}
+    timeout-minutes: ${{ inputs.mode == 'full' && 150 || 45 }}
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
@@ -54,11 +54,10 @@ jobs:
       - name: Choose seeds
         # Passed through env, never interpolated into the script.
         env:
-          SCHEDULE: ${{ github.event.schedule }}
           INPUT_MODE: ${{ inputs.mode }}
         run: |
           set -euo pipefail
-          if [ "$SCHEDULE" = '0 4 * * 0' ] || [ "$INPUT_MODE" = full ]; then
+          if [ "$INPUT_MODE" = full ]; then
             echo "MODE=full" >> "$GITHUB_ENV"; echo "SEEDS=1-100" >> "$GITHUB_ENV"
           else
             echo "MODE=smoke" >> "$GITHUB_ENV"; echo "SEEDS=1-30" >> "$GITHUB_ENV"
