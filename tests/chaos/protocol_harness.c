@@ -225,6 +225,57 @@ static void pacing_tests(void)
     before = s; before.level_spent = 1; assert(!chaos_state_valid(&before)); /* > spent */
     puts("pacing ok");
 }
+/* #1 door_reluctance: cost 1, halve, 1..300 turns, no Sanity gate. */
+static void door_tests(void)
+{
+    struct chaos_state s, restored, before;
+    struct chaos_request r = {1, 1, CHAOS_DOOR, 50, 300, 4, 1};
+    FILE *f;
+    assert(CHAOS_SIGNAL_COUNT == 4 && CHAOS_DURATION_CAP == 300);
+    assert(CHAOS_TURN_HEADROOM == 50 && CHAOS_DURATION_HEADROOM == 300);
+    chaos_state_init(&s); s.safe = 1;
+    /* Full Sanity qualifies: no gate. Budget base 2 at Sanity 100. */
+    assert(chaos_admit(&s, &r, 10, 100, 2) == CHAOS_OK);
+    assert(s.spent == 1 && s.reserved == 1 && s.effects[CHAOS_DOOR].expires == 310);
+    assert(chaos_rule(&s, CHAOS_DOOR, 10, 11) == 5);
+    assert(chaos_rule(&s, CHAOS_DOOR, 309, 11) == 5);
+    assert(chaos_rule(&s, CHAOS_DOOR, 310, 11) == 11);
+    /* Other kinds are untouched while the door effect is active. */
+    assert(chaos_rule(&s, CHAOS_HUNGER, 10, 3) == 3 && chaos_rule(&s, CHAOS_WARD, 10, 3) == 3);
+    /* Active duplicate: no stacking, no refresh. */
+    r.id = 2; s.safe = 2; r.at = 2; before = s;
+    assert(chaos_admit(&s, &r, 11, 100, 2) == CHAOS_ACTIVE);
+    assert(s.spent == before.spent && s.effects[CHAOS_DOOR].expires == 310);
+    /* Save/restore round trip keeps the active effect. */
+    f = tmpfile(); assert(f);
+    assert(fwrite(&s, sizeof s, 1, f) == 1); rewind(f);
+    assert(fread(&restored, sizeof restored, 1, f) == 1); fclose(f);
+    assert(chaos_state_valid(&restored));
+    assert(chaos_rule(&restored, CHAOS_DOOR, 200, 11) == 5);
+    chaos_expire(&restored, 310);
+    assert(!restored.reserved && restored.spent == 1 && chaos_rule(&restored, CHAOS_DOOR, 310, 11) == 11);
+    /* Unconscious or dead: ineligible. */
+    chaos_state_init(&s); s.safe = 1; r.id = 1; r.at = 1;
+    assert(chaos_admit(&s, &r, 10, 100, 0) == CHAOS_INELIGIBLE && !s.spent);
+    /* Over budget: pacing capacity exhausted. */
+    chaos_state_init(&s); s.safe = 1; s.spent = 2;
+    assert(chaos_admit(&s, &r, 10, 100, 2) == CHAOS_BUDGET && s.spent == 2);
+    /* Bad duration, value or telegraph: rejected at the parser/validator. */
+    assert(chaos_parse("{\"v\":1,\"id\":1,\"mutation\":\"door_reluctance\",\"value\":50,\"duration\":301,\"telegraph\":4,\"at\":1}", strlen("{\"v\":1,\"id\":1,\"mutation\":\"door_reluctance\",\"value\":50,\"duration\":301,\"telegraph\":4,\"at\":1}"), &r) == CHAOS_SCHEMA);
+    assert(chaos_parse("{\"v\":1,\"id\":1,\"mutation\":\"door_reluctance\",\"value\":50,\"duration\":0,\"telegraph\":4,\"at\":1}", strlen("{\"v\":1,\"id\":1,\"mutation\":\"door_reluctance\",\"value\":50,\"duration\":0,\"telegraph\":4,\"at\":1}"), &r) == CHAOS_SCHEMA);
+    assert(chaos_parse("{\"v\":1,\"id\":1,\"mutation\":\"door_reluctance\",\"value\":50,\"duration\":300,\"telegraph\":1,\"at\":1}", strlen("{\"v\":1,\"id\":1,\"mutation\":\"door_reluctance\",\"value\":50,\"duration\":300,\"telegraph\":1,\"at\":1}"), &r) == CHAOS_SCHEMA);
+    assert(chaos_parse("{\"v\":1,\"id\":1,\"mutation\":\"door_reluctance\",\"value\":49,\"duration\":300,\"telegraph\":4,\"at\":1}", strlen("{\"v\":1,\"id\":1,\"mutation\":\"door_reluctance\",\"value\":49,\"duration\":300,\"telegraph\":4,\"at\":1}"), &r) == CHAOS_SCHEMA);
+    assert(chaos_parse("{\"v\":1,\"id\":1,\"mutation\":\"door_reluctance\",\"value\":50,\"duration\":300,\"telegraph\":4,\"at\":1}", strlen("{\"v\":1,\"id\":1,\"mutation\":\"door_reluctance\",\"value\":50,\"duration\":300,\"telegraph\":4,\"at\":1}"), &r) == CHAOS_OK);
+    /* Hunger and ward keep their own 50-turn bound. */
+    assert(chaos_parse("{\"v\":1,\"id\":1,\"mutation\":\"hunger_rate\",\"value\":2,\"duration\":51,\"telegraph\":3,\"at\":1}", strlen("{\"v\":1,\"id\":1,\"mutation\":\"hunger_rate\",\"value\":2,\"duration\":51,\"telegraph\":3,\"at\":1}"), &r) == CHAOS_SCHEMA);
+    assert(chaos_parse("{\"v\":1,\"id\":1,\"mutation\":\"ward_efficacy\",\"value\":50,\"duration\":51,\"telegraph\":2,\"at\":1}", strlen("{\"v\":1,\"id\":1,\"mutation\":\"ward_efficacy\",\"value\":50,\"duration\":51,\"telegraph\":2,\"at\":1}"), &r) == CHAOS_SCHEMA);
+    /* Overflow guard reads the larger cap. */
+    chaos_state_init(&s); s.safe = 1; r = (struct chaos_request){1, 1, CHAOS_DOOR, 50, 300, 4, 1};
+    assert(chaos_admit(&s, &r, LONG_MAX - 299, 100, 2) == CHAOS_INELIGIBLE);
+    r.id = 2; s.safe = 2; r.at = 2;
+    assert(chaos_admit(&s, &r, LONG_MAX - 300, 100, 2) == CHAOS_OK);
+    puts("door ok");
+}
 int main(int argc, char **argv)
 {
     char buf[2048], out[16384];
@@ -233,6 +284,7 @@ int main(int argc, char **argv)
     if(argc > 1 && !strcmp(argv[1], "state")) { state_tests(); return 0; }
     if(argc > 1 && !strcmp(argv[1], "non-effect")) { non_effect_tests(); return 0; }
     if(argc > 1 && !strcmp(argv[1], "pacing")) { pacing_tests(); return 0; }
+    if(argc > 1 && !strcmp(argv[1], "door")) { door_tests(); return 0; }
     n = fread(buf, 1, sizeof buf, stdin);
     if(argc > 1 && !strcmp(argv[1], "escape")) {
         assert(chaos_quote(out, sizeof out, buf, n)); puts(out); return 0;
