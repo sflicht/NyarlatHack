@@ -60,3 +60,8 @@ mat
 __pycache__/
 .chaos-build*
 !*.json
+# C navigation (clangd, bear, codegraph): local, absolute paths; never commit.
+# After the !*.json un-ignore above, so compile_commands.json stays ignored.
+/compile_commands.json
+.cache/
+.codegraph/
