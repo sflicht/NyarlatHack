@@ -180,6 +180,15 @@ def duration_headroom(d):
     )
 
 
+def duration_bound(d, row):
+    """Kinds in the frozen legacy table keep the 50-turn headroom; only kinds
+    added after it (#1 onward) may use the additive duration cap."""
+    legacy = {r["name"] for r in d["legacy"]["mutations"]}
+    if row["name"] in legacy:
+        return d["limits"]["admission_turn_headroom"]
+    return d["mutation_limits"]["duration_cap"]
+
+
 def validate_extensions(d):
     def require(ok, why):
         if not ok:
@@ -210,8 +219,7 @@ def validate_extensions(d):
     cap = limits["duration_cap"]
     # Bounded well inside the long turn counter; admission guards LONG_MAX - cap.
     require(
-        type(cap) is int
-        and d["limits"]["admission_turn_headroom"] <= cap <= 100000,
+        type(cap) is int and d["limits"]["admission_turn_headroom"] <= cap <= 100000,
         "duration cap",
     )
 
@@ -435,10 +443,7 @@ def validate(d):
         bounds(row["duration"])
         require(
             row["value"][0] > 0
-            and 0
-            <= row["duration"][0]
-            <= row["duration"][1]
-            <= duration_headroom(d),
+            and 0 <= row["duration"][0] <= row["duration"][1] <= duration_bound(d, row),
             "mutation bounds",
         )
         require(row["rule"] in ("none", "halve", "double"), "rule tag")

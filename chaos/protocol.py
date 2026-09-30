@@ -186,7 +186,10 @@ def parse_event(raw):
             LEGACY_REASONS if legacy else REASONS
         ):
             raise ValueError("invalid acknowledgement")
-        if type(e.get("mutation")) is not str or e["mutation"] not in ("", *REGISTRY):
+        # Legacy (v1) rows only ever named the frozen v1 kinds; kinds added
+        # later (#1 door_reluctance) are never valid in a legacy view.
+        names = LEGACY_REGISTRY if legacy else REGISTRY
+        if type(e.get("mutation")) is not str or e["mutation"] not in ("", *names):
             raise ValueError("invalid acknowledgement mutation")
         if e["id"]:
             parse_request(encode_request(event_request(e)))

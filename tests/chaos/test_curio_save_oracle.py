@@ -101,7 +101,7 @@ class CurioSaveOracleTests(unittest.TestCase):
                 timeout=30,
             )
             schema = json.loads(subprocess.check_output([str(exe)], timeout=5))
-        self.assertEqual(schema["chaos_state_version"], 3)  # #164 pacing fields
+        self.assertEqual(schema["chaos_state_version"], 4)  # #164 pacing; #1 door slot
         self.assertEqual(schema["chaos_size"], schema["you"]["chaos"]["size"])
         previous = 0
         for name in ("version", "cosmetic_seen", "cosmetic_last_turn"):
