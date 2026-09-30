@@ -139,8 +139,8 @@ class EpisodeScopesTests(unittest.TestCase):
             ("hunger_rate", 2, 1, 3),
         ]:
             with self.subTest(name=name, value=value):
-                # #164: ward (4) exceeds the paced per-level cap of 3, so the
-                # legacy message table is exercised in an unpaced game.
+                # The legacy message table is exercised in an unpaced game
+                # (#164), as when the ward cost 4 and could not fit K = 3.
                 _, rows, output = self.run_scope(
                     "food start",
                     flag="0",

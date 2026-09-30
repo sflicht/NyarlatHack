@@ -43,7 +43,7 @@ describe options, not the implementation. See "Decisions for Sam" at the end.
 - **Delivered:** the bound companion's move was witnessed and the public
   message was shown.
 - **#182 sweep:** the committed seed sweep
-  `docs/evidence/seed-sweep/baseline-v1-seeds-1-100-rebind-lifetime-300.json`
+  `docs/measurements/seed-sweep/baseline-v1-seeds-1-100-rebind-lifetime-300.json`
   (revision `1e3c7af`, origin lifetime 300). It has 300 scripted games: starts
   `bard`, `madman` and `bard-inherited`, seeds 1–100.
 

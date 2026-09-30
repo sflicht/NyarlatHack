@@ -11,11 +11,13 @@ that nobody will read.
   stay for at most 7 days. Put a `KEEP` file in a directory only while someone
   is actively using it.
 - **Keep evidence properly.** Anything worth keeping goes into committed Tier A
-  evidence, or into `~/.hermes/reports/nyarlathack-*` with a pointer in the PR.
+  evidence, a committed Tier B measurement report, or into
+  `~/.hermes/reports/nyarlathack-*` with a pointer in the PR.
   Never cite a bare `/tmp` path as the record (see #176).
 - **No `/tmp` citations in `docs/`.** Small evidence (reviews, receipts, logs,
-  result JSON) goes under `docs/evidence/`; larger artifacts go to a durable
-  location outside Git, cited by path plus SHA-256. `scripts/check_docs_tmp.py`
+  result JSON) goes under `docs/evidence/` (Tier A proof) or
+  `docs/measurements/` (Tier B measurement reports); larger artifacts go to a
+  durable location outside Git, cited by path plus SHA-256. `scripts/check_docs_tmp.py`
   (run in Quality CI) fails when a tracked file under `docs/` has a `/tmp`
   path citation beyond `scripts/docs_tmp_allowlist.json`. That allowlist freezes the
   historical citations, per file and count; their surviving artifacts were

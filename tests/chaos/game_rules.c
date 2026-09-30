@@ -57,14 +57,14 @@ int main(int argc, char **argv) {
     assert(num_wards_at(10,10)==1);
     assert(onscary(10,10,&monster));
     assert(chaos_admit(&u.chaos,&ward,moves,60,1)==CHAOS_OK);
-    assert(u.chaos.spent==4 && u.chaos.reserved==4);cosmetic(prefixed);
+    assert(u.chaos.spent==3 && u.chaos.reserved==3);cosmetic(prefixed); /* ward 3 */
     assert(!onscary(10,10,&monster));
     assert(num_wards_at(10,10)==1); /* actual engraving is not erased */
     moves=25;
     assert(onscary(10,10,&monster));
     assert(num_wards_at(10,10)==1);
     chaos_expire(&u.chaos,moves);
-    assert(u.chaos.spent==4 && !u.chaos.reserved);cosmetic(prefixed);
+    assert(u.chaos.spent==3 && !u.chaos.reserved);cosmetic(prefixed);
     printf("real onscary: protected=1, admitted ward=0, expired=1; engraving retained\n");
     { int count=reseed_count, next=rn2(100000);
       printf("seed=123 moves=10,15,20,25 rng_count=%d next_draw=%d\n",count,next); }

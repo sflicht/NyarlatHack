@@ -17,7 +17,7 @@ static void state_tests(void)
     assert(chaos_admit(&s, &r, 10, 80, 1) == CHAOS_DUPLICATE);
     r.id = 2;
     assert(chaos_admit(&s, &r, 10, 80, 1) == CHAOS_OK);
-    assert(s.spent == 4 && s.reserved == 4);
+    assert(s.spent == 3 && s.reserved == 3); /* ward costs 3 (was 4) */
     assert(chaos_rule(&s, CHAOS_WARD, 10, 3) == 1);
     assert(chaos_rule(&s, CHAOS_HUNGER, 10, 3) == 3);
     r.id = 3;
@@ -30,7 +30,7 @@ static void state_tests(void)
     assert(chaos_admit(&restored, &r, 14, 0, 1) == CHAOS_DUPLICATE);
     assert(chaos_rule(&restored, CHAOS_WARD, 15, 3) == 3);
     chaos_expire(&restored, 15);
-    assert(restored.spent == 4 && restored.reserved == 0);
+    assert(restored.spent == 3 && restored.reserved == 0);
     r.id = 4;
     assert(chaos_admit(&restored, &r, 15, 80, 1) == CHAOS_BUDGET);
     r.id = 5; r.at = 2;
@@ -43,9 +43,9 @@ static void state_tests(void)
     r.id = 7;
     assert(chaos_admit(&restored, &r, 15, 0, 1) == CHAOS_OK);
     assert(chaos_rule(&restored, CHAOS_HUNGER, 16, 3) == 6);
-    assert(restored.spent == 7 && restored.reserved == 3);
+    assert(restored.spent == 6 && restored.reserved == 3);
     assert(chaos_budget(&restored, 100) == 0);
-    assert(chaos_budget(&restored, 0) == 5);
+    assert(chaos_budget(&restored, 0) == 6);
     assert(chaos_state_valid(&restored));
     restored.spent = 100; assert(!chaos_state_valid(&restored));
     puts("state ok");
@@ -112,8 +112,8 @@ static void non_effect_tests(void)
         assert(chaos_spend_non_effect(&s,0,spender)==CHAOS_OK);
         assert(!memcmp(&s,&expected,sizeof s));
     }
-    assert(s.spent==10 && s.reserved==7);
-    chaos_expire(&s,15);assert(s.spent==10 && s.reserved==0);
+    assert(s.spent==9 && s.reserved==6); /* ward 3 + hunger 3 + curio 1 + haunt 2 */
+    chaos_expire(&s,15);assert(s.spent==9 && s.reserved==0);
     assert(chaos_state_valid(&s));before=s;
     assert(chaos_spend_non_effect(&s,100,1)==CHAOS_BUDGET);
     assert(!memcmp(&s,&before,sizeof s));
@@ -199,13 +199,21 @@ static void pacing_tests(void)
     assert(chaos_budget(&s, 0) == 0);
     assert(chaos_spend_non_effect(&s, 0, CHAOS_SPEND_CURIO) == CHAOS_BUDGET);
     assert(!memcmp(&s, &before, sizeof s));
-    /* Effects: ward (4) exceeds the per-level cap of 3 and is never admitted
-     * under pacing; hunger (3) fits exactly. */
+    /* Effects: ward (3, lowered from 4 so it fits K = 3) is admitted when the
+     * level has room, and then nothing else mechanical fits on that level;
+     * hunger (3) fits exactly on its own. */
     {
         struct chaos_request r = {1, 1, CHAOS_WARD, 50, 5, 2, 1};
         chaos_state_init(&s); s.pacing = 1; s.safe = 1; chaos_pacing_level(&s, 6);
-        assert(chaos_admit(&s, &r, 10, 0, 1) == CHAOS_BUDGET && s.spent == 0);
+        assert(chaos_admit(&s, &r, 10, 0, 1) == CHAOS_OK);
+        assert(s.spent == 3 && s.level_spent == 3 && chaos_budget(&s, 10) == 0);
         r.id = 2; r.kind = CHAOS_HUNGER; r.value = 2; r.telegraph = 3;
+        assert(chaos_admit(&s, &r, 10, 0, 1) == CHAOS_BUDGET);
+        assert(s.spent == 3 && s.level_spent == 3 && s.reserved == 3);
+        before = s;
+        assert(chaos_spend_non_effect(&s, 0, CHAOS_SPEND_CURIO) == CHAOS_BUDGET);
+        assert(!memcmp(&s, &before, sizeof s));
+        chaos_state_init(&s); s.pacing = 1; s.safe = 1; chaos_pacing_level(&s, 6);
         assert(chaos_admit(&s, &r, 10, 0, 1) == CHAOS_OK);
         assert(s.spent == 3 && s.level_spent == 3 && chaos_budget(&s, 10) == 0);
     }

@@ -315,6 +315,7 @@ class EpisodeIOTests(unittest.TestCase):
             '"cosmetic":{{"seen":0,"last_turn":0}}{extra}}}\n'
         )
         current_records = list(records)
+        # Today's writer: the ward costs 3 (was 4; the v1 oracle above keeps 4).
         current_records[3] = (
             4,
             10,
@@ -322,12 +323,25 @@ class EpisodeIOTests(unittest.TestCase):
             "ack",
             "result",
             '"ok"',
-            8,
-            4,
-            4,
+            9,
+            3,
+            3,
             1,
             ',"id":1,"status":"accepted","mutation":"ward_efficacy","value":50,'
-            '"duration":1,"telegraph":2,"at":1,"cost":4,"cosmetic_cost":0,"expires":11',
+            '"duration":1,"telegraph":2,"at":1,"cost":3,"cosmetic_cost":0,"expires":11',
+        )
+        current_records[4] = (
+            5,
+            11,
+            1,
+            "expiry",
+            "result",
+            '"ward_efficacy"',
+            9,
+            3,
+            0,
+            1,
+            "",
         )
         current_expected = "".join(
             current_envelope.format(**dict(zip(keys, row))) for row in current_records

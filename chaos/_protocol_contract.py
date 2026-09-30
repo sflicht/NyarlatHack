@@ -252,7 +252,7 @@ OBSERVATIONS = {'format': 1,
                 'summary_bytes': 4096}}
 MAX_INT = 2147483647
 FIELDS = ('v', 'id', 'mutation', 'value', 'duration', 'telegraph', 'at')
-REGISTRY = {'ambient': (0, 100, 1), 'ward_efficacy': (4, 80, 2), 'hunger_rate': (3, 90, 3)}
+REGISTRY = {'ambient': (0, 100, 1), 'ward_efficacy': (3, 80, 2), 'hunger_rate': (3, 90, 3)}
 MUTATIONS = {'ambient': {'symbol': 'CHAOS_AMBIENT',
              'id': 0,
              'name': 'ambient',
@@ -269,7 +269,7 @@ MUTATIONS = {'ambient': {'symbol': 'CHAOS_AMBIENT',
  'ward_efficacy': {'symbol': 'CHAOS_WARD',
                    'id': 1,
                    'name': 'ward_efficacy',
-                   'cost': 4,
+                   'cost': 3,
                    'value': [50, 50],
                    'duration': [1, 50],
                    'telegraph': 2,

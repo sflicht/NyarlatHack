@@ -207,9 +207,33 @@ class GameplayTests(RetainOnFailure):
         for p in sorted((blind.game / "dumplog").iterdir()):
             self.assertNotIn("Crawling Chaos", p.read_text(errors="replace"))
 
+    def test_paced_ward_fits_level_then_nothing_else(self):
+        """Sam 2026-09-29: ward costs 3, so a paced game (the default, #164)
+        with room on the level admits it; the level's allowance (K = 3) is
+        then used up and a later hunger request on the same level is refused
+        for budget, leaving the spend unchanged."""
+        os.environ.pop("NYARLATHACK_PACING", None)
+        g = self.game("paced-ward", wizard=True)
+        g.request("ambient", 1, 1)
+        g.start()
+        g.request("ward_efficacy", 2, 2, 10)
+        g.sanity(60)
+        acks = [e for e in g.events() if e["event"] == "ack"]
+        self.assertEqual(
+            [(e["id"], e["status"]) for e in acks], [(1, "accepted"), (2, "accepted")]
+        )
+        self.assertEqual((acks[-1]["cost"], acks[-1]["spent"]), (3, 3))
+        g.request("hunger_rate", 3, 3, 5)
+        g.sanity(40)
+        acks = [e for e in g.events() if e["event"] == "ack"]
+        self.assertEqual((acks[-1]["id"], acks[-1]["status"]), (3, "rejected"))
+        self.assertEqual(acks[-1]["detail"], "budget")
+        self.assertEqual(g.events()[-1]["spent"], 3)
+        self.assertEqual(g.quit(), 0)
+
     def test_real_save_active_and_pending_roundtrip(self):
-        # #164: ward (4) is above the paced per-level cap of 3, so this save
-        # round trip of an active ward uses an unpaced game (saved choice).
+        # Ward (3) and hunger (3) together exceed the paced per-level cap of 3
+        # (#164), so this save round trip of both uses an unpaced game.
         os.environ["NYARLATHACK_PACING"] = "0"
         self.addCleanup(os.environ.pop, "NYARLATHACK_PACING", None)
         g = self.game("save-roundtrip", wizard=True)
@@ -246,7 +270,7 @@ class GameplayTests(RetainOnFailure):
                 restored[0]["last_id"],
                 restored[0]["safe"],
             ),
-            (4, 4, 2, 2),
+            (3, 3, 2, 2),
         )
         g.sanity(40)
         accepted = [
@@ -254,14 +278,14 @@ class GameplayTests(RetainOnFailure):
         ]
         self.assertEqual([e["id"] for e in accepted], [1, 2, 3])
         self.assertEqual(accepted[-1]["cosmetic"], cosmetic)
-        self.assertEqual(accepted[-1]["spent"], 7)
+        self.assertEqual(accepted[-1]["spent"], 6)
         g.wait_turns(12)
         self.assertEqual(g.quit(), 0)
         self.assertEqual(
             {e["detail"] for e in g.events() if e["event"] == "expiry"},
             {"ward_efficacy", "hunger_rate"},
         )
-        self.assertEqual((g.events()[-1]["spent"], g.events()[-1]["reserved"]), (7, 0))
+        self.assertEqual((g.events()[-1]["spent"], g.events()[-1]["reserved"]), (6, 0))
 
     def test_cosmetic_restore_remaining_interval_and_depletion(self):
         """Declared wizard fixture, not ordinary gameplay; no driver-pin edits.
