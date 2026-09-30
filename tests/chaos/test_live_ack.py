@@ -114,7 +114,14 @@ class LiveAckTests(unittest.TestCase):
             for existing in (None, REQ):
                 for kind in ("schedule", "random"):
                     with self.subTest(loop=loop, existing=existing, backend=kind):
-                        self.setup_run(CURRENT[:2], existing)
+                        # #1: with budget at full Sanity the random menu now
+                        # prefers door_reluctance (cost 1) over the omen, so
+                        # the random leg opens with no budget: the omen (cost
+                        # 0) is then its only option, as before.
+                        opening = CURRENT[:2]
+                        if kind == "random":
+                            opening = [dict(r, budget=0) for r in opening]
+                        self.setup_run(opening, existing)
                         # Seed 2 chooses the captured ambient value 1 at safe 0.
                         backend = (
                             None if kind == "schedule" else director.RandomBackend(2)

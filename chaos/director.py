@@ -33,6 +33,8 @@ from ._protocol_contract import (
 )
 
 DEFAULT_BYTES = 16 * 1024 * 1024
+# The arrival omen, byte-for-byte the ambient pack's request (chaos/packs).
+OMEN = dict(v=1, id=1, mutation="ambient", value=1, duration=0, telegraph=1, at=1)
 DEFAULT_EVENTS = 50000
 
 
@@ -148,6 +150,8 @@ class State:
         self.accepted_receipts = {}
         self.active = {}
         self.ended = False
+        # #1 M1: level-entry safe points seen; the first is the DL1 arrival.
+        self.level_entries = 0
 
     def ingest(self, event):
         e = parse_event(json.dumps(event).encode())
@@ -213,6 +217,12 @@ class State:
                     self.active[r["mutation"]] = e["expires"]
         if e["event"] == "death" and e["phase"] == "result":
             self.ended = True
+        if (e["event"], e["phase"], e["detail"]) == (
+            "safe_point",
+            "result",
+            "level_enter",
+        ):
+            self.level_entries += 1
 
     @property
     def last_id(self):
@@ -410,6 +420,9 @@ class RandomBackend:
         options = preferred_menu(state, self.ordinary_food)
         if not options:
             return None
+        return self.pick(options, ident, at)
+
+    def pick(self, options, ident, at):
         name = self.rng.choice(list(options))
         row = MUTATIONS[name]
         return dict(
@@ -425,6 +438,53 @@ class RandomBackend:
             else row["duration"][0],
             telegraph=REGISTRY[name][2],
         )
+
+
+class OrdinaryBackend:
+    """#1 M1, the default whisper path of `chaos play --ordinary`.
+
+    Sam 2026-09-30: the DL1 arrival safe point gets the arrival omen exactly as
+    the ambient pack sends it (id 1, safe 1, cost 0) and nothing mechanical,
+    so the hound keeps first claim on the opening budget. After the player
+    first leaves DL1 (a second level-entry safe point), a seeded RandomBackend
+    picks from the mechanical kinds only; each keeps its own eligibility,
+    cost and bounds, and the omen is not on that menu. No model call.
+    """
+
+    MENU = ("ward_efficacy", "hunger_rate", "door_reluctance")
+
+    def __init__(self, seed=0, ordinary_food=True):
+        self.seed = seed
+        # hunger_rate's metabolism gate stays engine-owned: admission refuses
+        # it (ineligible) for any form without ordinary food metabolism.
+        self.ordinary_food = ordinary_food
+        self.omen = ScheduleBackend([OMEN])
+
+    def next(self, state):
+        """The pre-game omen publication, like the ambient pack's."""
+        # Published once, before the game reaches safe 1; never retimed.
+        if state.last_id >= OMEN["id"] or state.safe >= OMEN["at"]:
+            return None
+        return self.omen.next(state)
+
+    def menu(self, state):
+        # Requests are published ahead for the NEXT safe point, whose level the
+        # director cannot know. Choosing only once a later level-entry safe
+        # point has been seen keeps every mechanical whisper off DL1's opening.
+        if state.level_entries < 2:
+            return {}
+        options = preferred_menu(state, self.ordinary_food)
+        return {k: v for k, v in options.items() if k in self.MENU}
+
+    def choose(self, state, ident, at):
+        options = self.menu(state)
+        if not options:
+            return None
+        # Stateless per slot: a restored run makes the same pick for the same
+        # (seed, id, safe index) without saving any RNG state.
+        rng = RandomBackend(0, self.ordinary_food)
+        rng.rng = random.Random("m1:%d:%d:%d" % (self.seed, ident, at))
+        return rng.pick(options, ident, at)
 
 
 class ScheduleBackend:
@@ -569,9 +629,14 @@ def run(
                         reason = "schedule_complete"
                         break
                 else:
-                    r = None
+                    r = (
+                        backend.next(state)
+                        if isinstance(backend, OrdinaryBackend)
+                        else None
+                    )
                     if (
-                        state.latest
+                        r is None
+                        and state.latest
                         and last_choice != state.safe
                         and eligible(state, getattr(backend, "ordinary_food", False))
                     ):

@@ -11,7 +11,7 @@ from chaos.oauth import OAuthBackend
 from chaos.protocol import parse_event
 
 
-def restored_state(*, seen=1, last=1, turn=51, sanity=100):
+def restored_state(*, seen=1, last=1, turn=51, sanity=100, budget=None):
     row = dict(
         v=3,
         seq=1,
@@ -22,7 +22,7 @@ def restored_state(*, seen=1, last=1, turn=51, sanity=100):
         detail="restore",
         sanity=sanity,
         insight=0,
-        budget=2 + (100 - sanity) // 10,
+        budget=2 + (100 - sanity) // 10 if budget is None else budget,
         spent=0,
         reserved=0,
         last_id=1,
@@ -65,7 +65,7 @@ class OAuthMenuTests(unittest.TestCase):
                     self.backend, "generate", return_value=json.dumps(answer)
                 ) as generate:
                     self.assertEqual(
-                        self.backend.choose(restored_state(), 2, 2), answer
+                        self.backend.choose(restored_state(budget=0), 2, 2), answer
                     )
                 generate.assert_called_once()
                 system, raw = generate.call_args.args
@@ -82,7 +82,7 @@ class OAuthMenuTests(unittest.TestCase):
             self.backend, "generate", return_value=json.dumps(request(value=1))
         ):
             with self.assertRaises(ValueError):
-                self.backend.choose(restored_state(), 2, 2)
+                self.backend.choose(restored_state(budget=0), 2, 2)
 
     def test_mechanical_preference_prompt_and_response(self):
         state = restored_state(sanity=80)
@@ -92,14 +92,37 @@ class OAuthMenuTests(unittest.TestCase):
         ) as generate:
             self.assertEqual(self.backend.choose(state, 2, 2), answer)
         payload = json.loads(generate.call_args.args[1])
-        self.assertEqual(payload["eligible"], ["ward_efficacy"])
-        self.assertEqual(payload["allowed_values"], {"ward_efficacy": [50]})
+        # #1: door_reluctance (cost 1, no Sanity gate) joins ward at Sanity 80.
+        self.assertEqual(payload["eligible"], ["ward_efficacy", "door_reluctance"])
+        self.assertEqual(
+            payload["allowed_values"], {"ward_efficacy": [50], "door_reluctance": [50]}
+        )
         with patch.object(self.backend, "generate", return_value=json.dumps(request())):
             with self.assertRaises(ValueError):
                 self.backend.choose(state, 2, 2)
 
+    def test_full_sanity_mechanical_menu_is_door_only(self):
+        # #1: at full Sanity only door_reluctance qualifies mechanically, so
+        # the preferred menu drops the omen; ward and hunger stay gated.
+        answer = request(mutation="door_reluctance", value=50)
+        answer.update(duration=300, telegraph=4)
+        with patch.object(
+            self.backend, "generate", return_value=json.dumps(answer)
+        ) as generate:
+            self.assertEqual(self.backend.choose(restored_state(), 2, 2), answer)
+        payload = json.loads(generate.call_args.args[1])
+        self.assertEqual(payload["eligible"], ["door_reluctance"])
+        self.assertEqual(payload["allowed_values"], {"door_reluctance": [50]})
+        for bad in (dict(answer, duration=301), request()):
+            with patch.object(self.backend, "generate", return_value=json.dumps(bad)):
+                with self.assertRaises(ValueError):
+                    self.backend.choose(restored_state(), 2, 2)
+
     def test_depletion_and_cooldown_never_generate(self):
-        for state in (restored_state(seen=7), restored_state(turn=50)):
+        for state in (
+            restored_state(seen=7, budget=0),
+            restored_state(turn=50, budget=0),
+        ):
             with (
                 self.subTest(snapshot=state.latest),
                 patch.object(self.backend, "generate") as generate,
@@ -108,7 +131,7 @@ class OAuthMenuTests(unittest.TestCase):
                 generate.assert_not_called()
 
     def test_only_last_unused_value_is_offered(self):
-        state = restored_state(seen=3)
+        state = restored_state(seen=3, budget=0)
         with patch.object(
             self.backend, "generate", return_value=json.dumps(request(value=3))
         ) as generate:
@@ -129,4 +152,4 @@ class OAuthMenuTests(unittest.TestCase):
                 patch.object(self.backend, "generate", return_value=json.dumps(answer)),
             ):
                 with self.assertRaises(ValueError):
-                    self.backend.choose(restored_state(), 2, 2)
+                    self.backend.choose(restored_state(budget=0), 2, 2)
