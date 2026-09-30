@@ -1,0 +1,8572 @@
+{
+ "aggregate": {
+  "wizard-default-path": {
+   "delivery_unknown_games": 0,
+   "director_sync_timeouts": 0,
+   "first_admission_move": {
+    "max": 680,
+    "median": 616,
+    "min": 292,
+    "n": 3
+   },
+   "first_felt": {
+    "by_kind": {
+     "hound": 79,
+     "next_use_F": 0,
+     "next_use_W": 0
+    },
+    "dlvl": {
+     "max": 1,
+     "median": 1,
+     "min": 1,
+     "n": 79
+    },
+    "games": 79,
+    "turn": {
+     "max": 1754,
+     "median": 12,
+     "min": 5,
+     "n": 79
+    }
+   },
+   "games": 100,
+   "games_reaching_stage": {
+    "admitted": 3,
+    "candidate": 22,
+    "delivered": 0,
+    "native_effect": 0,
+    "published": 22,
+    "qualifying_history": 22,
+    "trigger": 0
+   },
+   "games_with_whistle": 2,
+   "harness_errors": 0,
+   "hound": {
+    "games_accepted": 88,
+    "steps": 210
+   },
+   "last_turn": {
+    "max": 2029,
+    "median": 1165.5,
+    "min": 6,
+    "n": 100
+   },
+   "levels_visited": 189,
+   "loss_reasons": {
+    "admitted_no_trigger:level_departure": 1,
+    "admitted_no_trigger:program_expired": 2,
+    "inferred:no_safe_point_before_game_end": 4,
+    "no_qualifying_action": 78,
+    "rejected:budget": 2,
+    "rejected:origin_expired": 11,
+    "rejected:origin_expired+origin_unbound": 1,
+    "rejected:origin_unbound": 1
+   },
+   "max_dlvl": {
+    "max": 5,
+    "median": 2,
+    "min": 1,
+    "n": 19
+   },
+   "no_companion_refusals": {
+    "decisions": 0,
+    "games": 0
+   },
+   "nonzero_exit": 0,
+   "ordinary_whispers_admitted": 100,
+   "outcomes": {
+    "depth_limit": 2,
+    "died": 81,
+    "turn_limit": 17
+   },
+   "per_1000_turns": {
+    "admitted": 0.024,
+    "delivered": 0.0,
+    "hound_accepted": 0.713
+   },
+   "per_level": {
+    "admitted": 0.016,
+    "delivered": 0.0,
+    "hound_accepted": 0.466
+   },
+   "policy": {
+    "flees": 158,
+    "prayers": 118,
+    "rests": 366,
+    "whistles_found": 2
+   },
+   "qualifying_actions": {
+    "fountain_drink": 89,
+    "whistling": 21
+   },
+   "save_restore": {
+    "attempted": 88,
+    "restored": 88
+   },
+   "stage_totals": {
+    "admitted": 3,
+    "candidate": 46,
+    "delivered": 0,
+    "native_effect": 0,
+    "published": 22,
+    "qualifying_history": 46,
+    "trigger": 0
+   },
+   "start_budget": [
+    2
+   ],
+   "start_sanity": [
+    100
+   ],
+   "turns_played": 123380,
+   "w_suppressions_by_reason": {},
+   "zero_delivered_games": 100
+  }
+ },
+ "games": [
+  {
+   "commands": 208,
+   "error": null,
+   "exit_code": 0,
+   "final_status": {},
+   "funnel": {
+    "counts": {
+     "admitted": 0,
+     "candidate": 0,
+     "delivered": 0,
+     "native_effect": 0,
+     "published": 0,
+     "qualifying_history": 0,
+     "trigger": 0
+    },
+    "delivery_known": true,
+    "effect_outcomes": [],
+    "first_admission_move": null,
+    "first_felt": {
+     "dlvl": 1,
+     "kind": "hound",
+     "turn": 78
+    },
+    "haunt": {
+     "accepted": 1,
+     "expired": 1,
+     "pre_admitted": 1
+    },
+    "haunt_steps": 1,
+    "journal_status": "missing",
+    "last_turn": 455,
+    "loss": "no_qualifying_action",
+    "ordinary_whispers_admitted": 1,
+    "public_attention_completed": 0,
+    "qualifying_actions": {
+     "fountain_drink": 0,
+     "whistling": 0
+    },
+    "recorded_decisions": [],
+    "safe_points": {
+     "level_enter": 1,
+     "pray": 1
+    },
+    "session_details": [
+     "new"
+    ],
+    "start_budget": 2,
+    "start_sanity": 100,
+    "terminations": [],
+    "w_suppressions": []
+   },
+   "outcome": "died",
+   "save_restore": {
+    "attempted": false,
+    "session_detail": null
+   },
+   "seed": 1,
+   "start": "wizard-default-path",
+   "sync_timeouts": 0,
+   "v2": {
+    "dlvl_timeline": [
+     [
+      1,
+      1
+     ]
+    ],
+    "flees": 5,
+    "launcher": [
+     "--ordinary",
+     "--max-runtime",
+     "86400"
+    ],
+    "prayers": 1,
+    "rests": 11,
+    "whistles_found": 0
+   },
+   "whistle_in_inventory": false
+  },
+  {
+   "commands": 324,
+   "error": null,
+   "exit_code": 0,
+   "final_status": {},
+   "funnel": {
+    "counts": {
+     "admitted": 0,
+     "candidate": 0,
+     "delivered": 0,
+     "native_effect": 0,
+     "published": 0,
+     "qualifying_history": 0,
+     "trigger": 0
+    },
+    "delivery_known": true,
+    "effect_outcomes": [],
+    "first_admission_move": null,
+    "first_felt": null,
+    "haunt": {
+     "rejected": 1
+    },
+    "haunt_steps": 0,
+    "journal_status": "missing",
+    "last_turn": 1784,
+    "loss": "no_qualifying_action",
+    "ordinary_whispers_admitted": 1,
+    "public_attention_completed": 0,
+    "qualifying_actions": {
+     "fountain_drink": 0,
+     "whistling": 0
+    },
+    "recorded_decisions": [],
+    "safe_points": {
+     "level_enter": 1,
+     "pray": 2
+    },
+    "session_details": [
+     "new",
+     "restore"
+    ],
+    "start_budget": 2,
+    "start_sanity": 100,
+    "terminations": [],
+    "w_suppressions": []
+   },
+   "outcome": "died",
+   "save_restore": {
+    "attempted": true,
+    "session_detail": "restore"
+   },
+   "seed": 2,
+   "start": "wizard-default-path",
+   "sync_timeouts": 0,
+   "v2": {
+    "dlvl_timeline": [
+     [
+      1,
+      1
+     ]
+    ],
+    "flees": 0,
+    "launcher": [
+     "--ordinary",
+     "--max-runtime",
+     "86400"
+    ],
+    "prayers": 2,
+    "rests": 0,
+    "whistles_found": 0
+   },
+   "whistle_in_inventory": false
+  },
+  {
+   "commands": 394,
+   "error": null,
+   "exit_code": 0,
+   "final_status": {},
+   "funnel": {
+    "counts": {
+     "admitted": 0,
+     "candidate": 1,
+     "delivered": 0,
+     "native_effect": 0,
+     "published": 1,
+     "qualifying_history": 1,
+     "trigger": 0
+    },
+    "delivery_known": true,
+    "effect_outcomes": [],
+    "first_admission_move": null,
+    "first_felt": {
+     "dlvl": 1,
+     "kind": "hound",
+     "turn": 9
+    },
+    "haunt": {
+     "accepted": 1,
+     "expired": 1,
+     "pre_admitted": 1
+    },
+    "haunt_steps": 1,
+    "journal_status": "missing",
+    "last_turn": 1145,
+    "loss": "rejected:origin_expired",
+    "ordinary_whispers_admitted": 1,
+    "public_attention_completed": 0,
+    "qualifying_actions": {
+     "fountain_drink": 1,
+     "whistling": 0
+    },
+    "recorded_decisions": [
+     {
+      "at": 2,
+      "move": 499,
+      "reasons": [
+       "origin_expired"
+      ],
+      "safe": 2
+     }
+    ],
+    "safe_points": {
+     "level_enter": 1,
+     "pray": 1
+    },
+    "session_details": [
+     "new",
+     "restore"
+    ],
+    "start_budget": 2,
+    "start_sanity": 100,
+    "terminations": [],
+    "w_suppressions": []
+   },
+   "outcome": "died",
+   "save_restore": {
+    "attempted": true,
+    "session_detail": "restore"
+   },
+   "seed": 3,
+   "start": "wizard-default-path",
+   "sync_timeouts": 0,
+   "v2": {
+    "dlvl_timeline": [
+     [
+      1,
+      1
+     ]
+    ],
+    "flees": 0,
+    "launcher": [
+     "--ordinary",
+     "--max-runtime",
+     "86400"
+    ],
+    "prayers": 1,
+    "rests": 0,
+    "whistles_found": 0
+   },
+   "whistle_in_inventory": false
+  },
+  {
+   "commands": 541,
+   "error": null,
+   "exit_code": 0,
+   "final_status": {},
+   "funnel": {
+    "counts": {
+     "admitted": 0,
+     "candidate": 2,
+     "delivered": 0,
+     "native_effect": 0,
+     "published": 1,
+     "qualifying_history": 2,
+     "trigger": 0
+    },
+    "delivery_known": true,
+    "effect_outcomes": [],
+    "first_admission_move": null,
+    "first_felt": {
+     "dlvl": 1,
+     "kind": "hound",
+     "turn": 12
+    },
+    "haunt": {
+     "accepted": 1,
+     "expired": 1,
+     "pre_admitted": 1
+    },
+    "haunt_steps": 2,
+    "journal_status": "missing",
+    "last_turn": 1728,
+    "loss": "rejected:origin_expired",
+    "ordinary_whispers_admitted": 1,
+    "public_attention_completed": 0,
+    "qualifying_actions": {
+     "fountain_drink": 4,
+     "whistling": 0
+    },
+    "recorded_decisions": [
+     {
+      "at": 2,
+      "move": 323,
+      "reasons": [
+       "origin_expired"
+      ],
+      "safe": 2
+     }
+    ],
+    "safe_points": {
+     "level_enter": 2,
+     "pray": 1
+    },
+    "session_details": [
+     "new",
+     "restore"
+    ],
+    "start_budget": 2,
+    "start_sanity": 100,
+    "terminations": [],
+    "w_suppressions": []
+   },
+   "outcome": "died",
+   "save_restore": {
+    "attempted": true,
+    "session_detail": "restore"
+   },
+   "seed": 4,
+   "start": "wizard-default-path",
+   "sync_timeouts": 0,
+   "v2": {
+    "dlvl_timeline": [
+     [
+      1,
+      1
+     ],
+     [
+      324,
+      2
+     ]
+    ],
+    "flees": 2,
+    "launcher": [
+     "--ordinary",
+     "--max-runtime",
+     "86400"
+    ],
+    "prayers": 1,
+    "rests": 5,
+    "whistles_found": 0
+   },
+   "whistle_in_inventory": false
+  },
+  {
+   "commands": 309,
+   "error": null,
+   "exit_code": 0,
+   "final_status": {},
+   "funnel": {
+    "counts": {
+     "admitted": 0,
+     "candidate": 0,
+     "delivered": 0,
+     "native_effect": 0,
+     "published": 0,
+     "qualifying_history": 0,
+     "trigger": 0
+    },
+    "delivery_known": true,
+    "effect_outcomes": [],
+    "first_admission_move": null,
+    "first_felt": {
+     "dlvl": 1,
+     "kind": "hound",
+     "turn": 5
+    },
+    "haunt": {
+     "accepted": 1,
+     "expired": 1,
+     "pre_admitted": 1
+    },
+    "haunt_steps": 7,
+    "journal_status": "missing",
+    "last_turn": 1995,
+    "loss": "no_qualifying_action",
+    "ordinary_whispers_admitted": 1,
+    "public_attention_completed": 0,
+    "qualifying_actions": {
+     "fountain_drink": 0,
+     "whistling": 0
+    },
+    "recorded_decisions": [],
+    "safe_points": {
+     "level_enter": 1,
+     "pray": 2
+    },
+    "session_details": [
+     "new",
+     "restore"
+    ],
+    "start_budget": 2,
+    "start_sanity": 100,
+    "terminations": [],
+    "w_suppressions": []
+   },
+   "outcome": "died",
+   "save_restore": {
+    "attempted": true,
+    "session_detail": "restore"
+   },
+   "seed": 5,
+   "start": "wizard-default-path",
+   "sync_timeouts": 0,
+   "v2": {
+    "dlvl_timeline": [
+     [
+      1,
+      1
+     ]
+    ],
+    "flees": 0,
+    "launcher": [
+     "--ordinary",
+     "--max-runtime",
+     "86400"
+    ],
+    "prayers": 2,
+    "rests": 6,
+    "whistles_found": 0
+   },
+   "whistle_in_inventory": false
+  },
+  {
+   "commands": 545,
+   "error": null,
+   "exit_code": 0,
+   "final_status": {
+    "dlvl": 5,
+    "hp": 15,
+    "hp_max": 15,
+    "hunger": null,
+    "turn": 1516
+   },
+   "funnel": {
+    "counts": {
+     "admitted": 0,
+     "candidate": 0,
+     "delivered": 0,
+     "native_effect": 0,
+     "published": 0,
+     "qualifying_history": 0,
+     "trigger": 0
+    },
+    "delivery_known": true,
+    "effect_outcomes": [],
+    "first_admission_move": null,
+    "first_felt": {
+     "dlvl": 1,
+     "kind": "hound",
+     "turn": 8
+    },
+    "haunt": {
+     "accepted": 1,
+     "expired": 1,
+     "pre_admitted": 1
+    },
+    "haunt_steps": 4,
+    "journal_status": "missing",
+    "last_turn": 1516,
+    "loss": "no_qualifying_action",
+    "ordinary_whispers_admitted": 1,
+    "public_attention_completed": 0,
+    "qualifying_actions": {
+     "fountain_drink": 3,
+     "whistling": 0
+    },
+    "recorded_decisions": [],
+    "safe_points": {
+     "level_enter": 5,
+     "pray": 2
+    },
+    "session_details": [
+     "new",
+     "restore"
+    ],
+    "start_budget": 2,
+    "start_sanity": 100,
+    "terminations": [],
+    "w_suppressions": []
+   },
+   "outcome": "depth_limit",
+   "save_restore": {
+    "attempted": true,
+    "session_detail": "restore"
+   },
+   "seed": 6,
+   "start": "wizard-default-path",
+   "sync_timeouts": 0,
+   "v2": {
+    "dlvl_timeline": [
+     [
+      1,
+      1
+     ],
+     [
+      331,
+      2
+     ],
+     [
+      703,
+      3
+     ],
+     [
+      1186,
+      4
+     ]
+    ],
+    "flees": 2,
+    "launcher": [
+     "--ordinary",
+     "--max-runtime",
+     "86400"
+    ],
+    "prayers": 2,
+    "rests": 6,
+    "whistles_found": 0
+   },
+   "whistle_in_inventory": false
+  },
+  {
+   "commands": 755,
+   "error": null,
+   "exit_code": 0,
+   "final_status": {},
+   "funnel": {
+    "counts": {
+     "admitted": 0,
+     "candidate": 0,
+     "delivered": 0,
+     "native_effect": 0,
+     "published": 0,
+     "qualifying_history": 0,
+     "trigger": 0
+    },
+    "delivery_known": true,
+    "effect_outcomes": [],
+    "first_admission_move": null,
+    "first_felt": {
+     "dlvl": 1,
+     "kind": "hound",
+     "turn": 12
+    },
+    "haunt": {
+     "accepted": 1,
+     "expired": 1,
+     "pre_admitted": 1
+    },
+    "haunt_steps": 2,
+    "journal_status": "missing",
+    "last_turn": 1773,
+    "loss": "no_qualifying_action",
+    "ordinary_whispers_admitted": 1,
+    "public_attention_completed": 0,
+    "qualifying_actions": {
+     "fountain_drink": 0,
+     "whistling": 0
+    },
+    "recorded_decisions": [],
+    "safe_points": {
+     "level_enter": 1,
+     "pray": 2
+    },
+    "session_details": [
+     "new",
+     "restore"
+    ],
+    "start_budget": 2,
+    "start_sanity": 100,
+    "terminations": [],
+    "w_suppressions": []
+   },
+   "outcome": "died",
+   "save_restore": {
+    "attempted": true,
+    "session_detail": "restore"
+   },
+   "seed": 7,
+   "start": "wizard-default-path",
+   "sync_timeouts": 0,
+   "v2": {
+    "dlvl_timeline": [
+     [
+      1,
+      1
+     ]
+    ],
+    "flees": 0,
+    "launcher": [
+     "--ordinary",
+     "--max-runtime",
+     "86400"
+    ],
+    "prayers": 2,
+    "rests": 0,
+    "whistles_found": 0
+   },
+   "whistle_in_inventory": false
+  },
+  {
+   "commands": 850,
+   "error": null,
+   "exit_code": 0,
+   "final_status": {
+    "dlvl": 4,
+    "hp": 5,
+    "hp_max": 34,
+    "hunger": null,
+    "turn": 2004
+   },
+   "funnel": {
+    "counts": {
+     "admitted": 0,
+     "candidate": 0,
+     "delivered": 0,
+     "native_effect": 0,
+     "published": 0,
+     "qualifying_history": 0,
+     "trigger": 0
+    },
+    "delivery_known": true,
+    "effect_outcomes": [],
+    "first_admission_move": null,
+    "first_felt": {
+     "dlvl": 1,
+     "kind": "hound",
+     "turn": 11
+    },
+    "haunt": {
+     "accepted": 1,
+     "expired": 1,
+     "pre_admitted": 1
+    },
+    "haunt_steps": 2,
+    "journal_status": "missing",
+    "last_turn": 2004,
+    "loss": "no_qualifying_action",
+    "ordinary_whispers_admitted": 1,
+    "public_attention_completed": 0,
+    "qualifying_actions": {
+     "fountain_drink": 0,
+     "whistling": 0
+    },
+    "recorded_decisions": [],
+    "safe_points": {
+     "level_enter": 4,
+     "pray": 2,
+     "sanity_threshold": 1
+    },
+    "session_details": [
+     "new",
+     "restore"
+    ],
+    "start_budget": 2,
+    "start_sanity": 100,
+    "terminations": [],
+    "w_suppressions": []
+   },
+   "outcome": "turn_limit",
+   "save_restore": {
+    "attempted": true,
+    "session_detail": "restore"
+   },
+   "seed": 8,
+   "start": "wizard-default-path",
+   "sync_timeouts": 0,
+   "v2": {
+    "dlvl_timeline": [
+     [
+      1,
+      1
+     ],
+     [
+      308,
+      2
+     ],
+     [
+      640,
+      3
+     ],
+     [
+      1130,
+      4
+     ]
+    ],
+    "flees": 1,
+    "launcher": [
+     "--ordinary",
+     "--max-runtime",
+     "86400"
+    ],
+    "prayers": 2,
+    "rests": 12,
+    "whistles_found": 0
+   },
+   "whistle_in_inventory": false
+  },
+  {
+   "commands": 743,
+   "error": null,
+   "exit_code": 0,
+   "final_status": {},
+   "funnel": {
+    "counts": {
+     "admitted": 0,
+     "candidate": 0,
+     "delivered": 0,
+     "native_effect": 0,
+     "published": 0,
+     "qualifying_history": 0,
+     "trigger": 0
+    },
+    "delivery_known": true,
+    "effect_outcomes": [],
+    "first_admission_move": null,
+    "first_felt": {
+     "dlvl": 1,
+     "kind": "hound",
+     "turn": 75
+    },
+    "haunt": {
+     "accepted": 1,
+     "expired": 1,
+     "pre_admitted": 1
+    },
+    "haunt_steps": 1,
+    "journal_status": "missing",
+    "last_turn": 1502,
+    "loss": "no_qualifying_action",
+    "ordinary_whispers_admitted": 1,
+    "public_attention_completed": 0,
+    "qualifying_actions": {
+     "fountain_drink": 0,
+     "whistling": 0
+    },
+    "recorded_decisions": [],
+    "safe_points": {
+     "level_enter": 1,
+     "pray": 1
+    },
+    "session_details": [
+     "new",
+     "restore"
+    ],
+    "start_budget": 2,
+    "start_sanity": 100,
+    "terminations": [],
+    "w_suppressions": []
+   },
+   "outcome": "died",
+   "save_restore": {
+    "attempted": true,
+    "session_detail": "restore"
+   },
+   "seed": 9,
+   "start": "wizard-default-path",
+   "sync_timeouts": 0,
+   "v2": {
+    "dlvl_timeline": [
+     [
+      1,
+      1
+     ]
+    ],
+    "flees": 0,
+    "launcher": [
+     "--ordinary",
+     "--max-runtime",
+     "86400"
+    ],
+    "prayers": 1,
+    "rests": 0,
+    "whistles_found": 0
+   },
+   "whistle_in_inventory": false
+  },
+  {
+   "commands": 433,
+   "error": null,
+   "exit_code": 0,
+   "final_status": {},
+   "funnel": {
+    "counts": {
+     "admitted": 1,
+     "candidate": 1,
+     "delivered": 0,
+     "native_effect": 0,
+     "published": 1,
+     "qualifying_history": 1,
+     "trigger": 0
+    },
+    "delivery_known": true,
+    "effect_outcomes": [],
+    "first_admission_move": 292,
+    "first_felt": {
+     "dlvl": 1,
+     "kind": "hound",
+     "turn": 9
+    },
+    "haunt": {
+     "accepted": 1,
+     "expired": 1,
+     "pre_admitted": 1
+    },
+    "haunt_steps": 3,
+    "journal_status": "structurally_complete",
+    "last_turn": 1192,
+    "loss": "admitted_no_trigger:level_departure",
+    "ordinary_whispers_admitted": 1,
+    "public_attention_completed": 0,
+    "qualifying_actions": {
+     "fountain_drink": 2,
+     "whistling": 0
+    },
+    "recorded_decisions": [],
+    "safe_points": {
+     "level_enter": 2,
+     "pray": 1
+    },
+    "session_details": [
+     "new",
+     "restore"
+    ],
+    "start_budget": 2,
+    "start_sanity": 100,
+    "terminations": [
+     "level_departure"
+    ],
+    "w_suppressions": []
+   },
+   "outcome": "died",
+   "save_restore": {
+    "attempted": true,
+    "session_detail": "restore"
+   },
+   "seed": 10,
+   "start": "wizard-default-path",
+   "sync_timeouts": 0,
+   "v2": {
+    "dlvl_timeline": [
+     [
+      1,
+      1
+     ],
+     [
+      312,
+      2
+     ]
+    ],
+    "flees": 0,
+    "launcher": [
+     "--ordinary",
+     "--max-runtime",
+     "86400"
+    ],
+    "prayers": 1,
+    "rests": 0,
+    "whistles_found": 0
+   },
+   "whistle_in_inventory": false
+  },
+  {
+   "commands": 360,
+   "error": null,
+   "exit_code": 0,
+   "final_status": {},
+   "funnel": {
+    "counts": {
+     "admitted": 0,
+     "candidate": 1,
+     "delivered": 0,
+     "native_effect": 0,
+     "published": 1,
+     "qualifying_history": 1,
+     "trigger": 0
+    },
+    "delivery_known": true,
+    "effect_outcomes": [],
+    "first_admission_move": null,
+    "first_felt": {
+     "dlvl": 1,
+     "kind": "hound",
+     "turn": 7
+    },
+    "haunt": {
+     "accepted": 1,
+     "expired": 1,
+     "pre_admitted": 1
+    },
+    "haunt_steps": 2,
+    "journal_status": "missing",
+    "last_turn": 793,
+    "loss": "rejected:origin_expired",
+    "ordinary_whispers_admitted": 1,
+    "public_attention_completed": 0,
+    "qualifying_actions": {
+     "fountain_drink": 2,
+     "whistling": 0
+    },
+    "recorded_decisions": [
+     {
+      "at": 2,
+      "move": 325,
+      "reasons": [
+       "origin_expired"
+      ],
+      "safe": 2
+     }
+    ],
+    "safe_points": {
+     "level_enter": 3,
+     "pray": 1
+    },
+    "session_details": [
+     "new",
+     "restore"
+    ],
+    "start_budget": 2,
+    "start_sanity": 100,
+    "terminations": [],
+    "w_suppressions": []
+   },
+   "outcome": "died",
+   "save_restore": {
+    "attempted": true,
+    "session_detail": "restore"
+   },
+   "seed": 11,
+   "start": "wizard-default-path",
+   "sync_timeouts": 0,
+   "v2": {
+    "dlvl_timeline": [
+     [
+      1,
+      1
+     ],
+     [
+      326,
+      2
+     ],
+     [
+      668,
+      3
+     ]
+    ],
+    "flees": 1,
+    "launcher": [
+     "--ordinary",
+     "--max-runtime",
+     "86400"
+    ],
+    "prayers": 1,
+    "rests": 9,
+    "whistles_found": 0
+   },
+   "whistle_in_inventory": false
+  },
+  {
+   "commands": 394,
+   "error": null,
+   "exit_code": 0,
+   "final_status": {},
+   "funnel": {
+    "counts": {
+     "admitted": 0,
+     "candidate": 0,
+     "delivered": 0,
+     "native_effect": 0,
+     "published": 0,
+     "qualifying_history": 0,
+     "trigger": 0
+    },
+    "delivery_known": true,
+    "effect_outcomes": [],
+    "first_admission_move": null,
+    "first_felt": {
+     "dlvl": 1,
+     "kind": "hound",
+     "turn": 55
+    },
+    "haunt": {
+     "accepted": 1,
+     "expired": 1,
+     "pre_admitted": 1
+    },
+    "haunt_steps": 2,
+    "journal_status": "missing",
+    "last_turn": 1173,
+    "loss": "no_qualifying_action",
+    "ordinary_whispers_admitted": 1,
+    "public_attention_completed": 0,
+    "qualifying_actions": {
+     "fountain_drink": 2,
+     "whistling": 0
+    },
+    "recorded_decisions": [],
+    "safe_points": {
+     "level_enter": 2,
+     "pray": 1
+    },
+    "session_details": [
+     "new",
+     "restore"
+    ],
+    "start_budget": 2,
+    "start_sanity": 100,
+    "terminations": [],
+    "w_suppressions": []
+   },
+   "outcome": "died",
+   "save_restore": {
+    "attempted": true,
+    "session_detail": "restore"
+   },
+   "seed": 12,
+   "start": "wizard-default-path",
+   "sync_timeouts": 0,
+   "v2": {
+    "dlvl_timeline": [
+     [
+      1,
+      1
+     ],
+     [
+      312,
+      2
+     ]
+    ],
+    "flees": 0,
+    "launcher": [
+     "--ordinary",
+     "--max-runtime",
+     "86400"
+    ],
+    "prayers": 1,
+    "rests": 0,
+    "whistles_found": 0
+   },
+   "whistle_in_inventory": false
+  },
+  {
+   "commands": 666,
+   "error": null,
+   "exit_code": 0,
+   "final_status": {
+    "dlvl": 1,
+    "hp": 17,
+    "hp_max": 17,
+    "hunger": null,
+    "turn": 2009
+   },
+   "funnel": {
+    "counts": {
+     "admitted": 0,
+     "candidate": 0,
+     "delivered": 0,
+     "native_effect": 0,
+     "published": 0,
+     "qualifying_history": 0,
+     "trigger": 0
+    },
+    "delivery_known": true,
+    "effect_outcomes": [],
+    "first_admission_move": null,
+    "first_felt": {
+     "dlvl": 1,
+     "kind": "hound",
+     "turn": 5
+    },
+    "haunt": {
+     "accepted": 1,
+     "expired": 1,
+     "pre_admitted": 1
+    },
+    "haunt_steps": 2,
+    "journal_status": "missing",
+    "last_turn": 2009,
+    "loss": "no_qualifying_action",
+    "ordinary_whispers_admitted": 1,
+    "public_attention_completed": 0,
+    "qualifying_actions": {
+     "fountain_drink": 0,
+     "whistling": 0
+    },
+    "recorded_decisions": [],
+    "safe_points": {
+     "level_enter": 1,
+     "pray": 2
+    },
+    "session_details": [
+     "new",
+     "restore"
+    ],
+    "start_budget": 2,
+    "start_sanity": 100,
+    "terminations": [],
+    "w_suppressions": []
+   },
+   "outcome": "turn_limit",
+   "save_restore": {
+    "attempted": true,
+    "session_detail": "restore"
+   },
+   "seed": 13,
+   "start": "wizard-default-path",
+   "sync_timeouts": 0,
+   "v2": {
+    "dlvl_timeline": [
+     [
+      1,
+      1
+     ]
+    ],
+    "flees": 0,
+    "launcher": [
+     "--ordinary",
+     "--max-runtime",
+     "86400"
+    ],
+    "prayers": 2,
+    "rests": 3,
+    "whistles_found": 0
+   },
+   "whistle_in_inventory": false
+  },
+  {
+   "commands": 392,
+   "error": null,
+   "exit_code": 0,
+   "final_status": {},
+   "funnel": {
+    "counts": {
+     "admitted": 0,
+     "candidate": 0,
+     "delivered": 0,
+     "native_effect": 0,
+     "published": 0,
+     "qualifying_history": 0,
+     "trigger": 0
+    },
+    "delivery_known": true,
+    "effect_outcomes": [],
+    "first_admission_move": null,
+    "first_felt": {
+     "dlvl": 1,
+     "kind": "hound",
+     "turn": 5
+    },
+    "haunt": {
+     "accepted": 1,
+     "expired": 1,
+     "pre_admitted": 1
+    },
+    "haunt_steps": 2,
+    "journal_status": "missing",
+    "last_turn": 1061,
+    "loss": "no_qualifying_action",
+    "ordinary_whispers_admitted": 1,
+    "public_attention_completed": 0,
+    "qualifying_actions": {
+     "fountain_drink": 0,
+     "whistling": 0
+    },
+    "recorded_decisions": [],
+    "safe_points": {
+     "level_enter": 1,
+     "pray": 1
+    },
+    "session_details": [
+     "new",
+     "restore"
+    ],
+    "start_budget": 2,
+    "start_sanity": 100,
+    "terminations": [],
+    "w_suppressions": []
+   },
+   "outcome": "died",
+   "save_restore": {
+    "attempted": true,
+    "session_detail": "restore"
+   },
+   "seed": 14,
+   "start": "wizard-default-path",
+   "sync_timeouts": 0,
+   "v2": {
+    "dlvl_timeline": [
+     [
+      1,
+      1
+     ]
+    ],
+    "flees": 0,
+    "launcher": [
+     "--ordinary",
+     "--max-runtime",
+     "86400"
+    ],
+    "prayers": 1,
+    "rests": 3,
+    "whistles_found": 0
+   },
+   "whistle_in_inventory": false
+  },
+  {
+   "commands": 876,
+   "error": null,
+   "exit_code": 0,
+   "final_status": {
+    "dlvl": 1,
+    "hp": 21,
+    "hp_max": 21,
+    "hunger": null,
+    "turn": 2029
+   },
+   "funnel": {
+    "counts": {
+     "admitted": 0,
+     "candidate": 0,
+     "delivered": 0,
+     "native_effect": 0,
+     "published": 0,
+     "qualifying_history": 0,
+     "trigger": 0
+    },
+    "delivery_known": true,
+    "effect_outcomes": [],
+    "first_admission_move": null,
+    "first_felt": {
+     "dlvl": 1,
+     "kind": "hound",
+     "turn": 121
+    },
+    "haunt": {
+     "accepted": 1,
+     "expired": 1,
+     "pre_admitted": 1
+    },
+    "haunt_steps": 1,
+    "journal_status": "missing",
+    "last_turn": 2029,
+    "loss": "no_qualifying_action",
+    "ordinary_whispers_admitted": 1,
+    "public_attention_completed": 0,
+    "qualifying_actions": {
+     "fountain_drink": 0,
+     "whistling": 0
+    },
+    "recorded_decisions": [],
+    "safe_points": {
+     "level_enter": 1,
+     "pray": 2
+    },
+    "session_details": [
+     "new",
+     "restore"
+    ],
+    "start_budget": 2,
+    "start_sanity": 100,
+    "terminations": [],
+    "w_suppressions": []
+   },
+   "outcome": "turn_limit",
+   "save_restore": {
+    "attempted": true,
+    "session_detail": "restore"
+   },
+   "seed": 15,
+   "start": "wizard-default-path",
+   "sync_timeouts": 0,
+   "v2": {
+    "dlvl_timeline": [
+     [
+      1,
+      1
+     ]
+    ],
+    "flees": 3,
+    "launcher": [
+     "--ordinary",
+     "--max-runtime",
+     "86400"
+    ],
+    "prayers": 2,
+    "rests": 4,
+    "whistles_found": 0
+   },
+   "whistle_in_inventory": false
+  },
+  {
+   "commands": 172,
+   "error": null,
+   "exit_code": 0,
+   "final_status": {},
+   "funnel": {
+    "counts": {
+     "admitted": 0,
+     "candidate": 0,
+     "delivered": 0,
+     "native_effect": 0,
+     "published": 0,
+     "qualifying_history": 0,
+     "trigger": 0
+    },
+    "delivery_known": true,
+    "effect_outcomes": [],
+    "first_admission_move": null,
+    "first_felt": {
+     "dlvl": 1,
+     "kind": "hound",
+     "turn": 64
+    },
+    "haunt": {
+     "accepted": 1,
+     "expired": 1,
+     "pre_admitted": 1
+    },
+    "haunt_steps": 3,
+    "journal_status": "missing",
+    "last_turn": 224,
+    "loss": "no_qualifying_action",
+    "ordinary_whispers_admitted": 1,
+    "public_attention_completed": 0,
+    "qualifying_actions": {
+     "fountain_drink": 1,
+     "whistling": 0
+    },
+    "recorded_decisions": [],
+    "safe_points": {
+     "level_enter": 1
+    },
+    "session_details": [
+     "new"
+    ],
+    "start_budget": 2,
+    "start_sanity": 100,
+    "terminations": [],
+    "w_suppressions": []
+   },
+   "outcome": "died",
+   "save_restore": {
+    "attempted": false,
+    "session_detail": null
+   },
+   "seed": 16,
+   "start": "wizard-default-path",
+   "sync_timeouts": 0,
+   "v2": {
+    "dlvl_timeline": [
+     [
+      1,
+      1
+     ]
+    ],
+    "flees": 0,
+    "launcher": [
+     "--ordinary",
+     "--max-runtime",
+     "86400"
+    ],
+    "prayers": 0,
+    "rests": 0,
+    "whistles_found": 0
+   },
+   "whistle_in_inventory": false
+  },
+  {
+   "commands": 446,
+   "error": null,
+   "exit_code": 0,
+   "final_status": {},
+   "funnel": {
+    "counts": {
+     "admitted": 0,
+     "candidate": 1,
+     "delivered": 0,
+     "native_effect": 0,
+     "published": 1,
+     "qualifying_history": 1,
+     "trigger": 0
+    },
+    "delivery_known": true,
+    "effect_outcomes": [],
+    "first_admission_move": null,
+    "first_felt": null,
+    "haunt": {
+     "accepted": 1,
+     "expired": 1,
+     "pre_admitted": 1
+    },
+    "haunt_steps": 0,
+    "journal_status": "missing",
+    "last_turn": 1684,
+    "loss": "rejected:budget",
+    "ordinary_whispers_admitted": 1,
+    "public_attention_completed": 0,
+    "qualifying_actions": {
+     "fountain_drink": 2,
+     "whistling": 0
+    },
+    "recorded_decisions": [
+     {
+      "at": 3,
+      "move": 679,
+      "reasons": [
+       "budget"
+      ],
+      "safe": 3
+     }
+    ],
+    "safe_points": {
+     "level_enter": 2,
+     "pray": 1
+    },
+    "session_details": [
+     "new",
+     "restore"
+    ],
+    "start_budget": 2,
+    "start_sanity": 100,
+    "terminations": [],
+    "w_suppressions": []
+   },
+   "outcome": "died",
+   "save_restore": {
+    "attempted": true,
+    "session_detail": "restore"
+   },
+   "seed": 17,
+   "start": "wizard-default-path",
+   "sync_timeouts": 0,
+   "v2": {
+    "dlvl_timeline": [
+     [
+      1,
+      1
+     ],
+     [
+      472,
+      2
+     ]
+    ],
+    "flees": 0,
+    "launcher": [
+     "--ordinary",
+     "--max-runtime",
+     "86400"
+    ],
+    "prayers": 1,
+    "rests": 3,
+    "whistles_found": 0
+   },
+   "whistle_in_inventory": false
+  },
+  {
+   "commands": 123,
+   "error": null,
+   "exit_code": 0,
+   "final_status": {},
+   "funnel": {
+    "counts": {
+     "admitted": 0,
+     "candidate": 0,
+     "delivered": 0,
+     "native_effect": 0,
+     "published": 0,
+     "qualifying_history": 0,
+     "trigger": 0
+    },
+    "delivery_known": true,
+    "effect_outcomes": [],
+    "first_admission_move": null,
+    "first_felt": null,
+    "haunt": {
+     "rejected": 1
+    },
+    "haunt_steps": 0,
+    "journal_status": "missing",
+    "last_turn": 195,
+    "loss": "no_qualifying_action",
+    "ordinary_whispers_admitted": 1,
+    "public_attention_completed": 0,
+    "qualifying_actions": {
+     "fountain_drink": 2,
+     "whistling": 0
+    },
+    "recorded_decisions": [],
+    "safe_points": {
+     "level_enter": 1,
+     "pray": 1
+    },
+    "session_details": [
+     "new"
+    ],
+    "start_budget": 2,
+    "start_sanity": 100,
+    "terminations": [],
+    "w_suppressions": []
+   },
+   "outcome": "died",
+   "save_restore": {
+    "attempted": false,
+    "session_detail": null
+   },
+   "seed": 18,
+   "start": "wizard-default-path",
+   "sync_timeouts": 0,
+   "v2": {
+    "dlvl_timeline": [
+     [
+      1,
+      1
+     ]
+    ],
+    "flees": 0,
+    "launcher": [
+     "--ordinary",
+     "--max-runtime",
+     "86400"
+    ],
+    "prayers": 1,
+    "rests": 0,
+    "whistles_found": 0
+   },
+   "whistle_in_inventory": false
+  },
+  {
+   "commands": 447,
+   "error": null,
+   "exit_code": 0,
+   "final_status": {},
+   "funnel": {
+    "counts": {
+     "admitted": 0,
+     "candidate": 0,
+     "delivered": 0,
+     "native_effect": 0,
+     "published": 0,
+     "qualifying_history": 0,
+     "trigger": 0
+    },
+    "delivery_known": true,
+    "effect_outcomes": [],
+    "first_admission_move": null,
+    "first_felt": null,
+    "haunt": {
+     "accepted": 1,
+     "expired": 1,
+     "pre_admitted": 1
+    },
+    "haunt_steps": 0,
+    "journal_status": "missing",
+    "last_turn": 1130,
+    "loss": "no_qualifying_action",
+    "ordinary_whispers_admitted": 1,
+    "public_attention_completed": 0,
+    "qualifying_actions": {
+     "fountain_drink": 0,
+     "whistling": 0
+    },
+    "recorded_decisions": [],
+    "safe_points": {
+     "level_enter": 1,
+     "pray": 1
+    },
+    "session_details": [
+     "new",
+     "restore"
+    ],
+    "start_budget": 2,
+    "start_sanity": 100,
+    "terminations": [],
+    "w_suppressions": []
+   },
+   "outcome": "died",
+   "save_restore": {
+    "attempted": true,
+    "session_detail": "restore"
+   },
+   "seed": 19,
+   "start": "wizard-default-path",
+   "sync_timeouts": 0,
+   "v2": {
+    "dlvl_timeline": [
+     [
+      1,
+      1
+     ]
+    ],
+    "flees": 0,
+    "launcher": [
+     "--ordinary",
+     "--max-runtime",
+     "86400"
+    ],
+    "prayers": 1,
+    "rests": 0,
+    "whistles_found": 0
+   },
+   "whistle_in_inventory": false
+  },
+  {
+   "commands": 789,
+   "error": null,
+   "exit_code": 0,
+   "final_status": {
+    "dlvl": 2,
+    "hp": 27,
+    "hp_max": 27,
+    "hunger": null,
+    "turn": 2001
+   },
+   "funnel": {
+    "counts": {
+     "admitted": 0,
+     "candidate": 0,
+     "delivered": 0,
+     "native_effect": 0,
+     "published": 0,
+     "qualifying_history": 0,
+     "trigger": 0
+    },
+    "delivery_known": true,
+    "effect_outcomes": [],
+    "first_admission_move": null,
+    "first_felt": {
+     "dlvl": 1,
+     "kind": "hound",
+     "turn": 35
+    },
+    "haunt": {
+     "accepted": 1,
+     "expired": 1,
+     "pre_admitted": 1
+    },
+    "haunt_steps": 3,
+    "journal_status": "missing",
+    "last_turn": 2001,
+    "loss": "no_qualifying_action",
+    "ordinary_whispers_admitted": 1,
+    "public_attention_completed": 0,
+    "qualifying_actions": {
+     "fountain_drink": 1,
+     "whistling": 0
+    },
+    "recorded_decisions": [],
+    "safe_points": {
+     "level_enter": 2,
+     "pray": 2
+    },
+    "session_details": [
+     "new",
+     "restore"
+    ],
+    "start_budget": 2,
+    "start_sanity": 100,
+    "terminations": [],
+    "w_suppressions": []
+   },
+   "outcome": "turn_limit",
+   "save_restore": {
+    "attempted": true,
+    "session_detail": "restore"
+   },
+   "seed": 20,
+   "start": "wizard-default-path",
+   "sync_timeouts": 0,
+   "v2": {
+    "dlvl_timeline": [
+     [
+      1,
+      1
+     ],
+     [
+      662,
+      2
+     ]
+    ],
+    "flees": 4,
+    "launcher": [
+     "--ordinary",
+     "--max-runtime",
+     "86400"
+    ],
+    "prayers": 2,
+    "rests": 6,
+    "whistles_found": 0
+   },
+   "whistle_in_inventory": false
+  },
+  {
+   "commands": 511,
+   "error": null,
+   "exit_code": 0,
+   "final_status": {},
+   "funnel": {
+    "counts": {
+     "admitted": 1,
+     "candidate": 1,
+     "delivered": 0,
+     "native_effect": 0,
+     "published": 1,
+     "qualifying_history": 1,
+     "trigger": 0
+    },
+    "delivery_known": true,
+    "effect_outcomes": [],
+    "first_admission_move": 680,
+    "first_felt": {
+     "dlvl": 1,
+     "kind": "hound",
+     "turn": 12
+    },
+    "haunt": {
+     "accepted": 1,
+     "expired": 1,
+     "pre_admitted": 1
+    },
+    "haunt_steps": 1,
+    "journal_status": "structurally_complete",
+    "last_turn": 1039,
+    "loss": "admitted_no_trigger:program_expired",
+    "ordinary_whispers_admitted": 1,
+    "public_attention_completed": 0,
+    "qualifying_actions": {
+     "fountain_drink": 3,
+     "whistling": 0
+    },
+    "recorded_decisions": [],
+    "safe_points": {
+     "level_enter": 3,
+     "pray": 1
+    },
+    "session_details": [
+     "new",
+     "restore"
+    ],
+    "start_budget": 2,
+    "start_sanity": 100,
+    "terminations": [
+     "program_expired"
+    ],
+    "w_suppressions": []
+   },
+   "outcome": "died",
+   "save_restore": {
+    "attempted": true,
+    "session_detail": "restore"
+   },
+   "seed": 21,
+   "start": "wizard-default-path",
+   "sync_timeouts": 0,
+   "v2": {
+    "dlvl_timeline": [
+     [
+      1,
+      1
+     ],
+     [
+      346,
+      2
+     ],
+     [
+      681,
+      3
+     ]
+    ],
+    "flees": 0,
+    "launcher": [
+     "--ordinary",
+     "--max-runtime",
+     "86400"
+    ],
+    "prayers": 1,
+    "rests": 0,
+    "whistles_found": 0
+   },
+   "whistle_in_inventory": false
+  },
+  {
+   "commands": 355,
+   "error": null,
+   "exit_code": 0,
+   "final_status": {},
+   "funnel": {
+    "counts": {
+     "admitted": 0,
+     "candidate": 0,
+     "delivered": 0,
+     "native_effect": 0,
+     "published": 0,
+     "qualifying_history": 0,
+     "trigger": 0
+    },
+    "delivery_known": true,
+    "effect_outcomes": [],
+    "first_admission_move": null,
+    "first_felt": null,
+    "haunt": {
+     "rejected": 1
+    },
+    "haunt_steps": 0,
+    "journal_status": "missing",
+    "last_turn": 799,
+    "loss": "no_qualifying_action",
+    "ordinary_whispers_admitted": 1,
+    "public_attention_completed": 0,
+    "qualifying_actions": {
+     "fountain_drink": 0,
+     "whistling": 0
+    },
+    "recorded_decisions": [],
+    "safe_points": {
+     "level_enter": 3,
+     "pray": 1
+    },
+    "session_details": [
+     "new",
+     "restore"
+    ],
+    "start_budget": 2,
+    "start_sanity": 100,
+    "terminations": [],
+    "w_suppressions": []
+   },
+   "outcome": "died",
+   "save_restore": {
+    "attempted": true,
+    "session_detail": "restore"
+   },
+   "seed": 22,
+   "start": "wizard-default-path",
+   "sync_timeouts": 0,
+   "v2": {
+    "dlvl_timeline": [
+     [
+      1,
+      1
+     ],
+     [
+      326,
+      2
+     ],
+     [
+      798,
+      3
+     ]
+    ],
+    "flees": 0,
+    "launcher": [
+     "--ordinary",
+     "--max-runtime",
+     "86400"
+    ],
+    "prayers": 1,
+    "rests": 0,
+    "whistles_found": 0
+   },
+   "whistle_in_inventory": false
+  },
+  {
+   "commands": 332,
+   "error": null,
+   "exit_code": 0,
+   "final_status": {},
+   "funnel": {
+    "counts": {
+     "admitted": 0,
+     "candidate": 1,
+     "delivered": 0,
+     "native_effect": 0,
+     "published": 1,
+     "qualifying_history": 1,
+     "trigger": 0
+    },
+    "delivery_known": true,
+    "effect_outcomes": [],
+    "first_admission_move": null,
+    "first_felt": null,
+    "haunt": {
+     "accepted": 1,
+     "expired": 1,
+     "pre_admitted": 1
+    },
+    "haunt_steps": 0,
+    "journal_status": "missing",
+    "last_turn": 1238,
+    "loss": "inferred:no_safe_point_before_game_end",
+    "ordinary_whispers_admitted": 1,
+    "public_attention_completed": 0,
+    "qualifying_actions": {
+     "fountain_drink": 2,
+     "whistling": 0
+    },
+    "recorded_decisions": [],
+    "safe_points": {
+     "level_enter": 3,
+     "pray": 1
+    },
+    "session_details": [
+     "new",
+     "restore"
+    ],
+    "start_budget": 2,
+    "start_sanity": 100,
+    "terminations": [],
+    "w_suppressions": []
+   },
+   "outcome": "died",
+   "save_restore": {
+    "attempted": true,
+    "session_detail": "restore"
+   },
+   "seed": 23,
+   "start": "wizard-default-path",
+   "sync_timeouts": 0,
+   "v2": {
+    "dlvl_timeline": [
+     [
+      1,
+      1
+     ],
+     [
+      313,
+      2
+     ],
+     [
+      622,
+      3
+     ]
+    ],
+    "flees": 0,
+    "launcher": [
+     "--ordinary",
+     "--max-runtime",
+     "86400"
+    ],
+    "prayers": 1,
+    "rests": 3,
+    "whistles_found": 0
+   },
+   "whistle_in_inventory": false
+  },
+  {
+   "commands": 909,
+   "error": null,
+   "exit_code": 0,
+   "final_status": {
+    "dlvl": 1,
+    "hp": 18,
+    "hp_max": 18,
+    "hunger": null,
+    "turn": 2006
+   },
+   "funnel": {
+    "counts": {
+     "admitted": 0,
+     "candidate": 0,
+     "delivered": 0,
+     "native_effect": 0,
+     "published": 0,
+     "qualifying_history": 0,
+     "trigger": 0
+    },
+    "delivery_known": true,
+    "effect_outcomes": [],
+    "first_admission_move": null,
+    "first_felt": {
+     "dlvl": 1,
+     "kind": "hound",
+     "turn": 7
+    },
+    "haunt": {
+     "accepted": 1,
+     "expired": 1,
+     "pre_admitted": 1
+    },
+    "haunt_steps": 1,
+    "journal_status": "missing",
+    "last_turn": 2006,
+    "loss": "no_qualifying_action",
+    "ordinary_whispers_admitted": 1,
+    "public_attention_completed": 0,
+    "qualifying_actions": {
+     "fountain_drink": 1,
+     "whistling": 0
+    },
+    "recorded_decisions": [],
+    "safe_points": {
+     "level_enter": 1,
+     "pray": 2
+    },
+    "session_details": [
+     "new",
+     "restore"
+    ],
+    "start_budget": 2,
+    "start_sanity": 100,
+    "terminations": [],
+    "w_suppressions": []
+   },
+   "outcome": "turn_limit",
+   "save_restore": {
+    "attempted": true,
+    "session_detail": "restore"
+   },
+   "seed": 24,
+   "start": "wizard-default-path",
+   "sync_timeouts": 0,
+   "v2": {
+    "dlvl_timeline": [
+     [
+      1,
+      1
+     ]
+    ],
+    "flees": 0,
+    "launcher": [
+     "--ordinary",
+     "--max-runtime",
+     "86400"
+    ],
+    "prayers": 2,
+    "rests": 2,
+    "whistles_found": 0
+   },
+   "whistle_in_inventory": false
+  },
+  {
+   "commands": 332,
+   "error": null,
+   "exit_code": 0,
+   "final_status": {},
+   "funnel": {
+    "counts": {
+     "admitted": 0,
+     "candidate": 0,
+     "delivered": 0,
+     "native_effect": 0,
+     "published": 0,
+     "qualifying_history": 0,
+     "trigger": 0
+    },
+    "delivery_known": true,
+    "effect_outcomes": [],
+    "first_admission_move": null,
+    "first_felt": {
+     "dlvl": 1,
+     "kind": "hound",
+     "turn": 38
+    },
+    "haunt": {
+     "accepted": 1,
+     "expired": 1,
+     "pre_admitted": 1
+    },
+    "haunt_steps": 2,
+    "journal_status": "missing",
+    "last_turn": 705,
+    "loss": "no_qualifying_action",
+    "ordinary_whispers_admitted": 1,
+    "public_attention_completed": 0,
+    "qualifying_actions": {
+     "fountain_drink": 2,
+     "whistling": 0
+    },
+    "recorded_decisions": [],
+    "safe_points": {
+     "level_enter": 3,
+     "pray": 1
+    },
+    "session_details": [
+     "new",
+     "restore"
+    ],
+    "start_budget": 2,
+    "start_sanity": 100,
+    "terminations": [],
+    "w_suppressions": []
+   },
+   "outcome": "died",
+   "save_restore": {
+    "attempted": true,
+    "session_detail": "restore"
+   },
+   "seed": 25,
+   "start": "wizard-default-path",
+   "sync_timeouts": 0,
+   "v2": {
+    "dlvl_timeline": [
+     [
+      1,
+      1
+     ],
+     [
+      309,
+      2
+     ],
+     [
+      620,
+      3
+     ]
+    ],
+    "flees": 0,
+    "launcher": [
+     "--ordinary",
+     "--max-runtime",
+     "86400"
+    ],
+    "prayers": 1,
+    "rests": 1,
+    "whistles_found": 0
+   },
+   "whistle_in_inventory": false
+  },
+  {
+   "commands": 529,
+   "error": null,
+   "exit_code": 0,
+   "final_status": {},
+   "funnel": {
+    "counts": {
+     "admitted": 0,
+     "candidate": 0,
+     "delivered": 0,
+     "native_effect": 0,
+     "published": 0,
+     "qualifying_history": 0,
+     "trigger": 0
+    },
+    "delivery_known": true,
+    "effect_outcomes": [],
+    "first_admission_move": null,
+    "first_felt": {
+     "dlvl": 1,
+     "kind": "hound",
+     "turn": 14
+    },
+    "haunt": {
+     "accepted": 1,
+     "expired": 1,
+     "pre_admitted": 1
+    },
+    "haunt_steps": 7,
+    "journal_status": "missing",
+    "last_turn": 1102,
+    "loss": "no_qualifying_action",
+    "ordinary_whispers_admitted": 1,
+    "public_attention_completed": 0,
+    "qualifying_actions": {
+     "fountain_drink": 0,
+     "whistling": 0
+    },
+    "recorded_decisions": [],
+    "safe_points": {
+     "level_enter": 2,
+     "pray": 1
+    },
+    "session_details": [
+     "new",
+     "restore"
+    ],
+    "start_budget": 2,
+    "start_sanity": 100,
+    "terminations": [],
+    "w_suppressions": []
+   },
+   "outcome": "died",
+   "save_restore": {
+    "attempted": true,
+    "session_detail": "restore"
+   },
+   "seed": 26,
+   "start": "wizard-default-path",
+   "sync_timeouts": 0,
+   "v2": {
+    "dlvl_timeline": [
+     [
+      1,
+      1
+     ],
+     [
+      414,
+      2
+     ]
+    ],
+    "flees": 0,
+    "launcher": [
+     "--ordinary",
+     "--max-runtime",
+     "86400"
+    ],
+    "prayers": 1,
+    "rests": 1,
+    "whistles_found": 0
+   },
+   "whistle_in_inventory": false
+  },
+  {
+   "commands": 485,
+   "error": null,
+   "exit_code": 0,
+   "final_status": {
+    "dlvl": 1,
+    "hp": 19,
+    "hp_max": 19,
+    "hunger": null,
+    "turn": 2011
+   },
+   "funnel": {
+    "counts": {
+     "admitted": 0,
+     "candidate": 1,
+     "delivered": 0,
+     "native_effect": 0,
+     "published": 1,
+     "qualifying_history": 1,
+     "trigger": 0
+    },
+    "delivery_known": true,
+    "effect_outcomes": [],
+    "first_admission_move": null,
+    "first_felt": null,
+    "haunt": {
+     "rejected": 1
+    },
+    "haunt_steps": 0,
+    "journal_status": "missing",
+    "last_turn": 2011,
+    "loss": "rejected:origin_expired+origin_unbound",
+    "ordinary_whispers_admitted": 1,
+    "public_attention_completed": 0,
+    "qualifying_actions": {
+     "fountain_drink": 2,
+     "whistling": 0
+    },
+    "recorded_decisions": [
+     {
+      "at": 2,
+      "move": 713,
+      "reasons": [
+       "origin_expired",
+       "origin_unbound"
+      ],
+      "safe": 2
+     }
+    ],
+    "safe_points": {
+     "level_enter": 1,
+     "pray": 2
+    },
+    "session_details": [
+     "new",
+     "restore"
+    ],
+    "start_budget": 2,
+    "start_sanity": 100,
+    "terminations": [],
+    "w_suppressions": []
+   },
+   "outcome": "turn_limit",
+   "save_restore": {
+    "attempted": true,
+    "session_detail": "restore"
+   },
+   "seed": 27,
+   "start": "wizard-default-path",
+   "sync_timeouts": 0,
+   "v2": {
+    "dlvl_timeline": [
+     [
+      1,
+      1
+     ]
+    ],
+    "flees": 0,
+    "launcher": [
+     "--ordinary",
+     "--max-runtime",
+     "86400"
+    ],
+    "prayers": 2,
+    "rests": 0,
+    "whistles_found": 0
+   },
+   "whistle_in_inventory": false
+  },
+  {
+   "commands": 337,
+   "error": null,
+   "exit_code": 0,
+   "final_status": {},
+   "funnel": {
+    "counts": {
+     "admitted": 0,
+     "candidate": 0,
+     "delivered": 0,
+     "native_effect": 0,
+     "published": 0,
+     "qualifying_history": 0,
+     "trigger": 0
+    },
+    "delivery_known": true,
+    "effect_outcomes": [],
+    "first_admission_move": null,
+    "first_felt": null,
+    "haunt": {},
+    "haunt_steps": 0,
+    "journal_status": "missing",
+    "last_turn": 1165,
+    "loss": "no_qualifying_action",
+    "ordinary_whispers_admitted": 1,
+    "public_attention_completed": 0,
+    "qualifying_actions": {
+     "fountain_drink": 0,
+     "whistling": 0
+    },
+    "recorded_decisions": [],
+    "safe_points": {
+     "level_enter": 1,
+     "pray": 1
+    },
+    "session_details": [
+     "new",
+     "restore"
+    ],
+    "start_budget": 2,
+    "start_sanity": 100,
+    "terminations": [],
+    "w_suppressions": []
+   },
+   "outcome": "died",
+   "save_restore": {
+    "attempted": true,
+    "session_detail": "restore"
+   },
+   "seed": 28,
+   "start": "wizard-default-path",
+   "sync_timeouts": 0,
+   "v2": {
+    "dlvl_timeline": [
+     [
+      1,
+      1
+     ]
+    ],
+    "flees": 0,
+    "launcher": [
+     "--ordinary",
+     "--max-runtime",
+     "86400"
+    ],
+    "prayers": 1,
+    "rests": 0,
+    "whistles_found": 0
+   },
+   "whistle_in_inventory": false
+  },
+  {
+   "commands": 435,
+   "error": null,
+   "exit_code": 0,
+   "final_status": {},
+   "funnel": {
+    "counts": {
+     "admitted": 0,
+     "candidate": 0,
+     "delivered": 0,
+     "native_effect": 0,
+     "published": 0,
+     "qualifying_history": 0,
+     "trigger": 0
+    },
+    "delivery_known": true,
+    "effect_outcomes": [],
+    "first_admission_move": null,
+    "first_felt": null,
+    "haunt": {
+     "accepted": 1,
+     "expired": 1,
+     "pre_admitted": 1
+    },
+    "haunt_steps": 0,
+    "journal_status": "missing",
+    "last_turn": 1146,
+    "loss": "no_qualifying_action",
+    "ordinary_whispers_admitted": 1,
+    "public_attention_completed": 0,
+    "qualifying_actions": {
+     "fountain_drink": 0,
+     "whistling": 0
+    },
+    "recorded_decisions": [],
+    "safe_points": {
+     "level_enter": 1,
+     "pray": 1
+    },
+    "session_details": [
+     "new",
+     "restore"
+    ],
+    "start_budget": 2,
+    "start_sanity": 100,
+    "terminations": [],
+    "w_suppressions": []
+   },
+   "outcome": "died",
+   "save_restore": {
+    "attempted": true,
+    "session_detail": "restore"
+   },
+   "seed": 29,
+   "start": "wizard-default-path",
+   "sync_timeouts": 0,
+   "v2": {
+    "dlvl_timeline": [
+     [
+      1,
+      1
+     ]
+    ],
+    "flees": 4,
+    "launcher": [
+     "--ordinary",
+     "--max-runtime",
+     "86400"
+    ],
+    "prayers": 1,
+    "rests": 5,
+    "whistles_found": 0
+   },
+   "whistle_in_inventory": false
+  },
+  {
+   "commands": 464,
+   "error": null,
+   "exit_code": 0,
+   "final_status": {},
+   "funnel": {
+    "counts": {
+     "admitted": 0,
+     "candidate": 0,
+     "delivered": 0,
+     "native_effect": 0,
+     "published": 0,
+     "qualifying_history": 0,
+     "trigger": 0
+    },
+    "delivery_known": true,
+    "effect_outcomes": [],
+    "first_admission_move": null,
+    "first_felt": {
+     "dlvl": 1,
+     "kind": "hound",
+     "turn": 35
+    },
+    "haunt": {
+     "accepted": 1,
+     "expired": 1,
+     "pre_admitted": 1
+    },
+    "haunt_steps": 2,
+    "journal_status": "missing",
+    "last_turn": 901,
+    "loss": "no_qualifying_action",
+    "ordinary_whispers_admitted": 1,
+    "public_attention_completed": 0,
+    "qualifying_actions": {
+     "fountain_drink": 0,
+     "whistling": 0
+    },
+    "recorded_decisions": [],
+    "safe_points": {
+     "level_enter": 3,
+     "pray": 1
+    },
+    "session_details": [
+     "new",
+     "restore"
+    ],
+    "start_budget": 2,
+    "start_sanity": 100,
+    "terminations": [],
+    "w_suppressions": []
+   },
+   "outcome": "died",
+   "save_restore": {
+    "attempted": true,
+    "session_detail": "restore"
+   },
+   "seed": 30,
+   "start": "wizard-default-path",
+   "sync_timeouts": 0,
+   "v2": {
+    "dlvl_timeline": [
+     [
+      1,
+      1
+     ],
+     [
+      360,
+      2
+     ],
+     [
+      692,
+      3
+     ]
+    ],
+    "flees": 0,
+    "launcher": [
+     "--ordinary",
+     "--max-runtime",
+     "86400"
+    ],
+    "prayers": 1,
+    "rests": 4,
+    "whistles_found": 0
+   },
+   "whistle_in_inventory": false
+  },
+  {
+   "commands": 878,
+   "error": null,
+   "exit_code": 0,
+   "final_status": {
+    "dlvl": 4,
+    "hp": 31,
+    "hp_max": 31,
+    "hunger": null,
+    "turn": 2004
+   },
+   "funnel": {
+    "counts": {
+     "admitted": 0,
+     "candidate": 0,
+     "delivered": 0,
+     "native_effect": 0,
+     "published": 0,
+     "qualifying_history": 0,
+     "trigger": 0
+    },
+    "delivery_known": true,
+    "effect_outcomes": [],
+    "first_admission_move": null,
+    "first_felt": {
+     "dlvl": 1,
+     "kind": "hound",
+     "turn": 31
+    },
+    "haunt": {
+     "accepted": 1,
+     "expired": 1,
+     "pre_admitted": 1
+    },
+    "haunt_steps": 1,
+    "journal_status": "missing",
+    "last_turn": 2004,
+    "loss": "no_qualifying_action",
+    "ordinary_whispers_admitted": 1,
+    "public_attention_completed": 0,
+    "qualifying_actions": {
+     "fountain_drink": 0,
+     "whistling": 0
+    },
+    "recorded_decisions": [],
+    "safe_points": {
+     "level_enter": 4,
+     "pray": 2,
+     "sanity_threshold": 1
+    },
+    "session_details": [
+     "new",
+     "restore"
+    ],
+    "start_budget": 2,
+    "start_sanity": 100,
+    "terminations": [],
+    "w_suppressions": []
+   },
+   "outcome": "turn_limit",
+   "save_restore": {
+    "attempted": true,
+    "session_detail": "restore"
+   },
+   "seed": 31,
+   "start": "wizard-default-path",
+   "sync_timeouts": 0,
+   "v2": {
+    "dlvl_timeline": [
+     [
+      1,
+      1
+     ],
+     [
+      860,
+      2
+     ],
+     [
+      1199,
+      3
+     ],
+     [
+      1703,
+      4
+     ]
+    ],
+    "flees": 0,
+    "launcher": [
+     "--ordinary",
+     "--max-runtime",
+     "86400"
+    ],
+    "prayers": 2,
+    "rests": 10,
+    "whistles_found": 0
+   },
+   "whistle_in_inventory": false
+  },
+  {
+   "commands": 46,
+   "error": null,
+   "exit_code": 0,
+   "final_status": {},
+   "funnel": {
+    "counts": {
+     "admitted": 0,
+     "candidate": 0,
+     "delivered": 0,
+     "native_effect": 0,
+     "published": 0,
+     "qualifying_history": 0,
+     "trigger": 0
+    },
+    "delivery_known": true,
+    "effect_outcomes": [],
+    "first_admission_move": null,
+    "first_felt": {
+     "dlvl": 1,
+     "kind": "hound",
+     "turn": 9
+    },
+    "haunt": {
+     "accepted": 1,
+     "expired": 1,
+     "pre_admitted": 1
+    },
+    "haunt_steps": 3,
+    "journal_status": "missing",
+    "last_turn": 75,
+    "loss": "no_qualifying_action",
+    "ordinary_whispers_admitted": 1,
+    "public_attention_completed": 0,
+    "qualifying_actions": {
+     "fountain_drink": 2,
+     "whistling": 0
+    },
+    "recorded_decisions": [],
+    "safe_points": {
+     "level_enter": 1
+    },
+    "session_details": [
+     "new"
+    ],
+    "start_budget": 2,
+    "start_sanity": 100,
+    "terminations": [],
+    "w_suppressions": []
+   },
+   "outcome": "died",
+   "save_restore": {
+    "attempted": false,
+    "session_detail": null
+   },
+   "seed": 32,
+   "start": "wizard-default-path",
+   "sync_timeouts": 0,
+   "v2": {
+    "dlvl_timeline": [
+     [
+      1,
+      1
+     ]
+    ],
+    "flees": 0,
+    "launcher": [
+     "--ordinary",
+     "--max-runtime",
+     "86400"
+    ],
+    "prayers": 0,
+    "rests": 0,
+    "whistles_found": 0
+   },
+   "whistle_in_inventory": false
+  },
+  {
+   "commands": 522,
+   "error": null,
+   "exit_code": 0,
+   "final_status": {
+    "dlvl": 2,
+    "hp": 12,
+    "hp_max": 12,
+    "hunger": null,
+    "turn": 2012
+   },
+   "funnel": {
+    "counts": {
+     "admitted": 0,
+     "candidate": 0,
+     "delivered": 0,
+     "native_effect": 0,
+     "published": 0,
+     "qualifying_history": 0,
+     "trigger": 0
+    },
+    "delivery_known": true,
+    "effect_outcomes": [],
+    "first_admission_move": null,
+    "first_felt": {
+     "dlvl": 1,
+     "kind": "hound",
+     "turn": 19
+    },
+    "haunt": {
+     "accepted": 1,
+     "expired": 1,
+     "pre_admitted": 1
+    },
+    "haunt_steps": 2,
+    "journal_status": "missing",
+    "last_turn": 2012,
+    "loss": "no_qualifying_action",
+    "ordinary_whispers_admitted": 1,
+    "public_attention_completed": 0,
+    "qualifying_actions": {
+     "fountain_drink": 0,
+     "whistling": 0
+    },
+    "recorded_decisions": [],
+    "safe_points": {
+     "level_enter": 2,
+     "pray": 2
+    },
+    "session_details": [
+     "new",
+     "restore"
+    ],
+    "start_budget": 2,
+    "start_sanity": 100,
+    "terminations": [],
+    "w_suppressions": []
+   },
+   "outcome": "turn_limit",
+   "save_restore": {
+    "attempted": true,
+    "session_detail": "restore"
+   },
+   "seed": 33,
+   "start": "wizard-default-path",
+   "sync_timeouts": 0,
+   "v2": {
+    "dlvl_timeline": [
+     [
+      1,
+      1
+     ],
+     [
+      552,
+      2
+     ]
+    ],
+    "flees": 3,
+    "launcher": [
+     "--ordinary",
+     "--max-runtime",
+     "86400"
+    ],
+    "prayers": 2,
+    "rests": 9,
+    "whistles_found": 0
+   },
+   "whistle_in_inventory": false
+  },
+  {
+   "commands": 790,
+   "error": null,
+   "exit_code": 0,
+   "final_status": {},
+   "funnel": {
+    "counts": {
+     "admitted": 0,
+     "candidate": 1,
+     "delivered": 0,
+     "native_effect": 0,
+     "published": 1,
+     "qualifying_history": 1,
+     "trigger": 0
+    },
+    "delivery_known": true,
+    "effect_outcomes": [],
+    "first_admission_move": null,
+    "first_felt": {
+     "dlvl": 1,
+     "kind": "hound",
+     "turn": 16
+    },
+    "haunt": {
+     "accepted": 1,
+     "expired": 1,
+     "pre_admitted": 1
+    },
+    "haunt_steps": 3,
+    "journal_status": "missing",
+    "last_turn": 1561,
+    "loss": "rejected:origin_expired",
+    "ordinary_whispers_admitted": 1,
+    "public_attention_completed": 0,
+    "qualifying_actions": {
+     "fountain_drink": 4,
+     "whistling": 0
+    },
+    "recorded_decisions": [
+     {
+      "at": 2,
+      "move": 646,
+      "reasons": [
+       "origin_expired"
+      ],
+      "safe": 2
+     }
+    ],
+    "safe_points": {
+     "level_enter": 2,
+     "pray": 1
+    },
+    "session_details": [
+     "new",
+     "restore"
+    ],
+    "start_budget": 2,
+    "start_sanity": 100,
+    "terminations": [],
+    "w_suppressions": []
+   },
+   "outcome": "died",
+   "save_restore": {
+    "attempted": true,
+    "session_detail": "restore"
+   },
+   "seed": 34,
+   "start": "wizard-default-path",
+   "sync_timeouts": 0,
+   "v2": {
+    "dlvl_timeline": [
+     [
+      1,
+      1
+     ],
+     [
+      1231,
+      2
+     ]
+    ],
+    "flees": 0,
+    "launcher": [
+     "--ordinary",
+     "--max-runtime",
+     "86400"
+    ],
+    "prayers": 1,
+    "rests": 4,
+    "whistles_found": 0
+   },
+   "whistle_in_inventory": false
+  },
+  {
+   "commands": 66,
+   "error": null,
+   "exit_code": 0,
+   "final_status": {},
+   "funnel": {
+    "counts": {
+     "admitted": 0,
+     "candidate": 0,
+     "delivered": 0,
+     "native_effect": 0,
+     "published": 0,
+     "qualifying_history": 0,
+     "trigger": 0
+    },
+    "delivery_known": true,
+    "effect_outcomes": [],
+    "first_admission_move": null,
+    "first_felt": null,
+    "haunt": {
+     "accepted": 1,
+     "pre_admitted": 1
+    },
+    "haunt_steps": 0,
+    "journal_status": "missing",
+    "last_turn": 81,
+    "loss": "no_qualifying_action",
+    "ordinary_whispers_admitted": 1,
+    "public_attention_completed": 0,
+    "qualifying_actions": {
+     "fountain_drink": 1,
+     "whistling": 0
+    },
+    "recorded_decisions": [],
+    "safe_points": {
+     "level_enter": 1
+    },
+    "session_details": [
+     "new"
+    ],
+    "start_budget": 2,
+    "start_sanity": 100,
+    "terminations": [],
+    "w_suppressions": []
+   },
+   "outcome": "died",
+   "save_restore": {
+    "attempted": false,
+    "session_detail": null
+   },
+   "seed": 35,
+   "start": "wizard-default-path",
+   "sync_timeouts": 0,
+   "v2": {
+    "dlvl_timeline": [
+     [
+      1,
+      1
+     ]
+    ],
+    "flees": 1,
+    "launcher": [
+     "--ordinary",
+     "--max-runtime",
+     "86400"
+    ],
+    "prayers": 0,
+    "rests": 0,
+    "whistles_found": 0
+   },
+   "whistle_in_inventory": false
+  },
+  {
+   "commands": 384,
+   "error": null,
+   "exit_code": 0,
+   "final_status": {},
+   "funnel": {
+    "counts": {
+     "admitted": 0,
+     "candidate": 0,
+     "delivered": 0,
+     "native_effect": 0,
+     "published": 0,
+     "qualifying_history": 0,
+     "trigger": 0
+    },
+    "delivery_known": true,
+    "effect_outcomes": [],
+    "first_admission_move": null,
+    "first_felt": {
+     "dlvl": 1,
+     "kind": "hound",
+     "turn": 12
+    },
+    "haunt": {
+     "accepted": 1,
+     "expired": 1,
+     "pre_admitted": 1
+    },
+    "haunt_steps": 1,
+    "journal_status": "missing",
+    "last_turn": 921,
+    "loss": "no_qualifying_action",
+    "ordinary_whispers_admitted": 1,
+    "public_attention_completed": 0,
+    "qualifying_actions": {
+     "fountain_drink": 0,
+     "whistling": 0
+    },
+    "recorded_decisions": [],
+    "safe_points": {
+     "level_enter": 2,
+     "pray": 1
+    },
+    "session_details": [
+     "new",
+     "restore"
+    ],
+    "start_budget": 2,
+    "start_sanity": 100,
+    "terminations": [],
+    "w_suppressions": []
+   },
+   "outcome": "died",
+   "save_restore": {
+    "attempted": true,
+    "session_detail": "restore"
+   },
+   "seed": 36,
+   "start": "wizard-default-path",
+   "sync_timeouts": 0,
+   "v2": {
+    "dlvl_timeline": [
+     [
+      1,
+      1
+     ],
+     [
+      319,
+      2
+     ]
+    ],
+    "flees": 0,
+    "launcher": [
+     "--ordinary",
+     "--max-runtime",
+     "86400"
+    ],
+    "prayers": 1,
+    "rests": 2,
+    "whistles_found": 0
+   },
+   "whistle_in_inventory": false
+  },
+  {
+   "commands": 457,
+   "error": null,
+   "exit_code": 0,
+   "final_status": {},
+   "funnel": {
+    "counts": {
+     "admitted": 0,
+     "candidate": 0,
+     "delivered": 0,
+     "native_effect": 0,
+     "published": 0,
+     "qualifying_history": 0,
+     "trigger": 0
+    },
+    "delivery_known": true,
+    "effect_outcomes": [],
+    "first_admission_move": null,
+    "first_felt": {
+     "dlvl": 1,
+     "kind": "hound",
+     "turn": 10
+    },
+    "haunt": {
+     "accepted": 1,
+     "expired": 1,
+     "pre_admitted": 1
+    },
+    "haunt_steps": 2,
+    "journal_status": "missing",
+    "last_turn": 909,
+    "loss": "no_qualifying_action",
+    "ordinary_whispers_admitted": 1,
+    "public_attention_completed": 0,
+    "qualifying_actions": {
+     "fountain_drink": 0,
+     "whistling": 0
+    },
+    "recorded_decisions": [],
+    "safe_points": {
+     "level_enter": 3,
+     "pray": 1
+    },
+    "session_details": [
+     "new",
+     "restore"
+    ],
+    "start_budget": 2,
+    "start_sanity": 100,
+    "terminations": [],
+    "w_suppressions": []
+   },
+   "outcome": "died",
+   "save_restore": {
+    "attempted": true,
+    "session_detail": "restore"
+   },
+   "seed": 37,
+   "start": "wizard-default-path",
+   "sync_timeouts": 0,
+   "v2": {
+    "dlvl_timeline": [
+     [
+      1,
+      1
+     ],
+     [
+      320,
+      2
+     ],
+     [
+      658,
+      3
+     ]
+    ],
+    "flees": 0,
+    "launcher": [
+     "--ordinary",
+     "--max-runtime",
+     "86400"
+    ],
+    "prayers": 1,
+    "rests": 1,
+    "whistles_found": 0
+   },
+   "whistle_in_inventory": false
+  },
+  {
+   "commands": 439,
+   "error": null,
+   "exit_code": 0,
+   "final_status": {},
+   "funnel": {
+    "counts": {
+     "admitted": 0,
+     "candidate": 2,
+     "delivered": 0,
+     "native_effect": 0,
+     "published": 1,
+     "qualifying_history": 2,
+     "trigger": 0
+    },
+    "delivery_known": true,
+    "effect_outcomes": [],
+    "first_admission_move": null,
+    "first_felt": {
+     "dlvl": 1,
+     "kind": "hound",
+     "turn": 7
+    },
+    "haunt": {
+     "accepted": 1,
+     "expired": 1,
+     "pre_admitted": 1
+    },
+    "haunt_steps": 6,
+    "journal_status": "missing",
+    "last_turn": 1043,
+    "loss": "inferred:no_safe_point_before_game_end",
+    "ordinary_whispers_admitted": 1,
+    "public_attention_completed": 0,
+    "qualifying_actions": {
+     "fountain_drink": 2,
+     "whistling": 0
+    },
+    "recorded_decisions": [],
+    "safe_points": {
+     "level_enter": 3,
+     "pray": 1
+    },
+    "session_details": [
+     "new",
+     "restore"
+    ],
+    "start_budget": 2,
+    "start_sanity": 100,
+    "terminations": [],
+    "w_suppressions": []
+   },
+   "outcome": "died",
+   "save_restore": {
+    "attempted": true,
+    "session_detail": "restore"
+   },
+   "seed": 38,
+   "start": "wizard-default-path",
+   "sync_timeouts": 0,
+   "v2": {
+    "dlvl_timeline": [
+     [
+      1,
+      1
+     ],
+     [
+      321,
+      2
+     ],
+     [
+      630,
+      3
+     ]
+    ],
+    "flees": 0,
+    "launcher": [
+     "--ordinary",
+     "--max-runtime",
+     "86400"
+    ],
+    "prayers": 1,
+    "rests": 0,
+    "whistles_found": 0
+   },
+   "whistle_in_inventory": false
+  },
+  {
+   "commands": 192,
+   "error": null,
+   "exit_code": 0,
+   "final_status": {},
+   "funnel": {
+    "counts": {
+     "admitted": 0,
+     "candidate": 0,
+     "delivered": 0,
+     "native_effect": 0,
+     "published": 0,
+     "qualifying_history": 0,
+     "trigger": 0
+    },
+    "delivery_known": true,
+    "effect_outcomes": [],
+    "first_admission_move": null,
+    "first_felt": {
+     "dlvl": 1,
+     "kind": "hound",
+     "turn": 80
+    },
+    "haunt": {
+     "accepted": 1,
+     "expired": 1,
+     "pre_admitted": 1
+    },
+    "haunt_steps": 1,
+    "journal_status": "missing",
+    "last_turn": 487,
+    "loss": "no_qualifying_action",
+    "ordinary_whispers_admitted": 1,
+    "public_attention_completed": 0,
+    "qualifying_actions": {
+     "fountain_drink": 0,
+     "whistling": 0
+    },
+    "recorded_decisions": [],
+    "safe_points": {
+     "level_enter": 2,
+     "pray": 1
+    },
+    "session_details": [
+     "new"
+    ],
+    "start_budget": 2,
+    "start_sanity": 100,
+    "terminations": [],
+    "w_suppressions": []
+   },
+   "outcome": "died",
+   "save_restore": {
+    "attempted": false,
+    "session_detail": null
+   },
+   "seed": 39,
+   "start": "wizard-default-path",
+   "sync_timeouts": 0,
+   "v2": {
+    "dlvl_timeline": [
+     [
+      1,
+      1
+     ],
+     [
+      333,
+      2
+     ]
+    ],
+    "flees": 6,
+    "launcher": [
+     "--ordinary",
+     "--max-runtime",
+     "86400"
+    ],
+    "prayers": 1,
+    "rests": 4,
+    "whistles_found": 0
+   },
+   "whistle_in_inventory": false
+  },
+  {
+   "commands": 343,
+   "error": null,
+   "exit_code": 0,
+   "final_status": {},
+   "funnel": {
+    "counts": {
+     "admitted": 0,
+     "candidate": 0,
+     "delivered": 0,
+     "native_effect": 0,
+     "published": 0,
+     "qualifying_history": 0,
+     "trigger": 0
+    },
+    "delivery_known": true,
+    "effect_outcomes": [],
+    "first_admission_move": null,
+    "first_felt": {
+     "dlvl": 1,
+     "kind": "hound",
+     "turn": 6
+    },
+    "haunt": {
+     "accepted": 1,
+     "expired": 1,
+     "pre_admitted": 1
+    },
+    "haunt_steps": 3,
+    "journal_status": "missing",
+    "last_turn": 1123,
+    "loss": "no_qualifying_action",
+    "ordinary_whispers_admitted": 1,
+    "public_attention_completed": 0,
+    "qualifying_actions": {
+     "fountain_drink": 0,
+     "whistling": 0
+    },
+    "recorded_decisions": [],
+    "safe_points": {
+     "level_enter": 2,
+     "pray": 1
+    },
+    "session_details": [
+     "new",
+     "restore"
+    ],
+    "start_budget": 2,
+    "start_sanity": 100,
+    "terminations": [],
+    "w_suppressions": []
+   },
+   "outcome": "died",
+   "save_restore": {
+    "attempted": true,
+    "session_detail": "restore"
+   },
+   "seed": 40,
+   "start": "wizard-default-path",
+   "sync_timeouts": 0,
+   "v2": {
+    "dlvl_timeline": [
+     [
+      1,
+      1
+     ],
+     [
+      392,
+      2
+     ]
+    ],
+    "flees": 5,
+    "launcher": [
+     "--ordinary",
+     "--max-runtime",
+     "86400"
+    ],
+    "prayers": 1,
+    "rests": 17,
+    "whistles_found": 0
+   },
+   "whistle_in_inventory": false
+  },
+  {
+   "commands": 845,
+   "error": null,
+   "exit_code": 0,
+   "final_status": {},
+   "funnel": {
+    "counts": {
+     "admitted": 0,
+     "candidate": 20,
+     "delivered": 0,
+     "native_effect": 0,
+     "published": 1,
+     "qualifying_history": 20,
+     "trigger": 0
+    },
+    "delivery_known": true,
+    "effect_outcomes": [],
+    "first_admission_move": null,
+    "first_felt": {
+     "dlvl": 1,
+     "kind": "hound",
+     "turn": 13
+    },
+    "haunt": {
+     "accepted": 1,
+     "expired": 1,
+     "pre_admitted": 1
+    },
+    "haunt_steps": 1,
+    "journal_status": "missing",
+    "last_turn": 1704,
+    "loss": "rejected:origin_expired",
+    "ordinary_whispers_admitted": 1,
+    "public_attention_completed": 0,
+    "qualifying_actions": {
+     "fountain_drink": 3,
+     "whistling": 19
+    },
+    "recorded_decisions": [
+     {
+      "at": 2,
+      "move": 320,
+      "reasons": [
+       "origin_expired"
+      ],
+      "safe": 2
+     }
+    ],
+    "safe_points": {
+     "level_enter": 4,
+     "pray": 1,
+     "sanity_threshold": 1
+    },
+    "session_details": [
+     "new",
+     "restore"
+    ],
+    "start_budget": 2,
+    "start_sanity": 100,
+    "terminations": [],
+    "w_suppressions": []
+   },
+   "outcome": "died",
+   "save_restore": {
+    "attempted": true,
+    "session_detail": "restore"
+   },
+   "seed": 41,
+   "start": "wizard-default-path",
+   "sync_timeouts": 0,
+   "v2": {
+    "dlvl_timeline": [
+     [
+      1,
+      1
+     ],
+     [
+      321,
+      2
+     ],
+     [
+      648,
+      3
+     ],
+     [
+      957,
+      4
+     ]
+    ],
+    "flees": 5,
+    "launcher": [
+     "--ordinary",
+     "--max-runtime",
+     "86400"
+    ],
+    "prayers": 1,
+    "rests": 5,
+    "whistles_found": 1
+   },
+   "whistle_in_inventory": true
+  },
+  {
+   "commands": 386,
+   "error": null,
+   "exit_code": 0,
+   "final_status": {},
+   "funnel": {
+    "counts": {
+     "admitted": 0,
+     "candidate": 0,
+     "delivered": 0,
+     "native_effect": 0,
+     "published": 0,
+     "qualifying_history": 0,
+     "trigger": 0
+    },
+    "delivery_known": true,
+    "effect_outcomes": [],
+    "first_admission_move": null,
+    "first_felt": {
+     "dlvl": 1,
+     "kind": "hound",
+     "turn": 9
+    },
+    "haunt": {
+     "accepted": 1,
+     "expired": 1,
+     "pre_admitted": 1
+    },
+    "haunt_steps": 3,
+    "journal_status": "missing",
+    "last_turn": 987,
+    "loss": "no_qualifying_action",
+    "ordinary_whispers_admitted": 1,
+    "public_attention_completed": 0,
+    "qualifying_actions": {
+     "fountain_drink": 0,
+     "whistling": 0
+    },
+    "recorded_decisions": [],
+    "safe_points": {
+     "level_enter": 2,
+     "pray": 1
+    },
+    "session_details": [
+     "new",
+     "restore"
+    ],
+    "start_budget": 2,
+    "start_sanity": 100,
+    "terminations": [],
+    "w_suppressions": []
+   },
+   "outcome": "died",
+   "save_restore": {
+    "attempted": true,
+    "session_detail": "restore"
+   },
+   "seed": 42,
+   "start": "wizard-default-path",
+   "sync_timeouts": 0,
+   "v2": {
+    "dlvl_timeline": [
+     [
+      1,
+      1
+     ],
+     [
+      890,
+      2
+     ]
+    ],
+    "flees": 8,
+    "launcher": [
+     "--ordinary",
+     "--max-runtime",
+     "86400"
+    ],
+    "prayers": 1,
+    "rests": 13,
+    "whistles_found": 0
+   },
+   "whistle_in_inventory": false
+  },
+  {
+   "commands": 409,
+   "error": null,
+   "exit_code": 0,
+   "final_status": {},
+   "funnel": {
+    "counts": {
+     "admitted": 0,
+     "candidate": 0,
+     "delivered": 0,
+     "native_effect": 0,
+     "published": 0,
+     "qualifying_history": 0,
+     "trigger": 0
+    },
+    "delivery_known": true,
+    "effect_outcomes": [],
+    "first_admission_move": null,
+    "first_felt": null,
+    "haunt": {
+     "rejected": 1
+    },
+    "haunt_steps": 0,
+    "journal_status": "missing",
+    "last_turn": 960,
+    "loss": "no_qualifying_action",
+    "ordinary_whispers_admitted": 1,
+    "public_attention_completed": 0,
+    "qualifying_actions": {
+     "fountain_drink": 0,
+     "whistling": 0
+    },
+    "recorded_decisions": [],
+    "safe_points": {
+     "level_enter": 2,
+     "pray": 1
+    },
+    "session_details": [
+     "new",
+     "restore"
+    ],
+    "start_budget": 2,
+    "start_sanity": 100,
+    "terminations": [],
+    "w_suppressions": []
+   },
+   "outcome": "died",
+   "save_restore": {
+    "attempted": true,
+    "session_detail": "restore"
+   },
+   "seed": 43,
+   "start": "wizard-default-path",
+   "sync_timeouts": 0,
+   "v2": {
+    "dlvl_timeline": [
+     [
+      1,
+      1
+     ],
+     [
+      321,
+      2
+     ]
+    ],
+    "flees": 9,
+    "launcher": [
+     "--ordinary",
+     "--max-runtime",
+     "86400"
+    ],
+    "prayers": 1,
+    "rests": 27,
+    "whistles_found": 0
+   },
+   "whistle_in_inventory": false
+  },
+  {
+   "commands": 337,
+   "error": null,
+   "exit_code": 0,
+   "final_status": {},
+   "funnel": {
+    "counts": {
+     "admitted": 0,
+     "candidate": 0,
+     "delivered": 0,
+     "native_effect": 0,
+     "published": 0,
+     "qualifying_history": 0,
+     "trigger": 0
+    },
+    "delivery_known": true,
+    "effect_outcomes": [],
+    "first_admission_move": null,
+    "first_felt": null,
+    "haunt": {
+     "rejected": 1
+    },
+    "haunt_steps": 0,
+    "journal_status": "missing",
+    "last_turn": 1259,
+    "loss": "no_qualifying_action",
+    "ordinary_whispers_admitted": 1,
+    "public_attention_completed": 0,
+    "qualifying_actions": {
+     "fountain_drink": 0,
+     "whistling": 0
+    },
+    "recorded_decisions": [],
+    "safe_points": {
+     "level_enter": 1,
+     "pray": 1
+    },
+    "session_details": [
+     "new",
+     "restore"
+    ],
+    "start_budget": 2,
+    "start_sanity": 100,
+    "terminations": [],
+    "w_suppressions": []
+   },
+   "outcome": "died",
+   "save_restore": {
+    "attempted": true,
+    "session_detail": "restore"
+   },
+   "seed": 44,
+   "start": "wizard-default-path",
+   "sync_timeouts": 0,
+   "v2": {
+    "dlvl_timeline": [
+     [
+      1,
+      1
+     ]
+    ],
+    "flees": 0,
+    "launcher": [
+     "--ordinary",
+     "--max-runtime",
+     "86400"
+    ],
+    "prayers": 1,
+    "rests": 0,
+    "whistles_found": 0
+   },
+   "whistle_in_inventory": false
+  },
+  {
+   "commands": 452,
+   "error": null,
+   "exit_code": 0,
+   "final_status": {},
+   "funnel": {
+    "counts": {
+     "admitted": 0,
+     "candidate": 0,
+     "delivered": 0,
+     "native_effect": 0,
+     "published": 0,
+     "qualifying_history": 0,
+     "trigger": 0
+    },
+    "delivery_known": true,
+    "effect_outcomes": [],
+    "first_admission_move": null,
+    "first_felt": {
+     "dlvl": 1,
+     "kind": "hound",
+     "turn": 9
+    },
+    "haunt": {
+     "accepted": 1,
+     "expired": 1,
+     "pre_admitted": 1
+    },
+    "haunt_steps": 7,
+    "journal_status": "missing",
+    "last_turn": 1074,
+    "loss": "no_qualifying_action",
+    "ordinary_whispers_admitted": 1,
+    "public_attention_completed": 0,
+    "qualifying_actions": {
+     "fountain_drink": 0,
+     "whistling": 0
+    },
+    "recorded_decisions": [],
+    "safe_points": {
+     "level_enter": 1,
+     "pray": 1
+    },
+    "session_details": [
+     "new",
+     "restore"
+    ],
+    "start_budget": 2,
+    "start_sanity": 100,
+    "terminations": [],
+    "w_suppressions": []
+   },
+   "outcome": "died",
+   "save_restore": {
+    "attempted": true,
+    "session_detail": "restore"
+   },
+   "seed": 45,
+   "start": "wizard-default-path",
+   "sync_timeouts": 0,
+   "v2": {
+    "dlvl_timeline": [
+     [
+      1,
+      1
+     ]
+    ],
+    "flees": 0,
+    "launcher": [
+     "--ordinary",
+     "--max-runtime",
+     "86400"
+    ],
+    "prayers": 1,
+    "rests": 0,
+    "whistles_found": 0
+   },
+   "whistle_in_inventory": false
+  },
+  {
+   "commands": 7,
+   "error": null,
+   "exit_code": 0,
+   "final_status": {},
+   "funnel": {
+    "counts": {
+     "admitted": 0,
+     "candidate": 1,
+     "delivered": 0,
+     "native_effect": 0,
+     "published": 1,
+     "qualifying_history": 1,
+     "trigger": 0
+    },
+    "delivery_known": true,
+    "effect_outcomes": [],
+    "first_admission_move": null,
+    "first_felt": null,
+    "haunt": {
+     "rejected": 1
+    },
+    "haunt_steps": 0,
+    "journal_status": "missing",
+    "last_turn": 6,
+    "loss": "inferred:no_safe_point_before_game_end",
+    "ordinary_whispers_admitted": 1,
+    "public_attention_completed": 0,
+    "qualifying_actions": {
+     "fountain_drink": 2,
+     "whistling": 0
+    },
+    "recorded_decisions": [],
+    "safe_points": {
+     "level_enter": 1
+    },
+    "session_details": [
+     "new"
+    ],
+    "start_budget": 2,
+    "start_sanity": 100,
+    "terminations": [],
+    "w_suppressions": []
+   },
+   "outcome": "died",
+   "save_restore": {
+    "attempted": false,
+    "session_detail": null
+   },
+   "seed": 46,
+   "start": "wizard-default-path",
+   "sync_timeouts": 0,
+   "v2": {
+    "dlvl_timeline": [
+     [
+      1,
+      1
+     ]
+    ],
+    "flees": 0,
+    "launcher": [
+     "--ordinary",
+     "--max-runtime",
+     "86400"
+    ],
+    "prayers": 0,
+    "rests": 0,
+    "whistles_found": 0
+   },
+   "whistle_in_inventory": false
+  },
+  {
+   "commands": 449,
+   "error": null,
+   "exit_code": 0,
+   "final_status": {},
+   "funnel": {
+    "counts": {
+     "admitted": 0,
+     "candidate": 1,
+     "delivered": 0,
+     "native_effect": 0,
+     "published": 1,
+     "qualifying_history": 1,
+     "trigger": 0
+    },
+    "delivery_known": true,
+    "effect_outcomes": [],
+    "first_admission_move": null,
+    "first_felt": {
+     "dlvl": 1,
+     "kind": "hound",
+     "turn": 7
+    },
+    "haunt": {
+     "accepted": 1,
+     "expired": 1,
+     "pre_admitted": 1
+    },
+    "haunt_steps": 4,
+    "journal_status": "missing",
+    "last_turn": 864,
+    "loss": "rejected:origin_expired",
+    "ordinary_whispers_admitted": 1,
+    "public_attention_completed": 0,
+    "qualifying_actions": {
+     "fountain_drink": 2,
+     "whistling": 0
+    },
+    "recorded_decisions": [
+     {
+      "at": 2,
+      "move": 602,
+      "reasons": [
+       "origin_expired"
+      ],
+      "safe": 2
+     }
+    ],
+    "safe_points": {
+     "level_enter": 2,
+     "pray": 1
+    },
+    "session_details": [
+     "new",
+     "restore"
+    ],
+    "start_budget": 2,
+    "start_sanity": 100,
+    "terminations": [],
+    "w_suppressions": []
+   },
+   "outcome": "died",
+   "save_restore": {
+    "attempted": true,
+    "session_detail": "restore"
+   },
+   "seed": 47,
+   "start": "wizard-default-path",
+   "sync_timeouts": 0,
+   "v2": {
+    "dlvl_timeline": [
+     [
+      1,
+      1
+     ],
+     [
+      603,
+      2
+     ]
+    ],
+    "flees": 0,
+    "launcher": [
+     "--ordinary",
+     "--max-runtime",
+     "86400"
+    ],
+    "prayers": 1,
+    "rests": 0,
+    "whistles_found": 0
+   },
+   "whistle_in_inventory": false
+  },
+  {
+   "commands": 816,
+   "error": null,
+   "exit_code": 0,
+   "final_status": {},
+   "funnel": {
+    "counts": {
+     "admitted": 0,
+     "candidate": 0,
+     "delivered": 0,
+     "native_effect": 0,
+     "published": 0,
+     "qualifying_history": 0,
+     "trigger": 0
+    },
+    "delivery_known": true,
+    "effect_outcomes": [],
+    "first_admission_move": null,
+    "first_felt": {
+     "dlvl": 1,
+     "kind": "hound",
+     "turn": 21
+    },
+    "haunt": {
+     "accepted": 1,
+     "expired": 1,
+     "pre_admitted": 1
+    },
+    "haunt_steps": 2,
+    "journal_status": "missing",
+    "last_turn": 1471,
+    "loss": "no_qualifying_action",
+    "ordinary_whispers_admitted": 1,
+    "public_attention_completed": 0,
+    "qualifying_actions": {
+     "fountain_drink": 0,
+     "whistling": 0
+    },
+    "recorded_decisions": [],
+    "safe_points": {
+     "level_enter": 3,
+     "pray": 1
+    },
+    "session_details": [
+     "new",
+     "restore"
+    ],
+    "start_budget": 2,
+    "start_sanity": 100,
+    "terminations": [],
+    "w_suppressions": []
+   },
+   "outcome": "died",
+   "save_restore": {
+    "attempted": true,
+    "session_detail": "restore"
+   },
+   "seed": 48,
+   "start": "wizard-default-path",
+   "sync_timeouts": 0,
+   "v2": {
+    "dlvl_timeline": [
+     [
+      1,
+      1
+     ],
+     [
+      725,
+      2
+     ],
+     [
+      1122,
+      3
+     ]
+    ],
+    "flees": 0,
+    "launcher": [
+     "--ordinary",
+     "--max-runtime",
+     "86400"
+    ],
+    "prayers": 1,
+    "rests": 1,
+    "whistles_found": 0
+   },
+   "whistle_in_inventory": false
+  },
+  {
+   "commands": 767,
+   "error": null,
+   "exit_code": 0,
+   "final_status": {},
+   "funnel": {
+    "counts": {
+     "admitted": 0,
+     "candidate": 0,
+     "delivered": 0,
+     "native_effect": 0,
+     "published": 0,
+     "qualifying_history": 0,
+     "trigger": 0
+    },
+    "delivery_known": true,
+    "effect_outcomes": [],
+    "first_admission_move": null,
+    "first_felt": {
+     "dlvl": 1,
+     "kind": "hound",
+     "turn": 21
+    },
+    "haunt": {
+     "accepted": 1,
+     "expired": 1,
+     "pre_admitted": 1
+    },
+    "haunt_steps": 1,
+    "journal_status": "missing",
+    "last_turn": 1814,
+    "loss": "no_qualifying_action",
+    "ordinary_whispers_admitted": 1,
+    "public_attention_completed": 0,
+    "qualifying_actions": {
+     "fountain_drink": 0,
+     "whistling": 0
+    },
+    "recorded_decisions": [],
+    "safe_points": {
+     "level_enter": 2,
+     "pray": 2
+    },
+    "session_details": [
+     "new",
+     "restore"
+    ],
+    "start_budget": 2,
+    "start_sanity": 100,
+    "terminations": [],
+    "w_suppressions": []
+   },
+   "outcome": "died",
+   "save_restore": {
+    "attempted": true,
+    "session_detail": "restore"
+   },
+   "seed": 49,
+   "start": "wizard-default-path",
+   "sync_timeouts": 0,
+   "v2": {
+    "dlvl_timeline": [
+     [
+      1,
+      1
+     ],
+     [
+      313,
+      2
+     ]
+    ],
+    "flees": 0,
+    "launcher": [
+     "--ordinary",
+     "--max-runtime",
+     "86400"
+    ],
+    "prayers": 2,
+    "rests": 0,
+    "whistles_found": 0
+   },
+   "whistle_in_inventory": false
+  },
+  {
+   "commands": 424,
+   "error": null,
+   "exit_code": 0,
+   "final_status": {},
+   "funnel": {
+    "counts": {
+     "admitted": 0,
+     "candidate": 0,
+     "delivered": 0,
+     "native_effect": 0,
+     "published": 0,
+     "qualifying_history": 0,
+     "trigger": 0
+    },
+    "delivery_known": true,
+    "effect_outcomes": [],
+    "first_admission_move": null,
+    "first_felt": {
+     "dlvl": 1,
+     "kind": "hound",
+     "turn": 15
+    },
+    "haunt": {
+     "accepted": 1,
+     "expired": 1,
+     "pre_admitted": 1
+    },
+    "haunt_steps": 3,
+    "journal_status": "missing",
+    "last_turn": 1090,
+    "loss": "no_qualifying_action",
+    "ordinary_whispers_admitted": 1,
+    "public_attention_completed": 0,
+    "qualifying_actions": {
+     "fountain_drink": 2,
+     "whistling": 0
+    },
+    "recorded_decisions": [],
+    "safe_points": {
+     "level_enter": 1,
+     "pray": 1
+    },
+    "session_details": [
+     "new",
+     "restore"
+    ],
+    "start_budget": 2,
+    "start_sanity": 100,
+    "terminations": [],
+    "w_suppressions": []
+   },
+   "outcome": "died",
+   "save_restore": {
+    "attempted": true,
+    "session_detail": "restore"
+   },
+   "seed": 50,
+   "start": "wizard-default-path",
+   "sync_timeouts": 0,
+   "v2": {
+    "dlvl_timeline": [
+     [
+      1,
+      1
+     ]
+    ],
+    "flees": 1,
+    "launcher": [
+     "--ordinary",
+     "--max-runtime",
+     "86400"
+    ],
+    "prayers": 1,
+    "rests": 3,
+    "whistles_found": 0
+   },
+   "whistle_in_inventory": false
+  },
+  {
+   "commands": 463,
+   "error": null,
+   "exit_code": 0,
+   "final_status": {},
+   "funnel": {
+    "counts": {
+     "admitted": 0,
+     "candidate": 0,
+     "delivered": 0,
+     "native_effect": 0,
+     "published": 0,
+     "qualifying_history": 0,
+     "trigger": 0
+    },
+    "delivery_known": true,
+    "effect_outcomes": [],
+    "first_admission_move": null,
+    "first_felt": {
+     "dlvl": 1,
+     "kind": "hound",
+     "turn": 5
+    },
+    "haunt": {
+     "accepted": 1,
+     "expired": 1,
+     "pre_admitted": 1
+    },
+    "haunt_steps": 4,
+    "journal_status": "missing",
+    "last_turn": 683,
+    "loss": "no_qualifying_action",
+    "ordinary_whispers_admitted": 1,
+    "public_attention_completed": 0,
+    "qualifying_actions": {
+     "fountain_drink": 0,
+     "whistling": 0
+    },
+    "recorded_decisions": [],
+    "safe_points": {
+     "level_enter": 2,
+     "pray": 1
+    },
+    "session_details": [
+     "new"
+    ],
+    "start_budget": 2,
+    "start_sanity": 100,
+    "terminations": [],
+    "w_suppressions": []
+   },
+   "outcome": "died",
+   "save_restore": {
+    "attempted": false,
+    "session_detail": null
+   },
+   "seed": 51,
+   "start": "wizard-default-path",
+   "sync_timeouts": 0,
+   "v2": {
+    "dlvl_timeline": [
+     [
+      1,
+      1
+     ],
+     [
+      324,
+      2
+     ]
+    ],
+    "flees": 1,
+    "launcher": [
+     "--ordinary",
+     "--max-runtime",
+     "86400"
+    ],
+    "prayers": 1,
+    "rests": 2,
+    "whistles_found": 0
+   },
+   "whistle_in_inventory": false
+  },
+  {
+   "commands": 233,
+   "error": null,
+   "exit_code": 0,
+   "final_status": {},
+   "funnel": {
+    "counts": {
+     "admitted": 0,
+     "candidate": 0,
+     "delivered": 0,
+     "native_effect": 0,
+     "published": 0,
+     "qualifying_history": 0,
+     "trigger": 0
+    },
+    "delivery_known": true,
+    "effect_outcomes": [],
+    "first_admission_move": null,
+    "first_felt": {
+     "dlvl": 1,
+     "kind": "hound",
+     "turn": 5
+    },
+    "haunt": {
+     "accepted": 1,
+     "expired": 1,
+     "pre_admitted": 1
+    },
+    "haunt_steps": 6,
+    "journal_status": "missing",
+    "last_turn": 300,
+    "loss": "no_qualifying_action",
+    "ordinary_whispers_admitted": 1,
+    "public_attention_completed": 0,
+    "qualifying_actions": {
+     "fountain_drink": 1,
+     "whistling": 0
+    },
+    "recorded_decisions": [],
+    "safe_points": {
+     "level_enter": 1
+    },
+    "session_details": [
+     "new"
+    ],
+    "start_budget": 2,
+    "start_sanity": 100,
+    "terminations": [],
+    "w_suppressions": []
+   },
+   "outcome": "died",
+   "save_restore": {
+    "attempted": false,
+    "session_detail": null
+   },
+   "seed": 52,
+   "start": "wizard-default-path",
+   "sync_timeouts": 0,
+   "v2": {
+    "dlvl_timeline": [
+     [
+      1,
+      1
+     ]
+    ],
+    "flees": 0,
+    "launcher": [
+     "--ordinary",
+     "--max-runtime",
+     "86400"
+    ],
+    "prayers": 0,
+    "rests": 0,
+    "whistles_found": 0
+   },
+   "whistle_in_inventory": false
+  },
+  {
+   "commands": 398,
+   "error": null,
+   "exit_code": 0,
+   "final_status": {},
+   "funnel": {
+    "counts": {
+     "admitted": 0,
+     "candidate": 0,
+     "delivered": 0,
+     "native_effect": 0,
+     "published": 0,
+     "qualifying_history": 0,
+     "trigger": 0
+    },
+    "delivery_known": true,
+    "effect_outcomes": [],
+    "first_admission_move": null,
+    "first_felt": {
+     "dlvl": 1,
+     "kind": "hound",
+     "turn": 7
+    },
+    "haunt": {
+     "accepted": 1,
+     "expired": 1,
+     "pre_admitted": 1
+    },
+    "haunt_steps": 2,
+    "journal_status": "missing",
+    "last_turn": 1034,
+    "loss": "no_qualifying_action",
+    "ordinary_whispers_admitted": 1,
+    "public_attention_completed": 0,
+    "qualifying_actions": {
+     "fountain_drink": 0,
+     "whistling": 0
+    },
+    "recorded_decisions": [],
+    "safe_points": {
+     "level_enter": 3,
+     "pray": 1
+    },
+    "session_details": [
+     "new",
+     "restore"
+    ],
+    "start_budget": 2,
+    "start_sanity": 100,
+    "terminations": [],
+    "w_suppressions": []
+   },
+   "outcome": "died",
+   "save_restore": {
+    "attempted": true,
+    "session_detail": "restore"
+   },
+   "seed": 53,
+   "start": "wizard-default-path",
+   "sync_timeouts": 0,
+   "v2": {
+    "dlvl_timeline": [
+     [
+      1,
+      1
+     ],
+     [
+      327,
+      2
+     ],
+     [
+      645,
+      3
+     ]
+    ],
+    "flees": 0,
+    "launcher": [
+     "--ordinary",
+     "--max-runtime",
+     "86400"
+    ],
+    "prayers": 1,
+    "rests": 0,
+    "whistles_found": 0
+   },
+   "whistle_in_inventory": false
+  },
+  {
+   "commands": 422,
+   "error": null,
+   "exit_code": 0,
+   "final_status": {},
+   "funnel": {
+    "counts": {
+     "admitted": 0,
+     "candidate": 0,
+     "delivered": 0,
+     "native_effect": 0,
+     "published": 0,
+     "qualifying_history": 0,
+     "trigger": 0
+    },
+    "delivery_known": true,
+    "effect_outcomes": [],
+    "first_admission_move": null,
+    "first_felt": {
+     "dlvl": 1,
+     "kind": "hound",
+     "turn": 16
+    },
+    "haunt": {
+     "accepted": 1,
+     "expired": 1,
+     "pre_admitted": 1
+    },
+    "haunt_steps": 2,
+    "journal_status": "missing",
+    "last_turn": 1276,
+    "loss": "no_qualifying_action",
+    "ordinary_whispers_admitted": 1,
+    "public_attention_completed": 0,
+    "qualifying_actions": {
+     "fountain_drink": 0,
+     "whistling": 0
+    },
+    "recorded_decisions": [],
+    "safe_points": {
+     "level_enter": 3,
+     "pray": 1
+    },
+    "session_details": [
+     "new",
+     "restore"
+    ],
+    "start_budget": 2,
+    "start_sanity": 100,
+    "terminations": [],
+    "w_suppressions": []
+   },
+   "outcome": "died",
+   "save_restore": {
+    "attempted": true,
+    "session_detail": "restore"
+   },
+   "seed": 54,
+   "start": "wizard-default-path",
+   "sync_timeouts": 0,
+   "v2": {
+    "dlvl_timeline": [
+     [
+      1,
+      1
+     ],
+     [
+      325,
+      2
+     ],
+     [
+      655,
+      3
+     ]
+    ],
+    "flees": 0,
+    "launcher": [
+     "--ordinary",
+     "--max-runtime",
+     "86400"
+    ],
+    "prayers": 1,
+    "rests": 1,
+    "whistles_found": 0
+   },
+   "whistle_in_inventory": false
+  },
+  {
+   "commands": 366,
+   "error": null,
+   "exit_code": 0,
+   "final_status": {},
+   "funnel": {
+    "counts": {
+     "admitted": 0,
+     "candidate": 0,
+     "delivered": 0,
+     "native_effect": 0,
+     "published": 0,
+     "qualifying_history": 0,
+     "trigger": 0
+    },
+    "delivery_known": true,
+    "effect_outcomes": [],
+    "first_admission_move": null,
+    "first_felt": {
+     "dlvl": 1,
+     "kind": "hound",
+     "turn": 6
+    },
+    "haunt": {
+     "accepted": 1,
+     "expired": 1,
+     "pre_admitted": 1
+    },
+    "haunt_steps": 4,
+    "journal_status": "missing",
+    "last_turn": 966,
+    "loss": "no_qualifying_action",
+    "ordinary_whispers_admitted": 1,
+    "public_attention_completed": 0,
+    "qualifying_actions": {
+     "fountain_drink": 0,
+     "whistling": 0
+    },
+    "recorded_decisions": [],
+    "safe_points": {
+     "level_enter": 2,
+     "pray": 1
+    },
+    "session_details": [
+     "new",
+     "restore"
+    ],
+    "start_budget": 2,
+    "start_sanity": 100,
+    "terminations": [],
+    "w_suppressions": []
+   },
+   "outcome": "died",
+   "save_restore": {
+    "attempted": true,
+    "session_detail": "restore"
+   },
+   "seed": 55,
+   "start": "wizard-default-path",
+   "sync_timeouts": 0,
+   "v2": {
+    "dlvl_timeline": [
+     [
+      1,
+      1
+     ],
+     [
+      392,
+      2
+     ]
+    ],
+    "flees": 15,
+    "launcher": [
+     "--ordinary",
+     "--max-runtime",
+     "86400"
+    ],
+    "prayers": 1,
+    "rests": 4,
+    "whistles_found": 0
+   },
+   "whistle_in_inventory": false
+  },
+  {
+   "commands": 184,
+   "error": null,
+   "exit_code": 0,
+   "final_status": {},
+   "funnel": {
+    "counts": {
+     "admitted": 0,
+     "candidate": 0,
+     "delivered": 0,
+     "native_effect": 0,
+     "published": 0,
+     "qualifying_history": 0,
+     "trigger": 0
+    },
+    "delivery_known": true,
+    "effect_outcomes": [],
+    "first_admission_move": null,
+    "first_felt": {
+     "dlvl": 1,
+     "kind": "hound",
+     "turn": 10
+    },
+    "haunt": {
+     "accepted": 1,
+     "expired": 1,
+     "pre_admitted": 1
+    },
+    "haunt_steps": 4,
+    "journal_status": "missing",
+    "last_turn": 1301,
+    "loss": "no_qualifying_action",
+    "ordinary_whispers_admitted": 1,
+    "public_attention_completed": 0,
+    "qualifying_actions": {
+     "fountain_drink": 0,
+     "whistling": 0
+    },
+    "recorded_decisions": [],
+    "safe_points": {
+     "level_enter": 1,
+     "pray": 1
+    },
+    "session_details": [
+     "new",
+     "restore"
+    ],
+    "start_budget": 2,
+    "start_sanity": 100,
+    "terminations": [],
+    "w_suppressions": []
+   },
+   "outcome": "died",
+   "save_restore": {
+    "attempted": true,
+    "session_detail": "restore"
+   },
+   "seed": 56,
+   "start": "wizard-default-path",
+   "sync_timeouts": 0,
+   "v2": {
+    "dlvl_timeline": [
+     [
+      1,
+      1
+     ]
+    ],
+    "flees": 0,
+    "launcher": [
+     "--ordinary",
+     "--max-runtime",
+     "86400"
+    ],
+    "prayers": 1,
+    "rests": 0,
+    "whistles_found": 0
+   },
+   "whistle_in_inventory": false
+  },
+  {
+   "commands": 438,
+   "error": null,
+   "exit_code": 0,
+   "final_status": {},
+   "funnel": {
+    "counts": {
+     "admitted": 0,
+     "candidate": 0,
+     "delivered": 0,
+     "native_effect": 0,
+     "published": 0,
+     "qualifying_history": 0,
+     "trigger": 0
+    },
+    "delivery_known": true,
+    "effect_outcomes": [],
+    "first_admission_move": null,
+    "first_felt": null,
+    "haunt": {
+     "rejected": 1
+    },
+    "haunt_steps": 0,
+    "journal_status": "missing",
+    "last_turn": 980,
+    "loss": "no_qualifying_action",
+    "ordinary_whispers_admitted": 1,
+    "public_attention_completed": 0,
+    "qualifying_actions": {
+     "fountain_drink": 2,
+     "whistling": 0
+    },
+    "recorded_decisions": [],
+    "safe_points": {
+     "level_enter": 3,
+     "pray": 1
+    },
+    "session_details": [
+     "new",
+     "restore"
+    ],
+    "start_budget": 2,
+    "start_sanity": 100,
+    "terminations": [],
+    "w_suppressions": []
+   },
+   "outcome": "died",
+   "save_restore": {
+    "attempted": true,
+    "session_detail": "restore"
+   },
+   "seed": 57,
+   "start": "wizard-default-path",
+   "sync_timeouts": 0,
+   "v2": {
+    "dlvl_timeline": [
+     [
+      1,
+      1
+     ],
+     [
+      339,
+      2
+     ],
+     [
+      652,
+      3
+     ]
+    ],
+    "flees": 0,
+    "launcher": [
+     "--ordinary",
+     "--max-runtime",
+     "86400"
+    ],
+    "prayers": 1,
+    "rests": 0,
+    "whistles_found": 0
+   },
+   "whistle_in_inventory": false
+  },
+  {
+   "commands": 788,
+   "error": null,
+   "exit_code": 0,
+   "final_status": {},
+   "funnel": {
+    "counts": {
+     "admitted": 0,
+     "candidate": 0,
+     "delivered": 0,
+     "native_effect": 0,
+     "published": 0,
+     "qualifying_history": 0,
+     "trigger": 0
+    },
+    "delivery_known": true,
+    "effect_outcomes": [],
+    "first_admission_move": null,
+    "first_felt": {
+     "dlvl": 1,
+     "kind": "hound",
+     "turn": 5
+    },
+    "haunt": {
+     "accepted": 1,
+     "expired": 1,
+     "pre_admitted": 1
+    },
+    "haunt_steps": 6,
+    "journal_status": "missing",
+    "last_turn": 996,
+    "loss": "no_qualifying_action",
+    "ordinary_whispers_admitted": 1,
+    "public_attention_completed": 0,
+    "qualifying_actions": {
+     "fountain_drink": 2,
+     "whistling": 0
+    },
+    "recorded_decisions": [],
+    "safe_points": {
+     "level_enter": 3,
+     "pray": 1
+    },
+    "session_details": [
+     "new",
+     "restore"
+    ],
+    "start_budget": 2,
+    "start_sanity": 100,
+    "terminations": [],
+    "w_suppressions": []
+   },
+   "outcome": "died",
+   "save_restore": {
+    "attempted": true,
+    "session_detail": "restore"
+   },
+   "seed": 58,
+   "start": "wizard-default-path",
+   "sync_timeouts": 0,
+   "v2": {
+    "dlvl_timeline": [
+     [
+      1,
+      1
+     ],
+     [
+      376,
+      2
+     ],
+     [
+      701,
+      3
+     ]
+    ],
+    "flees": 12,
+    "launcher": [
+     "--ordinary",
+     "--max-runtime",
+     "86400"
+    ],
+    "prayers": 1,
+    "rests": 1,
+    "whistles_found": 0
+   },
+   "whistle_in_inventory": false
+  },
+  {
+   "commands": 607,
+   "error": null,
+   "exit_code": 0,
+   "final_status": {},
+   "funnel": {
+    "counts": {
+     "admitted": 0,
+     "candidate": 0,
+     "delivered": 0,
+     "native_effect": 0,
+     "published": 0,
+     "qualifying_history": 0,
+     "trigger": 0
+    },
+    "delivery_known": true,
+    "effect_outcomes": [],
+    "first_admission_move": null,
+    "first_felt": {
+     "dlvl": 1,
+     "kind": "hound",
+     "turn": 19
+    },
+    "haunt": {
+     "accepted": 1,
+     "expired": 1,
+     "pre_admitted": 1
+    },
+    "haunt_steps": 1,
+    "journal_status": "missing",
+    "last_turn": 1922,
+    "loss": "no_qualifying_action",
+    "ordinary_whispers_admitted": 1,
+    "public_attention_completed": 0,
+    "qualifying_actions": {
+     "fountain_drink": 0,
+     "whistling": 0
+    },
+    "recorded_decisions": [],
+    "safe_points": {
+     "level_enter": 1,
+     "pray": 2
+    },
+    "session_details": [
+     "new",
+     "restore"
+    ],
+    "start_budget": 2,
+    "start_sanity": 100,
+    "terminations": [],
+    "w_suppressions": []
+   },
+   "outcome": "died",
+   "save_restore": {
+    "attempted": true,
+    "session_detail": "restore"
+   },
+   "seed": 59,
+   "start": "wizard-default-path",
+   "sync_timeouts": 0,
+   "v2": {
+    "dlvl_timeline": [
+     [
+      1,
+      1
+     ]
+    ],
+    "flees": 0,
+    "launcher": [
+     "--ordinary",
+     "--max-runtime",
+     "86400"
+    ],
+    "prayers": 2,
+    "rests": 0,
+    "whistles_found": 0
+   },
+   "whistle_in_inventory": false
+  },
+  {
+   "commands": 476,
+   "error": null,
+   "exit_code": 0,
+   "final_status": {},
+   "funnel": {
+    "counts": {
+     "admitted": 0,
+     "candidate": 0,
+     "delivered": 0,
+     "native_effect": 0,
+     "published": 0,
+     "qualifying_history": 0,
+     "trigger": 0
+    },
+    "delivery_known": true,
+    "effect_outcomes": [],
+    "first_admission_move": null,
+    "first_felt": {
+     "dlvl": 1,
+     "kind": "hound",
+     "turn": 6
+    },
+    "haunt": {
+     "accepted": 1,
+     "expired": 1,
+     "pre_admitted": 1
+    },
+    "haunt_steps": 4,
+    "journal_status": "missing",
+    "last_turn": 719,
+    "loss": "no_qualifying_action",
+    "ordinary_whispers_admitted": 1,
+    "public_attention_completed": 0,
+    "qualifying_actions": {
+     "fountain_drink": 2,
+     "whistling": 0
+    },
+    "recorded_decisions": [],
+    "safe_points": {
+     "level_enter": 2,
+     "pray": 1
+    },
+    "session_details": [
+     "new",
+     "restore"
+    ],
+    "start_budget": 2,
+    "start_sanity": 100,
+    "terminations": [],
+    "w_suppressions": []
+   },
+   "outcome": "died",
+   "save_restore": {
+    "attempted": true,
+    "session_detail": "restore"
+   },
+   "seed": 60,
+   "start": "wizard-default-path",
+   "sync_timeouts": 0,
+   "v2": {
+    "dlvl_timeline": [
+     [
+      1,
+      1
+     ],
+     [
+      331,
+      2
+     ]
+    ],
+    "flees": 0,
+    "launcher": [
+     "--ordinary",
+     "--max-runtime",
+     "86400"
+    ],
+    "prayers": 1,
+    "rests": 0,
+    "whistles_found": 0
+   },
+   "whistle_in_inventory": false
+  },
+  {
+   "commands": 338,
+   "error": null,
+   "exit_code": 0,
+   "final_status": {},
+   "funnel": {
+    "counts": {
+     "admitted": 0,
+     "candidate": 0,
+     "delivered": 0,
+     "native_effect": 0,
+     "published": 0,
+     "qualifying_history": 0,
+     "trigger": 0
+    },
+    "delivery_known": true,
+    "effect_outcomes": [],
+    "first_admission_move": null,
+    "first_felt": {
+     "dlvl": 1,
+     "kind": "hound",
+     "turn": 21
+    },
+    "haunt": {
+     "accepted": 1,
+     "expired": 1,
+     "pre_admitted": 1
+    },
+    "haunt_steps": 2,
+    "journal_status": "missing",
+    "last_turn": 1240,
+    "loss": "no_qualifying_action",
+    "ordinary_whispers_admitted": 1,
+    "public_attention_completed": 0,
+    "qualifying_actions": {
+     "fountain_drink": 1,
+     "whistling": 0
+    },
+    "recorded_decisions": [],
+    "safe_points": {
+     "level_enter": 1,
+     "pray": 1
+    },
+    "session_details": [
+     "new",
+     "restore"
+    ],
+    "start_budget": 2,
+    "start_sanity": 100,
+    "terminations": [],
+    "w_suppressions": []
+   },
+   "outcome": "died",
+   "save_restore": {
+    "attempted": true,
+    "session_detail": "restore"
+   },
+   "seed": 61,
+   "start": "wizard-default-path",
+   "sync_timeouts": 0,
+   "v2": {
+    "dlvl_timeline": [
+     [
+      1,
+      1
+     ]
+    ],
+    "flees": 0,
+    "launcher": [
+     "--ordinary",
+     "--max-runtime",
+     "86400"
+    ],
+    "prayers": 1,
+    "rests": 0,
+    "whistles_found": 0
+   },
+   "whistle_in_inventory": false
+  },
+  {
+   "commands": 413,
+   "error": null,
+   "exit_code": 0,
+   "final_status": {},
+   "funnel": {
+    "counts": {
+     "admitted": 0,
+     "candidate": 0,
+     "delivered": 0,
+     "native_effect": 0,
+     "published": 0,
+     "qualifying_history": 0,
+     "trigger": 0
+    },
+    "delivery_known": true,
+    "effect_outcomes": [],
+    "first_admission_move": null,
+    "first_felt": {
+     "dlvl": 1,
+     "kind": "hound",
+     "turn": 7
+    },
+    "haunt": {
+     "accepted": 1,
+     "expired": 1,
+     "pre_admitted": 1
+    },
+    "haunt_steps": 3,
+    "journal_status": "missing",
+    "last_turn": 1083,
+    "loss": "no_qualifying_action",
+    "ordinary_whispers_admitted": 1,
+    "public_attention_completed": 0,
+    "qualifying_actions": {
+     "fountain_drink": 2,
+     "whistling": 0
+    },
+    "recorded_decisions": [],
+    "safe_points": {
+     "level_enter": 1,
+     "pray": 1
+    },
+    "session_details": [
+     "new",
+     "restore"
+    ],
+    "start_budget": 2,
+    "start_sanity": 100,
+    "terminations": [],
+    "w_suppressions": []
+   },
+   "outcome": "died",
+   "save_restore": {
+    "attempted": true,
+    "session_detail": "restore"
+   },
+   "seed": 62,
+   "start": "wizard-default-path",
+   "sync_timeouts": 0,
+   "v2": {
+    "dlvl_timeline": [
+     [
+      1,
+      1
+     ]
+    ],
+    "flees": 4,
+    "launcher": [
+     "--ordinary",
+     "--max-runtime",
+     "86400"
+    ],
+    "prayers": 1,
+    "rests": 15,
+    "whistles_found": 0
+   },
+   "whistle_in_inventory": false
+  },
+  {
+   "commands": 366,
+   "error": null,
+   "exit_code": 0,
+   "final_status": {},
+   "funnel": {
+    "counts": {
+     "admitted": 0,
+     "candidate": 1,
+     "delivered": 0,
+     "native_effect": 0,
+     "published": 1,
+     "qualifying_history": 1,
+     "trigger": 0
+    },
+    "delivery_known": true,
+    "effect_outcomes": [],
+    "first_admission_move": null,
+    "first_felt": {
+     "dlvl": 1,
+     "kind": "hound",
+     "turn": 20
+    },
+    "haunt": {
+     "accepted": 1,
+     "expired": 1,
+     "pre_admitted": 1
+    },
+    "haunt_steps": 2,
+    "journal_status": "missing",
+    "last_turn": 1193,
+    "loss": "rejected:origin_expired",
+    "ordinary_whispers_admitted": 1,
+    "public_attention_completed": 0,
+    "qualifying_actions": {
+     "fountain_drink": 2,
+     "whistling": 0
+    },
+    "recorded_decisions": [
+     {
+      "at": 2,
+      "move": 688,
+      "reasons": [
+       "origin_expired"
+      ],
+      "safe": 2
+     }
+    ],
+    "safe_points": {
+     "level_enter": 1,
+     "pray": 1
+    },
+    "session_details": [
+     "new",
+     "restore"
+    ],
+    "start_budget": 2,
+    "start_sanity": 100,
+    "terminations": [],
+    "w_suppressions": []
+   },
+   "outcome": "died",
+   "save_restore": {
+    "attempted": true,
+    "session_detail": "restore"
+   },
+   "seed": 63,
+   "start": "wizard-default-path",
+   "sync_timeouts": 0,
+   "v2": {
+    "dlvl_timeline": [
+     [
+      1,
+      1
+     ]
+    ],
+    "flees": 0,
+    "launcher": [
+     "--ordinary",
+     "--max-runtime",
+     "86400"
+    ],
+    "prayers": 1,
+    "rests": 1,
+    "whistles_found": 0
+   },
+   "whistle_in_inventory": false
+  },
+  {
+   "commands": 817,
+   "error": null,
+   "exit_code": 0,
+   "final_status": {},
+   "funnel": {
+    "counts": {
+     "admitted": 0,
+     "candidate": 2,
+     "delivered": 0,
+     "native_effect": 0,
+     "published": 1,
+     "qualifying_history": 2,
+     "trigger": 0
+    },
+    "delivery_known": true,
+    "effect_outcomes": [],
+    "first_admission_move": null,
+    "first_felt": {
+     "dlvl": 1,
+     "kind": "hound",
+     "turn": 13
+    },
+    "haunt": {
+     "accepted": 1,
+     "expired": 1,
+     "pre_admitted": 1
+    },
+    "haunt_steps": 3,
+    "journal_status": "missing",
+    "last_turn": 1467,
+    "loss": "rejected:origin_expired",
+    "ordinary_whispers_admitted": 1,
+    "public_attention_completed": 0,
+    "qualifying_actions": {
+     "fountain_drink": 4,
+     "whistling": 0
+    },
+    "recorded_decisions": [
+     {
+      "at": 2,
+      "move": 604,
+      "reasons": [
+       "origin_expired"
+      ],
+      "safe": 2
+     }
+    ],
+    "safe_points": {
+     "level_enter": 2,
+     "pray": 1
+    },
+    "session_details": [
+     "new",
+     "restore"
+    ],
+    "start_budget": 2,
+    "start_sanity": 100,
+    "terminations": [],
+    "w_suppressions": []
+   },
+   "outcome": "died",
+   "save_restore": {
+    "attempted": true,
+    "session_detail": "restore"
+   },
+   "seed": 64,
+   "start": "wizard-default-path",
+   "sync_timeouts": 0,
+   "v2": {
+    "dlvl_timeline": [
+     [
+      1,
+      1
+     ],
+     [
+      1101,
+      2
+     ]
+    ],
+    "flees": 0,
+    "launcher": [
+     "--ordinary",
+     "--max-runtime",
+     "86400"
+    ],
+    "prayers": 1,
+    "rests": 2,
+    "whistles_found": 0
+   },
+   "whistle_in_inventory": false
+  },
+  {
+   "commands": 340,
+   "error": null,
+   "exit_code": 0,
+   "final_status": {},
+   "funnel": {
+    "counts": {
+     "admitted": 0,
+     "candidate": 0,
+     "delivered": 0,
+     "native_effect": 0,
+     "published": 0,
+     "qualifying_history": 0,
+     "trigger": 0
+    },
+    "delivery_known": true,
+    "effect_outcomes": [],
+    "first_admission_move": null,
+    "first_felt": {
+     "dlvl": 1,
+     "kind": "hound",
+     "turn": 22
+    },
+    "haunt": {
+     "accepted": 1,
+     "expired": 1,
+     "pre_admitted": 1
+    },
+    "haunt_steps": 1,
+    "journal_status": "missing",
+    "last_turn": 741,
+    "loss": "no_qualifying_action",
+    "ordinary_whispers_admitted": 1,
+    "public_attention_completed": 0,
+    "qualifying_actions": {
+     "fountain_drink": 2,
+     "whistling": 0
+    },
+    "recorded_decisions": [],
+    "safe_points": {
+     "level_enter": 1,
+     "pray": 1
+    },
+    "session_details": [
+     "new",
+     "restore"
+    ],
+    "start_budget": 2,
+    "start_sanity": 100,
+    "terminations": [],
+    "w_suppressions": []
+   },
+   "outcome": "died",
+   "save_restore": {
+    "attempted": true,
+    "session_detail": "restore"
+   },
+   "seed": 65,
+   "start": "wizard-default-path",
+   "sync_timeouts": 0,
+   "v2": {
+    "dlvl_timeline": [
+     [
+      1,
+      1
+     ]
+    ],
+    "flees": 2,
+    "launcher": [
+     "--ordinary",
+     "--max-runtime",
+     "86400"
+    ],
+    "prayers": 1,
+    "rests": 6,
+    "whistles_found": 0
+   },
+   "whistle_in_inventory": false
+  },
+  {
+   "commands": 374,
+   "error": null,
+   "exit_code": 0,
+   "final_status": {},
+   "funnel": {
+    "counts": {
+     "admitted": 0,
+     "candidate": 0,
+     "delivered": 0,
+     "native_effect": 0,
+     "published": 0,
+     "qualifying_history": 0,
+     "trigger": 0
+    },
+    "delivery_known": true,
+    "effect_outcomes": [],
+    "first_admission_move": null,
+    "first_felt": null,
+    "haunt": {
+     "accepted": 1,
+     "expired": 1,
+     "pre_admitted": 1
+    },
+    "haunt_steps": 0,
+    "journal_status": "missing",
+    "last_turn": 1097,
+    "loss": "no_qualifying_action",
+    "ordinary_whispers_admitted": 1,
+    "public_attention_completed": 0,
+    "qualifying_actions": {
+     "fountain_drink": 0,
+     "whistling": 0
+    },
+    "recorded_decisions": [],
+    "safe_points": {
+     "level_enter": 1,
+     "pray": 1
+    },
+    "session_details": [
+     "new",
+     "restore"
+    ],
+    "start_budget": 2,
+    "start_sanity": 100,
+    "terminations": [],
+    "w_suppressions": []
+   },
+   "outcome": "died",
+   "save_restore": {
+    "attempted": true,
+    "session_detail": "restore"
+   },
+   "seed": 66,
+   "start": "wizard-default-path",
+   "sync_timeouts": 0,
+   "v2": {
+    "dlvl_timeline": [
+     [
+      1,
+      1
+     ]
+    ],
+    "flees": 0,
+    "launcher": [
+     "--ordinary",
+     "--max-runtime",
+     "86400"
+    ],
+    "prayers": 1,
+    "rests": 0,
+    "whistles_found": 0
+   },
+   "whistle_in_inventory": false
+  },
+  {
+   "commands": 579,
+   "error": null,
+   "exit_code": 0,
+   "final_status": {},
+   "funnel": {
+    "counts": {
+     "admitted": 0,
+     "candidate": 1,
+     "delivered": 0,
+     "native_effect": 0,
+     "published": 1,
+     "qualifying_history": 1,
+     "trigger": 0
+    },
+    "delivery_known": true,
+    "effect_outcomes": [],
+    "first_admission_move": null,
+    "first_felt": null,
+    "haunt": {
+     "accepted": 1,
+     "expired": 1,
+     "pre_admitted": 1
+    },
+    "haunt_steps": 0,
+    "journal_status": "missing",
+    "last_turn": 1357,
+    "loss": "rejected:budget",
+    "ordinary_whispers_admitted": 1,
+    "public_attention_completed": 0,
+    "qualifying_actions": {
+     "fountain_drink": 3,
+     "whistling": 0
+    },
+    "recorded_decisions": [
+     {
+      "at": 2,
+      "move": 659,
+      "reasons": [
+       "budget"
+      ],
+      "safe": 2
+     }
+    ],
+    "safe_points": {
+     "level_enter": 3,
+     "pray": 1
+    },
+    "session_details": [
+     "new",
+     "restore"
+    ],
+    "start_budget": 2,
+    "start_sanity": 100,
+    "terminations": [],
+    "w_suppressions": []
+   },
+   "outcome": "died",
+   "save_restore": {
+    "attempted": true,
+    "session_detail": "restore"
+   },
+   "seed": 67,
+   "start": "wizard-default-path",
+   "sync_timeouts": 0,
+   "v2": {
+    "dlvl_timeline": [
+     [
+      1,
+      1
+     ],
+     [
+      660,
+      2
+     ],
+     [
+      1063,
+      3
+     ]
+    ],
+    "flees": 5,
+    "launcher": [
+     "--ordinary",
+     "--max-runtime",
+     "86400"
+    ],
+    "prayers": 1,
+    "rests": 22,
+    "whistles_found": 0
+   },
+   "whistle_in_inventory": false
+  },
+  {
+   "commands": 897,
+   "error": null,
+   "exit_code": 0,
+   "final_status": {},
+   "funnel": {
+    "counts": {
+     "admitted": 0,
+     "candidate": 0,
+     "delivered": 0,
+     "native_effect": 0,
+     "published": 0,
+     "qualifying_history": 0,
+     "trigger": 0
+    },
+    "delivery_known": true,
+    "effect_outcomes": [],
+    "first_admission_move": null,
+    "first_felt": {
+     "dlvl": 1,
+     "kind": "hound",
+     "turn": 33
+    },
+    "haunt": {
+     "accepted": 1,
+     "expired": 1,
+     "pre_admitted": 1
+    },
+    "haunt_steps": 1,
+    "journal_status": "missing",
+    "last_turn": 1578,
+    "loss": "no_qualifying_action",
+    "ordinary_whispers_admitted": 1,
+    "public_attention_completed": 0,
+    "qualifying_actions": {
+     "fountain_drink": 0,
+     "whistling": 0
+    },
+    "recorded_decisions": [],
+    "safe_points": {
+     "level_enter": 2,
+     "pray": 1
+    },
+    "session_details": [
+     "new",
+     "restore"
+    ],
+    "start_budget": 2,
+    "start_sanity": 100,
+    "terminations": [],
+    "w_suppressions": []
+   },
+   "outcome": "died",
+   "save_restore": {
+    "attempted": true,
+    "session_detail": "restore"
+   },
+   "seed": 68,
+   "start": "wizard-default-path",
+   "sync_timeouts": 0,
+   "v2": {
+    "dlvl_timeline": [
+     [
+      1,
+      1
+     ],
+     [
+      319,
+      2
+     ]
+    ],
+    "flees": 0,
+    "launcher": [
+     "--ordinary",
+     "--max-runtime",
+     "86400"
+    ],
+    "prayers": 1,
+    "rests": 1,
+    "whistles_found": 0
+   },
+   "whistle_in_inventory": false
+  },
+  {
+   "commands": 424,
+   "error": null,
+   "exit_code": 0,
+   "final_status": {},
+   "funnel": {
+    "counts": {
+     "admitted": 0,
+     "candidate": 0,
+     "delivered": 0,
+     "native_effect": 0,
+     "published": 0,
+     "qualifying_history": 0,
+     "trigger": 0
+    },
+    "delivery_known": true,
+    "effect_outcomes": [],
+    "first_admission_move": null,
+    "first_felt": {
+     "dlvl": 1,
+     "kind": "hound",
+     "turn": 59
+    },
+    "haunt": {
+     "accepted": 1,
+     "expired": 1,
+     "pre_admitted": 1
+    },
+    "haunt_steps": 1,
+    "journal_status": "missing",
+    "last_turn": 821,
+    "loss": "no_qualifying_action",
+    "ordinary_whispers_admitted": 1,
+    "public_attention_completed": 0,
+    "qualifying_actions": {
+     "fountain_drink": 0,
+     "whistling": 0
+    },
+    "recorded_decisions": [],
+    "safe_points": {
+     "level_enter": 2,
+     "pray": 1
+    },
+    "session_details": [
+     "new",
+     "restore"
+    ],
+    "start_budget": 2,
+    "start_sanity": 100,
+    "terminations": [],
+    "w_suppressions": []
+   },
+   "outcome": "died",
+   "save_restore": {
+    "attempted": true,
+    "session_detail": "restore"
+   },
+   "seed": 69,
+   "start": "wizard-default-path",
+   "sync_timeouts": 0,
+   "v2": {
+    "dlvl_timeline": [
+     [
+      1,
+      1
+     ],
+     [
+      595,
+      2
+     ]
+    ],
+    "flees": 0,
+    "launcher": [
+     "--ordinary",
+     "--max-runtime",
+     "86400"
+    ],
+    "prayers": 1,
+    "rests": 0,
+    "whistles_found": 0
+   },
+   "whistle_in_inventory": false
+  },
+  {
+   "commands": 413,
+   "error": null,
+   "exit_code": 0,
+   "final_status": {},
+   "funnel": {
+    "counts": {
+     "admitted": 0,
+     "candidate": 0,
+     "delivered": 0,
+     "native_effect": 0,
+     "published": 0,
+     "qualifying_history": 0,
+     "trigger": 0
+    },
+    "delivery_known": true,
+    "effect_outcomes": [],
+    "first_admission_move": null,
+    "first_felt": null,
+    "haunt": {
+     "accepted": 1,
+     "expired": 1,
+     "pre_admitted": 1
+    },
+    "haunt_steps": 0,
+    "journal_status": "missing",
+    "last_turn": 1096,
+    "loss": "no_qualifying_action",
+    "ordinary_whispers_admitted": 1,
+    "public_attention_completed": 0,
+    "qualifying_actions": {
+     "fountain_drink": 1,
+     "whistling": 0
+    },
+    "recorded_decisions": [],
+    "safe_points": {
+     "level_enter": 1,
+     "pray": 1
+    },
+    "session_details": [
+     "new",
+     "restore"
+    ],
+    "start_budget": 2,
+    "start_sanity": 100,
+    "terminations": [],
+    "w_suppressions": []
+   },
+   "outcome": "died",
+   "save_restore": {
+    "attempted": true,
+    "session_detail": "restore"
+   },
+   "seed": 70,
+   "start": "wizard-default-path",
+   "sync_timeouts": 0,
+   "v2": {
+    "dlvl_timeline": [
+     [
+      1,
+      1
+     ]
+    ],
+    "flees": 0,
+    "launcher": [
+     "--ordinary",
+     "--max-runtime",
+     "86400"
+    ],
+    "prayers": 1,
+    "rests": 0,
+    "whistles_found": 0
+   },
+   "whistle_in_inventory": false
+  },
+  {
+   "commands": 479,
+   "error": null,
+   "exit_code": 0,
+   "final_status": {},
+   "funnel": {
+    "counts": {
+     "admitted": 0,
+     "candidate": 0,
+     "delivered": 0,
+     "native_effect": 0,
+     "published": 0,
+     "qualifying_history": 0,
+     "trigger": 0
+    },
+    "delivery_known": true,
+    "effect_outcomes": [],
+    "first_admission_move": null,
+    "first_felt": {
+     "dlvl": 1,
+     "kind": "hound",
+     "turn": 9
+    },
+    "haunt": {
+     "accepted": 1,
+     "expired": 1,
+     "pre_admitted": 1
+    },
+    "haunt_steps": 3,
+    "journal_status": "missing",
+    "last_turn": 1013,
+    "loss": "no_qualifying_action",
+    "ordinary_whispers_admitted": 1,
+    "public_attention_completed": 0,
+    "qualifying_actions": {
+     "fountain_drink": 0,
+     "whistling": 0
+    },
+    "recorded_decisions": [],
+    "safe_points": {
+     "level_enter": 1,
+     "pray": 1
+    },
+    "session_details": [
+     "new",
+     "restore"
+    ],
+    "start_budget": 2,
+    "start_sanity": 100,
+    "terminations": [],
+    "w_suppressions": []
+   },
+   "outcome": "died",
+   "save_restore": {
+    "attempted": true,
+    "session_detail": "restore"
+   },
+   "seed": 71,
+   "start": "wizard-default-path",
+   "sync_timeouts": 0,
+   "v2": {
+    "dlvl_timeline": [
+     [
+      1,
+      1
+     ]
+    ],
+    "flees": 0,
+    "launcher": [
+     "--ordinary",
+     "--max-runtime",
+     "86400"
+    ],
+    "prayers": 1,
+    "rests": 0,
+    "whistles_found": 0
+   },
+   "whistle_in_inventory": false
+  },
+  {
+   "commands": 842,
+   "error": null,
+   "exit_code": 0,
+   "final_status": {
+    "dlvl": 4,
+    "hp": 25,
+    "hp_max": 25,
+    "hunger": null,
+    "turn": 2008
+   },
+   "funnel": {
+    "counts": {
+     "admitted": 0,
+     "candidate": 1,
+     "delivered": 0,
+     "native_effect": 0,
+     "published": 1,
+     "qualifying_history": 1,
+     "trigger": 0
+    },
+    "delivery_known": true,
+    "effect_outcomes": [],
+    "first_admission_move": null,
+    "first_felt": null,
+    "haunt": {
+     "accepted": 1,
+     "expired": 1,
+     "pre_admitted": 1
+    },
+    "haunt_steps": 0,
+    "journal_status": "missing",
+    "last_turn": 2008,
+    "loss": "rejected:origin_expired",
+    "ordinary_whispers_admitted": 1,
+    "public_attention_completed": 0,
+    "qualifying_actions": {
+     "fountain_drink": 4,
+     "whistling": 0
+    },
+    "recorded_decisions": [
+     {
+      "at": 2,
+      "move": 643,
+      "reasons": [
+       "origin_expired"
+      ],
+      "safe": 2
+     }
+    ],
+    "safe_points": {
+     "level_enter": 4,
+     "pray": 2
+    },
+    "session_details": [
+     "new",
+     "restore"
+    ],
+    "start_budget": 2,
+    "start_sanity": 100,
+    "terminations": [],
+    "w_suppressions": []
+   },
+   "outcome": "turn_limit",
+   "save_restore": {
+    "attempted": true,
+    "session_detail": "restore"
+   },
+   "seed": 72,
+   "start": "wizard-default-path",
+   "sync_timeouts": 0,
+   "v2": {
+    "dlvl_timeline": [
+     [
+      1,
+      1
+     ],
+     [
+      712,
+      2
+     ],
+     [
+      1040,
+      3
+     ],
+     [
+      1417,
+      4
+     ]
+    ],
+    "flees": 1,
+    "launcher": [
+     "--ordinary",
+     "--max-runtime",
+     "86400"
+    ],
+    "prayers": 2,
+    "rests": 8,
+    "whistles_found": 0
+   },
+   "whistle_in_inventory": false
+  },
+  {
+   "commands": 394,
+   "error": null,
+   "exit_code": 0,
+   "final_status": {},
+   "funnel": {
+    "counts": {
+     "admitted": 0,
+     "candidate": 0,
+     "delivered": 0,
+     "native_effect": 0,
+     "published": 0,
+     "qualifying_history": 0,
+     "trigger": 0
+    },
+    "delivery_known": true,
+    "effect_outcomes": [],
+    "first_admission_move": null,
+    "first_felt": {
+     "dlvl": 1,
+     "kind": "hound",
+     "turn": 17
+    },
+    "haunt": {
+     "accepted": 1,
+     "expired": 1,
+     "pre_admitted": 1
+    },
+    "haunt_steps": 3,
+    "journal_status": "missing",
+    "last_turn": 1163,
+    "loss": "no_qualifying_action",
+    "ordinary_whispers_admitted": 1,
+    "public_attention_completed": 0,
+    "qualifying_actions": {
+     "fountain_drink": 0,
+     "whistling": 0
+    },
+    "recorded_decisions": [],
+    "safe_points": {
+     "level_enter": 1,
+     "pray": 1
+    },
+    "session_details": [
+     "new",
+     "restore"
+    ],
+    "start_budget": 2,
+    "start_sanity": 100,
+    "terminations": [],
+    "w_suppressions": []
+   },
+   "outcome": "died",
+   "save_restore": {
+    "attempted": true,
+    "session_detail": "restore"
+   },
+   "seed": 73,
+   "start": "wizard-default-path",
+   "sync_timeouts": 0,
+   "v2": {
+    "dlvl_timeline": [
+     [
+      1,
+      1
+     ]
+    ],
+    "flees": 0,
+    "launcher": [
+     "--ordinary",
+     "--max-runtime",
+     "86400"
+    ],
+    "prayers": 1,
+    "rests": 1,
+    "whistles_found": 0
+   },
+   "whistle_in_inventory": false
+  },
+  {
+   "commands": 433,
+   "error": null,
+   "exit_code": 0,
+   "final_status": {},
+   "funnel": {
+    "counts": {
+     "admitted": 0,
+     "candidate": 0,
+     "delivered": 0,
+     "native_effect": 0,
+     "published": 0,
+     "qualifying_history": 0,
+     "trigger": 0
+    },
+    "delivery_known": true,
+    "effect_outcomes": [],
+    "first_admission_move": null,
+    "first_felt": {
+     "dlvl": 1,
+     "kind": "hound",
+     "turn": 9
+    },
+    "haunt": {
+     "accepted": 1,
+     "expired": 1,
+     "pre_admitted": 1
+    },
+    "haunt_steps": 1,
+    "journal_status": "missing",
+    "last_turn": 677,
+    "loss": "no_qualifying_action",
+    "ordinary_whispers_admitted": 1,
+    "public_attention_completed": 0,
+    "qualifying_actions": {
+     "fountain_drink": 0,
+     "whistling": 0
+    },
+    "recorded_decisions": [],
+    "safe_points": {
+     "level_enter": 1,
+     "pray": 1
+    },
+    "session_details": [
+     "new"
+    ],
+    "start_budget": 2,
+    "start_sanity": 100,
+    "terminations": [],
+    "w_suppressions": []
+   },
+   "outcome": "died",
+   "save_restore": {
+    "attempted": false,
+    "session_detail": null
+   },
+   "seed": 74,
+   "start": "wizard-default-path",
+   "sync_timeouts": 0,
+   "v2": {
+    "dlvl_timeline": [
+     [
+      1,
+      1
+     ]
+    ],
+    "flees": 2,
+    "launcher": [
+     "--ordinary",
+     "--max-runtime",
+     "86400"
+    ],
+    "prayers": 1,
+    "rests": 4,
+    "whistles_found": 0
+   },
+   "whistle_in_inventory": false
+  },
+  {
+   "commands": 889,
+   "error": null,
+   "exit_code": 0,
+   "final_status": {
+    "dlvl": 1,
+    "hp": 13,
+    "hp_max": 13,
+    "hunger": null,
+    "turn": 2004
+   },
+   "funnel": {
+    "counts": {
+     "admitted": 0,
+     "candidate": 0,
+     "delivered": 0,
+     "native_effect": 0,
+     "published": 0,
+     "qualifying_history": 0,
+     "trigger": 0
+    },
+    "delivery_known": true,
+    "effect_outcomes": [],
+    "first_admission_move": null,
+    "first_felt": {
+     "dlvl": 1,
+     "kind": "hound",
+     "turn": 1754
+    },
+    "haunt": {
+     "accepted": 1,
+     "expired": 1,
+     "pre_admitted": 1
+    },
+    "haunt_steps": 4,
+    "journal_status": "missing",
+    "last_turn": 2004,
+    "loss": "no_qualifying_action",
+    "ordinary_whispers_admitted": 1,
+    "public_attention_completed": 0,
+    "qualifying_actions": {
+     "fountain_drink": 0,
+     "whistling": 0
+    },
+    "recorded_decisions": [],
+    "safe_points": {
+     "level_enter": 1,
+     "pray": 2
+    },
+    "session_details": [
+     "new",
+     "restore"
+    ],
+    "start_budget": 2,
+    "start_sanity": 100,
+    "terminations": [],
+    "w_suppressions": []
+   },
+   "outcome": "turn_limit",
+   "save_restore": {
+    "attempted": true,
+    "session_detail": "restore"
+   },
+   "seed": 75,
+   "start": "wizard-default-path",
+   "sync_timeouts": 0,
+   "v2": {
+    "dlvl_timeline": [
+     [
+      1,
+      1
+     ]
+    ],
+    "flees": 0,
+    "launcher": [
+     "--ordinary",
+     "--max-runtime",
+     "86400"
+    ],
+    "prayers": 2,
+    "rests": 0,
+    "whistles_found": 0
+   },
+   "whistle_in_inventory": false
+  },
+  {
+   "commands": 500,
+   "error": null,
+   "exit_code": 0,
+   "final_status": {
+    "dlvl": 3,
+    "hp": 13,
+    "hp_max": 13,
+    "hunger": null,
+    "turn": 2000
+   },
+   "funnel": {
+    "counts": {
+     "admitted": 0,
+     "candidate": 0,
+     "delivered": 0,
+     "native_effect": 0,
+     "published": 0,
+     "qualifying_history": 0,
+     "trigger": 0
+    },
+    "delivery_known": true,
+    "effect_outcomes": [],
+    "first_admission_move": null,
+    "first_felt": {
+     "dlvl": 1,
+     "kind": "hound",
+     "turn": 13
+    },
+    "haunt": {
+     "accepted": 1,
+     "expired": 1,
+     "pre_admitted": 1
+    },
+    "haunt_steps": 7,
+    "journal_status": "missing",
+    "last_turn": 2000,
+    "loss": "no_qualifying_action",
+    "ordinary_whispers_admitted": 1,
+    "public_attention_completed": 0,
+    "qualifying_actions": {
+     "fountain_drink": 0,
+     "whistling": 0
+    },
+    "recorded_decisions": [],
+    "safe_points": {
+     "level_enter": 3,
+     "pray": 2
+    },
+    "session_details": [
+     "new",
+     "restore"
+    ],
+    "start_budget": 2,
+    "start_sanity": 100,
+    "terminations": [],
+    "w_suppressions": []
+   },
+   "outcome": "turn_limit",
+   "save_restore": {
+    "attempted": true,
+    "session_detail": "restore"
+   },
+   "seed": 76,
+   "start": "wizard-default-path",
+   "sync_timeouts": 0,
+   "v2": {
+    "dlvl_timeline": [
+     [
+      1,
+      1
+     ],
+     [
+      404,
+      2
+     ],
+     [
+      757,
+      3
+     ]
+    ],
+    "flees": 0,
+    "launcher": [
+     "--ordinary",
+     "--max-runtime",
+     "86400"
+    ],
+    "prayers": 2,
+    "rests": 1,
+    "whistles_found": 0
+   },
+   "whistle_in_inventory": false
+  },
+  {
+   "commands": 791,
+   "error": null,
+   "exit_code": 0,
+   "final_status": {},
+   "funnel": {
+    "counts": {
+     "admitted": 0,
+     "candidate": 0,
+     "delivered": 0,
+     "native_effect": 0,
+     "published": 0,
+     "qualifying_history": 0,
+     "trigger": 0
+    },
+    "delivery_known": true,
+    "effect_outcomes": [],
+    "first_admission_move": null,
+    "first_felt": null,
+    "haunt": {
+     "rejected": 1
+    },
+    "haunt_steps": 0,
+    "journal_status": "missing",
+    "last_turn": 1761,
+    "loss": "no_qualifying_action",
+    "ordinary_whispers_admitted": 1,
+    "public_attention_completed": 0,
+    "qualifying_actions": {
+     "fountain_drink": 1,
+     "whistling": 0
+    },
+    "recorded_decisions": [],
+    "safe_points": {
+     "level_enter": 4,
+     "pray": 2
+    },
+    "session_details": [
+     "new",
+     "restore"
+    ],
+    "start_budget": 2,
+    "start_sanity": 100,
+    "terminations": [],
+    "w_suppressions": []
+   },
+   "outcome": "died",
+   "save_restore": {
+    "attempted": true,
+    "session_detail": "restore"
+   },
+   "seed": 77,
+   "start": "wizard-default-path",
+   "sync_timeouts": 0,
+   "v2": {
+    "dlvl_timeline": [
+     [
+      1,
+      1
+     ],
+     [
+      323,
+      2
+     ],
+     [
+      678,
+      3
+     ],
+     [
+      1106,
+      4
+     ]
+    ],
+    "flees": 12,
+    "launcher": [
+     "--ordinary",
+     "--max-runtime",
+     "86400"
+    ],
+    "prayers": 2,
+    "rests": 28,
+    "whistles_found": 0
+   },
+   "whistle_in_inventory": false
+  },
+  {
+   "commands": 430,
+   "error": null,
+   "exit_code": 0,
+   "final_status": {
+    "dlvl": 2,
+    "hp": 13,
+    "hp_max": 13,
+    "hunger": null,
+    "turn": 2000
+   },
+   "funnel": {
+    "counts": {
+     "admitted": 0,
+     "candidate": 0,
+     "delivered": 0,
+     "native_effect": 0,
+     "published": 0,
+     "qualifying_history": 0,
+     "trigger": 0
+    },
+    "delivery_known": true,
+    "effect_outcomes": [],
+    "first_admission_move": null,
+    "first_felt": {
+     "dlvl": 1,
+     "kind": "hound",
+     "turn": 30
+    },
+    "haunt": {
+     "accepted": 1,
+     "expired": 1,
+     "pre_admitted": 1
+    },
+    "haunt_steps": 2,
+    "journal_status": "missing",
+    "last_turn": 2000,
+    "loss": "no_qualifying_action",
+    "ordinary_whispers_admitted": 1,
+    "public_attention_completed": 0,
+    "qualifying_actions": {
+     "fountain_drink": 0,
+     "whistling": 0
+    },
+    "recorded_decisions": [],
+    "safe_points": {
+     "level_enter": 2,
+     "pray": 2
+    },
+    "session_details": [
+     "new",
+     "restore"
+    ],
+    "start_budget": 2,
+    "start_sanity": 100,
+    "terminations": [],
+    "w_suppressions": []
+   },
+   "outcome": "turn_limit",
+   "save_restore": {
+    "attempted": true,
+    "session_detail": "restore"
+   },
+   "seed": 78,
+   "start": "wizard-default-path",
+   "sync_timeouts": 0,
+   "v2": {
+    "dlvl_timeline": [
+     [
+      1,
+      1
+     ],
+     [
+      332,
+      2
+     ]
+    ],
+    "flees": 0,
+    "launcher": [
+     "--ordinary",
+     "--max-runtime",
+     "86400"
+    ],
+    "prayers": 2,
+    "rests": 0,
+    "whistles_found": 0
+   },
+   "whistle_in_inventory": false
+  },
+  {
+   "commands": 755,
+   "error": null,
+   "exit_code": 0,
+   "final_status": {
+    "dlvl": 2,
+    "hp": 7,
+    "hp_max": 19,
+    "hunger": null,
+    "turn": 2014
+   },
+   "funnel": {
+    "counts": {
+     "admitted": 1,
+     "candidate": 2,
+     "delivered": 0,
+     "native_effect": 0,
+     "published": 1,
+     "qualifying_history": 2,
+     "trigger": 0
+    },
+    "delivery_known": true,
+    "effect_outcomes": [],
+    "first_admission_move": 616,
+    "first_felt": null,
+    "haunt": {
+     "rejected": 1
+    },
+    "haunt_steps": 0,
+    "journal_status": "structurally_complete",
+    "last_turn": 2014,
+    "loss": "admitted_no_trigger:program_expired",
+    "ordinary_whispers_admitted": 1,
+    "public_attention_completed": 0,
+    "qualifying_actions": {
+     "fountain_drink": 4,
+     "whistling": 0
+    },
+    "recorded_decisions": [],
+    "safe_points": {
+     "level_enter": 2,
+     "pray": 2
+    },
+    "session_details": [
+     "new",
+     "restore"
+    ],
+    "start_budget": 2,
+    "start_sanity": 100,
+    "terminations": [
+     "program_expired"
+    ],
+    "w_suppressions": []
+   },
+   "outcome": "turn_limit",
+   "save_restore": {
+    "attempted": true,
+    "session_detail": "restore"
+   },
+   "seed": 79,
+   "start": "wizard-default-path",
+   "sync_timeouts": 0,
+   "v2": {
+    "dlvl_timeline": [
+     [
+      1,
+      1
+     ],
+     [
+      617,
+      2
+     ]
+    ],
+    "flees": 3,
+    "launcher": [
+     "--ordinary",
+     "--max-runtime",
+     "86400"
+    ],
+    "prayers": 2,
+    "rests": 3,
+    "whistles_found": 0
+   },
+   "whistle_in_inventory": false
+  },
+  {
+   "commands": 691,
+   "error": null,
+   "exit_code": 0,
+   "final_status": {},
+   "funnel": {
+    "counts": {
+     "admitted": 0,
+     "candidate": 0,
+     "delivered": 0,
+     "native_effect": 0,
+     "published": 0,
+     "qualifying_history": 0,
+     "trigger": 0
+    },
+    "delivery_known": true,
+    "effect_outcomes": [],
+    "first_admission_move": null,
+    "first_felt": {
+     "dlvl": 1,
+     "kind": "hound",
+     "turn": 8
+    },
+    "haunt": {
+     "accepted": 1,
+     "expired": 1,
+     "pre_admitted": 1
+    },
+    "haunt_steps": 3,
+    "journal_status": "missing",
+    "last_turn": 1166,
+    "loss": "no_qualifying_action",
+    "ordinary_whispers_admitted": 1,
+    "public_attention_completed": 0,
+    "qualifying_actions": {
+     "fountain_drink": 2,
+     "whistling": 0
+    },
+    "recorded_decisions": [],
+    "safe_points": {
+     "level_enter": 3,
+     "pray": 1
+    },
+    "session_details": [
+     "new",
+     "restore"
+    ],
+    "start_budget": 2,
+    "start_sanity": 100,
+    "terminations": [],
+    "w_suppressions": []
+   },
+   "outcome": "died",
+   "save_restore": {
+    "attempted": true,
+    "session_detail": "restore"
+   },
+   "seed": 80,
+   "start": "wizard-default-path",
+   "sync_timeouts": 0,
+   "v2": {
+    "dlvl_timeline": [
+     [
+      1,
+      1
+     ],
+     [
+      829,
+      2
+     ],
+     [
+      1155,
+      3
+     ]
+    ],
+    "flees": 2,
+    "launcher": [
+     "--ordinary",
+     "--max-runtime",
+     "86400"
+    ],
+    "prayers": 1,
+    "rests": 4,
+    "whistles_found": 0
+   },
+   "whistle_in_inventory": false
+  },
+  {
+   "commands": 781,
+   "error": null,
+   "exit_code": 0,
+   "final_status": {
+    "dlvl": 5,
+    "hp": 29,
+    "hp_max": 29,
+    "hunger": "Hungry",
+    "turn": 1357
+   },
+   "funnel": {
+    "counts": {
+     "admitted": 0,
+     "candidate": 0,
+     "delivered": 0,
+     "native_effect": 0,
+     "published": 0,
+     "qualifying_history": 0,
+     "trigger": 0
+    },
+    "delivery_known": true,
+    "effect_outcomes": [],
+    "first_admission_move": null,
+    "first_felt": {
+     "dlvl": 1,
+     "kind": "hound",
+     "turn": 5
+    },
+    "haunt": {
+     "accepted": 1,
+     "expired": 1,
+     "pre_admitted": 1
+    },
+    "haunt_steps": 3,
+    "journal_status": "missing",
+    "last_turn": 1357,
+    "loss": "no_qualifying_action",
+    "ordinary_whispers_admitted": 1,
+    "public_attention_completed": 0,
+    "qualifying_actions": {
+     "fountain_drink": 0,
+     "whistling": 0
+    },
+    "recorded_decisions": [],
+    "safe_points": {
+     "level_enter": 5,
+     "pray": 1,
+     "sanity_threshold": 1
+    },
+    "session_details": [
+     "new",
+     "restore"
+    ],
+    "start_budget": 2,
+    "start_sanity": 100,
+    "terminations": [],
+    "w_suppressions": []
+   },
+   "outcome": "depth_limit",
+   "save_restore": {
+    "attempted": true,
+    "session_detail": "restore"
+   },
+   "seed": 81,
+   "start": "wizard-default-path",
+   "sync_timeouts": 0,
+   "v2": {
+    "dlvl_timeline": [
+     [
+      1,
+      1
+     ],
+     [
+      351,
+      2
+     ],
+     [
+      691,
+      3
+     ],
+     [
+      1026,
+      4
+     ]
+    ],
+    "flees": 0,
+    "launcher": [
+     "--ordinary",
+     "--max-runtime",
+     "86400"
+    ],
+    "prayers": 1,
+    "rests": 0,
+    "whistles_found": 0
+   },
+   "whistle_in_inventory": false
+  },
+  {
+   "commands": 477,
+   "error": null,
+   "exit_code": 0,
+   "final_status": {},
+   "funnel": {
+    "counts": {
+     "admitted": 0,
+     "candidate": 0,
+     "delivered": 0,
+     "native_effect": 0,
+     "published": 0,
+     "qualifying_history": 0,
+     "trigger": 0
+    },
+    "delivery_known": true,
+    "effect_outcomes": [],
+    "first_admission_move": null,
+    "first_felt": {
+     "dlvl": 1,
+     "kind": "hound",
+     "turn": 8
+    },
+    "haunt": {
+     "accepted": 1,
+     "expired": 1,
+     "pre_admitted": 1
+    },
+    "haunt_steps": 1,
+    "journal_status": "missing",
+    "last_turn": 1028,
+    "loss": "no_qualifying_action",
+    "ordinary_whispers_admitted": 1,
+    "public_attention_completed": 0,
+    "qualifying_actions": {
+     "fountain_drink": 0,
+     "whistling": 0
+    },
+    "recorded_decisions": [],
+    "safe_points": {
+     "level_enter": 2,
+     "pray": 1
+    },
+    "session_details": [
+     "new",
+     "restore"
+    ],
+    "start_budget": 2,
+    "start_sanity": 100,
+    "terminations": [],
+    "w_suppressions": []
+   },
+   "outcome": "died",
+   "save_restore": {
+    "attempted": true,
+    "session_detail": "restore"
+   },
+   "seed": 82,
+   "start": "wizard-default-path",
+   "sync_timeouts": 0,
+   "v2": {
+    "dlvl_timeline": [
+     [
+      1,
+      1
+     ],
+     [
+      347,
+      2
+     ]
+    ],
+    "flees": 0,
+    "launcher": [
+     "--ordinary",
+     "--max-runtime",
+     "86400"
+    ],
+    "prayers": 1,
+    "rests": 0,
+    "whistles_found": 0
+   },
+   "whistle_in_inventory": false
+  },
+  {
+   "commands": 261,
+   "error": null,
+   "exit_code": 0,
+   "final_status": {},
+   "funnel": {
+    "counts": {
+     "admitted": 0,
+     "candidate": 0,
+     "delivered": 0,
+     "native_effect": 0,
+     "published": 0,
+     "qualifying_history": 0,
+     "trigger": 0
+    },
+    "delivery_known": true,
+    "effect_outcomes": [],
+    "first_admission_move": null,
+    "first_felt": {
+     "dlvl": 1,
+     "kind": "hound",
+     "turn": 14
+    },
+    "haunt": {
+     "accepted": 1,
+     "expired": 1,
+     "pre_admitted": 1
+    },
+    "haunt_steps": 2,
+    "journal_status": "missing",
+    "last_turn": 361,
+    "loss": "no_qualifying_action",
+    "ordinary_whispers_admitted": 1,
+    "public_attention_completed": 0,
+    "qualifying_actions": {
+     "fountain_drink": 1,
+     "whistling": 0
+    },
+    "recorded_decisions": [],
+    "safe_points": {
+     "level_enter": 2
+    },
+    "session_details": [
+     "new"
+    ],
+    "start_budget": 2,
+    "start_sanity": 100,
+    "terminations": [],
+    "w_suppressions": []
+   },
+   "outcome": "died",
+   "save_restore": {
+    "attempted": false,
+    "session_detail": null
+   },
+   "seed": 83,
+   "start": "wizard-default-path",
+   "sync_timeouts": 0,
+   "v2": {
+    "dlvl_timeline": [
+     [
+      1,
+      1
+     ],
+     [
+      321,
+      2
+     ]
+    ],
+    "flees": 0,
+    "launcher": [
+     "--ordinary",
+     "--max-runtime",
+     "86400"
+    ],
+    "prayers": 0,
+    "rests": 0,
+    "whistles_found": 0
+   },
+   "whistle_in_inventory": false
+  },
+  {
+   "commands": 479,
+   "error": null,
+   "exit_code": 0,
+   "final_status": {},
+   "funnel": {
+    "counts": {
+     "admitted": 0,
+     "candidate": 0,
+     "delivered": 0,
+     "native_effect": 0,
+     "published": 0,
+     "qualifying_history": 0,
+     "trigger": 0
+    },
+    "delivery_known": true,
+    "effect_outcomes": [],
+    "first_admission_move": null,
+    "first_felt": {
+     "dlvl": 1,
+     "kind": "hound",
+     "turn": 6
+    },
+    "haunt": {
+     "accepted": 1,
+     "expired": 1,
+     "pre_admitted": 1
+    },
+    "haunt_steps": 2,
+    "journal_status": "missing",
+    "last_turn": 1010,
+    "loss": "no_qualifying_action",
+    "ordinary_whispers_admitted": 1,
+    "public_attention_completed": 0,
+    "qualifying_actions": {
+     "fountain_drink": 0,
+     "whistling": 0
+    },
+    "recorded_decisions": [],
+    "safe_points": {
+     "level_enter": 1,
+     "pray": 1
+    },
+    "session_details": [
+     "new",
+     "restore"
+    ],
+    "start_budget": 2,
+    "start_sanity": 100,
+    "terminations": [],
+    "w_suppressions": []
+   },
+   "outcome": "died",
+   "save_restore": {
+    "attempted": true,
+    "session_detail": "restore"
+   },
+   "seed": 84,
+   "start": "wizard-default-path",
+   "sync_timeouts": 0,
+   "v2": {
+    "dlvl_timeline": [
+     [
+      1,
+      1
+     ]
+    ],
+    "flees": 0,
+    "launcher": [
+     "--ordinary",
+     "--max-runtime",
+     "86400"
+    ],
+    "prayers": 1,
+    "rests": 0,
+    "whistles_found": 0
+   },
+   "whistle_in_inventory": false
+  },
+  {
+   "commands": 316,
+   "error": null,
+   "exit_code": 0,
+   "final_status": {},
+   "funnel": {
+    "counts": {
+     "admitted": 0,
+     "candidate": 0,
+     "delivered": 0,
+     "native_effect": 0,
+     "published": 0,
+     "qualifying_history": 0,
+     "trigger": 0
+    },
+    "delivery_known": true,
+    "effect_outcomes": [],
+    "first_admission_move": null,
+    "first_felt": {
+     "dlvl": 1,
+     "kind": "hound",
+     "turn": 10
+    },
+    "haunt": {
+     "accepted": 1,
+     "expired": 1,
+     "pre_admitted": 1
+    },
+    "haunt_steps": 3,
+    "journal_status": "missing",
+    "last_turn": 1256,
+    "loss": "no_qualifying_action",
+    "ordinary_whispers_admitted": 1,
+    "public_attention_completed": 0,
+    "qualifying_actions": {
+     "fountain_drink": 2,
+     "whistling": 0
+    },
+    "recorded_decisions": [],
+    "safe_points": {
+     "level_enter": 3,
+     "pray": 1
+    },
+    "session_details": [
+     "new",
+     "restore"
+    ],
+    "start_budget": 2,
+    "start_sanity": 100,
+    "terminations": [],
+    "w_suppressions": []
+   },
+   "outcome": "died",
+   "save_restore": {
+    "attempted": true,
+    "session_detail": "restore"
+   },
+   "seed": 85,
+   "start": "wizard-default-path",
+   "sync_timeouts": 0,
+   "v2": {
+    "dlvl_timeline": [
+     [
+      1,
+      1
+     ],
+     [
+      753,
+      2
+     ]
+    ],
+    "flees": 12,
+    "launcher": [
+     "--ordinary",
+     "--max-runtime",
+     "86400"
+    ],
+    "prayers": 1,
+    "rests": 19,
+    "whistles_found": 0
+   },
+   "whistle_in_inventory": false
+  },
+  {
+   "commands": 418,
+   "error": null,
+   "exit_code": 0,
+   "final_status": {},
+   "funnel": {
+    "counts": {
+     "admitted": 0,
+     "candidate": 2,
+     "delivered": 0,
+     "native_effect": 0,
+     "published": 1,
+     "qualifying_history": 2,
+     "trigger": 0
+    },
+    "delivery_known": true,
+    "effect_outcomes": [],
+    "first_admission_move": null,
+    "first_felt": {
+     "dlvl": 1,
+     "kind": "hound",
+     "turn": 236
+    },
+    "haunt": {
+     "accepted": 1,
+     "expired": 1,
+     "pre_admitted": 1
+    },
+    "haunt_steps": 2,
+    "journal_status": "missing",
+    "last_turn": 1152,
+    "loss": "inferred:no_safe_point_before_game_end",
+    "ordinary_whispers_admitted": 1,
+    "public_attention_completed": 0,
+    "qualifying_actions": {
+     "fountain_drink": 0,
+     "whistling": 2
+    },
+    "recorded_decisions": [],
+    "safe_points": {
+     "level_enter": 1,
+     "pray": 1
+    },
+    "session_details": [
+     "new",
+     "restore"
+    ],
+    "start_budget": 2,
+    "start_sanity": 100,
+    "terminations": [],
+    "w_suppressions": []
+   },
+   "outcome": "died",
+   "save_restore": {
+    "attempted": true,
+    "session_detail": "restore"
+   },
+   "seed": 86,
+   "start": "wizard-default-path",
+   "sync_timeouts": 0,
+   "v2": {
+    "dlvl_timeline": [
+     [
+      1,
+      1
+     ]
+    ],
+    "flees": 0,
+    "launcher": [
+     "--ordinary",
+     "--max-runtime",
+     "86400"
+    ],
+    "prayers": 1,
+    "rests": 0,
+    "whistles_found": 1
+   },
+   "whistle_in_inventory": true
+  },
+  {
+   "commands": 338,
+   "error": null,
+   "exit_code": 0,
+   "final_status": {},
+   "funnel": {
+    "counts": {
+     "admitted": 0,
+     "candidate": 0,
+     "delivered": 0,
+     "native_effect": 0,
+     "published": 0,
+     "qualifying_history": 0,
+     "trigger": 0
+    },
+    "delivery_known": true,
+    "effect_outcomes": [],
+    "first_admission_move": null,
+    "first_felt": {
+     "dlvl": 1,
+     "kind": "hound",
+     "turn": 8
+    },
+    "haunt": {
+     "accepted": 1,
+     "expired": 1,
+     "pre_admitted": 1
+    },
+    "haunt_steps": 2,
+    "journal_status": "missing",
+    "last_turn": 1172,
+    "loss": "no_qualifying_action",
+    "ordinary_whispers_admitted": 1,
+    "public_attention_completed": 0,
+    "qualifying_actions": {
+     "fountain_drink": 0,
+     "whistling": 0
+    },
+    "recorded_decisions": [],
+    "safe_points": {
+     "level_enter": 1,
+     "pray": 1
+    },
+    "session_details": [
+     "new",
+     "restore"
+    ],
+    "start_budget": 2,
+    "start_sanity": 100,
+    "terminations": [],
+    "w_suppressions": []
+   },
+   "outcome": "died",
+   "save_restore": {
+    "attempted": true,
+    "session_detail": "restore"
+   },
+   "seed": 87,
+   "start": "wizard-default-path",
+   "sync_timeouts": 0,
+   "v2": {
+    "dlvl_timeline": [
+     [
+      1,
+      1
+     ]
+    ],
+    "flees": 0,
+    "launcher": [
+     "--ordinary",
+     "--max-runtime",
+     "86400"
+    ],
+    "prayers": 1,
+    "rests": 0,
+    "whistles_found": 0
+   },
+   "whistle_in_inventory": false
+  },
+  {
+   "commands": 342,
+   "error": null,
+   "exit_code": 0,
+   "final_status": {
+    "dlvl": 2,
+    "hp": 12,
+    "hp_max": 12,
+    "hunger": null,
+    "turn": 2009
+   },
+   "funnel": {
+    "counts": {
+     "admitted": 0,
+     "candidate": 1,
+     "delivered": 0,
+     "native_effect": 0,
+     "published": 1,
+     "qualifying_history": 1,
+     "trigger": 0
+    },
+    "delivery_known": true,
+    "effect_outcomes": [],
+    "first_admission_move": null,
+    "first_felt": {
+     "dlvl": 1,
+     "kind": "hound",
+     "turn": 23
+    },
+    "haunt": {
+     "accepted": 1,
+     "expired": 1,
+     "pre_admitted": 1
+    },
+    "haunt_steps": 1,
+    "journal_status": "missing",
+    "last_turn": 2009,
+    "loss": "rejected:origin_expired",
+    "ordinary_whispers_admitted": 1,
+    "public_attention_completed": 0,
+    "qualifying_actions": {
+     "fountain_drink": 2,
+     "whistling": 0
+    },
+    "recorded_decisions": [
+     {
+      "at": 2,
+      "move": 322,
+      "reasons": [
+       "origin_expired"
+      ],
+      "safe": 2
+     }
+    ],
+    "safe_points": {
+     "level_enter": 2,
+     "pray": 2
+    },
+    "session_details": [
+     "new",
+     "restore"
+    ],
+    "start_budget": 2,
+    "start_sanity": 100,
+    "terminations": [],
+    "w_suppressions": []
+   },
+   "outcome": "turn_limit",
+   "save_restore": {
+    "attempted": true,
+    "session_detail": "restore"
+   },
+   "seed": 88,
+   "start": "wizard-default-path",
+   "sync_timeouts": 0,
+   "v2": {
+    "dlvl_timeline": [
+     [
+      1,
+      1
+     ],
+     [
+      323,
+      2
+     ]
+    ],
+    "flees": 0,
+    "launcher": [
+     "--ordinary",
+     "--max-runtime",
+     "86400"
+    ],
+    "prayers": 2,
+    "rests": 0,
+    "whistles_found": 0
+   },
+   "whistle_in_inventory": false
+  },
+  {
+   "commands": 427,
+   "error": null,
+   "exit_code": 0,
+   "final_status": {},
+   "funnel": {
+    "counts": {
+     "admitted": 0,
+     "candidate": 1,
+     "delivered": 0,
+     "native_effect": 0,
+     "published": 1,
+     "qualifying_history": 1,
+     "trigger": 0
+    },
+    "delivery_known": true,
+    "effect_outcomes": [],
+    "first_admission_move": null,
+    "first_felt": {
+     "dlvl": 1,
+     "kind": "hound",
+     "turn": 37
+    },
+    "haunt": {
+     "accepted": 1,
+     "expired": 1,
+     "pre_admitted": 1
+    },
+    "haunt_steps": 3,
+    "journal_status": "missing",
+    "last_turn": 1203,
+    "loss": "rejected:origin_expired",
+    "ordinary_whispers_admitted": 1,
+    "public_attention_completed": 0,
+    "qualifying_actions": {
+     "fountain_drink": 1,
+     "whistling": 0
+    },
+    "recorded_decisions": [
+     {
+      "at": 2,
+      "move": 382,
+      "reasons": [
+       "origin_expired"
+      ],
+      "safe": 2
+     }
+    ],
+    "safe_points": {
+     "level_enter": 3,
+     "pray": 1
+    },
+    "session_details": [
+     "new",
+     "restore"
+    ],
+    "start_budget": 2,
+    "start_sanity": 100,
+    "terminations": [],
+    "w_suppressions": []
+   },
+   "outcome": "died",
+   "save_restore": {
+    "attempted": true,
+    "session_detail": "restore"
+   },
+   "seed": 89,
+   "start": "wizard-default-path",
+   "sync_timeouts": 0,
+   "v2": {
+    "dlvl_timeline": [
+     [
+      1,
+      1
+     ],
+     [
+      383,
+      2
+     ],
+     [
+      717,
+      3
+     ]
+    ],
+    "flees": 0,
+    "launcher": [
+     "--ordinary",
+     "--max-runtime",
+     "86400"
+    ],
+    "prayers": 1,
+    "rests": 0,
+    "whistles_found": 0
+   },
+   "whistle_in_inventory": false
+  },
+  {
+   "commands": 893,
+   "error": null,
+   "exit_code": 0,
+   "final_status": {},
+   "funnel": {
+    "counts": {
+     "admitted": 0,
+     "candidate": 0,
+     "delivered": 0,
+     "native_effect": 0,
+     "published": 0,
+     "qualifying_history": 0,
+     "trigger": 0
+    },
+    "delivery_known": true,
+    "effect_outcomes": [],
+    "first_admission_move": null,
+    "first_felt": {
+     "dlvl": 1,
+     "kind": "hound",
+     "turn": 6
+    },
+    "haunt": {
+     "accepted": 1,
+     "expired": 1,
+     "pre_admitted": 1
+    },
+    "haunt_steps": 4,
+    "journal_status": "missing",
+    "last_turn": 1379,
+    "loss": "no_qualifying_action",
+    "ordinary_whispers_admitted": 1,
+    "public_attention_completed": 0,
+    "qualifying_actions": {
+     "fountain_drink": 0,
+     "whistling": 0
+    },
+    "recorded_decisions": [],
+    "safe_points": {
+     "level_enter": 2,
+     "pray": 1
+    },
+    "session_details": [
+     "new",
+     "restore"
+    ],
+    "start_budget": 2,
+    "start_sanity": 100,
+    "terminations": [],
+    "w_suppressions": []
+   },
+   "outcome": "died",
+   "save_restore": {
+    "attempted": true,
+    "session_detail": "restore"
+   },
+   "seed": 90,
+   "start": "wizard-default-path",
+   "sync_timeouts": 0,
+   "v2": {
+    "dlvl_timeline": [
+     [
+      1,
+      1
+     ],
+     [
+      321,
+      2
+     ]
+    ],
+    "flees": 0,
+    "launcher": [
+     "--ordinary",
+     "--max-runtime",
+     "86400"
+    ],
+    "prayers": 1,
+    "rests": 0,
+    "whistles_found": 0
+   },
+   "whistle_in_inventory": false
+  },
+  {
+   "commands": 454,
+   "error": null,
+   "exit_code": 0,
+   "final_status": {
+    "dlvl": 1,
+    "hp": 12,
+    "hp_max": 12,
+    "hunger": null,
+    "turn": 2010
+   },
+   "funnel": {
+    "counts": {
+     "admitted": 0,
+     "candidate": 0,
+     "delivered": 0,
+     "native_effect": 0,
+     "published": 0,
+     "qualifying_history": 0,
+     "trigger": 0
+    },
+    "delivery_known": true,
+    "effect_outcomes": [],
+    "first_admission_move": null,
+    "first_felt": {
+     "dlvl": 1,
+     "kind": "hound",
+     "turn": 312
+    },
+    "haunt": {
+     "accepted": 1,
+     "expired": 1,
+     "pre_admitted": 1
+    },
+    "haunt_steps": 2,
+    "journal_status": "missing",
+    "last_turn": 2010,
+    "loss": "no_qualifying_action",
+    "ordinary_whispers_admitted": 1,
+    "public_attention_completed": 0,
+    "qualifying_actions": {
+     "fountain_drink": 0,
+     "whistling": 0
+    },
+    "recorded_decisions": [],
+    "safe_points": {
+     "level_enter": 1,
+     "pray": 2
+    },
+    "session_details": [
+     "new",
+     "restore"
+    ],
+    "start_budget": 2,
+    "start_sanity": 100,
+    "terminations": [],
+    "w_suppressions": []
+   },
+   "outcome": "turn_limit",
+   "save_restore": {
+    "attempted": true,
+    "session_detail": "restore"
+   },
+   "seed": 91,
+   "start": "wizard-default-path",
+   "sync_timeouts": 0,
+   "v2": {
+    "dlvl_timeline": [
+     [
+      1,
+      1
+     ]
+    ],
+    "flees": 0,
+    "launcher": [
+     "--ordinary",
+     "--max-runtime",
+     "86400"
+    ],
+    "prayers": 2,
+    "rests": 0,
+    "whistles_found": 0
+   },
+   "whistle_in_inventory": false
+  },
+  {
+   "commands": 295,
+   "error": null,
+   "exit_code": 0,
+   "final_status": {},
+   "funnel": {
+    "counts": {
+     "admitted": 0,
+     "candidate": 0,
+     "delivered": 0,
+     "native_effect": 0,
+     "published": 0,
+     "qualifying_history": 0,
+     "trigger": 0
+    },
+    "delivery_known": true,
+    "effect_outcomes": [],
+    "first_admission_move": null,
+    "first_felt": {
+     "dlvl": 1,
+     "kind": "hound",
+     "turn": 11
+    },
+    "haunt": {
+     "accepted": 1,
+     "expired": 1,
+     "pre_admitted": 1
+    },
+    "haunt_steps": 2,
+    "journal_status": "missing",
+    "last_turn": 1211,
+    "loss": "no_qualifying_action",
+    "ordinary_whispers_admitted": 1,
+    "public_attention_completed": 0,
+    "qualifying_actions": {
+     "fountain_drink": 0,
+     "whistling": 0
+    },
+    "recorded_decisions": [],
+    "safe_points": {
+     "level_enter": 1,
+     "pray": 1
+    },
+    "session_details": [
+     "new",
+     "restore"
+    ],
+    "start_budget": 2,
+    "start_sanity": 100,
+    "terminations": [],
+    "w_suppressions": []
+   },
+   "outcome": "died",
+   "save_restore": {
+    "attempted": true,
+    "session_detail": "restore"
+   },
+   "seed": 92,
+   "start": "wizard-default-path",
+   "sync_timeouts": 0,
+   "v2": {
+    "dlvl_timeline": [
+     [
+      1,
+      1
+     ]
+    ],
+    "flees": 6,
+    "launcher": [
+     "--ordinary",
+     "--max-runtime",
+     "86400"
+    ],
+    "prayers": 1,
+    "rests": 36,
+    "whistles_found": 0
+   },
+   "whistle_in_inventory": false
+  },
+  {
+   "commands": 528,
+   "error": null,
+   "exit_code": 0,
+   "final_status": {},
+   "funnel": {
+    "counts": {
+     "admitted": 0,
+     "candidate": 0,
+     "delivered": 0,
+     "native_effect": 0,
+     "published": 0,
+     "qualifying_history": 0,
+     "trigger": 0
+    },
+    "delivery_known": true,
+    "effect_outcomes": [],
+    "first_admission_move": null,
+    "first_felt": {
+     "dlvl": 1,
+     "kind": "hound",
+     "turn": 6
+    },
+    "haunt": {
+     "accepted": 1,
+     "expired": 1,
+     "pre_admitted": 1
+    },
+    "haunt_steps": 3,
+    "journal_status": "missing",
+    "last_turn": 738,
+    "loss": "no_qualifying_action",
+    "ordinary_whispers_admitted": 1,
+    "public_attention_completed": 0,
+    "qualifying_actions": {
+     "fountain_drink": 0,
+     "whistling": 0
+    },
+    "recorded_decisions": [],
+    "safe_points": {
+     "level_enter": 3,
+     "pray": 1
+    },
+    "session_details": [
+     "new",
+     "restore"
+    ],
+    "start_budget": 2,
+    "start_sanity": 100,
+    "terminations": [],
+    "w_suppressions": []
+   },
+   "outcome": "died",
+   "save_restore": {
+    "attempted": true,
+    "session_detail": "restore"
+   },
+   "seed": 93,
+   "start": "wizard-default-path",
+   "sync_timeouts": 0,
+   "v2": {
+    "dlvl_timeline": [
+     [
+      1,
+      1
+     ],
+     [
+      344,
+      2
+     ],
+     [
+      663,
+      3
+     ]
+    ],
+    "flees": 1,
+    "launcher": [
+     "--ordinary",
+     "--max-runtime",
+     "86400"
+    ],
+    "prayers": 1,
+    "rests": 5,
+    "whistles_found": 0
+   },
+   "whistle_in_inventory": false
+  },
+  {
+   "commands": 376,
+   "error": null,
+   "exit_code": 0,
+   "final_status": {},
+   "funnel": {
+    "counts": {
+     "admitted": 0,
+     "candidate": 0,
+     "delivered": 0,
+     "native_effect": 0,
+     "published": 0,
+     "qualifying_history": 0,
+     "trigger": 0
+    },
+    "delivery_known": true,
+    "effect_outcomes": [],
+    "first_admission_move": null,
+    "first_felt": {
+     "dlvl": 1,
+     "kind": "hound",
+     "turn": 51
+    },
+    "haunt": {
+     "accepted": 1,
+     "expired": 1,
+     "pre_admitted": 1
+    },
+    "haunt_steps": 2,
+    "journal_status": "missing",
+    "last_turn": 633,
+    "loss": "no_qualifying_action",
+    "ordinary_whispers_admitted": 1,
+    "public_attention_completed": 0,
+    "qualifying_actions": {
+     "fountain_drink": 0,
+     "whistling": 0
+    },
+    "recorded_decisions": [],
+    "safe_points": {
+     "level_enter": 1,
+     "pray": 1
+    },
+    "session_details": [
+     "new"
+    ],
+    "start_budget": 2,
+    "start_sanity": 100,
+    "terminations": [],
+    "w_suppressions": []
+   },
+   "outcome": "died",
+   "save_restore": {
+    "attempted": false,
+    "session_detail": null
+   },
+   "seed": 94,
+   "start": "wizard-default-path",
+   "sync_timeouts": 0,
+   "v2": {
+    "dlvl_timeline": [
+     [
+      1,
+      1
+     ]
+    ],
+    "flees": 5,
+    "launcher": [
+     "--ordinary",
+     "--max-runtime",
+     "86400"
+    ],
+    "prayers": 1,
+    "rests": 5,
+    "whistles_found": 0
+   },
+   "whistle_in_inventory": false
+  },
+  {
+   "commands": 467,
+   "error": null,
+   "exit_code": 0,
+   "final_status": {},
+   "funnel": {
+    "counts": {
+     "admitted": 0,
+     "candidate": 0,
+     "delivered": 0,
+     "native_effect": 0,
+     "published": 0,
+     "qualifying_history": 0,
+     "trigger": 0
+    },
+    "delivery_known": true,
+    "effect_outcomes": [],
+    "first_admission_move": null,
+    "first_felt": {
+     "dlvl": 1,
+     "kind": "hound",
+     "turn": 14
+    },
+    "haunt": {
+     "accepted": 1,
+     "expired": 1,
+     "pre_admitted": 1
+    },
+    "haunt_steps": 2,
+    "journal_status": "missing",
+    "last_turn": 741,
+    "loss": "no_qualifying_action",
+    "ordinary_whispers_admitted": 1,
+    "public_attention_completed": 0,
+    "qualifying_actions": {
+     "fountain_drink": 0,
+     "whistling": 0
+    },
+    "recorded_decisions": [],
+    "safe_points": {
+     "level_enter": 1,
+     "pray": 1
+    },
+    "session_details": [
+     "new",
+     "restore"
+    ],
+    "start_budget": 2,
+    "start_sanity": 100,
+    "terminations": [],
+    "w_suppressions": []
+   },
+   "outcome": "died",
+   "save_restore": {
+    "attempted": true,
+    "session_detail": "restore"
+   },
+   "seed": 95,
+   "start": "wizard-default-path",
+   "sync_timeouts": 0,
+   "v2": {
+    "dlvl_timeline": [
+     [
+      1,
+      1
+     ]
+    ],
+    "flees": 0,
+    "launcher": [
+     "--ordinary",
+     "--max-runtime",
+     "86400"
+    ],
+    "prayers": 1,
+    "rests": 0,
+    "whistles_found": 0
+   },
+   "whistle_in_inventory": false
+  },
+  {
+   "commands": 355,
+   "error": null,
+   "exit_code": 0,
+   "final_status": {},
+   "funnel": {
+    "counts": {
+     "admitted": 0,
+     "candidate": 0,
+     "delivered": 0,
+     "native_effect": 0,
+     "published": 0,
+     "qualifying_history": 0,
+     "trigger": 0
+    },
+    "delivery_known": true,
+    "effect_outcomes": [],
+    "first_admission_move": null,
+    "first_felt": {
+     "dlvl": 1,
+     "kind": "hound",
+     "turn": 16
+    },
+    "haunt": {
+     "accepted": 1,
+     "expired": 1,
+     "pre_admitted": 1
+    },
+    "haunt_steps": 3,
+    "journal_status": "missing",
+    "last_turn": 1185,
+    "loss": "no_qualifying_action",
+    "ordinary_whispers_admitted": 1,
+    "public_attention_completed": 0,
+    "qualifying_actions": {
+     "fountain_drink": 0,
+     "whistling": 0
+    },
+    "recorded_decisions": [],
+    "safe_points": {
+     "level_enter": 1,
+     "pray": 1
+    },
+    "session_details": [
+     "new",
+     "restore"
+    ],
+    "start_budget": 2,
+    "start_sanity": 100,
+    "terminations": [],
+    "w_suppressions": []
+   },
+   "outcome": "died",
+   "save_restore": {
+    "attempted": true,
+    "session_detail": "restore"
+   },
+   "seed": 96,
+   "start": "wizard-default-path",
+   "sync_timeouts": 0,
+   "v2": {
+    "dlvl_timeline": [
+     [
+      1,
+      1
+     ]
+    ],
+    "flees": 0,
+    "launcher": [
+     "--ordinary",
+     "--max-runtime",
+     "86400"
+    ],
+    "prayers": 1,
+    "rests": 0,
+    "whistles_found": 0
+   },
+   "whistle_in_inventory": false
+  },
+  {
+   "commands": 917,
+   "error": null,
+   "exit_code": 0,
+   "final_status": {
+    "dlvl": 3,
+    "hp": 24,
+    "hp_max": 24,
+    "hunger": null,
+    "turn": 2008
+   },
+   "funnel": {
+    "counts": {
+     "admitted": 0,
+     "candidate": 0,
+     "delivered": 0,
+     "native_effect": 0,
+     "published": 0,
+     "qualifying_history": 0,
+     "trigger": 0
+    },
+    "delivery_known": true,
+    "effect_outcomes": [],
+    "first_admission_move": null,
+    "first_felt": {
+     "dlvl": 1,
+     "kind": "hound",
+     "turn": 8
+    },
+    "haunt": {
+     "accepted": 1,
+     "expired": 1,
+     "pre_admitted": 1
+    },
+    "haunt_steps": 4,
+    "journal_status": "missing",
+    "last_turn": 2008,
+    "loss": "no_qualifying_action",
+    "ordinary_whispers_admitted": 1,
+    "public_attention_completed": 0,
+    "qualifying_actions": {
+     "fountain_drink": 0,
+     "whistling": 0
+    },
+    "recorded_decisions": [],
+    "safe_points": {
+     "level_enter": 3,
+     "pray": 2
+    },
+    "session_details": [
+     "new",
+     "restore"
+    ],
+    "start_budget": 2,
+    "start_sanity": 100,
+    "terminations": [],
+    "w_suppressions": []
+   },
+   "outcome": "turn_limit",
+   "save_restore": {
+    "attempted": true,
+    "session_detail": "restore"
+   },
+   "seed": 97,
+   "start": "wizard-default-path",
+   "sync_timeouts": 0,
+   "v2": {
+    "dlvl_timeline": [
+     [
+      1,
+      1
+     ],
+     [
+      794,
+      2
+     ],
+     [
+      1120,
+      3
+     ]
+    ],
+    "flees": 0,
+    "launcher": [
+     "--ordinary",
+     "--max-runtime",
+     "86400"
+    ],
+    "prayers": 2,
+    "rests": 0,
+    "whistles_found": 0
+   },
+   "whistle_in_inventory": false
+  },
+  {
+   "commands": 518,
+   "error": null,
+   "exit_code": 0,
+   "final_status": {
+    "dlvl": 2,
+    "hp": 20,
+    "hp_max": 20,
+    "hunger": null,
+    "turn": 2014
+   },
+   "funnel": {
+    "counts": {
+     "admitted": 0,
+     "candidate": 0,
+     "delivered": 0,
+     "native_effect": 0,
+     "published": 0,
+     "qualifying_history": 0,
+     "trigger": 0
+    },
+    "delivery_known": true,
+    "effect_outcomes": [],
+    "first_admission_move": null,
+    "first_felt": {
+     "dlvl": 1,
+     "kind": "hound",
+     "turn": 9
+    },
+    "haunt": {
+     "accepted": 1,
+     "expired": 1,
+     "pre_admitted": 1
+    },
+    "haunt_steps": 2,
+    "journal_status": "missing",
+    "last_turn": 2014,
+    "loss": "no_qualifying_action",
+    "ordinary_whispers_admitted": 1,
+    "public_attention_completed": 0,
+    "qualifying_actions": {
+     "fountain_drink": 0,
+     "whistling": 0
+    },
+    "recorded_decisions": [],
+    "safe_points": {
+     "level_enter": 2,
+     "pray": 2
+    },
+    "session_details": [
+     "new",
+     "restore"
+    ],
+    "start_budget": 2,
+    "start_sanity": 100,
+    "terminations": [],
+    "w_suppressions": []
+   },
+   "outcome": "turn_limit",
+   "save_restore": {
+    "attempted": true,
+    "session_detail": "restore"
+   },
+   "seed": 98,
+   "start": "wizard-default-path",
+   "sync_timeouts": 0,
+   "v2": {
+    "dlvl_timeline": [
+     [
+      1,
+      1
+     ],
+     [
+      965,
+      2
+     ]
+    ],
+    "flees": 3,
+    "launcher": [
+     "--ordinary",
+     "--max-runtime",
+     "86400"
+    ],
+    "prayers": 2,
+    "rests": 8,
+    "whistles_found": 0
+   },
+   "whistle_in_inventory": false
+  },
+  {
+   "commands": 426,
+   "error": null,
+   "exit_code": 0,
+   "final_status": {},
+   "funnel": {
+    "counts": {
+     "admitted": 0,
+     "candidate": 1,
+     "delivered": 0,
+     "native_effect": 0,
+     "published": 1,
+     "qualifying_history": 1,
+     "trigger": 0
+    },
+    "delivery_known": true,
+    "effect_outcomes": [],
+    "first_admission_move": null,
+    "first_felt": null,
+    "haunt": {
+     "rejected": 1
+    },
+    "haunt_steps": 0,
+    "journal_status": "missing",
+    "last_turn": 802,
+    "loss": "rejected:origin_unbound",
+    "ordinary_whispers_admitted": 1,
+    "public_attention_completed": 0,
+    "qualifying_actions": {
+     "fountain_drink": 2,
+     "whistling": 0
+    },
+    "recorded_decisions": [
+     {
+      "at": 3,
+      "move": 704,
+      "reasons": [
+       "origin_unbound"
+      ],
+      "safe": 3
+     }
+    ],
+    "safe_points": {
+     "level_enter": 2,
+     "pray": 1
+    },
+    "session_details": [
+     "new",
+     "restore"
+    ],
+    "start_budget": 2,
+    "start_sanity": 100,
+    "terminations": [],
+    "w_suppressions": []
+   },
+   "outcome": "died",
+   "save_restore": {
+    "attempted": true,
+    "session_detail": "restore"
+   },
+   "seed": 99,
+   "start": "wizard-default-path",
+   "sync_timeouts": 0,
+   "v2": {
+    "dlvl_timeline": [
+     [
+      1,
+      1
+     ],
+     [
+      369,
+      2
+     ]
+    ],
+    "flees": 0,
+    "launcher": [
+     "--ordinary",
+     "--max-runtime",
+     "86400"
+    ],
+    "prayers": 1,
+    "rests": 1,
+    "whistles_found": 0
+   },
+   "whistle_in_inventory": false
+  },
+  {
+   "commands": 623,
+   "error": null,
+   "exit_code": 0,
+   "final_status": {},
+   "funnel": {
+    "counts": {
+     "admitted": 0,
+     "candidate": 0,
+     "delivered": 0,
+     "native_effect": 0,
+     "published": 0,
+     "qualifying_history": 0,
+     "trigger": 0
+    },
+    "delivery_known": true,
+    "effect_outcomes": [],
+    "first_admission_move": null,
+    "first_felt": {
+     "dlvl": 1,
+     "kind": "hound",
+     "turn": 8
+    },
+    "haunt": {
+     "accepted": 1,
+     "expired": 1,
+     "pre_admitted": 1
+    },
+    "haunt_steps": 4,
+    "journal_status": "missing",
+    "last_turn": 1505,
+    "loss": "no_qualifying_action",
+    "ordinary_whispers_admitted": 1,
+    "public_attention_completed": 0,
+    "qualifying_actions": {
+     "fountain_drink": 0,
+     "whistling": 0
+    },
+    "recorded_decisions": [],
+    "safe_points": {
+     "level_enter": 1,
+     "pray": 1
+    },
+    "session_details": [
+     "new",
+     "restore"
+    ],
+    "start_budget": 2,
+    "start_sanity": 100,
+    "terminations": [],
+    "w_suppressions": []
+   },
+   "outcome": "died",
+   "save_restore": {
+    "attempted": true,
+    "session_detail": "restore"
+   },
+   "seed": 100,
+   "start": "wizard-default-path",
+   "sync_timeouts": 0,
+   "v2": {
+    "dlvl_timeline": [
+     [
+      1,
+      1
+     ]
+    ],
+    "flees": 12,
+    "launcher": [
+     "--ordinary",
+     "--max-runtime",
+     "86400"
+    ],
+    "prayers": 1,
+    "rests": 8,
+    "whistles_found": 0
+   },
+   "whistle_in_inventory": false
+  }
+ ],
+ "identity": {
+  "clock_source_sha256": "19795c57db9c74ad35584ca152d47b50102fc01fcddd4734beeec5671b67d58b",
+  "command": "python3 scripts/seed_sweep.py --seeds 1-100 --policy baseline-v2 --starts wizard-default-path --out <stem>",
+  "dnethack_sha256": "c0a81c6d590128b49f64f145ac86840332efef1dd2c24abed178f922e427a8f7",
+  "funnel_source_sha256": "67597283dcf69368a707cb42aa464143ec48bdc3d33cb23c681f047b90983ba6",
+  "launcher": [
+   "--ordinary",
+   "--next-use",
+   "--no-haunt",
+   "--max-runtime",
+   "86400"
+  ],
+  "nhdat_sha256": "004084722d17114ee579cd084d47c467a8154956998bd1b819c02c33cda608d1",
+  "player_source_sha256": "3c5732bdde63af3461523546abc87004586afb77dcb3e9d61af8492f27d7cb6c",
+  "policy": "baseline-v2",
+  "policy_params": {
+   "flee_in_trouble": true,
+   "fountain_quaffs_per_level": 2,
+   "max_commands": 8000,
+   "max_dlvl": 5,
+   "max_turns": 2000,
+   "min_prayer_turn": 100,
+   "min_turns_per_level": 300,
+   "no_food_retry_turns": 200,
+   "p_fountain": 0.25,
+   "p_fountain_no_whistle": 1.0,
+   "p_search": 0.05,
+   "p_seek_tool": 0.5,
+   "p_travel_explore": 0.8,
+   "p_whistle": 0.03,
+   "prayer_gap_turns": 1000,
+   "rest_below": 0.67,
+   "rest_command": "20s",
+   "save_restore_turn": 700,
+   "settle_pages": 400,
+   "stall_commands": 200,
+   "travel_retries": 3,
+   "version": 2
+  },
+  "report_v": 3,
+  "revision": "9579e3419c3ded0424b2f198acb1737c49b3b1d2",
+  "seeds": [
+   1,
+   100
+  ],
+  "start_launchers": {
+   "wizard-default-path": [
+    "--ordinary",
+    "--max-runtime",
+    "86400"
+   ]
+  },
+  "starts": {
+   "wizard-default-path": "name:ChaosReview,role:Wiz,race:human,gender:male,align:neutral,pettype:kitten,windowtype:tty,!news,!legacy,time,!splash_screen,!perm_invent,!autopickup,!mail"
+  }
+ },
+ "report_sha256": "7af38248f62d477e42cc539ddd323d1866ebf24e870f65f8470428bdc6a50973"
+}
