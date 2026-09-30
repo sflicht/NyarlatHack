@@ -103,6 +103,15 @@ LAUNCHER = ["--ordinary", "--next-use", "--no-haunt", "--max-runtime", "86400"]
 # together.
 START_LAUNCHER = {"bard-default-path": ["--ordinary", "--max-runtime", "86400"]}
 START_OPTIONS["bard-default-path"] = None
+# #179 remainder (for #1's "a default human Wizard can notice it"): a human
+# Wizard, no inheritance, on the same ordinary default launcher. Alignment and
+# pet are fixed so the start never depends on a random choice.
+START_LAUNCHER["wizard-default-path"] = START_LAUNCHER["bard-default-path"]
+START_OPTIONS["wizard-default-path"] = (
+    "name:ChaosReview,role:Wiz,race:human,gender:male,align:neutral,"
+    "pettype:kitten,windowtype:tty,!news,!legacy,time,!splash_screen,"
+    "!perm_invent,!autopickup"
+)
 DIRECTOR_SETTLED = (
     b"envelope_published_not_admitted",
     b"abstained",
