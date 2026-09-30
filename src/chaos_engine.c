@@ -422,6 +422,24 @@ void chaos_observation_end(long root) {
 int chaos_door(int threshold) {
     return chaos_rule(&u.chaos, CHAOS_DOOR, moves, threshold);
 }
+/* #1 door_open observation: one root per closed-door attempt by the hero,
+ * noticed only through the native "The door opens."/"The door resists!"
+ * message that follows. Returns its argument, so the caller's rnl(20) test
+ * is unchanged. Excluded from the next-use lookback and episode summary. */
+static long door_root;
+int chaos_door_attempt(int opened) {
+    door_root = chaos_observation_begin(CHAOS_OBS_OP_DOOR_OPEN);
+    if (door_root > 0)
+        chaos_observation_arm(CHAOS_OBS_OP_DOOR_OPEN,
+            opened ? CHAOS_OBS_FACT_OPENED : CHAOS_OBS_FACT_RESISTED);
+    return opened;
+}
+void chaos_door_attempt_end(void) {
+    long root = door_root;
+    door_root = 0;
+    chaos_observation_disarm();
+    if (root > 0) chaos_observation_end(root);
+}
 int chaos_food(int amount) {
     return food_metabolism() ? chaos_rule(&u.chaos, CHAOS_HUNGER, moves, amount) : amount;
 }

@@ -190,8 +190,11 @@ def project_episodes(raw: bytes) -> dict:
                     end_seq=None,
                     stage="incomplete",
                 )
-                omitted += len(roots) == roots.maxlen
-                roots.append(active)
+                # #1: excluded families (door_open) keep their chronology
+                # checks but never occupy or evict the bounded lookback.
+                if _FAMILIES[operation]["projection"] != "excluded":
+                    omitted += len(roots) == roots.maxlen
+                    roots.append(active)
             else:
                 if (
                     active is None

@@ -116,9 +116,19 @@ def validate_observations(o):
         word(p["scope"]) and p["evidence"] == "first_two_latest", "projection policy"
     )
     for row in families:
+        # #1: "excluded" families (door_open) never enter the episode summary
+        # or the 32-root next-use lookback. The three original families stay
+        # projected; an excluded family can never block.
         require(
             type(row["allow_blocked"]) is bool
-            and row["projection"] == "completed_notice_by_operation",
+            and (
+                row["projection"] == "completed_notice_by_operation"
+                or (
+                    row["projection"] == "excluded"
+                    and row["id"] > 3
+                    and not row["allow_blocked"]
+                )
+            ),
             "family policy",
         )
         require(

@@ -8,7 +8,12 @@ from collections import deque
 import json
 
 from .director import DEFAULT_BYTES, DEFAULT_EVENTS, State, eligible
-from .episodes import _snapshot_projection, parse_episode_event, project_episodes
+from .episodes import (
+    _FAMILIES,
+    _snapshot_projection,
+    parse_episode_event,
+    project_episodes,
+)
 from .protocol import MAX_INT, REGISTRY, LEGACY_REGISTRY, VITALS, encode_request
 
 PUBLIC_CONTEXT_BYTES = 6144  # Leave room in the 8192-byte model input for its menu.
@@ -62,6 +67,12 @@ class HistoryState:
             if row["v"] in (2, 4):
                 payload = row["observation"]
                 stage = payload["stage"]
+                if payload["operation"] != "none" and (
+                    _FAMILIES[payload["operation"]]["projection"] == "excluded"
+                ):
+                    # #1: door_open roots are validated by project_episodes
+                    # above but never occupy the 32-root next-use lookback.
+                    continue
                 if stage == "enabled":
                     marker = True
                 elif stage == "started":

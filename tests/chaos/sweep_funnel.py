@@ -113,13 +113,34 @@ def first_felt(events, effects):
       player can see the hound move, #164);
     - "next_use_W": the whistle-attention notice the player sees (#196);
     - "next_use_F": a delivered fountain remap (the engine's effect row; the
-      new result is what the player reads when drinking).
+      new result is what the player reads when drinking);
+    - "door" (#1): the first "The door resists!" notice (door_open
+      observation, fact resisted) while an accepted door_reluctance effect
+      is active, i.e. after its ACK and before its expiry.
     Returns {"turn", "kind"} or None. Dlvl is added by the sweep from the
     player's public status-line timeline.
     """
     found = []
+    door_until = None  # expiry turn of the active door_reluctance effect
     for e in events:
         o = e.get("observation")
+        if (
+            e["event"] == "ack"
+            and e.get("status") == "accepted"
+            and e.get("mutation") == "door_reluctance"
+        ):
+            door_until = e["expires"]
+        elif e["event"] == "expiry" and e["detail"] == "door_reluctance":
+            door_until = None
+        if (
+            o
+            and door_until is not None
+            and e["turn"] < door_until
+            and o["operation"] == "door_open"
+            and o["stage"] == "notice"
+            and o.get("fact") == "resisted"
+        ):
+            found.append((e["turn"], "door"))
         if e["event"] == "haunt_step":
             found.append((e["turn"], "hound"))
         elif (
