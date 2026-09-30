@@ -290,9 +290,17 @@ class HauntRoomTests(RetainOnFailure):
         self.assertLessEqual(report["max_damage"], 4, report)
 
     def test_cornered_map_bot_still_avoids_water_doors_traps(self):
-        # The same squares as water, a closed door or a trap stay off limits:
-        # the bot is cornered exactly as before #194.
-        for name, glyph in (("water", "~"), ("closed-door", "+"), ("trap", "^")):
+        # The same squares as water, a closed door, a trap or a doorless
+        # doorway stay off limits: the bot is cornered exactly as before #194.
+        # Doorways are excluded on purpose (see bot_square in chaos_haunt.c):
+        # the one-step-greedy bot parks in them and the plain-floor hound pins
+        # it there, which doubled cornered trials in the #194 sweep.
+        for name, glyph in (
+            ("water", "~"),
+            ("closed-door", "+"),
+            ("trap", "^"),
+            ("doorway", "D"),
+        ):
             with self.subTest(square=name):
                 _, report, _ = self.cornered("cornered-" + name, glyph, glyph)
                 self.assertIsNotNone(report)
