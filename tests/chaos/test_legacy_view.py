@@ -12,6 +12,7 @@ import unittest
 
 from chaos import protocol
 from chaos._protocol_contract import DURATION_CAP, LEGACY, TELEGRAPHS
+from chaos.episodes import parse_episode_event
 from test_director import ack, event
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -64,13 +65,20 @@ class LegacyView(unittest.TestCase):
     def test_committed_historical_logs_still_validate(self):
         paths = sorted((ROOT / "docs/evidence").rglob("events.jsonl"))
         self.assertGreaterEqual(len(paths), 10)
-        rows = 0
+        rows = observations = 0
         for path in paths:
             for line in path.read_bytes().splitlines():
                 with self.subTest(path=str(path.relative_to(ROOT))):
-                    protocol.parse_event(line)
+                    # Each row through the reader the director uses for it:
+                    # v1/v3 rows through the legacy event parser, observation
+                    # rows (v2/v4) through the strict observation parser.
+                    if json.loads(line)["v"] in (2, 4):
+                        parse_episode_event(line)
+                        observations += 1
+                    else:
+                        protocol.parse_event(line)
                 rows += 1
-        self.assertGreater(rows, 100)
+        self.assertGreater(rows - observations, 100)
         for path in sorted((ROOT / "docs/evidence").rglob("whispers.jsonl")):
             for line in path.read_bytes().splitlines():
                 row = json.loads(line)
