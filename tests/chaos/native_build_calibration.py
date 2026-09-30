@@ -607,7 +607,7 @@ def _measure(inputs):
     curio_version = _macro(curio_header, "CHAOS_CURIO_VERSION")
     policy_header = _read(root / "include/chaos_protocol.h", 65536).decode("ascii")
     policy_version = _macro(policy_header, "CHAOS_STATE_VERSION")
-    _require(policy_version in (1, 2, 3), "unsupported chaos state policy")
+    _require(policy_version in (1, 2, 3, 4), "unsupported chaos state policy")
     source_limit = _macro(curio_header, "CHAOS_CURIO_SOURCE")
     _require(
         curio_version == 1 and source_limit == 4096,

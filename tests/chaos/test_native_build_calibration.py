@@ -766,8 +766,8 @@ class CosmeticProfileTests(ProfileTests):
                     self.c.validate_native_profile(self.inputs, self.schema)
         self.dwarf = original
         path = self.root / "include/chaos_protocol.h"
-        # #164: v3 is now current (pacing fields); 4 is the unsupported probe.
-        path.write_text("#define CHAOS_STATE_VERSION 4\n")
+        # #1: v4 is now current (door_reluctance effect slot); 5 is the probe.
+        path.write_text("#define CHAOS_STATE_VERSION 5\n")
         self.baseline[path] = path.read_bytes()
         with self.assertRaisesRegex(
             self.c.CalibrationError, "unsupported chaos state policy"

@@ -167,6 +167,55 @@ def validate_observations(o):
     require(len(suffix) < 512, "writer suffix cap")
 
 
+def all_telegraphs(d):
+    """Frozen telegraphs 1..3, then the additive extension rows (#1)."""
+    return list(d["telegraphs"]) + list(d["telegraph_extensions"])
+
+
+def duration_headroom(d):
+    """The larger of the frozen admission headroom and the additive cap (#1)."""
+    return max(
+        d["limits"]["admission_turn_headroom"],
+        d["mutation_limits"]["duration_cap"],
+    )
+
+
+def validate_extensions(d):
+    def require(ok, why):
+        if not ok:
+            raise ValueError("extensions: " + why)
+
+    rows = d["telegraph_extensions"]
+    require(type(rows) is list, "telegraph extension rows")
+    for i, row in enumerate(rows, len(d["telegraphs"]) + 1):
+        require(
+            type(row) is dict
+            and set(row) == {"id", "text"}
+            and type(row["id"]) is int
+            and row["id"] == i,
+            "telegraph extension identity",
+        )
+        require(
+            type(row["text"]) is str
+            and bool(row["text"])
+            and all(32 <= ord(c) < 127 for c in row["text"]),
+            "ASCII telegraph extension",
+        )
+    texts = [r["text"] for r in all_telegraphs(d)]
+    require(len(texts) == len(set(texts)), "unique telegraph text")
+    limits = d["mutation_limits"]
+    require(
+        type(limits) is dict and set(limits) == {"duration_cap"}, "mutation limit keys"
+    )
+    cap = limits["duration_cap"]
+    # Bounded well inside the long turn counter; admission guards LONG_MAX - cap.
+    require(
+        type(cap) is int
+        and d["limits"]["admission_turn_headroom"] <= cap <= 100000,
+        "duration cap",
+    )
+
+
 def validate(d):
     def require(ok, why):
         if not ok:
@@ -175,7 +224,7 @@ def validate(d):
     require(
         set(d)
         == set(
-            "format legacy cosmetic observations versions limits budget pacing non_effect_spenders request_fields mutations telegraphs ambient_messages results events phases ack_statuses journal_status event_numbers vitals ack_numbers ack_number_bounds reader_policy wire_order".split()
+            "format legacy cosmetic observations versions limits budget pacing non_effect_spenders request_fields mutations telegraphs ambient_messages results events phases ack_statuses journal_status event_numbers vitals ack_numbers ack_number_bounds reader_policy wire_order telegraph_extensions mutation_limits".split()
         ),
         "contract keys",
     )
@@ -203,6 +252,9 @@ def validate(d):
         "frozen shared legacy metadata",
     )
     require(type(d["format"]) is int and d["format"] == 1, "unknown contract format")
+    # #1: additions live in their own sections so the frozen shared block
+    # above stays byte-identical. Legacy readers never consume these.
+    validate_extensions(d)
     for section, keys in {
         "versions": "request event state",
         "limits": "max_int max_counter request_bytes event_input_cap event_detail_characters request_string_buffer admission_turn_headroom",
@@ -250,7 +302,7 @@ def validate(d):
         and all(type(v) is int for v in d["cosmetic"].values()),
         "cosmetic policy",
     )
-    require(d["versions"] == dict(request=1, event=3, state=3), "current versions")
+    require(d["versions"] == dict(request=1, event=3, state=4), "current versions")
     validate_observations(d["observations"])
     limits = d["limits"]
     require(
@@ -337,6 +389,7 @@ def validate(d):
                 and all(32 <= ord(c) < 127 for c in row["text"]),
                 "ASCII message",
             )
+    signals = all_telegraphs(d)
     for row in d["mutations"]:
         require(
             set(row)
@@ -374,7 +427,7 @@ def validate(d):
             ),
             "cost",
         )
-        require(1 <= row["telegraph"] <= len(d["telegraphs"]), "telegraph reference")
+        require(1 <= row["telegraph"] <= len(signals), "telegraph reference")
         require(
             len(row["name"]) < limits["request_string_buffer"], "request name length"
         )
@@ -385,7 +438,7 @@ def validate(d):
             and 0
             <= row["duration"][0]
             <= row["duration"][1]
-            <= limits["admission_turn_headroom"],
+            <= duration_headroom(d),
             "mutation bounds",
         )
         require(row["rule"] in ("none", "halve", "double"), "rule tag")
@@ -483,6 +536,8 @@ def render(d):
         "MAX_COUNTER": str(d["limits"]["max_counter"]) + "L",
         "REQUEST_STRING_BUFFER": d["limits"]["request_string_buffer"],
         "TURN_HEADROOM": d["limits"]["admission_turn_headroom"],
+        "DURATION_CAP": d["mutation_limits"]["duration_cap"],
+        "DURATION_HEADROOM": duration_headroom(d),
     }
     constants.update({"COSMETIC_" + k.upper(): v for k, v in d["cosmetic"].items()})
     constants.update({"BUDGET_" + k.upper(): v for k, v in d["budget"].items()})
@@ -542,17 +597,17 @@ def render(d):
             ],
         )
     ]
-    for key, field, name in (
-        ("telegraphs", "id", "SIGNAL"),
-        ("ambient_messages", "value", "AMBIENT_MESSAGE"),
+    for rows, field, name in (
+        (all_telegraphs(d), "id", "SIGNAL"),
+        (d["ambient_messages"], "value", "AMBIENT_MESSAGE"),
     ):
         h += [
             macro(
                 "CHAOS_" + name + "_ROWS(X)",
-                [f"X({r[field]}, {q(r['text'])})" for r in d[key]],
+                [f"X({r[field]}, {q(r['text'])})" for r in rows],
             )
         ]
-        h += [f"#define CHAOS_{name}_COUNT {len(d[key])}"]
+        h += [f"#define CHAOS_{name}_COUNT {len(rows)}"]
     fields = d["request_fields"]
     h += [
         f"#define CHAOS_FIELD_COUNT {len(fields)}",
@@ -703,6 +758,8 @@ def render(d):
         OBSERVATION_VERSION=o["wire_version"],
         OBSERVATIONS=o,
         MAX_INT=d["limits"]["max_int"],
+        TELEGRAPHS={r["id"]: r["text"] for r in all_telegraphs(d)},
+        DURATION_CAP=d["mutation_limits"]["duration_cap"],
         FIELDS=tuple(r["wire"] for r in fields),
         REGISTRY={
             r["name"]: (r["cost"], r["director_sanity_max"], r["telegraph"])

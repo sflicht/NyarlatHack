@@ -27,6 +27,7 @@ int chaos_event_checked(const char *, const char *, const char *);
 void chaos_safe(const char *);
 int chaos_ward_count(int);
 int chaos_food(int);
+int chaos_door(int);
 long chaos_observation_begin(int);
 void chaos_observation_end(long);
 void chaos_observation_arm(int, int);
@@ -89,6 +90,7 @@ void chaos_reveal_xlog(FILE *rfile);
 #define chaos_safe(a) ((void)0)
 #define chaos_ward_count(n) (n)
 #define chaos_food(n) (n)
+#define chaos_door(n) (n)
 #define chaos_observation_begin(operation) (0L)
 #define chaos_observation_end(root) ((void)0)
 #define chaos_observation_arm(operation,fact) ((void)0)

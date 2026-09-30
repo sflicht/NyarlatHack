@@ -272,7 +272,7 @@ int chaos_admit(struct chaos_state *s, const struct chaos_request *r, long turn,
     s->last_id = r->id;
     if(r->at != s->safe) return CHAOS_SCHEDULE;
     chaos_expire(s,turn);
-    if(!eligible || turn < 0 || turn > LONG_MAX - CHAOS_TURN_HEADROOM ||
+    if(!eligible || turn < 0 || turn > LONG_MAX - CHAOS_DURATION_HEADROOM ||
        (mutations[r->kind].sanity_max >= 0 && sanity > mutations[r->kind].sanity_max) ||
        (mutations[r->kind].ordinary_food && eligible != 1)) return CHAOS_INELIGIBLE;
     if(r->kind == CHAOS_AMBIENT) {

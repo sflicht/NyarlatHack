@@ -100,7 +100,7 @@ PACING = {'version': 1,
  'level_cap': 3,
  'witnessed_credit': 1,
  'witnessed_cap': 2}
-STATE_VERSION = 3
+STATE_VERSION = 4
 OBSERVATION_VERSION = 4
 OBSERVATIONS = {'format': 1,
  'wire_version': 4,
@@ -251,8 +251,16 @@ OBSERVATIONS = {'format': 1,
                 'evidence': 'first_two_latest',
                 'summary_bytes': 4096}}
 MAX_INT = 2147483647
+TELEGRAPHS = {1: 'A distant whisper brushes against your thoughts.',
+ 2: 'The lines of your wards seem thin and uncertain.',
+ 3: 'An unnatural hunger coils in your stomach.',
+ 4: 'The doors of this place seem to lean against you.'}
+DURATION_CAP = 300
 FIELDS = ('v', 'id', 'mutation', 'value', 'duration', 'telegraph', 'at')
-REGISTRY = {'ambient': (0, 100, 1), 'ward_efficacy': (3, 80, 2), 'hunger_rate': (3, 90, 3)}
+REGISTRY = {'ambient': (0, 100, 1),
+ 'ward_efficacy': (3, 80, 2),
+ 'hunger_rate': (3, 90, 3),
+ 'door_reluctance': (1, 100, 4)}
 MUTATIONS = {'ambient': {'symbol': 'CHAOS_AMBIENT',
              'id': 0,
              'name': 'ambient',
@@ -291,7 +299,20 @@ MUTATIONS = {'ambient': {'symbol': 'CHAOS_AMBIENT',
                  'ordinary_food': True,
                  'persistent': True,
                  'rule': 'double',
-                 'cosmetic_cost': 0}}
+                 'cosmetic_cost': 0},
+ 'door_reluctance': {'symbol': 'CHAOS_DOOR',
+                     'id': 3,
+                     'name': 'door_reluctance',
+                     'cost': 1,
+                     'value': [50, 50],
+                     'duration': [1, 300],
+                     'telegraph': 4,
+                     'engine_sanity_max': None,
+                     'director_sanity_max': 100,
+                     'ordinary_food': False,
+                     'persistent': True,
+                     'rule': 'halve',
+                     'cosmetic_cost': 0}}
 NON_EFFECT_SPENDERS = {'curio': (1, 1), 'haunt': (2, 2)}
 EVENTS = frozenset(('eat',
  'read',

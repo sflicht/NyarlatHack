@@ -417,6 +417,11 @@ void chaos_observation_end(long root) {
     }
     observation_clear();
 }
+/* #1 door_reluctance: halves only the threshold of the hero's own attempt to
+ * open a closed door. The caller's rnl(20) draw is made either way. */
+int chaos_door(int threshold) {
+    return chaos_rule(&u.chaos, CHAOS_DOOR, moves, threshold);
+}
 int chaos_food(int amount) {
     return food_metabolism() ? chaos_rule(&u.chaos, CHAOS_HUNGER, moves, amount) : amount;
 }
