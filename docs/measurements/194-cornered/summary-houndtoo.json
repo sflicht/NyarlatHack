@@ -1,0 +1,135 @@
+{
+ "before": {
+  "games": 200,
+  "outcomes": {
+   "accepted": 151,
+   "cornered": 3,
+   "no_trial": 42,
+   "stuck": 4
+  },
+  "trial_contacts_median": 8.0,
+  "trial_max_damage_max": 2,
+  "admitted_games": 151,
+  "admitted_with_melee": 0,
+  "admitted_melee_msgs": 0,
+  "admitted_hp_lost_total": 137,
+  "admitted_hp_lost_max": 12,
+  "admitted_hp_lost_ge5": 5,
+  "admitted_died": 0
+ },
+ "after": {
+  "games": 200,
+  "outcomes": {
+   "accepted": 149,
+   "cornered": 9,
+   "no_trial": 42
+  },
+  "trial_contacts_median": 7.5,
+  "trial_max_damage_max": 2,
+  "admitted_games": 149,
+  "admitted_with_melee": 0,
+  "admitted_melee_msgs": 0,
+  "admitted_hp_lost_total": 134,
+  "admitted_hp_lost_max": 12,
+  "admitted_hp_lost_ge5": 6,
+  "admitted_died": 0
+ },
+ "transitions": {
+  "accepted -> accepted": 142,
+  "accepted -> cornered": 9,
+  "cornered -> accepted": 3,
+  "no_trial -> no_trial": 42,
+  "stuck -> accepted": 4
+ },
+ "same_start_both_sides": 200,
+ "newly_accepted_admitted": [
+  {
+   "seed": 7,
+   "hp0": 13,
+   "hp_lost": 1,
+   "melee_msgs": 0,
+   "died": false,
+   "keys": 62,
+   "turn0": 10,
+   "haunt_steps": 1,
+   "expired": true
+  },
+  {
+   "seed": 15,
+   "hp0": 12,
+   "hp_lost": 1,
+   "melee_msgs": 0,
+   "died": false,
+   "keys": 65,
+   "turn0": 11,
+   "haunt_steps": 5,
+   "expired": true
+  },
+  {
+   "seed": 53,
+   "hp0": 13,
+   "hp_lost": 0,
+   "melee_msgs": 0,
+   "died": false,
+   "keys": 60,
+   "turn0": 9,
+   "haunt_steps": 6,
+   "expired": true
+  },
+  {
+   "seed": 64,
+   "hp0": 13,
+   "hp_lost": 0,
+   "melee_msgs": 0,
+   "died": false,
+   "keys": 60,
+   "turn0": 10,
+   "haunt_steps": 6,
+   "expired": true
+  },
+  {
+   "seed": 80,
+   "hp0": 13,
+   "hp_lost": 1,
+   "melee_msgs": 0,
+   "died": false,
+   "keys": 61,
+   "turn0": 5,
+   "haunt_steps": 1,
+   "expired": true
+  },
+  {
+   "seed": 90,
+   "hp0": 12,
+   "hp_lost": 0,
+   "melee_msgs": 0,
+   "died": false,
+   "keys": 62,
+   "turn0": 5,
+   "haunt_steps": 5,
+   "expired": true
+  },
+  {
+   "seed": 156,
+   "hp0": 13,
+   "hp_lost": 0,
+   "melee_msgs": 0,
+   "died": false,
+   "keys": 61,
+   "turn0": 7,
+   "haunt_steps": 3,
+   "expired": true
+  }
+ ],
+ "still_cornered_after": [
+  50,
+  62,
+  71,
+  74,
+  99,
+  103,
+  148,
+  173,
+  179
+ ]
+}

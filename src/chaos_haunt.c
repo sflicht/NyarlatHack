@@ -12,6 +12,31 @@ static int pending_state, script_error, blocked_move, budget_logged;
 static int simple_floor(int x,int y) {
  return isok(x,y) && (levl[x][y].typ==ROOM || levl[x][y].typ==CORR) && !t_at(x,y);
 }
+/* #194: a square the shadow trial's evasive bot may step onto: the
+ * non-door squares an ordinary player walks. Plain floor and corridor;
+ * floor-like ground (grass, soil, sand); stairs, ladders and furniture
+ * (fountain, forge, throne, sink, grave, altar). Never water, lava, ice, air,
+ * or any trap (the old rule; stricter than a player, who would walk onto a
+ * trap it has not seen).
+ * Doorways are excluded on purpose, although a player can walk through an
+ * open one. The bot is one-step greedy (it takes the single step farthest
+ * from the hound), so given doorways it parks in one, and the hound, whose
+ * own steps stay simple_floor, waits beside it or pins it there. In a paired
+ * 200-seed real sweep that raised cornered trials from 3 to 6; without
+ * doorways they fell to 2 with no regressions (Sam chose this, 2026-09-30;
+ * docs/measurements/194-cornered/). If the player already stands in a
+ * doorway, the bot may leave it orthogonally only, as the game allows. The
+ * spawn square also keeps simple_floor. Terrain only: no RNG, nothing
+ * hidden. */
+static int bot_square(int fx,int fy,int x,int y) {
+ int t;
+ if(!isok(x,y) || t_at(x,y))return 0;
+ t=levl[x][y].typ;
+ if(!(t==ROOM || t==CORR || t==GRASS || t==SOIL || t==SAND || IS_FURNITURE(t)))return 0;
+ if(IS_DOOR(levl[fx][fy].typ) && fx!=x && fy!=y)return 0;
+ return 1;
+}
+
 static void remember_position(void) {
  struct chaos_haunt_state *h=&u.haunt;int i;
  if(h->count==CHAOS_TRAIL) {
@@ -121,7 +146,7 @@ static void trial(void *arg,struct chaos_shadow_report *r) {
   for(j=0;j<8;++j) {
    static const int xs[8]={1,1,0,-1,-1,-1,0,1},ys[8]={0,1,1,1,0,-1,-1,-1};
    dx=xs[(j+i)%8];dy=ys[(j+i)%8];
-   if(simple_floor(u.ux+dx,u.uy+dy) && !m_at(u.ux+dx,u.uy+dy) &&
+   if(bot_square(u.ux,u.uy,u.ux+dx,u.uy+dy) && !m_at(u.ux+dx,u.uy+dy) &&
       goodpos(u.ux+dx,u.uy+dy,&youmonst,0)) {
     score=dist2(u.ux+dx,u.uy+dy,m->mx,m->my);
     if(score>best){best=score;bx=u.ux+dx;by=u.uy+dy;}

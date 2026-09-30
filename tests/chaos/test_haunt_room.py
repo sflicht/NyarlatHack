@@ -267,6 +267,47 @@ class HauntRoomTests(RetainOnFailure):
                 )
                 self.assert_nothing_spent(fields, report, run)
 
+    # --- #194: the evasive bot walks where a player can -----------------------
+    CORNERED = ROOT / "tests/chaos/haunt_maps/cornered-190-game24.txt"
+
+    def cornered(self, name, stairs="<", fountain="{"):
+        """Recorded #190 cornered map (real game 24 of the widened sweep,
+        rebuilt from its screen; the pet removed, since #201 refuses the trial
+        while it stands that close). The player starts between the up stairs
+        (west) and a fountain (north-west); the hound spawns in the room."""
+        text = self.CORNERED.read_text().replace("<", stairs).replace("{", fountain)
+        path = self.root / (name + ".map")
+        path.write_text(text)
+        return self.run_room(name, [1, 1, 0, 0, 1], HAUNT_ROOM_MAP=str(path))
+
+    def test_cornered_map_bot_uses_stairs_and_fountain(self):
+        # Before #194 the bot walked plain floor only: here it was boxed in by
+        # the stairs, the fountain and the walls, never got 3 squares away and
+        # the trial was refused (accepted 0, escaped 0, 60 contacts).
+        _, report, _ = self.cornered("cornered-194")
+        self.assertIsNotNone(report)
+        self.assertEqual((report["accepted"], report["escaped"]), (1, 1), report)
+        self.assertLessEqual(report["max_damage"], 4, report)
+
+    def test_cornered_map_bot_still_avoids_water_doors_traps(self):
+        # The same squares as water, a closed door, a trap or a doorless
+        # doorway stay off limits: the bot is cornered exactly as before #194.
+        # Doorways are excluded on purpose (see bot_square in chaos_haunt.c):
+        # the one-step-greedy bot parks in them and the plain-floor hound pins
+        # it there, which doubled cornered trials in the #194 sweep.
+        for name, glyph in (
+            ("water", "~"),
+            ("closed-door", "+"),
+            ("trap", "^"),
+            ("doorway", "D"),
+        ):
+            with self.subTest(square=name):
+                _, report, _ = self.cornered("cornered-" + name, glyph, glyph)
+                self.assertIsNotNone(report)
+                self.assertEqual(
+                    (report["accepted"], report["escaped"]), (0, 0), report
+                )
+
     def test_bare_rooms(self):
         # No hound can be placed 3 squares away in 3x3: nothing is spent or
         # written, as before. Small and larger bare rooms pass the trial.
