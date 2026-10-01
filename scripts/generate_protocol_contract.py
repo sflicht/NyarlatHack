@@ -232,6 +232,15 @@ def validate_extensions(d):
         type(cap) is int and d["limits"]["admission_turn_headroom"] <= cap <= 100000,
         "duration cap",
     )
+    # M2 (multi-whisper arc): next-use programs per game. Sequential only, so
+    # the cap bounds programs over a whole game, never concurrent ones.
+    programs = d["next_use_programs"]
+    require(
+        type(programs) is dict and set(programs) == {"per_game_cap"},
+        "next-use program keys",
+    )
+    per_game = programs["per_game_cap"]
+    require(type(per_game) is int and 1 <= per_game <= 8, "next-use per-game cap")
 
 
 def validate(d):
@@ -242,7 +251,7 @@ def validate(d):
     require(
         set(d)
         == set(
-            "format legacy cosmetic observations versions limits budget pacing non_effect_spenders request_fields mutations telegraphs ambient_messages results events phases ack_statuses journal_status event_numbers vitals ack_numbers ack_number_bounds reader_policy wire_order telegraph_extensions mutation_limits".split()
+            "format legacy cosmetic observations versions limits budget pacing non_effect_spenders request_fields mutations telegraphs ambient_messages results events phases ack_statuses journal_status event_numbers vitals ack_numbers ack_number_bounds reader_policy wire_order telegraph_extensions mutation_limits next_use_programs".split()
         ),
         "contract keys",
     )
@@ -553,6 +562,7 @@ def render(d):
         "TURN_HEADROOM": d["limits"]["admission_turn_headroom"],
         "DURATION_CAP": d["mutation_limits"]["duration_cap"],
         "DURATION_HEADROOM": duration_headroom(d),
+        "NEXT_USE_PROGRAM_CAP": d["next_use_programs"]["per_game_cap"],
     }
     constants.update({"COSMETIC_" + k.upper(): v for k, v in d["cosmetic"].items()})
     constants.update({"BUDGET_" + k.upper(): v for k, v in d["budget"].items()})
@@ -775,6 +785,7 @@ def render(d):
         MAX_INT=d["limits"]["max_int"],
         TELEGRAPHS={r["id"]: r["text"] for r in all_telegraphs(d)},
         DURATION_CAP=d["mutation_limits"]["duration_cap"],
+        NEXT_USE_PROGRAM_CAP=d["next_use_programs"]["per_game_cap"],
         FIELDS=tuple(r["wire"] for r in fields),
         REGISTRY={
             r["name"]: (r["cost"], r["director_sanity_max"], r["telegraph"])
