@@ -167,6 +167,133 @@ class NextUseUnixSaveTests(unittest.TestCase):
         }
         cls.two_family_exe = exe
 
+    def test_m2_terminal_rejected_and_cap_save_restore(self):
+        self._build_two_family_game()
+        previous = {
+            key: os.environ.get(key)
+            for key in ("NYARLATHACK_NEXT_USE_ADMIT", "NYARLATHACK_OBSERVATIONS")
+        }
+
+        def restore_env():
+            for key, value in previous.items():
+                if value is None:
+                    os.environ.pop(key, None)
+                else:
+                    os.environ[key] = value
+
+        self.addCleanup(restore_env)
+        os.environ.update({key: "1" for key in previous})
+        for mode in ("terminal", "rejected", "cap"):
+            with self.subTest(mode=mode):
+                game = Game(
+                    ROOT / "dnethackdir",
+                    self.clock,
+                    wizard=True,
+                    asset_pool=self.asset_pool,
+                    executable=self.two_family_exe,
+                    root=self.artifacts / ("m2-" + mode),
+                )
+                self.addCleanup(game.close)
+                game.start()
+                slot = json.loads((game.game / "fixture.json").read_text())[
+                    "letter"
+                ].encode()
+
+                def state():
+                    return json.loads((game.game / "state.json").read_text())
+
+                def whistle():
+                    self.assertIn(b"apply", game.send("a").lower())
+                    game.more(game.send(slot))
+
+                whistle()
+                notice = next(
+                    e
+                    for e in game.events()
+                    if e.get("observation", {}).get("stage") == "notice"
+                    and e["observation"]["operation"] == "whistling"
+                )
+                done = next(
+                    e
+                    for e in game.events()
+                    if e.get("observation", {}).get("stage") == "completed"
+                    and e["observation"]["operation"] == "whistling"
+                )
+                row = {
+                    "family": "W",
+                    "op": "quiet",
+                    "origin": {
+                        "root_seq": notice["observation"]["root_seq"],
+                        "notice_seq": notice["seq"],
+                        "end_seq": done["seq"],
+                        "fact": notice["observation"]["fact"],
+                    },
+                }
+                host = {
+                    "at": state()["safe"] + 1,
+                    "id": 1,
+                    "level_dlevel": 1,
+                    "level_dnum": 0,
+                    "move": notice["turn"],
+                    "run": engine_run_hex(game.run),
+                    "variant": 0,
+                }
+                publish_envelope(game.run, row, host)
+                envelope = game.run / "next_use-envelope.json"
+                if mode == "rejected":
+                    payload = json.loads(envelope.read_text())
+                    payload["at"] -= 1  # missed safe index: parsed rejected attempt
+                    envelope.write_text(
+                        json.dumps(payload, separators=(",", ":"), sort_keys=True)
+                    )
+                game.sanity(60)
+                self.assertEqual(state()["settled_count"], 1)
+                self.assertEqual(state()["program_ordinal"], 1)
+                self.assertEqual(state()["last_program_id"], 1)
+                if mode != "rejected":
+                    whistle()  # quiet consumes the single slot, closes the journal
+                    self.assertEqual(state()["journal_state"], 2)
+                self.assertEqual(state()["policy_terminal"], 1)
+                if mode != "rejected":
+                    terminal_observation = next(
+                        e
+                        for e in reversed(game.events())
+                        if e.get("observation", {}).get("stage") == "completed"
+                    )
+                    self.assertEqual(
+                        state()["terminal_seq"], terminal_observation["seq"]
+                    )
+                if mode == "cap":
+                    (game.game / "m2-cap-fixture").touch()
+                    game.sanity(40)
+                before = state()
+                self.assertEqual(before["settled_count"], 3 if mode == "cap" else 1)
+                journal = game.run / "next_use-journal.jsonl"
+                journal_bytes = journal.read_bytes() if journal.exists() else None
+                self.assertEqual(game.save(), 0)
+                game.start()
+                after = state()
+                for key in (
+                    "settled_count",
+                    "program_ordinal",
+                    "last_program_id",
+                    "policy_terminal",
+                    "terminal_seq",
+                    "spent",
+                ):
+                    self.assertEqual(after[key], before[key], key)
+                # A fresh origin and early ordinal-2 file cannot bypass PR 2's gate.
+                whistle()
+                second = game.run / "next_use-envelope.2.json"
+                second.write_bytes(envelope.read_bytes())
+                second.chmod(0o600)
+                game.sanity(20)
+                self.assertEqual(state()["settled_count"], before["settled_count"])
+                self.assertEqual(state()["spent"], before["spent"])
+                if journal_bytes is not None:
+                    self.assertEqual(journal.read_bytes(), journal_bytes)
+                self.assertEqual(game.quit(), 0)
+
     def test_save_exit_restore_does_not_readmit(self):
         self._exercise_save_exit_restore(save_before_origin=False)
 
@@ -235,7 +362,10 @@ class NextUseUnixSaveTests(unittest.TestCase):
     def test_w_only_claimed_undelivered_survives_inside_window(self):
         self._two_family_order("W", unpublished=True)
 
-    def test_drop_program_on_save_loses_remaining_native_f_effect(self):
+    def test_old_native_header_is_refused_and_preserved(self):
+        self._two_family_order("WF", boundary="old-header")
+
+    def test_drop_program_on_save_is_refused_and_preserved(self):
         self._two_family_order("WF", boundary="drop-program")
 
     def test_new_game_reusing_old_transport_has_no_admission_authority(self):
@@ -469,6 +599,7 @@ class NextUseUnixSaveTests(unittest.TestCase):
                 "relocated-transport",
                 "armed-whistle",
                 "corrupt-save",
+                "old-header",
                 "drop-program",
                 "wrong-level",
                 "armed-missing-target",
@@ -816,7 +947,7 @@ class NextUseUnixSaveTests(unittest.TestCase):
                     # Fault is AFTER world restore, BEFORE chaos_start/observe;
                     # the serialized world still contains the original pet.
                     (game.game / boundary).touch()
-                if boundary == "corrupt-save":
+                if boundary in ("corrupt-save", "old-header"):
                     # Disposable current uncompressed native save, with a used W
                     # and pending F. Preserve the readonly original as evidence.
                     self.assertEqual(len(saves), 1)
@@ -859,6 +990,10 @@ class NextUseUnixSaveTests(unittest.TestCase):
                         "unsupported-version": bytes(incompatible),
                         "independent-game-identity": bytes(wrong_game),
                     }
+                    if boundary == "old-header":
+                        old_header = bytearray(original)
+                        old_header[0] ^= 1
+                        faults = {"incompatible-native-header": bytes(old_header)}
                     protected_paths = [
                         game.run / "events.jsonl",
                         game.run / "next_use-receipt.jsonl",
@@ -952,6 +1087,9 @@ class NextUseUnixSaveTests(unittest.TestCase):
                     else:
                         journal_path.write_bytes(damaged)
                     (game.root / "damaged-prefix.bin").write_bytes(damaged)
+                saved_before_restore = {
+                    p.name: p.read_bytes() for p in (game.game / "save").iterdir()
+                }
                 game.start()
                 restored = state()
                 if journal_damage:
@@ -974,6 +1112,7 @@ class NextUseUnixSaveTests(unittest.TestCase):
                         state,
                         native_trace,
                         receipt,
+                        saved_before_restore,
                     )
                     continue
                 self.assertEqual(restored["valid"], 1)
@@ -981,6 +1120,11 @@ class NextUseUnixSaveTests(unittest.TestCase):
                 # Read-only exported fields, never imported/assigned by the test.
                 for key in (
                     "attempted",
+                    "settled_count",
+                    "program_ordinal",
+                    "last_program_id",
+                    "policy_terminal",
+                    "terminal_seq",
                     "moves",
                     "monstermoves",
                     "safe",
@@ -1581,17 +1725,12 @@ class NextUseUnixSaveTests(unittest.TestCase):
         state,
         native_trace,
         receipt,
+        saved,
     ):
-        # A successful native restoration is prerequisite, not the mutant oracle.
-        self.assertEqual(
-            sum(
-                e.get("event") == "session" and e.get("detail") == "restore"
-                for e in game.events()
-            ),
-            1,
-        )
-        self.assertEqual(restored["valid"], 0)
+        # State v5 cross-checks the active ledger against the runtime snapshot.
+        # A dropped program is now refused before play, not silently lost.
         self.assertEqual(checkpoint["slot_f"], 1)
+        self.assertEqual(checkpoint["settled_count"], 1)
         dropped = [r for r in native_trace() if r["kind"] == "drop-program-save"]
         self.assertEqual(
             dropped,
@@ -1604,34 +1743,27 @@ class NextUseUnixSaveTests(unittest.TestCase):
                 )
             ],
         )
-        self.assertNotEqual(restored["source_sha256"], checkpoint["source_sha256"])
-        for key in ("moves", "monstermoves", "safe", "spent", "attempted"):
-            self.assertEqual(restored[key], checkpoint[key], key)
-        self.assertEqual(restored["attempted"], 1)
-        (game.root / "restored.json").write_text(json.dumps(restored, indent=2))
-        fountain()
-        game.sanity(40)
-        whistle()
-        game.wait_turns(10)
-        fountain()
-        drinks = [r for r in native_trace() if r["kind"] == "fountain"]
-        self.assertEqual(len(drinks), 3)
-        self.assertEqual([r["hunger_delta"] for r in drinks], [4, 0, 0])
-        self.assertEqual([r["outcome"] for r in drinks], [1, 4, 4])
-        with self.assertRaisesRegex(
-            AssertionError, "remaining native F effect lost"
-        ) as caught:
-            self._assert_fountain_continuation(drinks, True)
-        self.assertEqual(state()["spent"], checkpoint["spent"])
+        saves = list((game.game / "save").iterdir())
+        self.assertEqual(len(saves), 1)
+        self.assertEqual({p.name: p.read_bytes() for p in saves}, saved)
+        before = saves[0].read_bytes()
+        self.assertEqual(game.finish(b""), 1)
+        self.assertEqual(game.exitcode, 1)
+        self.assertEqual(saves[0].read_bytes(), before)
+        self.assertFalse(
+            any(
+                e.get("event") == "session" and e.get("detail") == "restore"
+                for e in game.events()
+            )
+        )
         self.assertEqual((game.run / "next_use-receipt.jsonl").read_bytes(), receipt)
-        self.assertEqual(game.quit(), 0)
         (game.root / "negative-control.json").write_text(
             json.dumps(
                 dict(
-                    oracle_failure=str(caught.exception),
-                    drinks=drinks,
+                    rejected=True,
+                    save_preserved=True,
+                    restored_session_count=0,
                     save_exit=0,
-                    restored_session_count=1,
                     final_exit=game.exitcode,
                 ),
                 indent=2,

@@ -3,6 +3,7 @@
 /* NetHack may be freely redistributed.  See license for details. */
 
 #include "hack.h"
+#include "chaos.h"
 #include "dlb.h"
 #include "system.h"
 
@@ -1023,6 +1024,7 @@ restore_saved_game()
 
 	if (!uptodate(fd, fq_save)) {
 	    (void) close(fd),  fd = -1;
+            chaos_refuse_old_save();
 	    if (yn("Delete the old file?") == 'y') /* Damn you, sadistic programmers who delete stuff without asking! --Amy */
 			(void) delete_savefile();
 	}

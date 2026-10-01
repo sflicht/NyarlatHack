@@ -477,7 +477,7 @@ restgamestate(int fd, unsigned int *stuckid, unsigned int *steedid, unsigned int
 	if (!chaos_next_use_restore_bound(fd, u.chaos_game_token,
 	        chaos_next_use_pack_level(u.uz.dnum, u.uz.dlevel)))
 	    return chaos_restore_reject(fd);
-	if (!chaos_next_use_safe_restore_attempted(u.chaos_next_use_attempted))
+	if (!chaos_next_use_safe_restore_state(&u.chaos, u.chaos_next_use_attempted))
 	    return chaos_restore_reject(fd);
 #endif
 	mread(fd, (genericptr_t) &youmonst, sizeof(struct monst));

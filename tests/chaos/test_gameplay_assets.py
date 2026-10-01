@@ -275,12 +275,16 @@ class GameAssetTests(unittest.TestCase):
             and isinstance(n.func, ast.Name)
             and n.func.id == "Game"
         ]
-        # Ordinary case, two-family order, and fresh lifetime on old transport.
-        self.assertEqual(len(calls), 3)
+        # Ordinary, two-family, fresh lifetime, and M2 terminal/cap saves.
+        self.assertEqual(len(calls), 4)
         for node in calls:
             keywords = {kw.arg: ast.unparse(kw.value) for kw in node.keywords}
             self.assertEqual(keywords.get("asset_pool"), "self.asset_pool")
-        for name in ("_two_family_order", "_new_game_reusing_old_transport"):
+        for name in (
+            "_two_family_order",
+            "_new_game_reusing_old_transport",
+            "test_m2_terminal_rejected_and_cap_save_restore",
+        ):
             custom = [
                 n
                 for n in ast.walk(tree)

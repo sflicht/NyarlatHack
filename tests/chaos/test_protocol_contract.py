@@ -57,6 +57,11 @@ def state_type(count=4):
                 ("cosmetic_last_turn", C.c_long),
             ]
             + [(k, C.c_int) for k in "pacing deepest credited level_spent".split()]
+            + [
+                (k, C.c_int)
+                for k in "next_use_count next_use_ordinal next_use_id next_use_terminal".split()
+            ]
+            + [("next_use_terminal_seq", C.c_long)]
         )
 
     return NativeState
@@ -319,7 +324,7 @@ class CompatibilityTests(unittest.TestCase):
         )
         self.assertEqual(eligible(s), ["ambient", "ward_efficacy", "door_reluctance"])
         # #164: v3 adds 4 ints; #1: v4 adds effects[CHAOS_DOOR] (16 bytes).
-        self.assertEqual(C.sizeof(state_type()), 128)
+        self.assertEqual(C.sizeof(state_type()), 152)
 
     def test_legacy_event_openness(self):
         e = dict(

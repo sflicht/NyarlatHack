@@ -54,6 +54,10 @@ static void state(void)
     valid = chaos_next_use_snapshot_export(&s);
     f = file("state.json", "w");
     fprintf(f, "{\"attempted\":%d,", chaos_next_use_safe_attempted());
+    fprintf(f, "\"settled_count\":%d,\"program_ordinal\":%d,"
+        "\"last_program_id\":%d,\"policy_terminal\":%d,\"terminal_seq\":%ld,",
+        u.chaos.next_use_count, u.chaos.next_use_ordinal, u.chaos.next_use_id,
+        u.chaos.next_use_terminal, u.chaos.next_use_terminal_seq);
     fprintf(f, "\"valid\":%d,\"moves\":%ld,\"monstermoves\":%ld,"
         "\"safe\":%ld,\"spent\":%d,\"dnum\":%d,\"dlevel\":%d,"
         "\"slot_w\":%d,\"slot_f\":%d,\"w_runtime\":%d,"
@@ -284,6 +288,13 @@ void __wrap_chaos_start(void)
 void __wrap_chaos_observe(void)
 {
     __real_chaos_observe();
+    /* TEST ONLY: exercise native serialization at the declared cap while
+     * production admission is temporarily capped at one by the journal gate. */
+    if (access("m2-cap-fixture", F_OK) == 0) {
+        assert(u.chaos.next_use_count == 1 && u.chaos.next_use_terminal);
+        u.chaos.next_use_count = u.chaos.next_use_ordinal = CHAOS_NEXT_USE_PROGRAM_CAP;
+        assert(!unlink("m2-cap-fixture"));
+    }
     state();
 }
 

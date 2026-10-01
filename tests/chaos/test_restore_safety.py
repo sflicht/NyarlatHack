@@ -14,6 +14,58 @@ ROOT = Path(__file__).resolve().parents[2]
 
 
 class RestoreSafetyTests(unittest.TestCase):
+    def test_incompatible_header_never_offers_deletion(self):
+        source = (ROOT / "src/files.c").read_text()
+        body = source.split("restore_saved_game()\n{", 1)[1].split("\n}", 1)[0]
+        code = r"""
+#include <assert.h>
+#include <setjmp.h>
+#include <stdlib.h>
+#define SAVEPREFIX 0
+#define SAVEF "fixture"
+#define yn prompt_yn
+static jmp_buf stop;
+static int closed, asked, deleted;
+void set_savefile_name(void) {}
+const char *fqname(const char *s, int p, int n) { (void)p; (void)n; return s; }
+void uncompress(const char *s) { (void)s; }
+int open_savefile(void) { return 42; }
+int uptodate(int fd, const char *s) { (void)s; assert(fd == 42); return 0; }
+int close(int fd) { assert(fd == 42); ++closed; return 0; }
+int yn(const char *s) { (void)s; ++asked; return 'y'; }
+int delete_savefile(void) { ++deleted; return 0; }
+void chaos_refuse_old_save(void) { longjmp(stop, 1); }
+"""
+        code += "int restore_saved_game(void) {" + body + "\n}\n"
+        code += r"""
+int main(void) {
+    if (!setjmp(stop)) {
+        restore_saved_game();
+        assert(0 && "incompatible save must exit before new game or deletion");
+    }
+    assert(closed == 1 && !asked && !deleted);
+    return 0;
+}
+"""
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "probe.c").write_text(code)
+            built = subprocess.run(
+                [
+                    "cc",
+                    "-Wall",
+                    "-Wextra",
+                    "-Werror",
+                    str(root / "probe.c"),
+                    "-o",
+                    str(root / "probe"),
+                ],
+                capture_output=True,
+            )
+            self.assertEqual(built.returncode, 0, built.stderr.decode())
+            result = subprocess.run([str(root / "probe")], capture_output=True)
+            self.assertEqual(result.returncode, 0, result.stderr.decode())
+
     def test_production_rejection_branches(self):
         source = (ROOT / "src/restore.c").read_text()
         self.assertIn(
@@ -69,7 +121,8 @@ static int chaos_next_use_restore_bound(int fd, long game, long level) {
     bound_calls++;
     return next_use_restore_ok && game == 1234567L && level == 300004L;
 }
-static int chaos_next_use_safe_restore_attempted(int attempted) {
+static int chaos_next_use_safe_restore_state(struct chaos_state *state, int attempted) {
+    assert(state == &u.chaos);
     latch_calls++;
     if (attempted != 0 && attempted != 1) return 0;
     restored_latch = attempted;

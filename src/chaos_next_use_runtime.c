@@ -1,5 +1,6 @@
 /* NetHack General Public License. Unsaved next-use runtime/replay state. */
 #include "hack.h"
+void chaos_next_use_safe_terminal(int) __attribute__((weak));
 #include "chaos.h"
 #include "chaos_next_use_runtime.h"
 #include "chaos_lua.h"
@@ -442,6 +443,8 @@ static void append_termination(int reason, int failure_code)
     runtime.private_records[runtime.private_count++] = record;
     runtime.termination_emitted = 1;
     runtime.phase = CHAOS_ATTEMPT_TERMINATED;
+    if (!runtime_staging && chaos_next_use_safe_terminal)
+        chaos_next_use_safe_terminal(runtime.program_id);
 }
 
 static void maybe_append_termination(int reason, int failure_code)

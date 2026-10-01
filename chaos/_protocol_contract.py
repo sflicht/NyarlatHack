@@ -100,7 +100,7 @@ PACING = {'version': 1,
  'level_cap': 3,
  'witnessed_credit': 1,
  'witnessed_cap': 2}
-STATE_VERSION = 4
+STATE_VERSION = 5
 OBSERVATION_VERSION = 4
 OBSERVATIONS = {'format': 1,
  'wire_version': 4,

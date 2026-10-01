@@ -6,6 +6,8 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <string.h>
+#include <stdio.h>
+#include "chaos_protocol.h"
 #include <sys/stat.h>
 #include <unistd.h>
 
@@ -122,15 +124,26 @@ int chaos_next_use_envelope_load(int dir, struct chaos_next_use_envelope *out)
 
 int chaos_next_use_envelope_read(int dir, char *buf, size_t cap, size_t *written)
 {
+    return chaos_next_use_envelope_read_ordinal(dir, 1, buf, cap, written);
+}
+
+int chaos_next_use_envelope_read_ordinal(int dir, int ordinal, char *buf,
+                                        size_t cap, size_t *written)
+{
+    char name[64];
     ssize_t n;
     int fd;
 
     if (!buf || !written)
         return CHAOS_NEXT_USE_NULL_ARGUMENT;
     *written = 0;
-    if (dir < 0 || cap < 1)
+    if (dir < 0 || cap < 1 || ordinal < 1 || ordinal > CHAOS_NEXT_USE_PROGRAM_CAP)
         return CHAOS_NEXT_USE_OUTPUT;
-    fd = private_file(dir, "next_use-envelope.json", O_RDONLY);
+    if (ordinal == 1)
+        strcpy(name, "next_use-envelope.json");
+    else
+        (void)snprintf(name, sizeof name, "next_use-envelope.%d.json", ordinal);
+    fd = private_file(dir, name, O_RDONLY);
     if (fd < 0)
         return CHAOS_NEXT_USE_OUTPUT;
     n = full_read(fd, buf, cap);

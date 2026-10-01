@@ -69,6 +69,28 @@ class NextUseIoTests(RetainOnFailure):
         row["dir"] = folder
         return row
 
+    def test_expected_ordinal_never_falls_back_to_another_program(self):
+        def seed(folder):
+            for name, value in (
+                ("next_use-envelope.json", b"11"),
+                ("next_use-envelope.2.json", b"22"),
+                ("next_use-envelope.3.json", b"33"),
+            ):
+                path = folder / name
+                path.write_bytes(value)
+                path.chmod(0o600)
+
+        for ordinal in (1, 2, 3):
+            with self.subTest(ordinal=ordinal):
+                row = self.run_dir(f"ordinal-{ordinal}", source=None, extra=seed)
+                self.assertEqual(row["rc"], 0)
+                self.assertEqual(row["value"], ordinal * 11)
+        for ordinal in (0, -1, 4):
+            with self.subTest(ordinal=ordinal):
+                row = self.run_dir(f"ordinal-{ordinal}", source=None, extra=seed)
+                self.assertNotEqual(row["rc"], 0)
+                self.assertEqual(row["value"], -1)
+
     def test_valid_load_writes_exact_marker_once(self):
         row = self.run_dir("ok")
         self.assertEqual(row["used"], 1)
