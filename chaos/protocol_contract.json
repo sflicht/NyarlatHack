@@ -1039,5 +1039,8 @@
   ],
   "mutation_limits": {
     "duration_cap": 300
+  },
+  "next_use_programs": {
+    "per_game_cap": 3
   }
 }

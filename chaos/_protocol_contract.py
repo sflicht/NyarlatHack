@@ -282,6 +282,7 @@ TELEGRAPHS = {1: 'A distant whisper brushes against your thoughts.',
  3: 'An unnatural hunger coils in your stomach.',
  4: 'The doors of this place seem to lean against you.'}
 DURATION_CAP = 300
+NEXT_USE_PROGRAM_CAP = 3
 FIELDS = ('v', 'id', 'mutation', 'value', 'duration', 'telegraph', 'at')
 REGISTRY = {'ambient': (0, 100, 1),
  'ward_efficacy': (3, 80, 2),

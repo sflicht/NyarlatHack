@@ -11,7 +11,12 @@ import subprocess
 import unittest
 
 from chaos import protocol
-from chaos._protocol_contract import DURATION_CAP, LEGACY, TELEGRAPHS
+from chaos._protocol_contract import (
+    DURATION_CAP,
+    LEGACY,
+    NEXT_USE_PROGRAM_CAP,
+    TELEGRAPHS,
+)
 from chaos.episodes import parse_episode_event
 from test_director import ack, event
 
@@ -58,6 +63,10 @@ class LegacyView(unittest.TestCase):
         )
         self.assertEqual(data["mutation_limits"], dict(duration_cap=300))
         self.assertEqual(DURATION_CAP, 300)
+        # M2's program cap is additive too; legacy readers never see it.
+        self.assertEqual(data["next_use_programs"], dict(per_game_cap=3))
+        self.assertEqual(NEXT_USE_PROGRAM_CAP, 3)
+        self.assertNotIn("next_use_programs", base)
         self.assertEqual(sorted(TELEGRAPHS), [1, 2, 3, 4])
         for row in base["telegraphs"]:
             self.assertEqual(TELEGRAPHS[row["id"]], row["text"])

@@ -9,8 +9,9 @@ All new engine code is under the NetHack General Public License (`dat/license`).
 
 ## Cosmetic pacing prototype and migration
 
-Current native state/save version is **3** (#164 added the pacing fields,
-now on by default; policy and prices are unchanged), ordinary events **3**, opt-in
+Current native state/save version is **4** (#164 added the pacing fields at
+3, now on by default; #1 added the `door_reluctance` effect slot at 4; policy
+and prices are unchanged), ordinary events **3**, opt-in
 observation events **4**, request grammar **1**, and admission-journal policy
 **2** (journal `v` remains request version 1). These are separate version axes.
 Historical ordinary v1/observation v2 readers retain their old prices and
@@ -277,6 +278,78 @@ The mailbox is external; replaying an already-consumed ID after restore cannot
 apply twice. A future request at the time of save remains pending until its
 saved target index. Old saves made before this extension are incompatible with
 CHAOS-on builds (use CHAOS=0 to load stock saves).
+
+## Next-use program policy v3 (M2; contract, engine pending)
+
+Status: **contract only.** Sam chose these rules on 2026-09-30
+([`proposals/multi-whisper-arc.md`](proposals/multi-whisper-arc.md), decisions
+1–3 and 7). `chaos/protocol_contract.json` now carries the cap under
+`next_use_programs`, so it is generated into `CHAOS_NEXT_USE_PROGRAM_CAP` and
+`NEXT_USE_PROGRAM_CAP`. Until the engine PR lands, the engine still admits **at
+most one** program per game (policy v2, the `settled` latch in
+[`next-use-snapshot.md`](next-use-snapshot.md)). Nothing below is in force yet.
+
+Policy v3 lets a game run up to **3** next-use programs, **strictly one after
+another**:
+
+- **Opening rule.** A next-use admission opportunity opens at a safe point only
+  when all of these hold:
+  - no program is installed, or the installed one is terminal (completed,
+    level departure, origin evicted or expired, program expired, invalid
+    callback, identity unsafe) and its journal is closed;
+  - fewer than 3 programs have been *settled* in this game;
+  - the envelope binds a **fresh origin** (below).
+- **Settled counts attempts, not successes.** As in policy v2, a program is
+  settled once its envelope is due and evaluated at its safe index, whether it
+  is admitted or rejected (budget, origin, companion, telegraph, schema). A
+  rejected program uses one of the 3. This keeps "no retry" from policy v2: a
+  refused program is never retried or retimed.
+- **Fresh-origin rule.** Program *k* > 1 may bind only an origin whose
+  completed observation has a sequence number greater than the event that
+  terminated program *k* − 1. One whistle or fountain use can never fund two
+  programs. The #177 rebind to a newer same-family origin still applies, under
+  the same rule.
+- **Identity.** The engine identifies programs by **ordinal** *k* = 1, 2, 3,
+  which it saves. The envelope's `id` (the host's publication id, `last_id + 1`
+  of the completed origin's event) is *not* unique across programs: no
+  mailbox request need be consumed between two programs, so two programs can
+  carry the same `id`. The engine therefore never uses `id` to order programs;
+  it keeps it only to bind each program's journal and receipts. Envelope files
+  are named by ordinal: `next_use-envelope.json` stays program 1, so policy-v2
+  run directories read unchanged, and later programs use
+  `next_use-envelope.<k>.json` for *k* = 2, 3. The engine reads only the
+  ordinal it expects next, so a stale or early envelope cannot be applied to a
+  later program.
+- **Unchanged.** Cost 1 per operation, engine-owned telegraph, origin lifetime
+  300 moves, program lifetime 100 moves, pacing and the per-level cap (K = 3),
+  first-come with M1 mutations at the same safe point (decision 4), no
+  witnessed credit for M1 mutations (decision 5), and witnessed credit once per
+  source, so a second program earns no new capacity.
+
+**Save impact (decision 7).** The saved opportunity becomes a count of settled
+programs (0..3) plus the last program id, replacing the 0/1
+`u.chaos_next_use_attempted` latch. The engine PR states which carrier changes
+and its version: next-use snapshot v6 → 7 if the values fit there, or native
+state 4 → 5 if they must move into `u.chaos`. Either way old saves are refused
+by the structural check and preserved, never migrated. No state goes into
+bones.
+
+**Journals.** One journal file per program (program 1 keeps
+`next_use-journal.jsonl`; later programs use `next_use-journal.<k>.jsonl`).
+Each is a complete, independently checked chain with today's per-file bounds.
+Restore validates the closed journals of earlier programs and the open prefix
+of the current one before reconnecting.
+
+**Schedule file.** `next_use-schedule.jsonl` keeps its bounds (32 rows, 256
+bytes per row, 16 KiB) and keeps its first 32 rows. Measured against the #1
+paired sweep
+([`measurements/next-use-schedule-bound-m2/`](measurements/next-use-schedule-bound-m2/README.md)):
+11–12 of 100 Bard games already fill the file with one program, at turn 1,123
+or later. In the 44 kept games with an admitted first program (the sweep kept
+logs only for games that published a door whisper), the bound never changes
+whether program 2 has a fresh origin: it trims fresh rows in 7 games but
+leaves at least 8 in each. Once the file is full, new rows fail closed as today.
+Raising the bound is a separate decision.
 
 ## Events and acknowledgements
 

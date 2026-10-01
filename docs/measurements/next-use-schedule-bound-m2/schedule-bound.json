@@ -1,0 +1,207 @@
+{
+  "main": {
+    "bard-default-path": {
+      "games": 100,
+      "median": 19.0,
+      "p90": 34,
+      "max": 54,
+      "over_bound": 11,
+      "at_or_over_bound": 11,
+      "over_64": 0,
+      "truncated_writes": 11,
+      "writes_match_min_bound": true
+    },
+    "wizard-default-path": {
+      "games": 100,
+      "median": 0.0,
+      "p90": 1,
+      "max": 20,
+      "over_bound": 0,
+      "at_or_over_bound": 0,
+      "over_64": 0,
+      "truncated_writes": 0,
+      "writes_match_min_bound": true
+    },
+    "bard": {
+      "games": 100,
+      "median": 18.0,
+      "p90": 34,
+      "max": 44,
+      "over_bound": 12,
+      "at_or_over_bound": 12,
+      "over_64": 0,
+      "truncated_writes": 12,
+      "writes_match_min_bound": true
+    },
+    "bard-inherited": {
+      "games": 100,
+      "median": 5.0,
+      "p90": 15,
+      "max": 33,
+      "over_bound": 1,
+      "at_or_over_bound": 1,
+      "over_64": 0,
+      "truncated_writes": 1,
+      "writes_match_min_bound": true
+    },
+    "madman": {
+      "games": 100,
+      "median": 0.0,
+      "p90": 1,
+      "max": 3,
+      "over_bound": 0,
+      "at_or_over_bound": 0,
+      "over_64": 0,
+      "truncated_writes": 0,
+      "writes_match_min_bound": true
+    },
+    "all": {
+      "games": 500,
+      "median": 2.0,
+      "p90": 26,
+      "max": 54,
+      "over_bound": 24,
+      "at_or_over_bound": 24,
+      "over_64": 0,
+      "truncated_writes": 24,
+      "writes_match_min_bound": true
+    }
+  },
+  "branch": {
+    "bard-default-path": {
+      "games": 100,
+      "median": 19.0,
+      "p90": 34,
+      "max": 54,
+      "over_bound": 11,
+      "at_or_over_bound": 12,
+      "over_64": 0,
+      "truncated_writes": 11,
+      "writes_match_min_bound": true
+    },
+    "wizard-default-path": {
+      "games": 100,
+      "median": 0.0,
+      "p90": 1,
+      "max": 12,
+      "over_bound": 0,
+      "at_or_over_bound": 0,
+      "over_64": 0,
+      "truncated_writes": 0,
+      "writes_match_min_bound": true
+    },
+    "bard": {
+      "games": 100,
+      "median": 18.0,
+      "p90": 33,
+      "max": 44,
+      "over_bound": 11,
+      "at_or_over_bound": 14,
+      "over_64": 0,
+      "truncated_writes": 11,
+      "writes_match_min_bound": true
+    },
+    "bard-inherited": {
+      "games": 100,
+      "median": 5.0,
+      "p90": 15,
+      "max": 33,
+      "over_bound": 1,
+      "at_or_over_bound": 1,
+      "over_64": 0,
+      "truncated_writes": 1,
+      "writes_match_min_bound": true
+    },
+    "madman": {
+      "games": 100,
+      "median": 0.0,
+      "p90": 1,
+      "max": 4,
+      "over_bound": 0,
+      "at_or_over_bound": 0,
+      "over_64": 0,
+      "truncated_writes": 0,
+      "writes_match_min_bound": true
+    },
+    "all": {
+      "games": 500,
+      "median": 1.5,
+      "p90": 26,
+      "max": 54,
+      "over_bound": 23,
+      "at_or_over_bound": 27,
+      "over_64": 0,
+      "truncated_writes": 23,
+      "writes_match_min_bound": true
+    }
+  },
+  "branch_kept_fresh_rows": {
+    "games_with_program_1": 44,
+    "no_fresh_row": 3,
+    "bound_removes_fresh_rows": [
+      {
+        "start": "bard",
+        "seed": 41,
+        "qualifying": 36,
+        "fresh_unbounded": 22,
+        "fresh_within_bound": 18
+      },
+      {
+        "start": "bard",
+        "seed": 57,
+        "qualifying": 33,
+        "fresh_unbounded": 22,
+        "fresh_within_bound": 21
+      },
+      {
+        "start": "bard",
+        "seed": 60,
+        "qualifying": 43,
+        "fresh_unbounded": 32,
+        "fresh_within_bound": 21
+      },
+      {
+        "start": "bard",
+        "seed": 93,
+        "qualifying": 34,
+        "fresh_unbounded": 10,
+        "fresh_within_bound": 8
+      },
+      {
+        "start": "bard",
+        "seed": 99,
+        "qualifying": 35,
+        "fresh_unbounded": 25,
+        "fresh_within_bound": 22
+      },
+      {
+        "start": "bard-default-path",
+        "seed": 27,
+        "qualifying": 36,
+        "fresh_unbounded": 30,
+        "fresh_within_bound": 26
+      },
+      {
+        "start": "bard-default-path",
+        "seed": 57,
+        "qualifying": 34,
+        "fresh_unbounded": 26,
+        "fresh_within_bound": 24
+      }
+    ],
+    "bound_leaves_fewer_than_2": 0,
+    "thirty_second_row_turns": [
+      1123,
+      1182,
+      1257,
+      1258,
+      1289,
+      1347,
+      1431,
+      1454,
+      1577,
+      1624,
+      1641
+    ]
+  }
+}

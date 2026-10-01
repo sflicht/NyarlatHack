@@ -443,6 +443,12 @@ class GenerationTests(unittest.TestCase):
                 (("mutation_limits", "duration_cap"), 100001),
                 (("mutation_limits", "duration_cap"), True),
                 (("mutation_limits", "extra"), 1),
+                # M2: the per-game next-use program cap is its own section.
+                (("next_use_programs", "per_game_cap"), 0),
+                (("next_use_programs", "per_game_cap"), 9),
+                (("next_use_programs", "per_game_cap"), True),
+                (("next_use_programs", "per_game_cap"), "3"),
+                (("next_use_programs", "extra"), 1),
                 (("request_fields", 0, "type"), "float"),
                 (("ack_number_bounds",), [-1, 2147483647]),
                 (("wire_order", "event"), ["seq", "v"]),
