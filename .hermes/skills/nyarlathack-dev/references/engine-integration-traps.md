@@ -53,6 +53,9 @@ adds traps found while hooking dNAO. Re-grep before trusting any function name.
 - When changing `struct chaos_state`, update ctypes mirrors, the native layout
   reporter's current-layout fixture, and version assertions together. Leave
   historical frozen fixtures and shared-metadata checks unchanged.
+- Keep fixture ledger storage alive for callbacks after admission: use the
+  game owner or static storage, never an admission helper's automatic local.
+  An ASan stack-use-after-return probe distinguishes this from a timeout flake.
 - Keep rejected-attempt authority in a carrier that exists without a runtime
   snapshot. Test native save/restore both after rejection and after terminal
   journal closure; label any fixture-initialized cap state explicitly.

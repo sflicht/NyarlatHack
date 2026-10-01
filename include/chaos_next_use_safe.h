@@ -20,6 +20,8 @@ struct chaos_next_use_safe_request {
     int level_dlevel;
     int sanity;
     const char *run_hex;
+    /* Live save authority, retained until reset/restore: storage must outlive
+     * the admitted runtime (production passes &u.chaos, not a helper local). */
     struct chaos_state *budget;
     chaos_next_use_receipt_fn receipt;
     void *receipt_opaque;

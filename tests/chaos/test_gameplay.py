@@ -466,7 +466,15 @@ class GameplayTests(RetainOnFailure):
                 self.assertEqual(g.save(), 0)
                 for filename in ("dnethack", "nhdat"):
                     shutil.copy2(target / filename, g.game / filename)
-                g.start()
+                retained = {p.name: p.read_bytes() for p in (g.game / "save").iterdir()}
+                text = g.start()
+                if name == "off-on":
+                    self.assertEqual(g.finish(text), 1)
+                    self.assertIn(b"save file preserved", g.raw)
+                self.assertEqual(
+                    {p.name: p.read_bytes() for p in (g.game / "save").iterdir()},
+                    retained,
+                )
                 self.assertIn(b"Configuration incompatibility", g.raw)
                 self.assertFalse(
                     any(
@@ -474,7 +482,8 @@ class GameplayTests(RetainOnFailure):
                         for e in g.events()
                     )
                 )
-                self.assertEqual(g.quit(), 0)
+                if name == "on-off":  # stock startup retains its old behavior
+                    self.assertEqual(g.quit(), 0)
 
     def test_ordinary_bard_reaches_dungeon_without_wizard_mode(self):
         g = Game(

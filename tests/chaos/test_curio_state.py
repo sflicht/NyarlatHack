@@ -116,7 +116,9 @@ class CurioStateTests(unittest.TestCase):
         self.assertTrue(retained)
         for name in ("dnethack", "nhdat"):
             shutil.copy2(ROOT / "dnethackdir" / name, g.game / name)
-        g.start()
+        text = g.start()
+        self.assertEqual(g.finish(text), 1)
+        self.assertIn(b"save file preserved", g.raw)
         self.assertIn(b"Configuration incompatibility", g.raw)
         self.assertFalse(
             any(
@@ -130,7 +132,7 @@ class CurioStateTests(unittest.TestCase):
             },
             retained,
         )
-        self.assertEqual(g.quit(), 0)
+        self.assertEqual(g.exitcode, 1)
 
     def test_current_invalid_chaos_save_preserved_without_resumption(self):
         # Synthetic native save-entry faults, NOT old-save compatibility proof.
