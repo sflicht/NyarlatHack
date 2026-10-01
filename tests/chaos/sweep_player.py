@@ -202,6 +202,7 @@ class Player:
         # (turn, dlvl) each time the status line shows a new level (v2 only;
         # public). The first-felt-consequence metric reads its Dlvl here.
         self.dlvl_timeline = []
+        self.status_timeline = []
         self.tools_seen = set()
         self.whistles_found = 0
         self.prayers = 0
@@ -324,6 +325,55 @@ class Player:
         if not ends:
             return
         log = run / "director.log"
+        # M2 changes transport synchronisation, not the player's action policy.
+        # A program-1 status in the append-only log cannot settle program 2.
+        choice_path = run / "ordinary-choice.json"
+        choice = json.loads(choice_path.read_text()) if choice_path.exists() else {}
+        if choice.get("m2", {}).get("enabled"):
+            from chaos.next_use_envelope import envelope_name
+            from chaos.next_use_schedule import parse_lifecycle
+
+            path = run / "next_use-lifecycle.jsonl"
+            raw = path.read_bytes() if path.exists() else b""
+            closed = [
+                parse_lifecycle(line)
+                for line in raw.splitlines(keepends=True)
+                if line.endswith(b"\n")
+            ]
+            ordinal = len(closed) + 1
+            boundary = closed[-1]["terminal_seq"] if closed else 0
+            if ordinal > choice["m2"]["cap"] or not any(end > boundary for end in ends):
+                return
+            target = run / envelope_name(ordinal)
+            if target.exists():
+                return
+            schedule = run / "next_use-schedule.jsonl"
+            candidates = (
+                [json.loads(s) for s in schedule.read_text().splitlines()]
+                if schedule.exists()
+                else []
+            )
+            if not any(
+                r["end_seq"] in ends and r["end_seq"] > boundary for r in candidates
+            ):
+                return
+            deadline = time.monotonic() + 20
+            while time.monotonic() < deadline:
+                if target.exists() or (
+                    log.exists()
+                    and any(
+                        s in log.read_bytes()
+                        for s in (
+                            b"next-use: failed",
+                            b"next-use: abstained",
+                            b"director stopped",
+                        )
+                    )
+                ):
+                    return
+                time.sleep(0.05)
+            self.sync_timeouts += 1
+            return
         if log.exists() and any(s in log.read_bytes() for s in DIRECTOR_SETTLED[1:]):
             return  # one-shot decision already made
         schedule = run / "next_use-schedule.jsonl"
@@ -446,6 +496,10 @@ class Player:
                 raise HarnessError("status line unreadable after recovery")
             return self.settle(self.send("\x1b")) or None
         self.status_misses = 0
+        if self.v2:
+            sample = {k: s[k] for k in ("turn", "dlvl", "hunger")}
+            if not self.status_timeline or self.status_timeline[-1] != sample:
+                self.status_timeline.append(sample)
         if s["turn"] == self.last_turn:
             self.same_turn_commands += 1
             if self.same_turn_commands >= p["stall_commands"]:
@@ -834,6 +888,7 @@ def play(dnethackdir, clock, root, seed, start, policy, asset_pool):
     if player.v2:
         extra["v2"] = {
             "dlvl_timeline": player.dlvl_timeline,
+            "status_timeline": player.status_timeline,
             "prayers": player.prayers,
             "flees": player.flees,
             "rests": player.rests,

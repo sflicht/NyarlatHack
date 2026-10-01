@@ -377,6 +377,38 @@ whether program 2 has a fresh origin: it trims fresh rows in 7 games but
 leaves at least 8 in each. Once the file is full, new rows fail closed as today.
 Raising the bound is a separate decision.
 
+### Public program receipts (M2 PR 4)
+
+`next_use-lifecycle.jsonl` is a diagnostic-only public terminal boundary. Each row
+has `next_use_lifecycle_v: 1`, `program_ordinal` (1–3), `program_id`, `terminal_seq`
+(the exact public event boundary), `reason`, and `journal_closed`. Reasons are
+`completed`, `level_departure`, `origin_evicted`, `origin_expired`,
+`program_expired`, `invalid_callback`, `identity_unsafe`, or `rejected`. Admitted
+programs emit only after the terminal chain is durably closed and acknowledged.
+A settled refusal emits `rejected` with `journal_closed: false` (no journal).
+At most three rows. Missing, partial or invalid receipts cannot grant permission
+to advance. These files are not save authority; diagnostic failure cannot change
+engine state, RNG, capture status, or admission.
+
+`next_use-felt.jsonl` projects only witnessed W and remapped F deliveries:
+`next_use_felt_v: 1`, `program_ordinal`, `program_id`, `family` (1=W, 2=F), and
+`root_seq` (public action root). At most two rows per program, after journal
+acknowledgement. No monster identities, private clocks or runtime snapshots.
+Post-run metrics join that root to an actual public notice for its turn and
+level. A receipt without a visible notice is not a felt event.
+
+M2 ordinary records use `ordinary-choice.json` v3: v2 fields plus
+`m2: {"enabled": true, "cap": 3}`; enabled follows the recorded next-use choice.
+Restore follows that record, including opt-out. V1/v2/no-record restores retain
+one-program scheduling; a fresh nonordinary run remains opt-in/single-program.
+Program 1 keeps its original envelope filename; later programs use `.2.json` and
+`.3.json`. The next origin's completed `end_seq` must exceed the previous
+`terminal_seq`. There is one seeded decision per program: the original seed for
+program 1, seed + ordinal − 1 thereafter. Existing publications are never
+rewritten, even after refusal or expiry. Missing receipts wait rather than
+retiming. Abstention/malformed input stops the director, without fabricating an
+engine attempt. The engine's existing cap/fresh-origin guard stays authoritative.
+
 ## Events and acknowledgements
 
 By default, each event is one v3 JSON object plus newline. Envelope fields are:

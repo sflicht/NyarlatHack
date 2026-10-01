@@ -123,6 +123,13 @@ class NextUseSafeAdmitTests(RetainOnFailure):
         receipts = self.rows(folder)
         self.assertEqual([r.get("program_ordinal") for r in receipts], [1, 2, 3])
         self.assertEqual([r.get("program_id") for r in receipts], [1, 1, 1])
+        lifecycle = Path(folder) / "next_use-lifecycle.jsonl"
+        self.assertTrue(lifecycle.exists(), "public terminal receipts required")
+        closed = [json.loads(line) for line in lifecycle.read_text().splitlines()]
+        self.assertEqual([r["program_ordinal"] for r in closed], [1, 2, 3])
+        self.assertEqual([r["terminal_seq"] for r in closed], [20, 50, 80])
+        self.assertEqual([r["reason"] for r in closed], ["program_expired"] * 3)
+        self.assertTrue(all(r["journal_closed"] for r in closed))
         from chaos.next_use_journal import read_journal
 
         paths = [

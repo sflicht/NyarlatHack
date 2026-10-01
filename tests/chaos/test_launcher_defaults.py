@@ -84,8 +84,9 @@ class OrdinaryDefaultTests(unittest.TestCase):
         choice = self.choice(run)
         self.assertEqual(
             {k: choice[k] for k in ("v", "haunt", "next_use", "whispers")},
-            dict(v=2, haunt=True, next_use=True, whispers=dict(backend="m1", seed=0)),
+            dict(v=3, haunt=True, next_use=True, whispers=dict(backend="m1", seed=0)),
         )
+        self.assertEqual(choice["m2"], {"enabled": True, "cap": 3})
         self.assertEqual(choice["haunt_pack"], str(HAUNT_DEFAULT))
         self.assertEqual(os.stat(run / "ordinary-choice.json").st_mode & 0o777, 0o600)
 
@@ -97,7 +98,8 @@ class OrdinaryDefaultTests(unittest.TestCase):
         self.assertEqual(
             self.choice(run),
             dict(
-                v=2,
+                v=3,
+                m2=dict(enabled=False, cap=3),
                 haunt=False,
                 haunt_pack=None,
                 haunt_sha256=None,
@@ -221,11 +223,29 @@ class OrdinaryDefaultTests(unittest.TestCase):
         )
         self.assertIsNone(launcher._resolve_choice(args, run))
         self.assertIsNone(args.m1_seed)
+        self.assertEqual(args.next_use_programs, 1)
         record = dict(json.loads(target.read_text()), v=2)
         for whispers, seed in ((dict(backend="m1", seed=4), 4), (None, None)):
             target.write_text(json.dumps(dict(record, whispers=whispers)))
             self.assertIsNone(launcher._resolve_choice(args, run))
             self.assertEqual(args.m1_seed, seed)
+            self.assertEqual(args.next_use_programs, 1)
+        for enabled, cap in ((True, 3), (False, 1)):
+            target.write_text(
+                json.dumps(
+                    dict(
+                        record,
+                        v=3,
+                        next_use=True,
+                        whispers=None,
+                        m2=dict(enabled=enabled, cap=3),
+                    )
+                )
+            )
+            args.next_use = False
+            self.assertIsNone(launcher._resolve_choice(args, run))
+            self.assertTrue(args.next_use)
+            self.assertEqual(args.next_use_programs, cap)
 
     def test_invalid_choice_record_fails_closed(self):
         base = dict(
@@ -238,6 +258,10 @@ class OrdinaryDefaultTests(unittest.TestCase):
             dict(base, whispers=dict(backend="m1", seed=-1)),
             dict(base, whispers=dict(backend="m1")),
             dict(base, v=1, whispers=None),  # v1 with a v2 key
+            dict(base, v=3, whispers=None),
+            dict(base, v=3, whispers=None, m2=dict(enabled=True, cap=3)),
+            dict(base, v=3, whispers=None, m2=dict(enabled=False, cap=True)),
+            dict(base, v=3, whispers=None, m2=dict(enabled=False, cap=4)),
         ]
         for raw in (b"{}", b"[]", b'{"v":2}', b"not json") + tuple(
             json.dumps(r).encode() for r in bad_v2

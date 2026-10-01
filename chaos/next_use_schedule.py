@@ -4,7 +4,7 @@ import os
 from pathlib import Path
 
 from .curio_store import _directory
-from .director import EventReader, Mailbox
+from .director import EventReader, Mailbox, secure_open
 from .episodes import parse_episode_event
 from .history import HistoryState, public_context
 from .history_choice import RandomHistoryBackend
@@ -146,8 +146,57 @@ def _history_line(line):
     return line + b"\n"  # Preserve exact source bytes, not reserialized evidence.
 
 
+TERMINATION_REASONS = (
+    "completed",
+    "level_departure",
+    "origin_evicted",
+    "origin_expired",
+    "program_expired",
+    "invalid_callback",
+    "identity_unsafe",
+    "rejected",
+)
+
+
+def parse_lifecycle(line):
+    """Public diagnostic, deliberately excludes private runtime/replay state."""
+    row = strict_json(line, 512)
+    if type(row) is not dict or set(row) != {
+        "next_use_lifecycle_v",
+        "program_ordinal",
+        "program_id",
+        "terminal_seq",
+        "reason",
+        "journal_closed",
+    }:
+        raise ValueError("lifecycle schema")
+    for key in (
+        "next_use_lifecycle_v",
+        "program_ordinal",
+        "program_id",
+        "terminal_seq",
+    ):
+        if type(row[key]) is not int:
+            raise ValueError("lifecycle integer")
+    if not (
+        row["next_use_lifecycle_v"] == 1
+        and 1 <= row["program_ordinal"] <= 3
+        and 1 <= row["program_id"] <= 2147483647
+        and 0 <= row["terminal_seq"] <= 2147483647
+        and row["reason"] in TERMINATION_REASONS
+        and type(row["journal_closed"]) is bool
+        and row["journal_closed"] == (row["reason"] != "rejected")
+    ):
+        raise ValueError("lifecycle bounds")
+    return row
+
+
 class NextUseScheduler:
-    """One seeded decision for a launcher lifetime, including abstention/failure.
+    """One seeded decision per program (legacy records retain one per game).
+
+    M2 advances only on a matching public terminal receipt. Its event sequence
+    fences the next origin; no wall-clock guess or private journal read is used.
+    The existing runtime still independently admits/rejects every publication.
 
     Retain the existing EventReader prefix/identity checks for BOTH inputs.
     History work/storage is bounded by its 16 MiB/50000-record contract; schedule
@@ -158,7 +207,18 @@ class NextUseScheduler:
     retimed to a later safe point. No retry or substitution after a decision.
     """
 
-    def __init__(self, directory, *, seed):
+    def __init__(self, directory, *, seed, programs=1):
+        if type(programs) is not int or programs not in (1, 3):
+            raise ValueError("program cap")
+        self.programs = programs
+        self.ordinal = 1
+        self.fresh_after = 0
+        self.seed = seed
+        self.lifecycle = EventReader(
+            "next_use-lifecycle.jsonl", 4096, 3, max_line=511, parser=parse_lifecycle
+        )
+        self.closed = {}
+        self.published = {}
         self.path = Path(directory).absolute()
         self.schedule = _schedule_reader("next_use-schedule.jsonl")
         self.events = EventReader("events.jsonl", parser=_history_line, max_line=4096)
@@ -201,6 +261,45 @@ class NextUseScheduler:
             self.history = HistoryState(b"".join(complete)) if complete else None
         return bool(self.events.tail or marker)
 
+    def _advance(self, directory):
+        from .next_use_envelope import envelope_name
+
+        for row in self.lifecycle.read(dir_fd=directory):
+            ordinal = row["program_ordinal"]
+            if ordinal != len(self.closed) + 1 or (
+                self.closed
+                and row["terminal_seq"] < self.closed[ordinal - 1]["terminal_seq"]
+            ):
+                raise ValueError("lifecycle order/duplicate")
+            self.closed[ordinal] = row
+        while self.ordinal <= self.programs:
+            path = self.path / envelope_name(self.ordinal)
+            if self.ordinal not in self.published:
+                try:
+                    fd = secure_open(path)
+                except FileNotFoundError:
+                    if self.ordinal in self.closed:
+                        raise ValueError("terminal without publication")
+                    return None
+                with os.fdopen(fd, "rb") as stream:
+                    raw = stream.read(16385)
+                envelope = strict_json(raw, 16384)
+                if type(envelope) is not dict or type(envelope.get("id")) is not int:
+                    raise ValueError("published envelope identity")
+                self.published[self.ordinal] = envelope["id"]
+            terminal = self.closed.get(self.ordinal)
+            if terminal is None:
+                return {"status": "already_published", "program": self.ordinal}
+            if terminal["program_id"] != self.published[self.ordinal]:
+                raise ValueError("terminal publication identity")
+            if not self.history or terminal["terminal_seq"] > len(self.lines):
+                return {"status": "pending", "program": self.ordinal}
+            self.fresh_after = terminal["terminal_seq"]
+            self.ordinal += 1
+            self.selector = RandomHistoryBackend(self.seed + self.ordinal - 1)
+        self.terminal = "cap_reached"
+        return {"status": self.terminal, "program": self.programs}
+
     def _poll(self, box):
         from .next_use_envelope import engine_run_hex, publish_envelope
 
@@ -210,11 +309,18 @@ class NextUseScheduler:
             if self.identity is not None and self.identity != identity:
                 raise ValueError("schedule directory replaced")
             self.identity = identity
-            if os.path.lexists(self.path / "next_use-envelope.json"):
+            if self.programs == 1 and os.path.lexists(
+                self.path / "next_use-envelope.json"
+            ):
                 self.terminal = "already_published"
                 return {"status": self.terminal}
             pending = self._read(directory)
             history = self.history
+            if self.programs > 1:
+                waiting = self._advance(directory)
+                if waiting is not None:
+                    return waiting
+                pending = pending or bool(self.lifecycle.tail)
             if pending or not history:
                 return {"status": "pending"}
             if (
@@ -225,6 +331,8 @@ class NextUseScheduler:
                 return {"status": "no_eligible_origin"}
             menu = next_use_menu(history)
             for row in sorted(self.rows, key=lambda r: r["end_seq"]):
+                if row["end_seq"] <= self.fresh_after:
+                    continue
                 choices = [choice for choice in menu if _matches(row, choice)]
                 if not choices:
                     continue
@@ -257,9 +365,11 @@ class NextUseScheduler:
                         end["last_id"] + 1,
                     ),
                     box,
+                    ordinal=self.ordinal,
                 )
-                self.terminal = "already_published"
-                return result
+                self.published[self.ordinal] = result["id"]
+                self.terminal = "already_published" if self.programs == 1 else None
+                return dict(result, program=self.ordinal)
             return {
                 "status": "pending"
                 if self.schedule.tail or pending_families(history)

@@ -169,7 +169,7 @@ def dlvl_at(timeline, turn):
     return level
 
 
-def analyse(game_root, felt=False):
+def analyse(game_root, felt=False, *, timeline=(), statuses=()):
     root = Path(game_root)
     run = root / "run"
     events = _rows(run / "events.jsonl")
@@ -205,7 +205,7 @@ def analyse(game_root, felt=False):
         for op in QUALIFYING
     }
     schedule = _rows(run / "next_use-schedule.jsonl")
-    statuses = _director_statuses(run)
+    director_statuses = _director_statuses(run)
     envelope_path = run / "next_use-envelope.json"
     envelope = json.loads(envelope_path.read_text()) if envelope_path.exists() else None
     receipts = _rows(run / "next_use-receipt.jsonl")
@@ -267,9 +267,9 @@ def analyse(game_root, felt=False):
     elif not counts["published"]:
         loss = (
             "director_abstained"
-            if "abstained" in statuses
+            if "abstained" in director_statuses
             else "director_failed"
-            if "failed" in statuses
+            if "failed" in director_statuses
             else "not_published_before_game_end"
         )
     elif not counts["admitted"]:
@@ -305,7 +305,17 @@ def analyse(game_root, felt=False):
     ordinary_whispers = _rows(run / "whispers.jsonl")
     extra = {}
     if felt:  # v2 only, so v1 reports keep their exact shape
-        extra["first_felt"] = first_felt(events, effects)
+        from sweep_programs import program_metrics
+
+        extra.update(program_metrics(run, events, receipts, timeline, statuses))
+        for stage in ("published", "admitted", "trigger", "native_effect", "delivered"):
+            counts[stage] = sum(p[stage] for p in extra["programs"])
+        delivery_known = all(p["delivery_known"] for p in extra["programs"])
+        extra["first_felt"] = (
+            {k: extra["felt_events"][0][k] for k in ("turn", "kind")}
+            if extra["felt_events"]
+            else None
+        )
         extra["haunt"] = {
             d: sum(1 for e in events if e["event"] == "haunting" and e["detail"] == d)
             for d in sorted({e["detail"] for e in events if e["event"] == "haunting"})

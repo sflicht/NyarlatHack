@@ -11,15 +11,18 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+void chaos_next_use_terminal_receipt(int, int, int) __attribute__((weak));
+void chaos_next_use_felt_receipt(int, int, int, long) __attribute__((weak));
+
 /* One bounded buffer and one owned descriptor, not a database. */
 static struct {
-    int fd, started, failed, ended;
+    int fd, dir, started, failed, ended;
     unsigned long cursor;
     size_t bytes, used;
     int bad;
     char previous[65], source_sha256[65];
     char line[CHAOS_JOURNAL_LINE_MAX];
-} journal = { .fd = -1 };
+} journal = { .fd = -1, .dir = -1 };
 
 static int journal_name(char name[64], int ordinal)
 {
@@ -225,6 +228,7 @@ static void fail(void)
 {
     static const char marker[] = "{\"journal_failed\":1}\n";
     journal.failed = 1;
+    if (journal.dir >= 0) { (void)close(journal.dir); journal.dir = -1; }
     chaos_next_use_capture_journal_fail();
     /* Best effort negative evidence, never overwrite/delete the original prefix.
      * A footer CAN survive failed fsync/close even when this marker cannot land.
@@ -266,7 +270,7 @@ static int finish_line(void)
 }
 static int sink(void *opaque, const struct chaos_next_use_replay_input *p)
 {
-    int i, terminal = 0;
+    int i, terminal = 0, reason = 0, program_id = 0;
     (void)opaque;
     if (!p || journal.failed || journal.ended || journal.fd < 0) return 0;
     if (p->replay_input_v != 1 || p->cursor != journal.cursor + 1
@@ -277,8 +281,11 @@ static int sink(void *opaque, const struct chaos_next_use_replay_input *p)
         fail(); return 0;
     }
     for (i = 0; i < p->private_count; ++i)
-        if (p->private_records[i].kind == CHAOS_RUNTIME_PRIVATE_TERMINATION)
+        if (p->private_records[i].kind == CHAOS_RUNTIME_PRIVATE_TERMINATION) {
             terminal = 1;
+            reason = p->private_records[i].data.termination.reason;
+            program_id = p->private_records[i].program_id;
+        }
     start_line("transition", p->cursor); transition(p);
     if (!finish_line()) { fail(); return 0; }
     if (terminal && p->post.phase == CHAOS_ATTEMPT_TERMINATED
@@ -298,13 +305,28 @@ static int sink(void *opaque, const struct chaos_next_use_replay_input *p)
         journal.ended ? CHAOS_JOURNAL_COMPLETE : CHAOS_JOURNAL_OPEN,
         (unsigned long)journal.bytes, journal.previous);
     journal.cursor = p->cursor;
+    if (chaos_next_use_felt_receipt)
+        for (i = 0; i < p->private_count; ++i) {
+            const struct chaos_next_use_runtime_private_record *r = &p->private_records[i];
+            if (r->kind == CHAOS_RUNTIME_PRIVATE_EFFECT
+                && (r->data.effect.outcome == CHAOS_EFFECT_W_WITNESSED
+                    || r->data.effect.outcome == CHAOS_EFFECT_F_REMAPPED))
+                chaos_next_use_felt_receipt(journal.dir, r->program_id,
+                    r->data.effect.family, r->data.effect.root);
+        }
+    if (journal.ended && chaos_next_use_terminal_receipt)
+        chaos_next_use_terminal_receipt(journal.dir, program_id, reason);
+    if (journal.ended && journal.dir >= 0) {
+        (void)close(journal.dir); journal.dir = -1;
+    }
     return 1;
 }
 void chaos_next_use_journal_reset(void)
 {
     if (journal.fd >= 0) (void)close(journal.fd);
+    if (journal.dir >= 0) (void)close(journal.dir);
     memset(&journal, 0, sizeof journal);
-    journal.fd = -1;
+    journal.fd = journal.dir = -1;
     chaos_next_use_capture_set_sink(NULL, NULL);
 }
 /* This is a writer-framing scanner, not a second semantic JSON interpreter.
@@ -490,6 +512,7 @@ static int resume_one(int dir, int ordinal,
     } else if (fcntl(fd, F_SETFL, O_APPEND | O_NONBLOCK) < 0) goto rejected;
     if (attach) {
         journal.fd = fd; fd = -1;
+        journal.dir = ended ? -1 : fcntl(dir, F_DUPFD_CLOEXEC, 0);
         journal.cursor = cursor; journal.bytes = total; journal.ended = ended;
         memcpy(journal.previous, previous, 65);
         /* Closed COMPLETE retains its status subscriber, never a writable fd. */
@@ -536,6 +559,7 @@ int chaos_next_use_journal_begin(int dir)
     if (!chaos_next_use_capture_journal_enter(&status)) return 0;
     if (journal.started) { chaos_next_use_capture_fail(); goto done; }
     journal.started = 1;
+    journal.dir = fcntl(dir, F_DUPFD_CLOEXEC, 0); /* diagnostic-only; failure is a gap */
     chaos_next_use_capture_set_sink(sink, NULL);
     if (status.incomplete || status.transaction_open || status.acknowledged_cursor
         || !chaos_next_use_snapshot_export(&initial) || initial.replay_cursor
