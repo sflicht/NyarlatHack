@@ -1,0 +1,301 @@
+{
+  "code_revision": "bdf8d757bd77d79e0053f360d39e69c165ab5f1a",
+  "note": "Real Unix fixture runs use wizard geometry and hand-placed envelopes; ordinary capture is save/restore smoke only. Corrupt-case journals intentionally remain corrupt.",
+  "files": [
+    {
+      "path": "native/terminal/game/state.json",
+      "sha256": "7166393a6cd973ba11b9d09a47042310cba478be6336cd7b749ffdf60f08bf60",
+      "bytes": 1123
+    },
+    {
+      "path": "native/terminal/manifest.json",
+      "sha256": "301b5bee68d9b2d0b9772fe76cce59e5795aad24ee9ca609ab88c92f6bdabb77",
+      "bytes": 2446
+    },
+    {
+      "path": "native/terminal/inputs.json",
+      "sha256": "c385598ba9259aa7915eecac4ba26334b39a38f0140b90123f0de02e4b72f25c",
+      "bytes": 574
+    },
+    {
+      "path": "native/terminal/run/next_use-journal.2.jsonl",
+      "sha256": "92f7ceded05f54318abbfc57c33e3e7d1137bd8dda4daa615a5e7a37cdfbc40f",
+      "bytes": 6866
+    },
+    {
+      "path": "native/terminal/run/next_use-journal.3.jsonl",
+      "sha256": "5673e3fd66af59b127cd12512003b6f627a0dab9abd1fd9af7154c08acbb3fb6",
+      "bytes": 6866
+    },
+    {
+      "path": "native/terminal/run/next_use-journal.jsonl",
+      "sha256": "cd0127a5022055a9d85a354c84dbcf25025df63e65d75ffbba5d871069b50a19",
+      "bytes": 6859
+    },
+    {
+      "path": "native/terminal/run/next_use-envelope.2.json",
+      "sha256": "fcd963c1e0d94be3b1322facfbbc8a912138d8ba14ef4ddb6b88719fc95f2be7",
+      "bytes": 531
+    },
+    {
+      "path": "native/terminal/run/next_use-envelope.3.json",
+      "sha256": "201f718648a5b262f056edfdb013c5ee86d288f68911a644b54b7427f81ff32f",
+      "bytes": 531
+    },
+    {
+      "path": "native/terminal/run/next_use-envelope.json",
+      "sha256": "56bffe05df9dd8b2323382796de96f97ba5a8a43be917c387f3521b3eddfab9d",
+      "bytes": 528
+    },
+    {
+      "path": "native/terminal/run/next_use-receipt.jsonl",
+      "sha256": "3ac662adcf1c8c751d044c54af9fb844368429f9f78205f3ab49a0858d72d85c",
+      "bytes": 388
+    },
+    {
+      "path": "native/rejected/game/state.json",
+      "sha256": "750859c8b81e8bd92443e9f669acf03bc9b94ef5d85f7639091e06c935279d3e",
+      "bytes": 1124
+    },
+    {
+      "path": "native/rejected/manifest.json",
+      "sha256": "4f63f355f74bbb1afcfc898787b2bbdb91a199b8ec0f1c8843097ddc4120f962",
+      "bytes": 2446
+    },
+    {
+      "path": "native/rejected/inputs.json",
+      "sha256": "3e882050fb6d73362d494218a4c6bd5a7289e4e1e0cdbeb09c2e40a94fa4ac57",
+      "bytes": 556
+    },
+    {
+      "path": "native/rejected/run/next_use-journal.2.jsonl",
+      "sha256": "d3e654eb120d901d0d17c3b1cc775fec54948a2f242c4d648115413851a789de",
+      "bytes": 6870
+    },
+    {
+      "path": "native/rejected/run/next_use-journal.3.jsonl",
+      "sha256": "210249ab3be02a41cf8066a565a8c712b3bb5c3efd7c5c57969c983af4f37b99",
+      "bytes": 6870
+    },
+    {
+      "path": "native/rejected/run/next_use-envelope.2.json",
+      "sha256": "4fc395eb44d11440e8c936c6faa18d5e935e8d3ad83aab12eecbdd1a51429fa5",
+      "bytes": 531
+    },
+    {
+      "path": "native/rejected/run/next_use-envelope.3.json",
+      "sha256": "72135cc8a279a55ee455efafa82bedd19e504eb6b9a92d3caf1c379476e256a1",
+      "bytes": 531
+    },
+    {
+      "path": "native/rejected/run/next_use-envelope.json",
+      "sha256": "2e288d7a9495d57f574cde1242518671d0e13f850f45d143a3a3c0c649b08bc1",
+      "bytes": 528
+    },
+    {
+      "path": "native/rejected/run/next_use-receipt.jsonl",
+      "sha256": "aace32898ceb9ec504b139338fd8ec8dea9f7dd0a2044b18503da1b508ad36c2",
+      "bytes": 395
+    },
+    {
+      "path": "native/rejected2/game/state.json",
+      "sha256": "d5bef0db20fa7ad2e06567fe0f4a8f2f1079cb3c62d8a773e530945f18ab41d2",
+      "bytes": 1123
+    },
+    {
+      "path": "native/rejected2/manifest.json",
+      "sha256": "8011775db3b2290158c985ebe22117bf23f4f56f6e7714d7897237f2b22750fd",
+      "bytes": 2446
+    },
+    {
+      "path": "native/rejected2/inputs.json",
+      "sha256": "763562317fbd9be73af86f1062f596fd0540455d81e6311b8dbce829c505d554",
+      "bytes": 556
+    },
+    {
+      "path": "native/rejected2/run/next_use-journal.3.jsonl",
+      "sha256": "eff88a7e4ae60e9913f8a50b66c4b476788f79397dac4edf8a65563cabe68dc4",
+      "bytes": 6866
+    },
+    {
+      "path": "native/rejected2/run/next_use-journal.jsonl",
+      "sha256": "4a6f6d58f378cddda68de88e6a68738c813157b265c5e7ebb05d5808c4047afd",
+      "bytes": 6859
+    },
+    {
+      "path": "native/rejected2/run/next_use-envelope.2.json",
+      "sha256": "420205618425a6e5db819dda0db23efcc09bb7a7f730fbc10bf7ae69c4afc308",
+      "bytes": 531
+    },
+    {
+      "path": "native/rejected2/run/next_use-envelope.3.json",
+      "sha256": "ec314b75e203c0a96dff3ddb6b5421e64bf82b923d5760ad3884173e1815da8d",
+      "bytes": 531
+    },
+    {
+      "path": "native/rejected2/run/next_use-envelope.json",
+      "sha256": "718912824e8e85082ba402244dd149e81680e4d805aae26f605ab16367b4bd18",
+      "bytes": 528
+    },
+    {
+      "path": "native/rejected2/run/next_use-receipt.jsonl",
+      "sha256": "16c85caecb69610981f1bc316c4daac923b2b652f42544fe2578ac1411eeda17",
+      "bytes": 393
+    },
+    {
+      "path": "native/active2/game/state.json",
+      "sha256": "c6f9a63247531e20ccc837ddc45dc28a0c6656914e457b391cc4459ed9f00996",
+      "bytes": 1124
+    },
+    {
+      "path": "native/active2/manifest.json",
+      "sha256": "89d917574c0d0a46869f6868a44186b62861fecd3e55548997d513160eaa5dbe",
+      "bytes": 3049
+    },
+    {
+      "path": "native/active2/inputs.json",
+      "sha256": "4ae81f3f05b8834de58925348fd95285ca20c7da21963af784e868cd71d43198",
+      "bytes": 620
+    },
+    {
+      "path": "native/active2/run/next_use-journal.2.jsonl",
+      "sha256": "13d4bfbdf8d37b670a697080f8be9a0fd05e59a6e1d5f2b235529a3432f379f3",
+      "bytes": 8476
+    },
+    {
+      "path": "native/active2/run/next_use-journal.3.jsonl",
+      "sha256": "041b75919c1c2d7ea2d2d275afa3a869c9cad3e37e076a332b4b75303b88ceda",
+      "bytes": 6870
+    },
+    {
+      "path": "native/active2/run/next_use-journal.jsonl",
+      "sha256": "b33d6db38e9ac3eac960cda0e60cdba9679b926b143ca9718038d2c55ed2b050",
+      "bytes": 6863
+    },
+    {
+      "path": "native/active2/run/next_use-envelope.2.json",
+      "sha256": "9c8a20c659fc20b6df792787d666ef662c262199f4bd0f0f25f9b68188e909a8",
+      "bytes": 531
+    },
+    {
+      "path": "native/active2/run/next_use-envelope.3.json",
+      "sha256": "df44eedce0c3d13e140fa5e12f3fde5fa9faf41269881b010fe20cd7e9ed3c21",
+      "bytes": 531
+    },
+    {
+      "path": "native/active2/run/next_use-envelope.json",
+      "sha256": "bf804c398be5e41efc27694c63d8ddcfcd3007aff219ef3645bbc0c2f3da628b",
+      "bytes": 528
+    },
+    {
+      "path": "native/active2/run/next_use-receipt.jsonl",
+      "sha256": "3bdff7125d3892597764087a278660e3d79781c519177392b16e3039257c37fa",
+      "bytes": 388
+    },
+    {
+      "path": "native/corrupt1/game/state.json",
+      "sha256": "6d0abfa2b1a9c1969946d92695b11ec484748eb6c6cefe072f78d1460d65c9c4",
+      "bytes": 1123
+    },
+    {
+      "path": "native/corrupt1/manifest.json",
+      "sha256": "8b16a6a2125237295e75f95339b1999445f9410e0650e63536693d7e91dad556",
+      "bytes": 1843
+    },
+    {
+      "path": "native/corrupt1/inputs.json",
+      "sha256": "7cef9836fee98cf36312a54c45a5b612cfe31a95ee65aebdd4785c003128fd11",
+      "bytes": 426
+    },
+    {
+      "path": "native/corrupt1/run/next_use-journal.2.jsonl",
+      "sha256": "ac87523ce48ba8b07edc21d7611c40ae6794306dc2a4247046ea328d42f9e3ae",
+      "bytes": 2659
+    },
+    {
+      "path": "native/corrupt1/run/next_use-journal.jsonl",
+      "sha256": "943be830f85950d404bf206b0f2ddd87887c86bccf578f1e0f086e4cf78a1240",
+      "bytes": 6858
+    },
+    {
+      "path": "native/corrupt1/run/next_use-envelope.2.json",
+      "sha256": "55b0d660af3a88f6abffa2aa3b2db446a0bd74c079dfd2013498c06b6c807d1a",
+      "bytes": 531
+    },
+    {
+      "path": "native/corrupt1/run/next_use-envelope.3.json",
+      "sha256": "3954e6501ebfd4fe39e8cb37ff5eb8ed31634a3765ab8a7dc658481b2609d911",
+      "bytes": 531
+    },
+    {
+      "path": "native/corrupt1/run/next_use-envelope.json",
+      "sha256": "ba7d924de882a8e7019c0f89b5ff8115274ab8f0b874b80fd37cf8e9f4b64e4e",
+      "bytes": 528
+    },
+    {
+      "path": "native/corrupt1/run/next_use-receipt.jsonl",
+      "sha256": "a8bf746f41c3e4957a87c0f8d2e3941062b49838226a52826d2b30375b5e2092",
+      "bytes": 258
+    },
+    {
+      "path": "native/corrupt2/game/state.json",
+      "sha256": "3661e8dd1d71f4ca5053b30031cbe7697ae22caadfd46b8c3419269677cf9f21",
+      "bytes": 1124
+    },
+    {
+      "path": "native/corrupt2/manifest.json",
+      "sha256": "8b16a6a2125237295e75f95339b1999445f9410e0650e63536693d7e91dad556",
+      "bytes": 1843
+    },
+    {
+      "path": "native/corrupt2/inputs.json",
+      "sha256": "7cef9836fee98cf36312a54c45a5b612cfe31a95ee65aebdd4785c003128fd11",
+      "bytes": 426
+    },
+    {
+      "path": "native/corrupt2/run/next_use-journal.2.jsonl",
+      "sha256": "669ae2be75bb54b06d24be27460604552984225a9c919f70932737b17a4b8214",
+      "bytes": 2659
+    },
+    {
+      "path": "native/corrupt2/run/next_use-journal.jsonl",
+      "sha256": "599a195015da44c0833744e2fac13e824d632f5d6df7d1eefcec2b3fb49fdb06",
+      "bytes": 6863
+    },
+    {
+      "path": "native/corrupt2/run/next_use-envelope.2.json",
+      "sha256": "812a2e442e690019be93feba613cf2a1d5461f3385a45529230c3fddf9b28573",
+      "bytes": 531
+    },
+    {
+      "path": "native/corrupt2/run/next_use-envelope.3.json",
+      "sha256": "663bc6178fff41fd607a063811e74211ea6fe3a3a30438528b46f9cf700743e1",
+      "bytes": 531
+    },
+    {
+      "path": "native/corrupt2/run/next_use-envelope.json",
+      "sha256": "9d2305b5b7eb0fc292f6226a263d26cdc5b43e503f7e0bf4c6befa4242e92dad",
+      "bytes": 528
+    },
+    {
+      "path": "native/corrupt2/run/next_use-receipt.jsonl",
+      "sha256": "a8bf746f41c3e4957a87c0f8d2e3941062b49838226a52826d2b30375b5e2092",
+      "bytes": 258
+    },
+    {
+      "path": "ordinary/manifest.json",
+      "sha256": "1023300ef665a34fe2b20191eecd116300b3095aa5a5f214b1e8be703855d421",
+      "bytes": 1305
+    },
+    {
+      "path": "ordinary/inputs.json",
+      "sha256": "91164010cbdfc4b7f801bc48d47427e52f52af1beef3a591d4cea6e84c882072",
+      "bytes": 122
+    },
+    {
+      "path": "ordinary/run/events.jsonl",
+      "sha256": "c88a36182373872d4749e8b19ece6eee6e789c6241a7d4412773cf483ec25f4d",
+      "bytes": 2523
+    }
+  ]
+}

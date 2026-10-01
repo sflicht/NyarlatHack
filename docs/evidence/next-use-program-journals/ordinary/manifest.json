@@ -1,13 +1,4 @@
 {
-  "wizard": false,
-  "ordinary": true,
-  "clock_control": false,
-  "seed_control": false,
-  "model_calls": 0,
-  "save_exit": 0,
-  "quit_exit": 0,
-  "restores": 1,
-  "event_count": 9,
   "sessions": [
     {
       "wizard": false,
@@ -47,5 +38,6 @@
       "options": "Bard,human,male,neutral,dog,tty,!news,!legacy,time",
       "timezone": "UTC"
     }
-  ]
+  ],
+  "exit": 0
 }

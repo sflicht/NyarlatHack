@@ -1,0 +1,81 @@
+{
+  "sessions": [
+    {
+      "wizard": true,
+      "ordinary": false,
+      "observe": true,
+      "echoes": true,
+      "haunting_source_sha256": null,
+      "terminal": [
+        24,
+        80
+      ],
+      "inputs_begin": 0,
+      "sha256": {
+        "dnethack": "0210259bdc867d03024b2d7e4c5279a4b84b81b3a2965309e6145e64954f12c4",
+        "nhdat": "b7fc1a3aff42f759d4ee3d4db40e1d553ce753bc72c7dc75995a349c24719a96"
+      },
+      "clock_sha256": "76f30efb4a9de52d0c43028772d227ea9627e34814009f25c9f8851b55ddec5e",
+      "options": "Wizard,human,male,neutral,tty,!news,!legacy,time",
+      "timezone": "UTC"
+    },
+    {
+      "wizard": true,
+      "ordinary": false,
+      "observe": true,
+      "echoes": true,
+      "haunting_source_sha256": null,
+      "terminal": [
+        24,
+        80
+      ],
+      "inputs_begin": 13,
+      "sha256": {
+        "dnethack": "0210259bdc867d03024b2d7e4c5279a4b84b81b3a2965309e6145e64954f12c4",
+        "nhdat": "b7fc1a3aff42f759d4ee3d4db40e1d553ce753bc72c7dc75995a349c24719a96"
+      },
+      "clock_sha256": "76f30efb4a9de52d0c43028772d227ea9627e34814009f25c9f8851b55ddec5e",
+      "options": "Wizard,human,male,neutral,tty,!news,!legacy,time",
+      "timezone": "UTC"
+    },
+    {
+      "wizard": true,
+      "ordinary": false,
+      "observe": true,
+      "echoes": true,
+      "haunting_source_sha256": null,
+      "terminal": [
+        24,
+        80
+      ],
+      "inputs_begin": 25,
+      "sha256": {
+        "dnethack": "0210259bdc867d03024b2d7e4c5279a4b84b81b3a2965309e6145e64954f12c4",
+        "nhdat": "b7fc1a3aff42f759d4ee3d4db40e1d553ce753bc72c7dc75995a349c24719a96"
+      },
+      "clock_sha256": "76f30efb4a9de52d0c43028772d227ea9627e34814009f25c9f8851b55ddec5e",
+      "options": "Wizard,human,male,neutral,tty,!news,!legacy,time",
+      "timezone": "UTC"
+    },
+    {
+      "wizard": true,
+      "ordinary": false,
+      "observe": true,
+      "echoes": true,
+      "haunting_source_sha256": null,
+      "terminal": [
+        24,
+        80
+      ],
+      "inputs_begin": 40,
+      "sha256": {
+        "dnethack": "0210259bdc867d03024b2d7e4c5279a4b84b81b3a2965309e6145e64954f12c4",
+        "nhdat": "b7fc1a3aff42f759d4ee3d4db40e1d553ce753bc72c7dc75995a349c24719a96"
+      },
+      "clock_sha256": "76f30efb4a9de52d0c43028772d227ea9627e34814009f25c9f8851b55ddec5e",
+      "options": "Wizard,human,male,neutral,tty,!news,!legacy,time",
+      "timezone": "UTC"
+    }
+  ],
+  "exit": 0
+}
