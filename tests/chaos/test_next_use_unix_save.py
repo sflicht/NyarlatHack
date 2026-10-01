@@ -168,6 +168,27 @@ class NextUseUnixSaveTests(unittest.TestCase):
         cls.two_family_exe = exe
 
     def test_m2_terminal_rejected_and_cap_save_restore(self):
+        self._multi_program_game("terminal")
+        self._multi_program_game("rejected")
+        self._multi_program_game("rejected2")
+
+    def test_program_two_restore_validates_both_journals(self):
+        self._multi_program_game("active2")
+
+    def test_program_two_restore_corrupt_previous_journal_fails_closed(self):
+        self._multi_program_game("corrupt1")
+
+    def test_program_two_restore_truncated_current_journal_fails_closed(self):
+        self._multi_program_game("corrupt2")
+
+    def _multi_program_game(self, mode):
+        """Real Unix game, controlled wizard geometry, hand-placed envelopes.
+
+        The director still publishes only ordinal 1. Counts are NEVER injected.
+        """
+        from chaos.next_use_envelope import envelope_from_selection
+        from chaos.next_use_journal import read_journal
+
         self._build_two_family_game()
         previous = {
             key: os.environ.get(key)
@@ -183,116 +204,143 @@ class NextUseUnixSaveTests(unittest.TestCase):
 
         self.addCleanup(restore_env)
         os.environ.update({key: "1" for key in previous})
-        for mode in ("terminal", "rejected", "cap"):
-            with self.subTest(mode=mode):
-                game = Game(
-                    ROOT / "dnethackdir",
-                    self.clock,
-                    wizard=True,
-                    asset_pool=self.asset_pool,
-                    executable=self.two_family_exe,
-                    root=self.artifacts / ("m2-" + mode),
-                )
-                self.addCleanup(game.close)
-                game.start()
-                slot = json.loads((game.game / "fixture.json").read_text())[
-                    "letter"
-                ].encode()
+        game = Game(
+            ROOT / "dnethackdir",
+            self.clock,
+            wizard=True,
+            asset_pool=self.asset_pool,
+            executable=self.two_family_exe,
+            root=self.artifacts / ("m3-" + mode),
+        )
+        self.addCleanup(game.close)
+        game.start()
+        slot = json.loads((game.game / "fixture.json").read_text())["letter"].encode()
 
-                def state():
-                    return json.loads((game.game / "state.json").read_text())
+        def state():
+            return json.loads((game.game / "state.json").read_text())
 
-                def whistle():
-                    self.assertIn(b"apply", game.send("a").lower())
-                    game.more(game.send(slot))
+        def whistle():
+            self.assertIn(b"apply", game.send("a").lower())
+            game.more(game.send(slot))
 
-                whistle()
-                notice = next(
-                    e
-                    for e in game.events()
-                    if e.get("observation", {}).get("stage") == "notice"
-                    and e["observation"]["operation"] == "whistling"
-                )
-                done = next(
-                    e
-                    for e in game.events()
-                    if e.get("observation", {}).get("stage") == "completed"
-                    and e["observation"]["operation"] == "whistling"
-                )
-                row = {
-                    "family": "W",
-                    "op": "quiet",
-                    "origin": {
-                        "root_seq": notice["observation"]["root_seq"],
-                        "notice_seq": notice["seq"],
-                        "end_seq": done["seq"],
-                        "fact": notice["observation"]["fact"],
-                    },
-                }
-                host = {
-                    "at": state()["safe"] + 1,
-                    "id": 1,
-                    "level_dlevel": 1,
-                    "level_dnum": 0,
-                    "move": notice["turn"],
-                    "run": engine_run_hex(game.run),
-                    "variant": 0,
-                }
-                publish_envelope(game.run, row, host)
-                envelope = game.run / "next_use-envelope.json"
-                if mode == "rejected":
-                    payload = json.loads(envelope.read_text())
-                    payload["at"] -= 1  # missed safe index: parsed rejected attempt
-                    envelope.write_text(
-                        json.dumps(payload, separators=(",", ":"), sort_keys=True)
-                    )
-                game.sanity(60)
-                self.assertEqual(state()["settled_count"], 1)
-                self.assertEqual(state()["program_ordinal"], 1)
-                self.assertEqual(state()["last_program_id"], 1)
-                if mode != "rejected":
-                    whistle()  # quiet consumes the single slot, closes the journal
-                    self.assertEqual(state()["journal_state"], 2)
-                self.assertEqual(state()["policy_terminal"], 1)
-                if mode != "rejected":
-                    terminal_observation = next(
-                        e
-                        for e in reversed(game.events())
-                        if e.get("observation", {}).get("stage") == "completed"
-                    )
-                    self.assertEqual(
-                        state()["terminal_seq"], terminal_observation["seq"]
-                    )
-                if mode == "cap":
-                    (game.game / "m2-cap-fixture").touch()
-                    game.sanity(40)
-                before = state()
-                self.assertEqual(before["settled_count"], 3 if mode == "cap" else 1)
-                journal = game.run / "next_use-journal.jsonl"
-                journal_bytes = journal.read_bytes() if journal.exists() else None
+        def publish(ordinal, reject=False):
+            notices = [
+                e
+                for e in game.events()
+                if e.get("observation", {}).get("stage") == "notice"
+                and e["observation"]["operation"] == "whistling"
+            ]
+            notice = notices[-1]
+            done = next(
+                e
+                for e in reversed(game.events())
+                if e.get("observation", {}).get("stage") == "completed"
+                and e["observation"]["operation"] == "whistling"
+            )
+            row = {
+                "family": "W",
+                "op": "quiet",
+                "origin": {
+                    "root_seq": notice["observation"]["root_seq"],
+                    "notice_seq": notice["seq"],
+                    "end_seq": done["seq"],
+                    "fact": notice["observation"]["fact"],
+                },
+            }
+            host = {
+                "at": state()["safe"] + (0 if reject else 1),
+                "id": 1,
+                "level_dlevel": 1,
+                "level_dnum": 0,
+                "move": notice["turn"],
+                "run": engine_run_hex(game.run),
+                "variant": 0,
+            }
+            _, encoded = envelope_from_selection(row, host)
+            name = (
+                "next_use-envelope.json"
+                if ordinal == 1
+                else f"next_use-envelope.{ordinal}.json"
+            )
+            target = game.run / name
+            target.write_bytes(encoded)
+            target.chmod(0o600)
+
+        def save_restore():
+            before = state()
+            self.assertEqual(game.save(), 0)
+            game.start()
+            for key in (
+                "settled_count",
+                "program_ordinal",
+                "last_program_id",
+                "policy_terminal",
+                "terminal_seq",
+                "spent",
+            ):
+                self.assertEqual(state()[key], before[key], key)
+
+        closed = {}
+        for ordinal in (1, 2, 3):
+            if ordinal > 1:
+                game.sanity(80)  # wizard sanity has a floor; cross a real threshold
+            whistle()  # genuinely completed, newer than the prior termination
+            rejected = (mode == "rejected" and ordinal == 1) or (
+                mode == "rejected2" and ordinal == 2
+            )
+            publish(ordinal, reject=rejected)
+            game.sanity(60)
+            self.assertEqual(state()["settled_count"], ordinal)
+            self.assertEqual(state()["program_ordinal"], ordinal)
+            if ordinal == 2 and mode in ("active2", "corrupt1", "corrupt2"):
+                self.assertEqual(state()["journal_state"], 1)
                 self.assertEqual(game.save(), 0)
+                target = game.run / (
+                    "next_use-journal.jsonl"
+                    if mode == "corrupt1"
+                    else "next_use-journal.2.jsonl"
+                )
+                if mode.startswith("corrupt"):
+                    target.write_bytes(target.read_bytes()[:-1])
+                    corrupted = target.read_bytes()
                 game.start()
-                after = state()
-                for key in (
-                    "settled_count",
-                    "program_ordinal",
-                    "last_program_id",
-                    "policy_terminal",
-                    "terminal_seq",
-                    "spent",
-                ):
-                    self.assertEqual(after[key], before[key], key)
-                # A fresh origin and early ordinal-2 file cannot bypass PR 2's gate.
-                whistle()
-                second = game.run / "next_use-envelope.2.json"
-                second.write_bytes(envelope.read_bytes())
-                second.chmod(0o600)
-                game.sanity(20)
-                self.assertEqual(state()["settled_count"], before["settled_count"])
-                self.assertEqual(state()["spent"], before["spent"])
-                if journal_bytes is not None:
-                    self.assertEqual(journal.read_bytes(), journal_bytes)
-                self.assertEqual(game.quit(), 0)
+                if mode.startswith("corrupt"):
+                    self.assertEqual(state()["journal_state"], 3)
+                    self.assertEqual(target.read_bytes(), corrupted)
+                    whistle()
+                    whistle()
+                    game.sanity(80)
+                    publish(3)
+                    previous_safe = state()["safe"]
+                    game.sanity(60)
+                    self.assertGreater(state()["safe"], previous_safe)
+                    self.assertEqual(state()["settled_count"], 2)
+                    self.assertEqual(game.quit(), 0)
+                    return
+                self.assertEqual(state()["journal_state"], 1)
+            if not rejected:
+                whistle()  # native quiet callback terminates and durably closes
+                self.assertEqual(state()["journal_state"], 2)
+                name = (
+                    "next_use-journal.jsonl"
+                    if ordinal == 1
+                    else f"next_use-journal.{ordinal}.jsonl"
+                )
+                self.assertTrue(read_journal(game.run / name)["structurally_complete"])
+                closed[name] = (game.run / name).read_bytes()
+            self.assertEqual(state()["policy_terminal"], 1)
+            save_restore()  # between programs AND at the naturally reached cap
+            for name, data in closed.items():
+                self.assertEqual((game.run / name).read_bytes(), data)
+        before = state()
+        whistle()
+        game.sanity(80)
+        previous_safe = state()["safe"]
+        game.sanity(60)
+        self.assertGreater(state()["safe"], previous_safe)
+        self.assertEqual(state()["settled_count"], 3)
+        self.assertEqual(state()["spent"], before["spent"])
+        self.assertEqual(game.quit(), 0)
 
     def test_save_exit_restore_does_not_readmit(self):
         self._exercise_save_exit_restore(save_before_origin=False)
@@ -956,8 +1004,8 @@ class NextUseUnixSaveTests(unittest.TestCase):
                     source_bytes = source.encode("ascii")
                     self.assertEqual(original.count(source_bytes), 1)
                     source_at = original.index(source_bytes)
-                    self.assertEqual(original.count(b"NUS1"), 1)
-                    marker = original.index(b"NUS1")
+                    self.assertEqual(original.count(b"NUS2"), 1)
+                    marker = original.index(b"NUS2")
                     word = struct.calcsize("i")
                     self.assertEqual(
                         original[marker + 4 : marker + 4 + word], struct.pack("i", 1)
@@ -984,7 +1032,10 @@ class NextUseUnixSaveTests(unittest.TestCase):
                     wrong_game[logical_at : logical_at + len(logical)] = struct.pack(
                         "l", replacement_identity
                     )
+                    old_carrier = bytearray(original)
+                    old_carrier[marker : marker + 4] = b"NUS1"
                     faults = {
+                        "old-single-program-carrier": bytes(old_carrier),
                         "source-digest": bytes(changed_source),
                         "short-source": original[: source_at + len(source_bytes) // 2],
                         "unsupported-version": bytes(incompatible),
@@ -1504,8 +1555,8 @@ class NextUseUnixSaveTests(unittest.TestCase):
         layout = json.loads(probe.stdout)
         self.assertEqual(layout["compressed"], 0)
         self.assertEqual(layout["dlevel_size"], struct.calcsize("i"))
-        self.assertEqual(original.count(b"NUS1"), 1)
-        marker = original.index(b"NUS1")
+        self.assertEqual(original.count(b"NUS2"), 1)
+        marker = original.index(b"NUS2")
         player_at = marker - layout["you_size"]
         level_at = player_at + layout["dlevel_offset"]
         width = layout["dlevel_size"]

@@ -59,8 +59,14 @@ adds traps found while hooking dNAO. Re-grep before trusting any function name.
 - Keep rejected-attempt authority in a carrier that exists without a runtime
   snapshot. Test native save/restore both after rejection and after terminal
   journal closure; label any fixture-initialized cap state explicitly.
-- Snapshot version bumps must update the pinned version in
-  `tests/chaos/test_next_use_unix_save.py` (it reads the `NUS1` header word).
+- Snapshot/carrier version changes must update current native marker readers,
+  serializer fault fixtures, and preservation probes together. Keep a negative
+  probe for the old marker; otherwise a deliberate witness-loss fixture can
+  fail on missing trailer bytes instead of exercising witness loss.
+- Sequential-program restore must validate every retired chain against saved
+  closed anchors before attaching the current writer, including when the latest
+  attempt was rejected and therefore has no runtime snapshot. Repeated envelope
+  IDs are not program identity: bind journal paths and receipts to saved ordinals.
 - Trace `bwrite`/`mread` compression and error semantics. Preflight before
   `create_savefile`, stage restore before publication, keep originals on
   incompatibility. An error marker after truncating a save is not preservation.

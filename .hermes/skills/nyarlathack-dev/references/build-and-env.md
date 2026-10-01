@@ -58,3 +58,8 @@ native-acceptance builds are done only by `scripts/prepare_native_ci.py` (see
   command line (for example a temp-root name). Kill by recorded PID.
 - A build finishing is not native acceptance; a green focused suite is not the
   full recipe.
+
+- Freeze HEAD, tracked files and shared build assets until a full native suite
+  exits. The reproducibility sweep embeds `git rev-parse HEAD` in each report;
+  even a test/docs-only commit during its paired runs can change the digest.
+  Prepare the next change outside the worktree, then commit after the gate exits.

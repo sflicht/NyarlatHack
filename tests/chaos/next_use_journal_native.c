@@ -187,6 +187,34 @@ int main(int argc, char **argv)
     chaos_observation_end(obs);
     chaos_bind_drinkfountain_token(0);
     }
+    if (mode && !strcmp(mode, "series")) {
+        struct chaos_next_use_origin_ref fresh;
+        struct chaos_next_use_snapshot first;
+        int rng_before;
+        assert(chaos_next_use_snapshot_export(&first));
+        assert(first.journal_state == CHAOS_JOURNAL_COMPLETE);
+        dir = open(argv[1], O_RDONLY | O_DIRECTORY | O_NOFOLLOW);
+        assert(dir >= 0);
+        rng_before = reseed_count;
+        assert(chaos_next_use_on_safe(dir, 8, 50, &u.chaos, 0, 1)
+               == CHAOS_NEXT_USE_ADMISSION_NOT_OPEN);
+        memset(&fresh, 0, sizeof fresh);
+        fresh.root = 100; fresh.notice_seq = 101; fresh.end_seq = 102;
+        fresh.family = CHAOS_NEXT_USE_FAMILY_F;
+        fresh.level_dlevel = 1; fresh.move = 40;
+        strcpy(fresh.fact, "water_refreshed");
+        memcpy(fresh.run, run, sizeof run);
+        u.chaos.seq = 102; /* explicit linked-fixture completed observation */
+        chaos_next_use_safe_bind_origin(&fresh, 1);
+        assert(chaos_next_use_on_safe(dir, 8, 50, &u.chaos, 0, 1)
+               == CHAOS_NEXT_USE_ADMISSION_OK);
+        assert(reseed_count == rng_before); /* no new game RNG draws */
+        assert(u.chaos.next_use_count == 2 && !u.chaos.next_use_terminal);
+        monstermoves = 140;
+        chaos_next_use_identity_boundary(u.chaos_game_token, first.level_token);
+        assert(reseed_count == rng_before);
+        close(dir);
+    }
 report:
     chaos_next_use_capture_status(&status);
     memset(&checkpoint, 0, sizeof checkpoint);
@@ -199,7 +227,7 @@ report:
             char magic[4];
             int present, fd = open("settled.save", O_RDONLY);
             assert(fd >= 0);
-            assert(read(fd, magic, 4) == 4 && !memcmp(magic, "NUS1", 4));
+            assert(read(fd, magic, 4) == 4 && !memcmp(magic, "NUS2", 4));
             assert(read(fd, &present, sizeof present) == sizeof present);
             assert(present == CHAOS_SNAPSHOT_VALID);
             assert(chaos_next_use_snapshot_read(fd, &saved));

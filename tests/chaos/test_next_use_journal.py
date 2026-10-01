@@ -61,6 +61,32 @@ class NextUseJournalTests(RetainOnFailure):
         self.assertNotIn("find_seed(", driver)
         self.assertIn("srandom(123u)", driver)
 
+    def test_natural_second_program_linked_fixture_rng_unchanged(self):
+        from chaos.next_use_envelope import envelope_from_selection
+        from chaos.next_use_journal import read_journals
+
+        folder = Path(track(self, tempfile.mkdtemp(prefix="nyarl-journal-series-")))
+        folder.chmod(0o700)
+        row = dict(
+            native.ROW,
+            origin=dict(
+                native.ROW["origin"], root_seq=100, notice_seq=101, end_seq=102
+            ),
+        )
+        _, encoded = envelope_from_selection(
+            row, dict(native.HOST, at=8, run=engine_run_hex(folder))
+        )
+        second = folder / "next_use-envelope.2.json"
+        second.write_bytes(encoded)
+        second.chmod(0o600)
+        folder, result = self.run_native(folder=folder, mode="series")
+        traces = read_journals(
+            [folder / "next_use-journal.jsonl", folder / "next_use-journal.2.jsonl"]
+        )
+        self.assertEqual([r["program_ordinal"] for r in traces], [1, 2])
+        self.assertEqual(result["spent"], 2)
+        self.assertEqual(result["incomplete"], 0)
+
     def test_program_expiry_has_readable_terminal_evidence(self):
         from chaos.next_use_journal import read_journal
 
@@ -117,14 +143,24 @@ class NextUseJournalTests(RetainOnFailure):
             (row["admitted"], row["rejected"], row["spent"], row["hunger_delta"]),
             (0, 1, 0, 0)
             if mode == "deadline-late"
-            else (1, 0, 1, 0 if mode in ("expire", "header") else 4),
+            else (
+                1,
+                0,
+                2 if mode == "series" else 1,
+                0 if mode in ("expire", "header") else 4,
+            ),
         )
         if row["admitted"]:
             self.assertEqual(
                 row["journal_state"],
                 3 if row["incomplete"] else (1 if mode == "header" else 2),
             )
-            data = (folder / "next_use-journal.jsonl").read_bytes()
+            name = (
+                "next_use-journal.2.jsonl"
+                if mode == "series"
+                else "next_use-journal.jsonl"
+            )
+            data = (folder / name).read_bytes()
             if row["journal_bytes"]:
                 prefix = data[: row["journal_bytes"]]
                 self.assertTrue(prefix.endswith(b"\n"))

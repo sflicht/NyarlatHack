@@ -28,7 +28,7 @@ def assert_no_next_use_payload(test, payload):
             test.assertNotIn(
                 marker, payload, "next-use source/identity leaked into bones"
             )
-    test.assertNotIn(b"NUS1", payload, "next-use save extension leaked into bones")
+    test.assertNotIn(b"NUS2", payload, "next-use save extension leaked into bones")
 
 
 @unittest.skipUnless(

@@ -1,0 +1,51 @@
+{
+  "wizard": false,
+  "ordinary": true,
+  "clock_control": false,
+  "seed_control": false,
+  "model_calls": 0,
+  "save_exit": 0,
+  "quit_exit": 0,
+  "restores": 1,
+  "event_count": 9,
+  "sessions": [
+    {
+      "wizard": false,
+      "ordinary": true,
+      "observe": true,
+      "echoes": true,
+      "haunting_source_sha256": null,
+      "terminal": [
+        24,
+        80
+      ],
+      "inputs_begin": 0,
+      "sha256": {
+        "dnethack": "80c97c7afac447665f293c5b000bcd2788ad828d43e7974934cb73d2f2acd33e",
+        "nhdat": "b7fc1a3aff42f759d4ee3d4db40e1d553ce753bc72c7dc75995a349c24719a96"
+      },
+      "clock_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "options": "Bard,human,male,neutral,dog,tty,!news,!legacy,time",
+      "timezone": "UTC"
+    },
+    {
+      "wizard": false,
+      "ordinary": true,
+      "observe": true,
+      "echoes": true,
+      "haunting_source_sha256": "4e4f0154dc8830c753f13af25b592ef255ba97e1be6cf81e019d4568f6cfa9e9",
+      "terminal": [
+        24,
+        80
+      ],
+      "inputs_begin": 7,
+      "sha256": {
+        "dnethack": "80c97c7afac447665f293c5b000bcd2788ad828d43e7974934cb73d2f2acd33e",
+        "nhdat": "b7fc1a3aff42f759d4ee3d4db40e1d553ce753bc72c7dc75995a349c24719a96"
+      },
+      "clock_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "options": "Bard,human,male,neutral,dog,tty,!news,!legacy,time",
+      "timezone": "UTC"
+    }
+  ]
+}

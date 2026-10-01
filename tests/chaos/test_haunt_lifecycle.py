@@ -460,6 +460,8 @@ class HauntLifecycleTests(unittest.TestCase):
                     "at": 1,
                     "safe": 1,
                     "move": 10,
+                    "program_ordinal": 1,
+                    "program_id": 1,
                     "reasons": ["budget"],
                 }
             ],
@@ -490,6 +492,8 @@ class HauntLifecycleTests(unittest.TestCase):
                     "at": 1,
                     "safe": 1,
                     "move": 10,
+                    "program_ordinal": 1,
+                    "program_id": 1,
                     "reasons": ["no_companion_in_view"],
                 }
             ],

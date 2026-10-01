@@ -18,7 +18,7 @@
 /* The game-owned state is the save authority, including rejected attempts.
  * legacy_closed supports snapshot-only component fixtures, not native saves. */
 static struct chaos_state *policy_state;
-static int legacy_closed, resume_pending;
+static int legacy_closed, resume_pending, resume_failed;
 static char owned_run[65];
 static int owned_run_set;
 static int (*owned_warn)(void *, const char *);
@@ -46,7 +46,8 @@ void chaos_next_use_safe_reset_for_test(void)
 {
     chaos_next_use_journal_reset();
     policy_state = NULL;
-    legacy_closed = resume_pending = 0;
+    chaos_next_use_history_reset();
+    legacy_closed = resume_pending = resume_failed = 0;
     owned_run_set = 0;
     logical_run = 0;
     owned_run[0] = '\0';
@@ -136,7 +137,7 @@ void chaos_next_use_safe_mark_restored(void)
 void chaos_next_use_safe_resume(int dir)
 {
     if (!resume_pending) return;
-    (void)chaos_next_use_journal_resume(dir);
+    resume_failed = !chaos_next_use_journal_resume(dir);
     resume_pending = 0;
 }
 
@@ -144,7 +145,8 @@ int chaos_next_use_safe_restore_state(struct chaos_state *state, int attempted)
 {
     struct chaos_next_use_snapshot snapshot;
     if (!chaos_state_valid(state) || (attempted != 0 && attempted != 1)
-        || attempted != (state->next_use_count > 0)) return 0;
+        || attempted != (state->next_use_count > 0)
+        || state->next_use_count != chaos_next_use_program_ordinal()) return 0;
     memset(&snapshot, 0, sizeof snapshot);
     if (chaos_next_use_runtime_run_token() > 0
         && !chaos_next_use_snapshot_export(&snapshot)) return 0;
@@ -171,7 +173,7 @@ void chaos_next_use_safe_terminal(int program_id)
     }
 }
 
-/* Policy predicate, independent of PR 2's temporary single-journal gate.
+/* Policy predicate for sequential journal-backed programs.
  * COMPLETE is the durable writer acknowledgement, not just terminal mechanics. */
 int chaos_next_use_safe_opportunity(const struct chaos_state *state,
                                     long completed_seq)
@@ -191,12 +193,15 @@ int chaos_next_use_safe_opportunity(const struct chaos_state *state,
         && !snapshot.capture_incomplete;
 }
 
-static void settle_attempt(struct chaos_state *state, int id)
+static int settle_attempt(struct chaos_state *state, int id)
 {
     if (!state || !chaos_state_valid(state)) {
         legacy_closed = 1; /* malformed engine state cannot be saved */
-        return;
+        return 1; /* preserve the existing diagnostic rejection path */
     }
+    if (!chaos_next_use_retire_program()
+        || !chaos_next_use_set_ordinal(state->next_use_count + 1)) return 0;
+    if (state->next_use_count > 0) chaos_next_use_journal_reset();
     policy_state = state;
     ++state->next_use_count;
     state->next_use_ordinal = state->next_use_count;
@@ -205,6 +210,7 @@ static void settle_attempt(struct chaos_state *state, int id)
      * this flag, then the live termination hook supplies its event boundary. */
     state->next_use_terminal = 1;
     state->next_use_terminal_seq = state->seq;
+    return 1;
 }
 
 int chaos_next_use_safe_last(struct chaos_next_use_safe_result *out)
@@ -347,7 +353,7 @@ static int envelope_origin_reasons(const struct chaos_next_use_envelope *envelop
 static int production_receipt(void *opaque,
                               const struct chaos_next_use_private_record *record)
 {
-    char line[256];
+    char line[512];
     int dir, fd, n;
     ssize_t wrote;
 
@@ -383,8 +389,11 @@ int chaos_next_use_safe_receipt_row(const struct chaos_next_use_private_record *
     if (record->kind != CHAOS_PRIVATE_ADMISSION || count < 1 || count > 2)
         return 0;
     n = snprintf(out, cap,
-                 "{\"next_use_private_v\":%d,\"kind\":%d,\"seq\":%d,\"origins\":[",
-                 record->next_use_private_v, record->kind, record->seq);
+                 "{\"next_use_private_v\":%d,\"kind\":%d,\"seq\":%d,"
+                 "\"program_ordinal\":%d,\"program_id\":%d,\"origins\":[",
+                 record->next_use_private_v, record->kind, record->seq,
+                 chaos_next_use_program_ordinal() ? chaos_next_use_program_ordinal() : 1,
+                 record->program_id);
     if (n < 1 || (size_t)n >= cap) { out[0] = '\0'; return 0; }
     used = (size_t)n;
     for (i = 0; i < count; ++i) {
@@ -445,8 +454,10 @@ int chaos_next_use_safe_decision_row(const struct chaos_next_use_safe_result *re
      * (identity) leave the directory's existing evidence untouched. */
     if (at < 1 || (result->reasons & CHAOS_NEXT_USE_SAFE_IDENTITY)) return 0;
     n = snprintf(out, cap, "{\"next_use_decision_v\":1,\"decision\":\"rejected\","
-                 "\"at\":%d,\"safe\":%ld,\"move\":%ld,\"reasons\":[",
-                 at, at_safe, at_move);
+                 "\"at\":%d,\"safe\":%ld,\"move\":%ld,\"program_ordinal\":%d,"
+                 "\"program_id\":%d,\"reasons\":[",
+                 at, at_safe, at_move, chaos_next_use_program_ordinal(),
+                 policy_state ? policy_state->next_use_id : 0);
     if (n < 1 || (size_t)n >= cap) { out[0] = '\0'; return 0; }
     used = (size_t)n;
     for (i = 0; i < (int)(sizeof reason_names / sizeof reason_names[0]); ++i) {
@@ -555,10 +566,16 @@ int chaos_next_use_safe_try(const struct chaos_next_use_safe_request *request,
         return finish(result, CHAOS_NEXT_USE_ADMISSION_NOT_OPEN);
     if (request->budget && request->budget->next_use_count >= CHAOS_NEXT_USE_PROGRAM_CAP)
         return finish(result, CHAOS_NEXT_USE_ADMISSION_NOT_OPEN);
-    /* PR 3 must supply ordinal journal paths/resume before this guard is
-     * removed. No env flag or envelope can enable a second runtime today. */
-    if (request->budget && request->budget->next_use_count > 0)
+    if (resume_pending || resume_failed)
         return finish(result, CHAOS_NEXT_USE_ADMISSION_NOT_OPEN);
+    if (request->budget && request->budget->next_use_count > 0) {
+        int i, fresh = 0;
+        for (i = 0; i < 2; ++i)
+            if (origin_evidence[i].bound && origin_evidence[i].qualifying
+                && chaos_next_use_safe_opportunity(request->budget,
+                    origin_evidence[i].origin.end_seq)) fresh = 1;
+        if (!fresh) return finish(result, CHAOS_NEXT_USE_ADMISSION_NOT_OPEN);
+    }
     if (chaos_next_use_envelope_read_ordinal(request->dir,
             request->budget ? request->budget->next_use_ordinal + 1 : 1,
             raw, sizeof raw, &n)
@@ -567,7 +584,8 @@ int chaos_next_use_safe_try(const struct chaos_next_use_safe_request *request,
     if (chaos_next_use_parse_envelope(raw, n, &envelope) != CHAOS_NEXT_USE_OK
         || chaos_next_use_jcs(raw, n, canonical, sizeof canonical, &written)
            != CHAOS_NEXT_USE_OK) {
-        settle_attempt(request->budget, 0);
+        if (!settle_attempt(request->budget, 0))
+            return finish(result, CHAOS_NEXT_USE_ADMISSION_NOT_OPEN);
         result->loaded = 1;
         last_at = 0;
         return reject(result, CHAOS_NEXT_USE_SAFE_SCHEMA,
@@ -581,7 +599,8 @@ int chaos_next_use_safe_try(const struct chaos_next_use_safe_request *request,
     }
     fresh_after = request->budget && request->budget->next_use_count
         ? request->budget->next_use_terminal_seq : -1;
-    settle_attempt(request->budget, envelope.id);
+    if (!settle_attempt(request->budget, envelope.id))
+        return finish(result, CHAOS_NEXT_USE_ADMISSION_NOT_OPEN);
     reasons = 0;
     if (envelope.at != request->at_safe)
         reasons |= CHAOS_NEXT_USE_SAFE_MISSED_INDEX;
