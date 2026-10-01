@@ -44,7 +44,9 @@ then repeated once on the committed implementation, not selected by seed/outcome
 No failed attempt is presented as successful. The development capture identified
 its base revision but had a dirty implementation tree; it is not the final
 revision witness. All three raw PTY traces, receipts and the exact final driver
-are retained under `~/.hermes/reports/nyarlathack-m2/pr4/`.
+are retained under `~/.hermes/reports/nyarlathack-m2/pr4/`. Rendered `terminal.txt`
+normalizes display whitespace, strips ANSI escapes, and substitutes `<retained-run-directory>` for scratch-path
+labels; the retained raw PTYs are unchanged.
 
 ## V2 report semantics
 

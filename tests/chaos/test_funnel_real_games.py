@@ -104,9 +104,52 @@ class RealDeliveringGames(unittest.TestCase):
     def check(self, name):
         fx = _load(name)
         a = _analyse(fx)
-        # The whole per-game entry the committed report holds (minus the
-        # sweep-added Dlvl, which needs the status-line timeline).
-        self.assertEqual(a, fx["expected"])
+        # Keep the historical golden byte-for-byte; assert the entire new v2
+        # result with independently specified additions. These trimmed fixtures
+        # retained no public ordinal witnesses, so W attribution is unknown.
+        programs = [
+            dict(
+                program=k,
+                published=0,
+                admitted=0,
+                trigger=0,
+                native_effect=0,
+                delivered=0,
+                felt=0,
+                termination=None,
+                journal_status="missing",
+                delivery_known=True,
+            )
+            for k in (1, 2, 3)
+        ]
+        programs[0].update(
+            published=1,
+            admitted=1,
+            trigger=1,
+            native_effect=1,
+            delivered=1,
+            termination="completed",
+            journal_status="structurally_complete",
+        )
+        public_felt = (
+            {
+                "v2-bard-40.json": [(200, "next_use_W")],
+                "v2-bard-default-path-21.json": [
+                    (7, "hound"),
+                    (8, "hound"),
+                    (344, "next_use_W"),
+                ],
+            }
+        )[name]
+        expected = dict(
+            fx["expected"],
+            programs=programs,
+            felt_events=[
+                dict(turn=t, dlvl=None, kind=kind, program=None)
+                for t, kind in public_felt
+            ],
+        )
+        self.assertEqual(a, expected)
         # Hand-checked stages, from the raw rows rather than the analyser.
         private = fx["private_records"]
         effects = [p["data"]["outcome"] for p in private if p["kind"] == 4]

@@ -188,10 +188,11 @@ class OfflineAuthorTests(unittest.TestCase):
             "SOURCE",
             "MEASURED",
             "UNKNOWN",
-            "6b7bd822c82d770bafa10af6e751cbf987231c6b",
+            "cb99b7e293bedbddc0e44ef535f779123cfc0be5",
             "do not persist",
             "not available in on_action",
             "not typical",
+            "M2 caps programs at 3: terminal receipt, then fresh completion.",
         ):
             self.assertIn(term, instructions)
         self.assertLessEqual(
@@ -527,7 +528,7 @@ class OfflineAuthorTests(unittest.TestCase):
             (ROOT / "chaos/prompts/next-use-mechanics-sources.json").read_bytes()
         )
         self.assertEqual(
-            manifest["revision"], "6b7bd822c82d770bafa10af6e751cbf987231c6b"
+            manifest["revision"], "cb99b7e293bedbddc0e44ef535f779123cfc0be5"
         )
         for name in (
             "include/chaos_presentation.h",
