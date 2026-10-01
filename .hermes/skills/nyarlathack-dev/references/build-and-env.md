@@ -1,5 +1,10 @@
 # Build and environment
 
+- Set `TMPDIR` in the environment of the actual heavy command or its driver;
+  do not depend on an export made by an earlier tool subprocess. Include any
+  positively identified diagnostic spill root in this item's retirement proof.
+
+
 `GNUmakefile` is the real build; `sys/unix/Makefile.*` are legacy. Official
 native-acceptance builds are done only by `scripts/prepare_native_ci.py` (see
 `docs/quality-control.md`); this file covers development builds.
