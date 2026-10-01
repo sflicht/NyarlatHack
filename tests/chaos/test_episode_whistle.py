@@ -691,7 +691,7 @@ def main(argv=None):
                     "effects",
                     "haunt",
                 }
-                assert len(before["effects"]) == 3
+                assert len(before["effects"]) == 4  # #1 adds the door slot
                 assert not any(e["event"] == "ack" for e in records)
                 obs = validate_observations(
                     records,

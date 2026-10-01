@@ -1,0 +1,13 @@
+# Top-line messages from the captured game's terminal output, with the status
+# line's T: turn shown just before each. Extracted from the raw PTY bytes.
+T:94	The door resists!
+T:182	The door resists!
+T:289	The door opens.
+T:405	The door resists!
+T:435	The door opens.
+T:624	The door resists!
+T:822	The doors of this place seem to lean against you.
+T:874	The door opens.
+T:904	The door resists!
+T:1057	The door resists!
+T:1191	The door opens.

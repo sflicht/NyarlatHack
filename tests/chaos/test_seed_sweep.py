@@ -367,6 +367,66 @@ class FirstFeltTest(unittest.TestCase):
         )
         self.assertEqual(a["first_felt"], {"turn": 90, "kind": "next_use_W"})
 
+    def test_door_resisted_counts_only_while_door_effect_active(self):
+        # #1: first_felt "door" is the first resisted notice under an
+        # accepted door_reluctance effect; opened notices, resists before the
+        # ACK and resists after expiry do not count.
+        def door(seq, turn, fact):
+            return _obs(seq, "door_open", "notice", seq - 1, fact, turn=turn)
+
+        ack = {
+            "event": "ack",
+            "seq": 5,
+            "turn": 40,
+            "detail": "ok",
+            "status": "accepted",
+            "mutation": "door_reluctance",
+            "expires": 100,
+        }
+        expiry = {"event": "expiry", "seq": 9, "turn": 100, "detail": "door_reluctance"}
+        a = self._analyse(
+            [SESSION, door(3, 30, "resisted"), ack, door(7, 50, "opened")]
+        )
+        self.assertIsNone(a["first_felt"])
+        a = self._analyse([SESSION, ack, expiry, door(11, 120, "resisted")])
+        self.assertIsNone(a["first_felt"])
+        a = self._analyse(
+            [SESSION, door(3, 30, "resisted"), ack, door(7, 60, "resisted"), expiry]
+        )
+        self.assertEqual(a["first_felt"], {"turn": 60, "kind": "door"})
+
+    def test_aggregate_counts_door_first_felt(self):
+        # #1: a door first_felt must reach the report's by_kind, not vanish.
+        import importlib.util
+
+        spec = importlib.util.spec_from_file_location(
+            "seed_sweep_for_test", ROOT / "scripts/seed_sweep.py"
+        )
+        assert spec is not None and spec.loader is not None
+        seed_sweep = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(seed_sweep)
+        row = {
+            "funnel": {
+                "first_felt": {"turn": 60, "kind": "door", "dlvl": 2},
+                "last_turn": 100,
+                "counts": {"admitted": 0, "delivered": 0},
+                "haunt": {},
+                "haunt_steps": 0,
+            },
+            "v2": {
+                "dlvl_timeline": [(1, 1), (50, 2)],
+                "prayers": 0,
+                "flees": 0,
+                "rests": 0,
+                "whistles_found": 0,
+            },
+            "whistle_in_inventory": False,
+        }
+        by_kind = seed_sweep.aggregate_v2([row])["first_felt"]["by_kind"]
+        self.assertEqual(
+            by_kind, {"hound": 0, "next_use_W": 0, "next_use_F": 0, "door": 1}
+        )
+
     def test_earliest_kind_wins(self):
         a = self._analyse(
             [

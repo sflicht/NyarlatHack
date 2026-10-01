@@ -217,7 +217,7 @@ def aggregate_v2(rows):
             "dlvl": _dist([f["dlvl"] for f in felt if f["dlvl"] is not None]),
             "by_kind": {
                 k: sum(1 for f in felt if f["kind"] == k)
-                for k in ("hound", "next_use_W", "next_use_F")
+                for k in ("hound", "next_use_W", "next_use_F", "door")
             },
         },
         "turns_played": turns,

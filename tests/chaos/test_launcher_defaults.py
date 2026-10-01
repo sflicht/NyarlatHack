@@ -4,6 +4,7 @@ Offline: the fake game from test_launcher reports its environment, so these
 tests see exactly what the launcher installed and exported. No game build.
 """
 
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -82,8 +83,8 @@ class OrdinaryDefaultTests(unittest.TestCase):
         self.assert_next_use(True)
         choice = self.choice(run)
         self.assertEqual(
-            {k: choice[k] for k in ("v", "haunt", "next_use")},
-            dict(v=1, haunt=True, next_use=True),
+            {k: choice[k] for k in ("v", "haunt", "next_use", "whispers")},
+            dict(v=2, haunt=True, next_use=True, whispers=dict(backend="m1", seed=0)),
         )
         self.assertEqual(choice["haunt_pack"], str(HAUNT_DEFAULT))
         self.assertEqual(os.stat(run / "ordinary-choice.json").st_mode & 0o777, 0o600)
@@ -95,7 +96,14 @@ class OrdinaryDefaultTests(unittest.TestCase):
         self.assert_next_use(False)
         self.assertEqual(
             self.choice(run),
-            dict(v=1, haunt=False, haunt_pack=None, haunt_sha256=None, next_use=False),
+            dict(
+                v=2,
+                haunt=False,
+                haunt_pack=None,
+                haunt_sha256=None,
+                next_use=False,
+                whispers=dict(backend="m1", seed=0),
+            ),
         )
         for flags, haunt, next_use in (
             (("--no-haunt",), False, True),
@@ -158,10 +166,84 @@ class OrdinaryDefaultTests(unittest.TestCase):
         self.assert_next_use(False)
         self.assertFalse((run / "ordinary-choice.json").exists())
 
+    def test_m1_menu_recorded_and_followed_on_restore(self):
+        # #1 M1: --seed picks the menu seed; explicit whisper flags opt out.
+        run, result = self.fresh("seeded", "--ordinary", "--seed", "9")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(self.choice(run)["whispers"], dict(backend="m1", seed=9))
+        record = (run / "ordinary-choice.json").read_bytes()
+        result = self.run_cli("--ordinary", "--reuse-run-dir", str(run))
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual((run / "ordinary-choice.json").read_bytes(), record)
+        for flags in (("--seed", "8"), ("--backend", "pack"), ("--pack", "ward")):
+            with self.subTest(flags=flags):
+                result = self.run_cli("--ordinary", *flags, "--reuse-run-dir", str(run))
+                self.assertEqual(result.returncode, 2, result.stderr)
+                self.assertFalse(self.marker.exists())
+        for flags in (
+            ("--backend", "pack"),
+            ("--backend", "random"),
+            ("--pack", "ward"),
+        ):
+            with self.subTest(flags=flags):
+                run, result = self.fresh("-".join(flags), "--ordinary", *flags)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertIsNone(self.choice(run)["whispers"])
+
+    def test_restore_of_v1_record_keeps_the_pack(self):
+        from types import SimpleNamespace
+
+        from chaos import launcher
+
+        run = self.path / "v1"
+        run.mkdir(mode=0o700)
+        target = run / "ordinary-choice.json"
+        target.write_text(
+            json.dumps(
+                dict(
+                    v=1, haunt=False, haunt_pack=None, haunt_sha256=None, next_use=False
+                )
+            )
+        )
+        target.chmod(0o600)
+        args = SimpleNamespace(
+            ordinary=True,
+            backend=None,
+            pack=None,
+            at=None,
+            id=None,
+            seed=None,
+            ordinary_food=False,
+            haunt=None,
+            no_haunt=False,
+            next_use=False,
+            no_next_use=False,
+        )
+        self.assertIsNone(launcher._resolve_choice(args, run))
+        self.assertIsNone(args.m1_seed)
+        record = dict(json.loads(target.read_text()), v=2)
+        for whispers, seed in ((dict(backend="m1", seed=4), 4), (None, None)):
+            target.write_text(json.dumps(dict(record, whispers=whispers)))
+            self.assertIsNone(launcher._resolve_choice(args, run))
+            self.assertEqual(args.m1_seed, seed)
+
     def test_invalid_choice_record_fails_closed(self):
-        for raw in (b"{}", b"[]", b'{"v":2}', b"not json"):
+        base = dict(
+            v=2, haunt=False, haunt_pack=None, haunt_sha256=None, next_use=False
+        )
+        bad_v2 = [
+            dict(base),  # v2 without whispers
+            dict(base, whispers=dict(backend="random", seed=0)),
+            dict(base, whispers=dict(backend="m1", seed="0")),
+            dict(base, whispers=dict(backend="m1", seed=-1)),
+            dict(base, whispers=dict(backend="m1")),
+            dict(base, v=1, whispers=None),  # v1 with a v2 key
+        ]
+        for raw in (b"{}", b"[]", b'{"v":2}', b"not json") + tuple(
+            json.dumps(r).encode() for r in bad_v2
+        ):
             with self.subTest(raw=raw):
-                run = self.path / ("bad-" + str(len(raw)) + raw[:2].hex())
+                run = self.path / ("bad-" + hashlib.sha256(raw).hexdigest()[:12])
                 run.mkdir(mode=0o700)
                 target = run / "ordinary-choice.json"
                 target.write_bytes(raw)

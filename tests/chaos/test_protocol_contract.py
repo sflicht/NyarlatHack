@@ -26,6 +26,9 @@ CURRENT_ROWS = (
     # ROWS above is the frozen v1 table and keeps the ward at 4.
     ("ward_efficacy", 50, 50, 1, 50, 2, 3, 80),
     ("hunger_rate", 2, 2, 1, 50, 3, 3, 90),
+    # Sam 2026-09-30 (#1): cost 1, 1..300 turns, telegraph 4 from the additive
+    # telegraph_extensions section; no engine Sanity gate (director max 100).
+    ("door_reluctance", 50, 50, 1, 300, 4, 1, 100),
 )
 EVENTS = "eat read zap apply pray kill level_enter level_leave sanity insight death sleep session safe_point ack telegraph expiry haunting haunt_step backtrack curio".split()
 REASONS = (
@@ -42,7 +45,7 @@ class Effect(C.Structure):
     _fields_ = [("value", C.c_int), ("cost", C.c_int), ("expires", C.c_long)]
 
 
-def state_type(count=3):
+def state_type(count=4):
     class NativeState(C.Structure):
         _fields_ = (
             [(k, C.c_int) for k in "version spent reserved last_id".split()]
@@ -112,7 +115,9 @@ def corpus():
     base = request()
     good = raw(base)
     yield good, True
-    for name, lo, hi, dlo, dhi, signal, _, _ in ROWS:
+    # Frozen v1 rows, plus kinds added after them (#1 door_reluctance: 300 ok,
+    # 301 rejected; ward and hunger keep rejecting 51).
+    for name, lo, hi, dlo, dhi, signal, _, _ in ROWS + CURRENT_ROWS[len(ROWS) :]:
         for value, duration, telegraph in itertools.product(
             {lo - 1, lo, hi, hi + 1},
             {dlo - 1, dlo, dhi, dhi + 1},
@@ -206,7 +211,7 @@ class CompatibilityTests(unittest.TestCase):
                         (
                             obj["v"],
                             obj["id"],
-                            [x[0] for x in ROWS].index(obj["mutation"]),
+                            [x[0] for x in CURRENT_ROWS].index(obj["mutation"]),
                             obj["value"],
                             obj["duration"],
                             obj["telegraph"],
@@ -252,9 +257,12 @@ class CompatibilityTests(unittest.TestCase):
                 self.lib.chaos_state_init(C.byref(s))
                 s.safe = 1
                 r = Request(1, 1, i, lo, dlo, signal, 1)
+                # Ambient and door_reluctance have no engine Sanity gate.
                 expected = (
                     7
-                    if not food or (i and sanity > limit) or (i == 2 and food != 1)
+                    if not food
+                    or (i in (1, 2) and sanity > limit)
+                    or (i == 2 and food != 1)
                     else 5
                     if cost > 2 + (100 - min(100, max(0, sanity))) // 10
                     else 0
@@ -269,15 +277,16 @@ class CompatibilityTests(unittest.TestCase):
                 if expected == 0 and i:
                     self.assertEqual(s.effects[i].expires, 10 + dlo)
                     self.assertEqual(
-                        self.lib.chaos_rule(C.byref(s), i, 10, 3), 1 if i == 1 else 6
+                        self.lib.chaos_rule(C.byref(s), i, 10, 3),
+                        1 if i in (1, 3) else 6,
                     )
         for i, reason in enumerate(
             REASONS
             + ["future", "cosmetic_budget", "cosmetic_cooldown", "cosmetic_repeat"]
         ):
             self.assertEqual(self.lib.chaos_reason(i), reason.encode())
-        self.assertEqual(self.lib.chaos_name(3), b"")
-        self.assertEqual(self.lib.chaos_cost(3), 0)
+        self.assertEqual(self.lib.chaos_name(4), b"")
+        self.assertEqual(self.lib.chaos_cost(4), 0)
         self.assertEqual(self.lib.chaos_reason(13), b"schema")
 
     def test_legacy_bytes_and_random(self):
@@ -303,10 +312,14 @@ class CompatibilityTests(unittest.TestCase):
         backend = RandomBackend(7, ordinary_food=True)
         choices = [backend.choose(s, i, i) for i in range(1, 13)]
         self.assertTrue(
-            all(r["mutation"] in ("ward_efficacy", "hunger_rate") for r in choices)
+            all(
+                r["mutation"] in ("ward_efficacy", "hunger_rate", "door_reluctance")
+                for r in choices
+            )
         )
-        self.assertEqual(eligible(s), ["ambient", "ward_efficacy"])
-        self.assertEqual(C.sizeof(state_type()), 112)  # #164: v3 adds 4 ints
+        self.assertEqual(eligible(s), ["ambient", "ward_efficacy", "door_reluctance"])
+        # #164: v3 adds 4 ints; #1: v4 adds effects[CHAOS_DOOR] (16 bytes).
+        self.assertEqual(C.sizeof(state_type()), 128)
 
     def test_legacy_event_openness(self):
         e = dict(
@@ -413,6 +426,23 @@ class GenerationTests(unittest.TestCase):
                 (("mutations", 1, "name"), "ambient"),
                 (("mutations", 1, "rule"), "unknown"),
                 (("mutations", 1, "duration"), [1, 51]),
+                # Per-mutation bounds (#1): ward and hunger keep [1, 50]; only
+                # door_reluctance may use the additive cap, and not beyond it.
+                (("mutations", 2, "duration"), [1, 51]),
+                (("mutations", 3, "duration"), [1, 301]),
+                (("mutations", 3, "telegraph"), 5),
+                (("telegraph_extensions", 0, "id"), 5),
+                (("telegraph_extensions", 0, "text"), ""),
+                (("telegraph_extensions", 0, "text"), "caf\u00e9"),
+                (
+                    ("telegraph_extensions", 0, "text"),
+                    "A distant whisper brushes against your thoughts.",
+                ),
+                (("telegraph_extensions", 0, "extra"), 1),
+                (("mutation_limits", "duration_cap"), 49),
+                (("mutation_limits", "duration_cap"), 100001),
+                (("mutation_limits", "duration_cap"), True),
+                (("mutation_limits", "extra"), 1),
                 (("request_fields", 0, "type"), "float"),
                 (("ack_number_bounds",), [-1, 2147483647]),
                 (("wire_order", "event"), ["seq", "v"]),
@@ -556,10 +586,11 @@ class GenerationTests(unittest.TestCase):
                 p.write_bytes(original)
             source = root / "chaos/protocol_contract.json"
             data = json.loads(source.read_text())
+            # #1 made door_reluctance the fourth row, so the probe row is fifth.
             fourth = dict(
                 data["mutations"][0],
                 symbol="CHAOS_TEST_ONLY",
-                id=3,
+                id=4,
                 name="test_only",
                 value=[1, 1],
                 cost=1,
@@ -578,8 +609,8 @@ class GenerationTests(unittest.TestCase):
             payload = raw(request("test_only"))
             r = Request()
             self.assertEqual(lib.chaos_parse(payload, len(payload), C.byref(r)), 0)
-            self.assertEqual(r.kind, 3)
-            s = state_type(4)()
+            self.assertEqual(r.kind, 4)
+            s = state_type(5)()
             lib.chaos_state_init(C.byref(s))
             s.safe = 1
             self.assertEqual(lib.chaos_admit(C.byref(s), C.byref(r), 10, 101, 2), 0)

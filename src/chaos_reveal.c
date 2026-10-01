@@ -462,6 +462,8 @@ static void whisper(const struct chaos_reveal_entry *e, chaos_reveal_emit emit, 
     }
     if (e->mutation == CHAOS_WARD)
         out(emit, arg, "    Effect: your wards counted for half, for %d turns.", e->duration);
+    else if (e->mutation == CHAOS_DOOR)
+        out(emit, arg, "    Effect: closed doors resisted you more often, for %d turns.", e->duration);
     else
         out(emit, arg, "    Effect: you grew hungry twice as fast, for %d turns.", e->duration);
     out(emit, arg, "    Delivered: no; a rule change has no separate manifestation.");

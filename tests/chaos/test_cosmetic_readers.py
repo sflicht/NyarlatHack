@@ -216,8 +216,16 @@ class CosmeticReaders(unittest.TestCase):
         for seed in range(12):
             self.assertIn(
                 RandomBackend(seed, True).choose(state, 1, 2)["mutation"],
-                ("ward_efficacy", "hunger_rate"),
+                ("ward_efficacy", "hunger_rate", "door_reluctance"),
             )
+        # #1: all three mechanical kinds are reachable, never the omen.
+        self.assertEqual(
+            {
+                RandomBackend(seed, True).choose(state, 1, 2)["mutation"]
+                for seed in range(12)
+            },
+            {"ward_efficacy", "hunger_rate", "door_reluctance"},
+        )
 
     def test_model_local_fake_transport_value_menu(self):
         # No HTTP/network/provider call: exercise real request/response logic.
@@ -282,7 +290,8 @@ class CosmeticReaders(unittest.TestCase):
             with self.assertRaises(ValueError):
                 backend.choose(state, 1, 2)
             prompt = json.loads(captured[-1]["messages"][1]["content"])
-            self.assertEqual(prompt["eligible"], ["ward_efficacy"])
+            # #1: door_reluctance (no Sanity gate) is eligible beside ward.
+            self.assertEqual(prompt["eligible"], ["ward_efficacy", "door_reluctance"])
 
     def test_historical_state_cannot_publish_current_mailbox(self):
         state = State()

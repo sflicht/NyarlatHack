@@ -155,6 +155,11 @@ class ProtocolTests(unittest.TestCase):
         # descent credit uses the deepest level reached only.
         self.assertEqual(self.run_c(b"", "pacing"), "pacing ok")
 
+    def test_door_reluctance_core(self):
+        # #1: admit at full Sanity, halve, expire, save round trip, every
+        # rejected path, and the 300-turn overflow guard.
+        self.assertEqual(self.run_c(b"", "door"), "door ok")
+
     def test_event_escaping(self):
         raw = b'quote" slash\\ newline\n tab\t ctrl\x01 utf8\xc3\xa9'
         self.assertEqual(json.loads(self.run_c(raw, "escape")), raw.decode())

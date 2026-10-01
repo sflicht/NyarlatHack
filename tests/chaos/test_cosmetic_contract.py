@@ -22,13 +22,13 @@ class CosmeticContract(unittest.TestCase):
     def test_current_and_frozen_legacy(self):
         d = self.data
         self.assertEqual(
-            d["versions"], dict(request=1, event=3, state=3)
-        )  # #164 pacing
+            d["versions"], dict(request=1, event=3, state=4)
+        )  # #164 pacing (v3); #1 door_reluctance grows effects[] (v4)
         self.assertEqual(d["observations"]["wire_version"], 4)
         self.assertEqual(d["cosmetic"], dict(limit=3, spacing=50, mask=7, policy=2))
         self.assertEqual(
             [(r["cost"], r["cosmetic_cost"]) for r in d["mutations"]],
-            [(0, 1), (3, 0), (3, 0)],  # ward 4 -> 3 (Sam, 2026-09-29)
+            [(0, 1), (3, 0), (3, 0), (1, 0)],  # ward 4 -> 3; door 1 (#1)
         )
         self.assertEqual(d["legacy"]["versions"], dict(request=1, event=1, state=1))
         self.assertEqual([r["cost"] for r in d["legacy"]["mutations"]], [1, 4, 3])

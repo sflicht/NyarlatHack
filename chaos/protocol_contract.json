@@ -3,7 +3,7 @@
   "versions": {
     "request": 1,
     "event": 3,
-    "state": 3
+    "state": 4
   },
   "limits": {
     "max_int": 2147483647,
@@ -164,6 +164,27 @@
       "ordinary_food": true,
       "persistent": true,
       "rule": "double",
+      "cosmetic_cost": 0
+    },
+    {
+      "symbol": "CHAOS_DOOR",
+      "id": 3,
+      "name": "door_reluctance",
+      "cost": 1,
+      "value": [
+        50,
+        50
+      ],
+      "duration": [
+        1,
+        300
+      ],
+      "telegraph": 4,
+      "engine_sanity_max": null,
+      "director_sanity_max": 100,
+      "ordinary_food": false,
+      "persistent": true,
+      "rule": "halve",
       "cosmetic_cost": 0
     }
   ],
@@ -616,6 +637,30 @@
             "role": "map_take_deliver"
           }
         ]
+      },
+      {
+        "symbol": "CHAOS_OBS_OP_DOOR_OPEN",
+        "id": 4,
+        "name": "door_open",
+        "allow_blocked": false,
+        "projection": "excluded",
+        "hook_refs": [
+          {
+            "file": "src/lock.c",
+            "symbol": "doopen_indir",
+            "role": "scope"
+          },
+          {
+            "file": "src/chaos_engine.c",
+            "symbol": "chaos_door_attempt",
+            "role": "arm"
+          },
+          {
+            "file": "src/pline.c",
+            "symbol": "vpline",
+            "role": "message_take_deliver"
+          }
+        ]
       }
     ],
     "facts": [
@@ -696,6 +741,22 @@
         "id": 10,
         "name": "attention",
         "operation": 3,
+        "channel": "message",
+        "implies_blocked": false
+      },
+      {
+        "symbol": "CHAOS_OBS_FACT_OPENED",
+        "id": 11,
+        "name": "opened",
+        "operation": 4,
+        "channel": "message",
+        "implies_blocked": false
+      },
+      {
+        "symbol": "CHAOS_OBS_FACT_RESISTED",
+        "id": 12,
+        "name": "resisted",
+        "operation": 4,
         "channel": "message",
         "implies_blocked": false
       }
@@ -969,5 +1030,14 @@
     "spacing": 50,
     "mask": 7,
     "policy": 2
+  },
+  "telegraph_extensions": [
+    {
+      "id": 4,
+      "text": "The doors of this place seem to lean against you."
+    }
+  ],
+  "mutation_limits": {
+    "duration_cap": 300
   }
 }

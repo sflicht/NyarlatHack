@@ -3,6 +3,7 @@
 /* NetHack may be freely redistributed.  See license for details. */
 
 #include "hack.h"
+#include "chaos.h"
 
 STATIC_PTR int NDECL(picklock);
 STATIC_PTR int NDECL(forcelock);
@@ -995,7 +996,7 @@ nodoor_indr:
 	}
 
 	/* door is known to be CLOSED */
-	if (rnl(20) < (ACURRSTR+ACURR(A_DEX)+ACURR(A_CON))/3) {
+	if (chaos_door_attempt(rnl(20) < chaos_door((ACURRSTR+ACURR(A_DEX)+ACURR(A_CON))/3))) {
 	    pline_The("door opens.");
 	    if(door->doormask & D_TRAPPED) {
 		b_trapped("door", FINGER);
@@ -1012,6 +1013,7 @@ nodoor_indr:
 	    exercise(A_STR, TRUE);
 	    pline_The("door resists!");
 	}
+	chaos_door_attempt_end();
 
 	return MOVE_STANDARD;
 }

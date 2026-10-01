@@ -97,7 +97,9 @@ class ModelTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             run(tmp, self.backend(), max_runtime=0.06, poll=0.01)
             self.assertEqual(len(self.server.requests), 0)
-            append(Path(tmp) / "events.jsonl", current_event())
+            # #1: budget 0 keeps the fixture's ambient answer the only
+            # eligible one (door_reluctance would qualify at budget 2).
+            append(Path(tmp) / "events.jsonl", current_event(budget=0))
             run(tmp, self.backend(), max_runtime=0.06, poll=0.01)
             self.assertEqual(len(self.server.requests), 1)
 

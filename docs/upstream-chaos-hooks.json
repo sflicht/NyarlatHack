@@ -658,6 +658,13 @@
         ]
       }
     ],
+    "src/lock.c": [
+      {
+        "symbol": "doopen_indir",
+        "start": ["doopen_indir", "(", "x", ",", "y", ")", "int", "x", ",", "y", ";", "{"],
+        "end": ["obstructed", "(", "x", ",", "y", ")", "register", "int", "x", ",", "y", ";", "{"]
+      }
+    ],
     "src/mklev.c": [
       {
         "symbol": "makelevel",
@@ -13052,6 +13059,50 @@
       ],
       "count": 1,
       "chaos0": "No-op macro; arguments are not evaluated."
+    },
+    {
+      "id": "hook-0411",
+      "file": "src/lock.c",
+      "symbol": "<file>",
+      "kind": "directive",
+      "purpose": "<file>: include upstream-facing API \"chaos.h\"",
+      "signature": ["#", "include", "\"chaos.h\""],
+      "guards": [],
+      "count": 1,
+      "chaos0": "Include remains; header supplies off-mode types/stubs."
+    },
+    {
+      "id": "hook-0412",
+      "file": "src/lock.c",
+      "symbol": "doopen_indir",
+      "kind": "call-or-declaration",
+      "purpose": "doopen_indir: apply bounded door_reluctance rule to the open threshold (#1)",
+      "signature": ["rnl", "(", "20", ")", "<", "chaos_door", "(", "(", "ACURRSTR", "+", "ACURR", "(", "A_DEX", ")", "+", "ACURR", "(", "A_CON", ")", ")", "/", "3", ")"],
+      "guards": ["ifdef OVLB"],
+      "count": 1,
+      "chaos0": "Identity macro: evaluates and returns its argument."
+    },
+    {
+      "id": "hook-0413",
+      "file": "src/lock.c",
+      "symbol": "doopen_indir",
+      "kind": "call-or-declaration",
+      "purpose": "doopen_indir: open the door_open observation root and arm opened/resisted for the native message (#1)",
+      "signature": ["MOVE_CANCELLED", ";", "}", "if", "(", "chaos_door_attempt", "(", "rnl", "(", "20", ")", "<", "chaos_door", "(", "(", "ACURRSTR", "+", "ACURR", "(", "A_DEX", ")", "+", "ACURR", "(", "A_CON", ")", ")", "/", "3", ")", ")"],
+      "guards": ["ifdef OVLB"],
+      "count": 1,
+      "chaos0": "Identity macro: evaluates and returns its argument."
+    },
+    {
+      "id": "hook-0414",
+      "file": "src/lock.c",
+      "symbol": "doopen_indir",
+      "kind": "call-or-declaration",
+      "purpose": "doopen_indir: close the door_open observation root after the native message (#1)",
+      "signature": ["(", "\"door resists!\"", ")", ";", "}", "chaos_door_attempt_end", "(", ")", ";", "return", "MOVE_STANDARD"],
+      "guards": ["ifdef OVLB"],
+      "count": 1,
+      "chaos0": "No-op macro."
     }
   ],
   "build_blocks": [

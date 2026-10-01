@@ -26,6 +26,7 @@ from .director import (
     DEFAULT_EVENTS,
     EventReader,
     Mailbox,
+    OrdinaryBackend,
     RandomBackend,
     ScheduleBackend,
     State,
@@ -43,7 +44,11 @@ HAUNT_DEFAULT = Path(__file__).resolve().parent / "packs" / "footsteps.lua"
 
 def add_parser(sub):
     p = sub.add_parser("play", help="launch the game and an offline director together")
-    p.add_argument("--backend", choices=("pack", "random"), default="pack")
+    p.add_argument(
+        "--backend",
+        choices=("pack", "random"),
+        help="default pack; a fresh --ordinary run defaults to the #1 M1 menu",
+    )
     p.add_argument(
         "--pack",
         choices=("ambient", "silence", "ward", "hunger"),
@@ -152,6 +157,16 @@ def add_parser(sub):
     )
 
 
+def _m1_default(args):
+    """#1 M1: --ordinary with no explicit whisper option (--seed allowed)."""
+    return (
+        args.ordinary
+        and args.backend is None
+        and not args.ordinary_food
+        and all(x is None for x in (args.pack, args.at, args.id))
+    )
+
+
 def _configuration(args):
     if (
         not 0 < args.max_runtime <= 86400
@@ -159,8 +174,9 @@ def _configuration(args):
         or min(args.max_events, args.max_bytes, args.max_submissions) < 1
     ):
         raise ValueError("invalid director limits")
-    if args.backend == "pack":
-        if args.seed is not None or args.ordinary_food:
+    m1 = _m1_default(args)
+    if args.backend in ("pack", None):
+        if (args.seed is not None and not m1) or args.ordinary_food:
             raise ValueError("random options require random backend")
         raw = (
             Path(__file__).parent / "packs" / ((args.pack or "ambient") + ".json")
@@ -169,6 +185,8 @@ def _configuration(args):
         request.update(
             id=1 if args.id is None else args.id, at=1 if args.at is None else args.at
         )
+        # #1 M1: play() swaps in OrdinaryBackend when the fresh record (or a
+        # restored v2 record) selects it; the pack is the pre-M1 fallback.
         backend = ScheduleBackend([request])
     else:
         if any(x is not None for x in (args.pack, args.at, args.id)):
@@ -373,6 +391,9 @@ def _refuse_ordinary_over_save(args, root):
 
 CHOICE = "ordinary-choice.json"
 CHOICE_KEYS = {"v", "haunt", "haunt_pack", "haunt_sha256", "next_use"}
+# #1 M1, record v2: "whispers" is {"backend": "m1", "seed": int} when the run
+# uses OrdinaryBackend, or null when explicit whisper flags chose the backend.
+CHOICE_KEYS_V2 = CHOICE_KEYS | {"whispers"}
 
 
 def _explicit(args):
@@ -403,10 +424,19 @@ def _read_choice(directory):
     record = json.loads(raw)
     if (
         not isinstance(record, dict)
-        or set(record) != CHOICE_KEYS
-        or record["v"] != 1
+        or record.get("v") not in (1, 2)
+        or set(record) != (CHOICE_KEYS if record["v"] == 1 else CHOICE_KEYS_V2)
         or not isinstance(record["haunt"], bool)
         or not isinstance(record["next_use"], bool)
+    ):
+        raise ValueError("invalid ordinary choice record")
+    whispers = record.get("whispers")
+    if whispers is not None and (
+        not isinstance(whispers, dict)
+        or set(whispers) != {"backend", "seed"}
+        or whispers["backend"] != "m1"
+        or type(whispers["seed"]) is not int
+        or not 0 <= whispers["seed"] < 2**63
     ):
         raise ValueError("invalid ordinary choice record")
     pack, digest = record["haunt_pack"], record["haunt_sha256"]
@@ -435,6 +465,7 @@ def _resolve_choice(args, restore_dir):
     haunt, next_use = _explicit(args)
     if restore_dir is not None:
         record = _read_choice(restore_dir)
+        args.m1_seed = None
         if record is None:
             args.next_use = next_use is True
             return None
@@ -442,6 +473,15 @@ def _resolve_choice(args, restore_dir):
             next_use is not None and next_use != record["next_use"]
         ):
             raise ValueError("restore options conflict with the run's recorded choice")
+        whispers = record.get("whispers")
+        if whispers is not None and (
+            not _m1_default(args)
+            or (args.seed is not None and args.seed != whispers["seed"])
+        ):
+            raise ValueError("restore options conflict with the run's recorded choice")
+        if whispers is None and args.seed is not None and args.backend is None:
+            raise ValueError("restore options conflict with the run's recorded choice")
+        args.m1_seed = None if whispers is None else whispers["seed"]
         if record["haunt"]:
             pack = args.haunt if args.haunt is not None else record["haunt_pack"]
             if _pack_digest(pack) != record["haunt_sha256"]:
@@ -449,13 +489,20 @@ def _resolve_choice(args, restore_dir):
             args.haunt = Path(pack)
         args.next_use = record["next_use"]
         return None
+    args.m1_seed = None
     if not args.ordinary:
         args.next_use = next_use is True
         return None
     if haunt is None:
         args.haunt = HAUNT_DEFAULT
     args.next_use = next_use is not False
-    record = {"v": 1, "haunt": args.haunt is not None, "next_use": args.next_use}
+    args.m1_seed = (
+        (0 if args.seed is None else args.seed) if _m1_default(args) else None
+    )
+    record = {"v": 2, "haunt": args.haunt is not None, "next_use": args.next_use}
+    record["whispers"] = (
+        None if args.m1_seed is None else {"backend": "m1", "seed": args.m1_seed}
+    )
     record["haunt_pack"] = record["haunt_sha256"] = None
     if args.haunt is not None:
         pack = Path(args.haunt).resolve()
@@ -485,6 +532,10 @@ def _validate_startup_pending(backend, state, pending):
         expected = backend.next(state)
         if pending is not None and pending != expected:
             raise ValueError("pending request conflicts with selected pack")
+    if isinstance(backend, OrdinaryBackend) and pending is not None:
+        expected = backend.next(state)
+        if expected is not None and pending != expected:
+            raise ValueError("pending request conflicts with the recorded menu")
 
 
 def _observe(reader, state, box, backend, *, next_use=False):
@@ -545,6 +596,8 @@ def _offline_loop(box, backend, reader, state, args, ready):
             if isinstance(backend, ScheduleBackend):
                 request = backend.next(state)
                 done = request is None and not getattr(args, "next_use", False)
+            elif isinstance(backend, OrdinaryBackend) and backend.next(state):
+                request = backend.next(state)
             elif (
                 state.latest
                 and last_choice != state.safe
@@ -680,6 +733,8 @@ def play(args):
     curio = _curio_preflight(args)
     restore_dir = _directory(args) if args.reuse_run_dir is not None else None
     choice = _resolve_choice(args, restore_dir)
+    if args.m1_seed is not None:
+        backend = OrdinaryBackend(args.m1_seed)
     haunt = _haunt_preflight(args)
     directory = restore_dir if restore_dir is not None else _directory(args)
     print(

@@ -16,7 +16,7 @@ import test_episode_io as io_tests
 import test_episode_scopes as scope_tests
 
 ROOT = Path(__file__).resolve().parents[2]
-FACTS = "sound_high sound_shrill sound_normal sound_strange sound_humming water_refreshed water_foul cannot_reach detection_presented attention".split()
+FACTS = "sound_high sound_shrill sound_normal sound_strange sound_humming water_refreshed water_foul cannot_reach detection_presented attention opened resisted".split()
 
 
 class RegistrationTests(unittest.TestCase):
@@ -199,6 +199,30 @@ class RegistrationTests(unittest.TestCase):
                         ],
                     ),
                 ]
+            ]
+            + [
+                # #1: door_open is registered but excluded from the summary and
+                # the next-use lookback; it can never block.
+                dict(
+                    symbol="CHAOS_OBS_OP_DOOR_OPEN",
+                    id=4,
+                    name="door_open",
+                    allow_blocked=False,
+                    projection="excluded",
+                    hook_refs=[
+                        dict(file="src/lock.c", symbol="doopen_indir", role="scope"),
+                        dict(
+                            file="src/chaos_engine.c",
+                            symbol="chaos_door_attempt",
+                            role="arm",
+                        ),
+                        dict(
+                            file="src/pline.c",
+                            symbol="vpline",
+                            role="message_take_deliver",
+                        ),
+                    ],
+                )
             ],
             facts=[
                 dict(
@@ -276,6 +300,8 @@ class RegistrationTests(unittest.TestCase):
                         "message",
                         False,
                     ),
+                    ("CHAOS_OBS_FACT_OPENED", 11, "opened", 4, "message", False),
+                    ("CHAOS_OBS_FACT_RESISTED", 12, "resisted", 4, "message", False),
                 ]
             ],
             projection=dict(
@@ -315,7 +341,8 @@ class WireTests(unittest.TestCase):
             1: "whistling",
             2: "fountain_drink",
             3: "whistle_attention",
-            4: "stub",
+            4: "door_open",
+            5: "stub",
         }
         stages = dict(
             enumerate("enabled started notice completed blocked unknown".split())
@@ -335,7 +362,7 @@ class WireTests(unittest.TestCase):
             op, stage, root, fact = case
             legal = (
                 (stage == 0 and op == 0 and root == 0 and fact == 0)
-                or (stage == 1 and op in (1, 2, 3) and root == 0 and fact == 0)
+                or (stage == 1 and op in (1, 2, 3, 4) and root == 0 and fact == 0)
                 or (
                     0 < root < 11
                     and (
@@ -345,9 +372,10 @@ class WireTests(unittest.TestCase):
                                 (op == 1 and 1 <= fact <= 5)
                                 or (op == 2 and 6 <= fact <= 9)
                                 or (op == 3 and fact == 10)
+                                or (op == 4 and fact in (11, 12))
                             )
                         )
-                        or (stage == 3 and op in (1, 2, 3) and fact == 0)
+                        or (stage == 3 and op in (1, 2, 3, 4) and fact == 0)
                         or (stage == 4 and op in (2, 3) and fact == 0)
                     )
                 )
@@ -577,7 +605,7 @@ else:
             obs["families"].append(
                 dict(
                     symbol="CHAOS_OBS_OP_STUB",
-                    id=4,
+                    id=5,
                     name="stub",
                     allow_blocked=True,
                     projection="completed_notice_by_operation",
@@ -597,16 +625,16 @@ else:
                 )
             )
             for id_, name, channel, blocked in [
-                (11, "stub_message", "message", False),
-                (12, "stub_map", "map", False),
-                (13, "stub_blocking", "message", True),
+                (13, "stub_message", "message", False),
+                (14, "stub_map", "map", False),
+                (15, "stub_blocking", "message", True),
             ]:
                 obs["facts"].append(
                     dict(
                         symbol="CHAOS_OBS_FACT_" + name.upper(),
                         id=id_,
                         name=name,
-                        operation=4,
+                        operation=5,
                         channel=channel,
                         implies_blocked=blocked,
                     )
@@ -619,13 +647,13 @@ else:
             self.assertEqual(header_before, handwritten_header())
             self.compile_scope()
             for fact, take, deliver, terminal in [
-                (11, "take", "deliver", "completed"),
-                (12, "take_map", "map", "completed"),
-                (13, "take", "deliver", "blocked"),
+                (13, "take", "deliver", "completed"),
+                (14, "take_map", "map", "completed"),
+                (15, "take", "deliver", "blocked"),
             ]:
                 with self.subTest(fact=fact):
                     raw, rows, _ = self.run_scope(
-                        f"start begin 4 arm 4 {fact} {take} {deliver} {deliver} end end"
+                        f"start begin 5 arm 5 {fact} {take} {deliver} {deliver} end end"
                     )
                     self.assertEqual(
                         [r["observation"]["stage"] for r in rows[4:]],
@@ -659,7 +687,7 @@ else:
                                             notice_seq=6,
                                             end_seq=7,
                                             fact="stub_message"
-                                            if fact == 11
+                                            if fact == 13
                                             else "stub_map",
                                         )
                                     ],
@@ -680,7 +708,7 @@ else:
                 ("", "completed", "completed_without_notice"),
                 ("block", "blocked", "blocked"),
             ]:
-                raw, rows, _ = self.run_scope(f"start begin 4 {commands} end")
+                raw, rows, _ = self.run_scope(f"start begin 5 {commands} end")
                 self.assertEqual(rows[-1]["observation"]["stage"], terminal)
                 public = self.project_isolated(raw)
                 self.assertEqual(public["episodes"], [])
@@ -688,12 +716,12 @@ else:
                     public["coverage"][coverage], dict(count=1, saturated=False)
                 )
             for fact, take, deliver, wrong in [
-                (11, "take", "deliver", "map"),
-                (12, "take_map", "map", "deliver"),
+                (13, "take", "deliver", "map"),
+                (14, "take_map", "map", "deliver"),
             ]:
-                self.check_identical_fact_reentry(4, fact, take, deliver)
+                self.check_identical_fact_reentry(5, fact, take, deliver)
                 _, rows, _ = self.run_scope(
-                    f"start begin 4 arm 4 {fact} {take} {wrong} {deliver} end"
+                    f"start begin 5 arm 5 {fact} {take} {wrong} {deliver} end"
                 )
                 self.assertEqual(
                     [r["observation"]["stage"] for r in rows[4:]],
@@ -709,7 +737,7 @@ else:
                     "disarm",
                 ):
                     _, rows, _ = self.run_scope(
-                        f"start begin 4 arm 4 {fact} {take} {boundary} {deliver} end"
+                        f"start begin 5 arm 5 {fact} {take} {boundary} {deliver} end"
                     )
                     self.assertFalse(
                         any(
@@ -720,16 +748,16 @@ else:
                 for w, s in [(1, 0), (0, 1)]:
                     for prefix, successful in [
                         ("fault {w} {s} start", 0),
-                        ("start fault {w} {s} begin 4", 4),
+                        ("start fault {w} {s} begin 5", 4),
                         (
-                            f"start begin 4 arm 4 {fact} {take} fault {{w}} {{s}} {deliver}",
+                            f"start begin 5 arm 5 {fact} {take} fault {{w}} {{s}} {deliver}",
                             5,
                         ),
-                        ("start begin 4 fault {w} {s} end", 5),
+                        ("start begin 5 fault {w} {s} end", 5),
                     ]:
                         _, rows, out = self.run_scope(
                             prefix.format(w=w, s=s)
-                            + f" {deliver} end end begin 4 arm 4 {fact} {take} {deliver} end"
+                            + f" {deliver} end end begin 5 arm 5 {fact} {take} {deliver} end"
                         )
                         self.assertEqual(len(rows), successful + s)
                         self.assertEqual(
@@ -737,7 +765,7 @@ else:
                         )
                         self.assertEqual(int(out.splitlines()[-1].split()[1]), 0)
             raw, _, _ = self.run_scope(
-                "start " + "begin 4 arm 4 11 take deliver end " * 5
+                "start " + "begin 5 arm 5 13 take deliver end " * 5
             )
             public = self.project_isolated(raw)
             self.assertEqual(
@@ -761,19 +789,19 @@ else:
             )
             for bad in (
                 "arm 1 1 take deliver",
-                "arm 4 9 take_map map",
+                "arm 5 9 take_map map",
                 "fake 10",
-                "arm 4 11 deliver",
-                "arm 4 12 map",
+                "arm 5 13 deliver",
+                "arm 5 14 map",
             ):
-                _, rows, _ = self.run_scope(f"start begin 4 {bad} end")
+                _, rows, _ = self.run_scope(f"start begin 5 {bad} end")
                 self.assertEqual(
                     [r["observation"]["stage"] for r in rows[4:]],
                     ["started", "completed"],
                 )
             for fault in ("fault 1 0", "fault 0 1", "overflow"):
                 _, rows, out = self.run_scope(
-                    f"start begin 4 arm 4 11 take {fault} begin 4 oldend deliver end"
+                    f"start begin 5 arm 5 13 take {fault} begin 5 oldend deliver end"
                 )
                 self.assertFalse(
                     any(r.get("observation", {}).get("stage") == "notice" for r in rows)
@@ -812,14 +840,14 @@ else:
 
         def family_check():
             self.assertEqual(
-                stages("start begin 4 arm 4 11 take deliver end"),
+                stages("start begin 5 arm 5 13 take deliver end"),
                 ["started", "notice", "completed"],
                 "family_registration",
             )
 
         def channel_check():
             self.assertEqual(
-                stages("start begin 4 arm 4 11 take_map take deliver end"),
+                stages("start begin 5 arm 5 13 take_map take deliver end"),
                 ["started", "notice", "completed"],
                 "channel_preserves_token",
             )
@@ -831,8 +859,8 @@ else:
                 "fact_owner_rejection",
             )
 
-        raw, _, _ = self.run_scope("start begin 4 arm 4 11 take deliver end")
-        blocking_raw, _, _ = self.run_scope("start begin 4 arm 4 13 take deliver end")
+        raw, _, _ = self.run_scope("start begin 5 arm 5 13 take deliver end")
+        blocking_raw, _, _ = self.run_scope("start begin 5 arm 5 15 take deliver end")
 
         def blocking_check():
             self.check_blocking_chronology(blocking_raw)
@@ -975,7 +1003,7 @@ else:
     run_rows = io_tests.EpisodeIOTests.run_rows
 
     def assert_rejected(self):
-        _, rows, output = self.run_scope("start begin 4 arm 4 11 take deliver end")
+        _, rows, output = self.run_scope("start begin 5 arm 5 13 take deliver end")
         self.assertEqual(
             [r["observation"]["stage"] for r in rows if r["v"] == 4], ["enabled"]
         )

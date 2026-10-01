@@ -1,0 +1,198 @@
+[
+ {
+  "game": 1,
+  "outcome": "died",
+  "exit_code": 0,
+  "error": null,
+  "acks": [
+   [
+    1,
+    "ambient",
+    "accepted",
+    0
+   ],
+   [
+    384,
+    "ambient",
+    "rejected",
+    0
+   ],
+   [
+    870,
+    "door_reluctance",
+    "accepted",
+    1062
+   ]
+  ],
+  "first_felt": {
+   "turn": 44,
+   "kind": "hound"
+  },
+  "telegraph_on_screen": true,
+  "door_resists_on_screen": 5
+ },
+ {
+  "game": 2,
+  "outcome": "died",
+  "exit_code": 0,
+  "error": null,
+  "acks": [
+   [
+    1,
+    "ambient",
+    "accepted",
+    0
+   ],
+   [
+    349,
+    "ambient",
+    "rejected",
+    0
+   ],
+   [
+    397,
+    "door_reluctance",
+    "accepted",
+    589
+   ],
+   [
+    696,
+    "door_reluctance",
+    "rejected",
+    0
+   ],
+   [
+    1010,
+    "door_reluctance",
+    "accepted",
+    1019
+   ],
+   [
+    1099,
+    "door_reluctance",
+    "rejected",
+    0
+   ]
+  ],
+  "first_felt": {
+   "turn": 17,
+   "kind": "hound"
+  },
+  "telegraph_on_screen": true,
+  "door_resists_on_screen": 1
+ },
+ {
+  "game": 3,
+  "outcome": "died",
+  "exit_code": 0,
+  "error": null,
+  "acks": [
+   [
+    1,
+    "ambient",
+    "accepted",
+    0
+   ],
+   [
+    328,
+    "ambient",
+    "rejected",
+    0
+   ],
+   [
+    655,
+    "door_reluctance",
+    "accepted",
+    847
+   ],
+   [
+    661,
+    "door_reluctance",
+    "rejected",
+    0
+   ]
+  ],
+  "first_felt": {
+   "turn": 49,
+   "kind": "hound"
+  },
+  "telegraph_on_screen": true,
+  "door_resists_on_screen": 2
+ },
+ {
+  "game": 4,
+  "outcome": "died",
+  "exit_code": 0,
+  "error": null,
+  "acks": [
+   [
+    1,
+    "ambient",
+    "accepted",
+    0
+   ],
+   [
+    700,
+    "ambient",
+    "rejected",
+    0
+   ],
+   [
+    1017,
+    "ambient",
+    "rejected",
+    0
+   ]
+  ],
+  "first_felt": {
+   "turn": 18,
+   "kind": "hound"
+  },
+  "telegraph_on_screen": false,
+  "door_resists_on_screen": 3
+ },
+ {
+  "game": 5,
+  "outcome": "turn_limit",
+  "exit_code": 0,
+  "error": null,
+  "acks": [
+   [
+    1,
+    "ambient",
+    "accepted",
+    0
+   ],
+   [
+    505,
+    "ambient",
+    "rejected",
+    0
+   ],
+   [
+    822,
+    "door_reluctance",
+    "accepted",
+    1014
+   ],
+   [
+    931,
+    "door_reluctance",
+    "rejected",
+    0
+   ],
+   [
+    1934,
+    "door_reluctance",
+    "rejected",
+    0
+   ]
+  ],
+  "first_felt": {
+   "turn": 517,
+   "kind": "next_use_W"
+  },
+  "telegraph_on_screen": true,
+  "door_resists_on_screen": 6
+ }
+]

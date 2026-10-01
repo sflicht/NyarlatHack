@@ -32,7 +32,9 @@ class CleanupContract:
         self.addCleanup(self.tmp.cleanup)
         self.root = Path(self.tmp.name)
         self.state = State()
-        self.state.ingest(event())
+        # #1: no mechanical budget, so the ambient REQUEST stays the only
+        # eligible proposal (door_reluctance costs 1 at full Sanity).
+        self.state.ingest(event(budget=0))
         self.content = TEXT
         self.calls = []
         self.closed = 0
@@ -213,7 +215,7 @@ class CleanupContract:
     def test_invalid_cleanup_cannot_publish_or_retry_in_director(self):
         self.content = fenced(TEXT) + " trailing prose"
         backend = self.backend()
-        append(self.root / "events.jsonl", event())
+        append(self.root / "events.jsonl", event(budget=0))
         with self.assertRaises(ValueError):
             run(self.root, backend, max_runtime=1, install_only=True)
         self.assertFalse((self.root / "whisper.json").exists())
@@ -222,7 +224,7 @@ class CleanupContract:
     def test_wrapped_response_publishes_only_assigned_request(self):
         self.content = fenced(TEXT)
         backend = self.backend()
-        append(self.root / "events.jsonl", event())
+        append(self.root / "events.jsonl", event(budget=0))
         result = run(self.root, backend, max_runtime=1, install_only=True)
         self.assertEqual(result["submitted"], 1)
         self.assertEqual(result["reason"], "installed_pending_ack")
@@ -234,7 +236,7 @@ class CleanupContract:
     def test_late_wrapped_response_cannot_publish(self):
         self.content = fenced(TEXT)
         backend = self.backend()
-        append(self.root / "events.jsonl", event())
+        append(self.root / "events.jsonl", event(budget=0))
         clock = [100]
         self.after_call = lambda: clock.__setitem__(0, 102)
         with patch("time.monotonic", side_effect=lambda: clock[0]):
