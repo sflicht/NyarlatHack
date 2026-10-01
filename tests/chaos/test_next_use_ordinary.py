@@ -518,6 +518,8 @@ class OrdinaryNextUseTests(unittest.TestCase):
             "run/next_use-envelope.json",
             "run/next_use-owner",
             "run/next_use-receipt.jsonl",
+            "run/next_use-lifecycle.jsonl",
+            "run/next_use-felt.jsonl",
             "run/next_use-schedule.jsonl",
             "game/ordinary-observer.jsonl",
             "game/xlogfile",
@@ -589,8 +591,20 @@ class OrdinaryNextUseTests(unittest.TestCase):
             self.assertTrue(full.startswith(log_prefix))
             self.assertEqual(
                 full[len(log_prefix) :].splitlines(),
-                [b"chaos: next-use: already_published"] * 2,
+                [
+                    b"chaos: next-use: already_published",
+                    b"chaos: next-use: no_eligible_origin",
+                    b"chaos: next-use: no_eligible_origin",
+                ],
             )
+            # The restored v3 scheduler finishes program 1, then waits at
+            # program 2 for a new completed origin. This continuation never
+            # supplies one: neither restore nor a terminal program is a retry.
+            self.assertEqual(rows(game.run / "ordinary-choice.json")[0]["v"], 3)
+            lifecycle = rows(game.run / "next_use-lifecycle.jsonl")
+            self.assertEqual(len(lifecycle), 1)
+            self.assertEqual(lifecycle[0]["program_ordinal"], 1)
+            self.assertFalse((game.run / "next_use-envelope.2.json").exists())
         evidence.update(
             pacing=self.pacing,
             input_chunks=len(record.inputs),

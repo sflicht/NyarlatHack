@@ -394,6 +394,7 @@ CHOICE_KEYS = {"v", "haunt", "haunt_pack", "haunt_sha256", "next_use"}
 # #1 M1, record v2: "whispers" is {"backend": "m1", "seed": int} when the run
 # uses OrdinaryBackend, or null when explicit whisper flags chose the backend.
 CHOICE_KEYS_V2 = CHOICE_KEYS | {"whispers"}
+CHOICE_KEYS_V3 = CHOICE_KEYS_V2 | {"m2"}
 
 
 def _explicit(args):
@@ -424,12 +425,25 @@ def _read_choice(directory):
     record = json.loads(raw)
     if (
         not isinstance(record, dict)
-        or record.get("v") not in (1, 2)
-        or set(record) != (CHOICE_KEYS if record["v"] == 1 else CHOICE_KEYS_V2)
+        or type(record.get("v")) is not int
+        or record["v"] not in (1, 2, 3)
+        or set(record)
+        != {1: CHOICE_KEYS, 2: CHOICE_KEYS_V2, 3: CHOICE_KEYS_V3}[record["v"]]
         or not isinstance(record["haunt"], bool)
         or not isinstance(record["next_use"], bool)
     ):
         raise ValueError("invalid ordinary choice record")
+    if record["v"] == 3:
+        m2 = record["m2"]
+        if (
+            type(m2) is not dict
+            or set(m2) != {"enabled", "cap"}
+            or type(m2["enabled"]) is not bool
+            or type(m2["cap"]) is not int
+            or m2["cap"] != 3
+            or (m2["enabled"] and not record["next_use"])
+        ):
+            raise ValueError("invalid ordinary M2 choice")
     whispers = record.get("whispers")
     if whispers is not None and (
         not isinstance(whispers, dict)
@@ -463,6 +477,7 @@ def _resolve_choice(args, restore_dir):
     before #198 has no record and keeps exactly its explicit flags.
     """
     haunt, next_use = _explicit(args)
+    args.next_use_programs = 1
     if restore_dir is not None:
         record = _read_choice(restore_dir)
         args.m1_seed = None
@@ -488,6 +503,8 @@ def _resolve_choice(args, restore_dir):
                 raise ValueError("haunt pack differs from the run's recorded pack")
             args.haunt = Path(pack)
         args.next_use = record["next_use"]
+        if record.get("m2", {}).get("enabled"):
+            args.next_use_programs = record["m2"]["cap"]
         return None
     args.m1_seed = None
     if not args.ordinary:
@@ -499,7 +516,9 @@ def _resolve_choice(args, restore_dir):
     args.m1_seed = (
         (0 if args.seed is None else args.seed) if _m1_default(args) else None
     )
-    record = {"v": 2, "haunt": args.haunt is not None, "next_use": args.next_use}
+    args.next_use_programs = 3 if args.next_use else 1
+    record = {"v": 3, "haunt": args.haunt is not None, "next_use": args.next_use}
+    record["m2"] = {"enabled": args.next_use, "cap": 3}
     record["whispers"] = (
         None if args.m1_seed is None else {"backend": "m1", "seed": args.m1_seed}
     )
@@ -570,7 +589,9 @@ def _offline_loop(box, backend, reader, state, args, ready):
         from .next_use_schedule import NextUseScheduler
 
         next_use = NextUseScheduler(
-            box.path, seed=0 if args.seed is None else args.seed
+            box.path,
+            seed=0 if args.seed is None else args.seed,
+            programs=getattr(args, "next_use_programs", 1),
         )
     while time.monotonic() < deadline or first:
         for event in reader.read(allow_observations=getattr(args, "next_use", False)):
@@ -578,10 +599,12 @@ def _offline_loop(box, backend, reader, state, args, ready):
                 continue
             state.ingest(event)
         if next_use is not None:
-            status = next_use.poll(box)["status"]
-            if status != next_use_status:
+            result = next_use.poll(box)
+            status = result["status"]
+            key = (getattr(next_use, "ordinal", 1), status)
+            if key != next_use_status:
                 print("chaos: next-use: " + status, file=sys.stderr, flush=True)
-                next_use_status = status
+                next_use_status = key
         if first and reader.tail:
             raise ValueError("incomplete event history before game startup")
         if state.ended:

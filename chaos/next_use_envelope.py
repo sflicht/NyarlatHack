@@ -104,12 +104,19 @@ def envelope_from_selection(selected, host):
     return envelope, encoded
 
 
-def publish_envelope(directory, selected, host, box=None):
+def envelope_name(ordinal=1):
+    if type(ordinal) is not int or not 1 <= ordinal <= 3:
+        raise ValueError("next-use program ordinal")
+    return _ENVELOPE_NAME if ordinal == 1 else f"next_use-envelope.{ordinal}.json"
+
+
+def publish_envelope(directory, selected, host, box=None, ordinal=1):
     """Write one complete envelope artifact. Never admits."""
+    name = envelope_name(ordinal)
     envelope, encoded = envelope_from_selection(selected, host)
 
     def write(held):
-        target = held.path / _ENVELOPE_NAME
+        target = held.path / name
         if os.path.lexists(target):
             raise ValueError(
                 "a next-use envelope already exists; use a fresh game directory"
@@ -140,7 +147,7 @@ def publish_envelope(directory, selected, host, box=None):
         write(box)
     return {
         "status": "envelope_published_not_admitted",
-        "path": _ENVELOPE_NAME,
+        "path": name,
         "id": envelope["id"],
         "source_sha256": envelope["source_sha256"],
         "bytes": len(encoded),

@@ -123,3 +123,15 @@ adds traps found while hooking dNAO. Re-grep before trusting any function name.
 - New upstream seams: add narrow justified rows to the hook inventory
   (`docs/upstream-chaos-hooks.md`, `scripts/check_upstream_hooks.py`); never
   auto-accept diagnostics or update historical goldens.
+
+## Public multi-program diagnostics
+
+- Give a long-lived diagnostic writer its own close-on-exec directory descriptor;
+  admission callers and linked fixtures may close their borrowed fd before a
+  later effect/terminal callback. Close the owned fd at terminal, failure/reset.
+- Project only public outcome/root/ordinal fields into director-facing receipts.
+  Never give the director the private replay journal. Emit terminal receipts only
+  after durable closure/acknowledgement; missing diagnostics must fail closed.
+- Attribute felt events by public action roots and public turns, not replay
+  sequence numbers or monster moves. Require an actual public notice; native
+  delivery alone is not a felt-event observation.

@@ -1,0 +1,1199 @@
+chaos: run directory "<retained-run-directory>" (preserved on exit)
+dNethack, Copyright 2012-2025
+    Based on NetHack, Copyright 1985-2003 by Stichting Mathematisch
+         Centrum and M. Stephenson.  See license for details.
+Choosing inheritance Pick the inheritance of your neutral male human Troubadour
+  y - Inherit from a past adventurer (start with an heirloom artifact but low st
+ n - No past inheritance
+ * - Random
+ q - Quit
+(end)
++┌─────┐··=···││···d··│····@│└─────┘ChaosRevie the Rhymer     St:10 Dx:18 Co:10 In:9 Wi:10 Ch:18   Neutral
+Dlvl:1  $:0  HP:
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:1 AC:7  DR:2  Exp:1 T:1Hello ChaosReview, welcome to dNetHack!  You are a neutral male human
+Troubadour.--More--
+Press Ctrl^W or type #ward to engrave a warding sign.--More--A distant whisper brushes against your thoughts.--More--The shadows lean closer.
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:1 AC:7  DR:2  Exp:1 T:1 Inventory: 206/550 weight (7/52 slots) Armor b - an uncursed +1 leather cloak (being worn) {15} c - an uncursed +0 pair of high boots (being worn) {20} Comestibles d - 4 uncursed apples {8} e - 5 uncursed oranges {10} Potions f - 6 uncursed potions of booze {120} Tools a - an uncursed wooden harp {30} g - an uncursed tin whistle {3}(end) ┌─────┐··=···││···d··│····@│└─────┘
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:1 AC:7  DR:2  Exp:1 T:1What do you want to use or apply? [ag or ?*] That is a silly thing to use or apply.
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:1 AC:7  DR:2  Exp:1 T:1# prayayyAre you sure you want to pray? [yn] (n) yYou begin praying to Pan.
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:2 AC:15 DR:2  Exp:1 T:2
+
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:15 DR:2  Exp:1 T:3d·
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:15 DR:2  Exp:1 T:4You finish your prayer.--More--You feel that Pan is displeased.
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:4What do you want to use or apply? [ag or ?*] That is a silly thing to use or apply.
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:4
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:5·d
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:6·d·
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:7d·
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:8··d
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:9d·
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:10··d
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:11d·
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:12d··
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:12The little dog picks up a copper ring.
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:13·d·d
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:13The little dog drops a copper ring.
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:14d=
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:15·d
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:16·d=
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:17·d
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:18·d
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:19
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:19The little dog picks up a copper ring.
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:20·d·
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:20The little dog drops a copper ring.
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:21=d
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:22d=·
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:23·d
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:24·d
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:25=d
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:26d=·
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:27·d
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:28·d
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:29=d
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:30d=·
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:31·d
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:31The little dog picks up a copper ring.·d
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:31--More--The little dog drops a copper ring.
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:32=d
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:33d
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:34d
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:35
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:36=
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:37dd
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:37The little dog picks up a copper ring.
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:38d·
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:39d··d
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:39The little dog drops a copper ring.
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:40=d
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:41d·
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:42·d
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:43=d
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:44d·
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:45d=
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:46·=d
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:47d·
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:48·d
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:49d=
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:50d=
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:51·d
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:52·=d
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:53d·
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:54d·
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:55=d
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:56=d
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:57d·
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:58d=
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:59·d
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:60d·
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:61=d
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:62=d
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:63d·
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:64d·
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:65d=
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:66·d
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:67=d
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:68=d
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:69d·d·
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:70You hear water falling on coins.
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:70
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:71=d
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:72=d
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:73d·
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:74d·
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:75d=
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:76·=d
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:77d·
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:78d·
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:79=d
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:80=d
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:81d·
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:82d·
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:83=d
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:84=d
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:85d·
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:86·=d
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:87d·
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:88d·
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:89d=
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:90·=d
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:91d·
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:92·d
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:93=d
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:94d·
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:95d=
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:96·=d
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:97d·
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:98·d
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:98The little dog picks up a copper ring.
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:99d·
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:99The little dog drops a copper ring.
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:100d·
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:100The little dog picks up a copper ring.
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:101·d
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:101The little dog drops a copper ring.
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:102d
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:103=d
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:104=d
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:105d
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:105The little dog picks up a copper ring.
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:106··d
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:107d·
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:108·d·
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:108The little dog drops a copper ring.
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:109d=·d
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:109The little dog picks up a copper ring.
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:110·d
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:111d·
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:111The little dog drops a copper ring.
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:112d·
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:113=d
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:114=d
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:115d·
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:115The little dog picks up a copper ring.
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:116··d
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:117·d
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:117The little dog drops a copper ring.
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:118d·
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:119=d
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:120=d
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:121d·
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:122d·
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:123=d
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:124=d

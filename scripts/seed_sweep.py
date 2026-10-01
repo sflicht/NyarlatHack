@@ -13,6 +13,7 @@ with NYARLATHACK_KEEP_ARTIFACTS=1; an explicit --work dir is always kept.
 """
 
 import argparse
+from collections import Counter
 from concurrent.futures import ProcessPoolExecutor
 import hashlib
 import json
@@ -66,7 +67,12 @@ def one(job):
     pool = Path(work) / f".assets-{os.getpid()}"
     played = sweep_player.play(gamedir, clock, root, seed, start, policy, pool)
     v2 = "v2" in played
-    funnel = sweep_funnel.analyse(root, felt=v2)
+    funnel = sweep_funnel.analyse(
+        root,
+        felt=v2,
+        timeline=played.get("v2", {}).get("dlvl_timeline", ()),
+        statuses=played.get("v2", {}).get("status_timeline", ()),
+    )
     if v2 and funnel["first_felt"] is not None:
         funnel["first_felt"]["dlvl"] = sweep_funnel.dlvl_at(
             played["v2"]["dlvl_timeline"], funnel["first_felt"]["turn"]
@@ -210,14 +216,34 @@ def aggregate_v2(rows):
     admitted = sum(g["funnel"]["counts"]["admitted"] for g in rows)
     delivered = sum(g["funnel"]["counts"]["delivered"] for g in rows)
     hound = sum(g["funnel"]["haunt"].get("accepted", 0) for g in rows)
+    programs = [p for g in rows for p in g["funnel"].get("programs", ())]
     return {
+        "programs": [
+            dict(
+                program=k,
+                **{
+                    stage: sum(p[stage] for p in programs if p["program"] == k)
+                    for stage in ("published", "admitted", "delivered", "felt")
+                },
+                terminations=dict(
+                    sorted(
+                        Counter(
+                            p["termination"]
+                            for p in programs
+                            if p["program"] == k and p["termination"] is not None
+                        ).items()
+                    )
+                ),
+            )
+            for k in (1, 2, 3)
+        ],
         "first_felt": {
             "games": len(felt),
             "turn": _dist([f["turn"] for f in felt]),
             "dlvl": _dist([f["dlvl"] for f in felt if f["dlvl"] is not None]),
             "by_kind": {
                 k: sum(1 for f in felt if f["kind"] == k)
-                for k in ("hound", "next_use_W", "next_use_F", "door")
+                for k in ("hound", "next_use_W", "next_use_F", "door", "hunger")
             },
         },
         "turns_played": turns,
@@ -343,7 +369,11 @@ def markdown(report):
         "  companion was in view, so the engine skipped the callback (by design, #196).",
         "  The recorded reason says whether none was in view, only ineligible ones were,",
         "  or the chosen one stopped qualifying before capture.",
-        "- A single one-shot next-use program per game (the launcher's current design).",
+        (
+            "- Sequential M2 next-use, cap 3; each publication is final, not an admission."
+            if ident["report_v"] >= 4
+            else "- A single one-shot next-use program per game (the launcher's current design)."
+        ),
         "- The inherited start fixes one artifact (Vampire Killer); others are untested.",
         "- In-game mail is off (`!mail`): it reads the host mail spool, not the seed.",
         "",
@@ -421,7 +451,7 @@ def write_report(args, lo, hi, starts, games):
 
     identity = {
         "report_v": REPORT_V
-        + (1 if sweep_player.POLICIES[args.policy].get("version", 1) >= 2 else 0),
+        + (2 if sweep_player.POLICIES[args.policy].get("version", 1) >= 2 else 0),
         "revision": subprocess.check_output(
             ["git", "rev-parse", "HEAD"], cwd=ROOT, text=True
         ).strip(),

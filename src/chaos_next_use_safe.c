@@ -14,6 +14,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
+#include <sys/stat.h>
 
 /* The game-owned state is the save authority, including rejected attempts.
  * legacy_closed supports snapshot-only component fixtures, not native saves. */
@@ -473,6 +474,71 @@ int chaos_next_use_safe_decision_row(const struct chaos_next_use_safe_result *re
     return 1;
 }
 
+static void append_public_receipt(int dir, const char *name, const char *line,
+                                  size_t length, size_t limit)
+{
+    struct stat st;
+    size_t done = 0;
+    int fd = openat(dir, name,
+        O_WRONLY | O_CREAT | O_APPEND | O_NOFOLLOW | O_NONBLOCK | O_CLOEXEC, 0600);
+    if (fd < 0) return;
+    if (fstat(fd, &st) || !S_ISREG(st.st_mode) || st.st_uid != getuid()
+        || st.st_nlink != 1 || (st.st_mode & 077) || st.st_size < 0
+        || (size_t)st.st_size > limit || length > limit - (size_t)st.st_size) {
+        close(fd); return;
+    }
+    while (done < length) {
+        ssize_t wrote = write(fd, line + done, length - done);
+        if (wrote < 0 && errno == EINTR) continue;
+        if (wrote <= 0) break;
+        done += (size_t)wrote;
+    }
+    (void)fsync(fd); (void)close(fd); (void)fsync(dir);
+}
+
+/* Only witnessed W / remapped F: public identity, never a private runtime row. */
+void chaos_next_use_felt_receipt(int dir, int program_id, int family, long root)
+{
+    char line[256];
+    int n;
+    if (dir < 0 || !policy_state || program_id < 1 || root < 1
+        || policy_state->next_use_id != program_id
+        || policy_state->next_use_count < 1
+        || policy_state->next_use_count > CHAOS_NEXT_USE_PROGRAM_CAP
+        || (family != CHAOS_NEXT_USE_FAMILY_W && family != CHAOS_NEXT_USE_FAMILY_F)) return;
+    n = snprintf(line, sizeof line,
+        "{\"next_use_felt_v\":1,\"program_ordinal\":%d,\"program_id\":%d,"
+        "\"family\":%d,\"root_seq\":%ld}\n",
+        policy_state->next_use_count, program_id, family, root);
+    if (n > 0 && (size_t)n < sizeof line)
+        append_public_receipt(dir, "next_use-felt.jsonl", line, (size_t)n, 6 * 256);
+}
+
+/* Diagnostic-only public boundary. Called after durable journal closure, or
+ * after a parsed, settled refusal. Losing this file suppresses further director
+ * publications; it never changes admission, saved state, capture status or RNG. */
+void chaos_next_use_terminal_receipt(int dir, int program_id, int reason)
+{
+    static const char *const reasons[] = {
+        "rejected", "completed", "level_departure", "origin_evicted",
+        "origin_expired", "program_expired", "invalid_callback", "identity_unsafe"
+    };
+    char line[384];
+    int n;
+    if (dir < 0 || reason < 0 || reason > 7 || !policy_state
+        || !policy_state->next_use_terminal || program_id < 1
+        || policy_state->next_use_id != program_id
+        || policy_state->next_use_count < 1
+        || policy_state->next_use_count > CHAOS_NEXT_USE_PROGRAM_CAP) return;
+    n = snprintf(line, sizeof line,
+        "{\"next_use_lifecycle_v\":1,\"program_ordinal\":%d,\"program_id\":%d,"
+        "\"terminal_seq\":%ld,\"reason\":\"%s\",\"journal_closed\":%s}\n",
+        policy_state->next_use_count, program_id, policy_state->next_use_terminal_seq,
+        reasons[reason], reason ? "true" : "false");
+    if (n <= 0 || (size_t)n >= sizeof line) return;
+    append_public_receipt(dir, "next_use-lifecycle.jsonl", line, (size_t)n, 3 * 384);
+}
+
 static void production_decision(int dir, const struct chaos_next_use_safe_result *result,
                                 int at, long at_safe, long at_move)
 {
@@ -497,6 +563,8 @@ static void production_decision(int dir, const struct chaos_next_use_safe_result
     /* A lost diagnostic row is a trace gap, never a game-state change. */
     (void)fsync(fd);
     (void)close(fd);
+    if (policy_state)
+        chaos_next_use_terminal_receipt(dir, policy_state->next_use_id, 0);
 }
 
 int chaos_next_use_on_safe(int dir, long at_safe, int sanity,

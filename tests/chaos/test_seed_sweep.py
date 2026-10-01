@@ -424,7 +424,8 @@ class FirstFeltTest(unittest.TestCase):
         }
         by_kind = seed_sweep.aggregate_v2([row])["first_felt"]["by_kind"]
         self.assertEqual(
-            by_kind, {"hound": 0, "next_use_W": 0, "next_use_F": 0, "door": 1}
+            by_kind,
+            {"hound": 0, "next_use_W": 0, "next_use_F": 0, "door": 1, "hunger": 0},
         )
 
     def test_earliest_kind_wins(self):

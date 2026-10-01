@@ -1,0 +1,24 @@
+{
+  "sessions": [
+    {
+      "wizard": false,
+      "ordinary": true,
+      "observe": true,
+      "echoes": true,
+      "haunting_source_sha256": null,
+      "terminal": [
+        24,
+        80
+      ],
+      "inputs_begin": 0,
+      "sha256": {
+        "dnethack": "356c39df548727e97e6ebaf13cd8d267a572bc43ce5a24f26904faf07938d74a",
+        "nhdat": "b7fc1a3aff42f759d4ee3d4db40e1d553ce753bc72c7dc75995a349c24719a96"
+      },
+      "clock_sha256": "6a5fbb4cd9bf794fe4385cb6902c2c2ae376f5285484d7b0f610b0517fa2ac0b",
+      "options": "Bard,human,male,neutral,dog,tty,!news,!legacy,time",
+      "timezone": "UTC"
+    }
+  ],
+  "exit": null
+}

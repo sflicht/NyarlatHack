@@ -80,6 +80,14 @@ class NextUseJournalTests(RetainOnFailure):
         second.write_bytes(encoded)
         second.chmod(0o600)
         folder, result = self.run_native(folder=folder, mode="series")
+        visible = [
+            json.loads(line)
+            for line in (folder / "next_use-felt.jsonl").read_text().splitlines()
+        ]
+        self.assertEqual(len(visible), 1)
+        self.assertEqual(visible[0]["program_ordinal"], 1)
+        self.assertEqual(visible[0]["family"], 2)
+        self.assertGreater(visible[0]["root_seq"], 0)
         traces = read_journals(
             [folder / "next_use-journal.jsonl", folder / "next_use-journal.2.jsonl"]
         )
