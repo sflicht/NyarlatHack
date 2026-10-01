@@ -1,0 +1,219 @@
+{
+  "ordinary": true,
+  "wizard": false,
+  "seed_control": false,
+  "clock_control": false,
+  "model_calls": 0,
+  "hand_placed_envelopes": false,
+  "max_wait_commands": 120,
+  "max_prayers": 2,
+  "outcome": "two_programs_naturally_admitted",
+  "revision": "cb99b7e293bedbddc0e44ef535f779123cfc0be5",
+  "inventory": " Inventory: 159/525 weight (8/52 slots) Armor b - an uncursed +1 leather cloak (being worn) {15} c - an uncursed +0 pair of high boots (being worn) {20} Comestibles d - 4 uncursed apples {8} e - 4 uncursed oranges {8} Potions f - 3 uncursed potions of booze {60} g - 2 blessed potions of booze {40} Tools a - an uncursed wooden flute {5} h - an uncursed tin whistle {3}(end) ",
+  "apply_command": "ah",
+  "first_published": true,
+  "second_published": true,
+  "admitted": [
+    1,
+    2
+  ],
+  "save_exit": 0,
+  "quit_exit": 0,
+  "restore_record": {
+    "haunt": true,
+    "haunt_pack": "/home/hermes/worktrees/NyarlatHack/hermes-session-nyarlathack-queue-2/chaos/packs/footsteps.lua",
+    "haunt_sha256": "4e4f0154dc8830c753f13af25b592ef255ba97e1be6cf81e019d4568f6cfa9e9",
+    "m2": {
+      "cap": 3,
+      "enabled": true
+    },
+    "next_use": true,
+    "v": 3,
+    "whispers": {
+      "backend": "m1",
+      "seed": 0
+    }
+  },
+  "sessions": [
+    {
+      "wizard": false,
+      "ordinary": true,
+      "observe": true,
+      "echoes": true,
+      "haunting_source_sha256": null,
+      "terminal": [
+        24,
+        80
+      ],
+      "inputs_begin": 0,
+      "sha256": {
+        "dnethack": "92da4992d3d23ee7a8f5fad6cd2df7c7f37d697a19d9bd9bff005e9fe20623e4",
+        "nhdat": "b7fc1a3aff42f759d4ee3d4db40e1d553ce753bc72c7dc75995a349c24719a96"
+      },
+      "clock_sha256": "6a5fbb4cd9bf794fe4385cb6902c2c2ae376f5285484d7b0f610b0517fa2ac0b",
+      "options": "Bard,human,male,neutral,dog,tty,!news,!legacy,time",
+      "timezone": "UTC"
+    },
+    {
+      "wizard": false,
+      "ordinary": true,
+      "observe": true,
+      "echoes": true,
+      "haunting_source_sha256": "4e4f0154dc8830c753f13af25b592ef255ba97e1be6cf81e019d4568f6cfa9e9",
+      "terminal": [
+        24,
+        80
+      ],
+      "inputs_begin": 30,
+      "sha256": {
+        "dnethack": "92da4992d3d23ee7a8f5fad6cd2df7c7f37d697a19d9bd9bff005e9fe20623e4",
+        "nhdat": "b7fc1a3aff42f759d4ee3d4db40e1d553ce753bc72c7dc75995a349c24719a96"
+      },
+      "clock_sha256": "6a5fbb4cd9bf794fe4385cb6902c2c2ae376f5285484d7b0f610b0517fa2ac0b",
+      "options": "Bard,human,male,neutral,dog,tty,!news,!legacy,time",
+      "timezone": "UTC"
+    }
+  ],
+  "receipts": [
+    {
+      "next_use_private_v": 2,
+      "kind": 2,
+      "seq": 2,
+      "program_ordinal": 1,
+      "program_id": 2,
+      "origins": [
+        {
+          "family": "W",
+          "published": 8,
+          "bound": 8
+        }
+      ]
+    },
+    {
+      "next_use_private_v": 2,
+      "kind": 2,
+      "seq": 2,
+      "program_ordinal": 2,
+      "program_id": 2,
+      "origins": [
+        {
+          "family": "W",
+          "published": 22,
+          "bound": 22
+        }
+      ]
+    }
+  ],
+  "lifecycle": [
+    {
+      "next_use_lifecycle_v": 1,
+      "program_ordinal": 1,
+      "program_id": 2,
+      "terminal_seq": 20,
+      "reason": "completed",
+      "journal_closed": true
+    },
+    {
+      "next_use_lifecycle_v": 1,
+      "program_ordinal": 2,
+      "program_id": 2,
+      "terminal_seq": 31,
+      "reason": "completed",
+      "journal_closed": true
+    }
+  ],
+  "metrics": {
+    "programs": [
+      {
+        "program": 1,
+        "published": 1,
+        "admitted": 1,
+        "trigger": 1,
+        "native_effect": 1,
+        "delivered": 1,
+        "felt": 1,
+        "termination": "completed",
+        "journal_status": "structurally_complete",
+        "delivery_known": true
+      },
+      {
+        "program": 2,
+        "published": 1,
+        "admitted": 1,
+        "trigger": 1,
+        "native_effect": 0,
+        "delivered": 0,
+        "felt": 0,
+        "termination": "completed",
+        "journal_status": "structurally_complete",
+        "delivery_known": true
+      },
+      {
+        "program": 3,
+        "published": 0,
+        "admitted": 0,
+        "trigger": 0,
+        "native_effect": 0,
+        "delivered": 0,
+        "felt": 0,
+        "termination": null,
+        "journal_status": "missing",
+        "delivery_known": true
+      }
+    ],
+    "felt_events": [
+      {
+        "turn": 9,
+        "dlvl": null,
+        "kind": "next_use_W",
+        "program": 1
+      }
+    ],
+    "first_felt": {
+      "turn": 9,
+      "kind": "next_use_W"
+    },
+    "haunt": {},
+    "haunt_steps": 0,
+    "counts": {
+      "qualifying_history": 4,
+      "candidate": 4,
+      "published": 2,
+      "admitted": 2,
+      "trigger": 2,
+      "native_effect": 1,
+      "delivered": 1
+    },
+    "delivery_known": true,
+    "loss": null,
+    "first_admission_move": 1,
+    "qualifying_actions": {
+      "whistling": 4,
+      "fountain_drink": 0
+    },
+    "safe_points": {
+      "level_enter": 1,
+      "pray": 2
+    },
+    "start_budget": 2,
+    "start_sanity": 100,
+    "session_details": [
+      "new",
+      "restore"
+    ],
+    "journal_status": "structurally_complete",
+    "effect_outcomes": [
+      1,
+      3,
+      4
+    ],
+    "w_suppressions": [],
+    "terminations": [
+      "completed"
+    ],
+    "public_attention_completed": 1,
+    "ordinary_whispers_admitted": 1,
+    "recorded_decisions": [],
+    "last_turn": 19
+  }
+}

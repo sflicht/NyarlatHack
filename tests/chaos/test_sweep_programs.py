@@ -12,6 +12,29 @@ ROOT = Path(__file__).resolve().parents[2]
 
 
 class ProgramFunnelTests(unittest.TestCase):
+    def test_real_ordinary_v3_two_program_capture(self):
+        from chaos.next_use_journal import read_journals
+
+        root = ROOT / "docs/measurements/next-use-director-m2/ordinary"
+        saved = json.loads((root / "result.json").read_text())
+        result = sweep_funnel.analyse(root, felt=True)
+        self.assertEqual(result, saved["metrics"])
+        self.assertEqual([p["admitted"] for p in result["programs"]], [1, 1, 0])
+        self.assertEqual([p["felt"] for p in result["programs"]], [1, 0, 0])
+        self.assertEqual(result["session_details"], ["new", "restore"])
+        self.assertEqual(saved["restore_record"]["v"], 3)
+        self.assertEqual(saved["restore_record"]["m2"], {"enabled": True, "cap": 3})
+        self.assertFalse(saved["wizard"])
+        self.assertFalse(saved["hand_placed_envelopes"])
+        read_journals(
+            [root / "run/next_use-journal.jsonl", root / "run/next_use-journal.2.jsonl"]
+        )
+        terminal = json.loads(
+            (root / "run/next_use-lifecycle.jsonl").read_text().splitlines()[0]
+        )
+        later = json.loads((root / "run/next_use-envelope.2.json").read_text())
+        self.assertGreater(later["origin_refs"][0]["end_seq"], terminal["terminal_seq"])
+
     def test_f_felt_uses_public_root_and_public_turn_not_replay_clock(self):
         with tempfile.TemporaryDirectory() as root:
             p = _run(

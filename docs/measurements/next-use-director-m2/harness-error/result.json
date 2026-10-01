@@ -1,0 +1,115 @@
+{
+  "ordinary": true,
+  "wizard": false,
+  "seed_control": false,
+  "clock_control": false,
+  "model_calls": 0,
+  "hand_placed_envelopes": false,
+  "max_wait_commands": 120,
+  "max_prayers": 2,
+  "outcome": "unqualified",
+  "revision": "e7888b7c5dd6ed60522ba6cba9dc55856e57e061",
+  "inventory": " Inventory: 206/550 weight (7/52 slots) Armor b - an uncursed +1 leather cloak (being worn) {15} c - an uncursed +0 pair of high boots (being worn) {20} Comestibles d - 4 uncursed apples {8} e - 5 uncursed oranges {10} Potions f - 6 uncursed potions of booze {120} Tools a - an uncursed wooden harp {30} g - an uncursed tin whistle {3}(end) ",
+  "first_published": false,
+  "error": "RuntimeError('program 1 not terminal within fixed bound')",
+  "sessions": [
+    {
+      "wizard": false,
+      "ordinary": true,
+      "observe": true,
+      "echoes": true,
+      "haunting_source_sha256": null,
+      "terminal": [
+        24,
+        80
+      ],
+      "inputs_begin": 0,
+      "sha256": {
+        "dnethack": "356c39df548727e97e6ebaf13cd8d267a572bc43ce5a24f26904faf07938d74a",
+        "nhdat": "b7fc1a3aff42f759d4ee3d4db40e1d553ce753bc72c7dc75995a349c24719a96"
+      },
+      "clock_sha256": "6a5fbb4cd9bf794fe4385cb6902c2c2ae376f5285484d7b0f610b0517fa2ac0b",
+      "options": "Bard,human,male,neutral,dog,tty,!news,!legacy,time",
+      "timezone": "UTC"
+    }
+  ],
+  "receipts": [],
+  "lifecycle": [],
+  "metrics": {
+    "programs": [
+      {
+        "program": 1,
+        "published": 0,
+        "admitted": 0,
+        "trigger": 0,
+        "native_effect": 0,
+        "delivered": 0,
+        "felt": 0,
+        "termination": null,
+        "journal_status": "missing",
+        "delivery_known": true
+      },
+      {
+        "program": 2,
+        "published": 0,
+        "admitted": 0,
+        "trigger": 0,
+        "native_effect": 0,
+        "delivered": 0,
+        "felt": 0,
+        "termination": null,
+        "journal_status": "missing",
+        "delivery_known": true
+      },
+      {
+        "program": 3,
+        "published": 0,
+        "admitted": 0,
+        "trigger": 0,
+        "native_effect": 0,
+        "delivered": 0,
+        "felt": 0,
+        "termination": null,
+        "journal_status": "missing",
+        "delivery_known": true
+      }
+    ],
+    "felt_events": [],
+    "first_felt": null,
+    "haunt": {},
+    "haunt_steps": 0,
+    "counts": {
+      "qualifying_history": 0,
+      "candidate": 0,
+      "published": 0,
+      "admitted": 0,
+      "trigger": 0,
+      "native_effect": 0,
+      "delivered": 0
+    },
+    "delivery_known": true,
+    "loss": "no_qualifying_action",
+    "first_admission_move": null,
+    "qualifying_actions": {
+      "whistling": 0,
+      "fountain_drink": 0
+    },
+    "safe_points": {
+      "level_enter": 1,
+      "pray": 1
+    },
+    "start_budget": 2,
+    "start_sanity": 100,
+    "session_details": [
+      "new"
+    ],
+    "journal_status": "missing",
+    "effect_outcomes": [],
+    "w_suppressions": [],
+    "terminations": [],
+    "public_attention_completed": 0,
+    "ordinary_whispers_admitted": 1,
+    "recorded_decisions": [],
+    "last_turn": 4
+  }
+}
