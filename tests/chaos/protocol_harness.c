@@ -125,7 +125,7 @@ static void pacing_tests(void)
 {
     struct chaos_state s, before, v2;
     int d, i;
-    assert(CHAOS_STATE_VERSION == 4 && CHAOS_PACING_VERSION == 1);
+    assert(CHAOS_STATE_VERSION == 5 && CHAOS_PACING_VERSION == 1);
     assert(CHAOS_PACING_DESCENT_FROM == 2 && CHAOS_PACING_DESCENT_CAP == 4);
     assert(CHAOS_PACING_LEVEL_CAP == 3 && CHAOS_PACING_WITNESSED_CREDIT == 1);
     assert(CHAOS_PACING_WITNESSED_CAP == 2 && CHAOS_BUDGET_CEILING == 12);

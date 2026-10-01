@@ -126,7 +126,7 @@ def decode_save(
         test.assertEqual(fields["spent"], 2)  # archived ambient1 + curio1
     elif policy == "current":
         test.assertEqual(fields["spent"], 1)  # current ambient0 + curio1
-        test.assertEqual(schema["chaos_state_version"], 4)  # #164 pacing; #1 door slot
+        test.assertEqual(schema["chaos_state_version"], 5)  # M2 opportunity ledger
         test.assertEqual(schema["chaos_size"], schema["you"]["chaos"]["size"])
         base = schema["you"]["chaos"]["offset"]
         test.assertLessEqual(base + schema["chaos_size"], len(player))

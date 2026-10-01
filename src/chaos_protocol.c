@@ -174,6 +174,12 @@ int chaos_state_valid(const struct chaos_state *s) {
        s->cosmetic_seen < 0 || s->cosmetic_seen > CHAOS_COSMETIC_MASK ||
        s->cosmetic_last_turn < 0 || s->cosmetic_last_turn > CHAOS_MAX_COUNTER ||
        (!s->cosmetic_seen && s->cosmetic_last_turn)) return 0;
+    if(s->next_use_count < 0 || s->next_use_count > CHAOS_NEXT_USE_PROGRAM_CAP
+       || s->next_use_ordinal != s->next_use_count || s->next_use_id < 0
+       || (s->next_use_terminal != 0 && s->next_use_terminal != 1)
+       || s->next_use_terminal_seq < 0 || s->next_use_terminal_seq > s->seq
+       || (!s->next_use_count && (s->next_use_id || s->next_use_terminal))
+       || (!s->next_use_terminal && s->next_use_terminal_seq)) return 0;
     if(s->pacing != 0 && s->pacing != 1) return 0;
     if(!s->pacing && (s->deepest || s->credited || s->level_spent)) return 0;
     if(s->deepest < 0 || s->deepest > CHAOS_PACING_MAX_DEPTH ||

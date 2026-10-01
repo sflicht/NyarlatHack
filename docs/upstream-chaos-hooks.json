@@ -48,6 +48,13 @@
     }
   },
   "windows": {
+    "src/files.c": [
+      {
+        "symbol": "restore_saved_game",
+        "start": ["restore_saved_game", "(", ")", "{"],
+        "end": [")", ";", "}", "return", "fd", ";", "}"]
+      }
+    ],
     "src/allmain.c": [
       {
         "symbol": "moveloop",
@@ -3069,6 +3076,44 @@
     ]
   },
   "hooks": [
+    {
+      "id": "m2-old-save-header-include",
+      "file": "src/files.c",
+      "symbol": "<file>",
+      "kind": "directive",
+      "purpose": "Declare the non-deleting header-incompatibility refusal hook.",
+      "signature": [
+        "#",
+        "include",
+        "\"chaos.h\""
+      ],
+      "guards": [],
+      "count": 1,
+      "chaos0": "Header supplies a no-op macro; stock restore/delete prompt is unchanged."
+    },
+    {
+      "id": "m2-old-save-header-refusal",
+      "file": "src/files.c",
+      "symbol": "restore_saved_game",
+      "kind": "call-or-declaration",
+      "purpose": "After closing an incompatible save, terminate before deletion prompt or a new game can overwrite it.",
+      "signature": [
+        "fd",
+        "=",
+        "-",
+        "1",
+        ";",
+        "chaos_refuse_old_save",
+        "(",
+        ")",
+        ";",
+        "if",
+        "("
+      ],
+      "guards": [],
+      "count": 1,
+      "chaos0": "No-op macro; stock deletion prompt is unchanged."
+    },
     {
       "id": "hook-0001",
       "file": "include/obj.h",
@@ -12566,15 +12611,20 @@
       "file": "src/restore.c",
       "symbol": "restgamestate",
       "kind": "call-or-declaration",
-      "purpose": "Validate and restore the saved admission latch, preserving an unused opportunity in empty saves.",
+      "purpose": "Validate the state-v5 opportunity ledger against the runtime and saved Boolean; preserve unused empty saves.",
       "signature": [
         ")",
         ";",
         "if",
         "(",
         "!",
-        "chaos_next_use_safe_restore_attempted",
+        "chaos_next_use_safe_restore_state",
         "(",
+        "&",
+        "u",
+        ".",
+        "chaos",
+        ",",
         "u",
         ".",
         "chaos_next_use_attempted",
@@ -12836,11 +12886,11 @@
       "file": "src/restore.c",
       "symbol": "restgamestate",
       "kind": "identifier",
-      "purpose": "Use the trusted restored player latch, not presence of a program.",
+      "purpose": "Cross-check the saved legacy Boolean against the state-v5 attempt count.",
       "signature": [
-        "!",
-        "chaos_next_use_safe_restore_attempted",
-        "(",
+        ".",
+        "chaos",
+        ",",
         "u",
         ".",
         "chaos_next_use_attempted",

@@ -9,6 +9,7 @@
 #ifdef TTY_GRAPHICS
 #include "wintty.h" /* more() */
 #endif
+#include "chaos.h"
 
 #if defined(WHEREIS_FILE) && defined(UNIX)
 #include <sys/types.h> /* whereis-file chmod() */
@@ -1023,6 +1024,7 @@ restore_saved_game()
 
 	if (!uptodate(fd, fq_save)) {
 	    (void) close(fd),  fd = -1;
+            chaos_refuse_old_save();
 	    if (yn("Delete the old file?") == 'y') /* Damn you, sadistic programmers who delete stuff without asking! --Amy */
 			(void) delete_savefile();
 	}

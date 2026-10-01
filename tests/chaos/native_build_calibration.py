@@ -575,9 +575,10 @@ def _cosmetic_init(ops, layout, header_version):
     )
     _sequence(ops, patterns, "chaos initializer")
     # #164: state v3 adds the opt-in pacing fields; #1: state v4 adds the
-    # door_reluctance effect slot. Same initializer shape.
+    # door_reluctance effect slot; M2 v5 adds the saved opportunity ledger.
+    # The exact initializer body/size and ELF/header agreement remain required.
     _require(
-        version == header_version and version in (2, 3, 4),
+        version == header_version and version in (2, 3, 4, 5),
         "unsupported chaos initializer policy",
     )
     return version
@@ -608,7 +609,7 @@ def _measure(inputs):
     curio_version = _macro(curio_header, "CHAOS_CURIO_VERSION")
     policy_header = _read(root / "include/chaos_protocol.h", 65536).decode("ascii")
     policy_version = _macro(policy_header, "CHAOS_STATE_VERSION")
-    _require(policy_version in (1, 2, 3, 4), "unsupported chaos state policy")
+    _require(policy_version in (1, 2, 3, 4, 5), "unsupported chaos state policy")
     source_limit = _macro(curio_header, "CHAOS_CURIO_SOURCE")
     _require(
         curio_version == 1 and source_limit == 4096,

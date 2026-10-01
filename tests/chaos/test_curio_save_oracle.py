@@ -64,7 +64,7 @@ def fixture(policy):
         # #1's door slot); the compiled layout is checked by
         # test_current_compiled_layout_reporter.
         schema.update(
-            chaos_state_version=4,
+            chaos_state_version=5,
             chaos_size=96,
             chaos_fields={
                 "version": dict(offset=0, size=4),
@@ -72,7 +72,7 @@ def fixture(policy):
                 "cosmetic_last_turn": dict(offset=88, size=8),
             },
         )
-        put(12, 4)
+        put(12, 5)
         put(92, 1)
         put(100, 1, 8)
     return bytes(data), schema, source
@@ -102,7 +102,7 @@ class CurioSaveOracleTests(unittest.TestCase):
                 timeout=30,
             )
             schema = json.loads(subprocess.check_output([str(exe)], timeout=5))
-        self.assertEqual(schema["chaos_state_version"], 4)  # #164 pacing; #1 door slot
+        self.assertEqual(schema["chaos_state_version"], 5)  # M2 opportunity ledger
         self.assertEqual(schema["chaos_size"], schema["you"]["chaos"]["size"])
         previous = 0
         for name in ("version", "cosmetic_seen", "cosmetic_last_turn"):

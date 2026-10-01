@@ -161,7 +161,8 @@ static int admit_and_act(const char *dirpath, struct monst *pet, int *telegraphs
 {
     struct chaos_next_use_safe_request req;
     struct chaos_next_use_safe_result admitted;
-    struct chaos_state budget;
+    /* The safe layer retains this ledger through runtime termination. */
+    static struct chaos_state budget;
     char run[65];
     int dir, acted;
 

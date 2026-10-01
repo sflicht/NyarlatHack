@@ -9,9 +9,9 @@ All new engine code is under the NetHack General Public License (`dat/license`).
 
 ## Cosmetic pacing prototype and migration
 
-Current native state/save version is **4** (#164 added the pacing fields at
-3, now on by default; #1 added the `door_reluctance` effect slot at 4; policy
-and prices are unchanged), ordinary events **3**, opt-in
+Current native state/save version is **5** (#164 added pacing at 3, #1 added
+the `door_reluctance` effect slot at 4, and M2 adds saved opportunity fields
+at 5; prices are unchanged), ordinary events **3**, opt-in
 observation events **4**, request grammar **1**, and admission-journal policy
 **2** (journal `v` remains request version 1). These are separate version axes.
 Historical ordinary v1/observation v2 readers retain their old prices and
@@ -48,8 +48,8 @@ manual reconciliation. Restore may reconcile a monotonic committed snapshot
 after a lost receipt, but cannot reconstruct acceptance. With observations,
 the enabled marker and following restore session must agree before publication.
 
-**Old saves are incompatible; there is no automatic migration. Answer NO to
-“Delete the old file?”** Retain the old save with its matching old binary and
+**Old saves are incompatible; there is no automatic migration.** CHAOS builds
+refuse incompatible native headers without offering deletion. Retain the old save with its matching old binary and
 `nhdat`; finish that game there. Start a separate new game/run on the new build.
 The new CHAOS structural and restored-clock rejection paths preserve the save;
 this is not blanket corruption protection: stock short-read corruption handling
@@ -279,15 +279,24 @@ apply twice. A future request at the time of save remains pending until its
 saved target index. Old saves made before this extension are incompatible with
 CHAOS-on builds (use CHAOS=0 to load stock saves).
 
-## Next-use program policy v3 (M2; contract, engine pending)
+## Next-use program policy v3 (M2 contract; single-journal gate)
 
-Status: **contract only.** Sam chose these rules on 2026-09-30
-([`proposals/multi-whisper-arc.md`](proposals/multi-whisper-arc.md), decisions
-1–3 and 7). `chaos/protocol_contract.json` now carries the cap under
-`next_use_programs`, so it is generated into `CHAOS_NEXT_USE_PROGRAM_CAP` and
-`NEXT_USE_PROGRAM_CAP`. Until the engine PR lands, the engine still admits **at
-most one** program per game (policy v2, the `settled` latch in
-[`next-use-snapshot.md`](next-use-snapshot.md)). Nothing below is in force yet.
+Status: **saved engine state and ordinal reader implemented; second admission
+still gated until PR 3.** Sam chose the sequential cap-three rules in
+[`proposals/multi-whisper-arc.md`](proposals/multi-whisper-arc.md), decisions
+1–3 and 7. `next_use_programs` generates `CHAOS_NEXT_USE_PROGRAM_CAP` and
+`NEXT_USE_PROGRAM_CAP`. PR 2 replaces the process-local latch with the saved
+count, last ordinal/id and terminal event boundary. The reader supports the
+three ordinal filenames, but production admission deliberately remains at one
+attempt until per-program journals are implemented. It cannot overwrite the
+first journal or reset the runtime to admit program 2.
+
+`chaos_next_use_safe_opportunity` separately checks terminal state, a COMPLETE
+journal acknowledgement (or a rejected attempt with no runtime), a completed
+origin strictly after the terminal event, and count below three. The linked
+safe-layer fixtures test this predicate; real save/restore tests check terminal,
+rejected and fixture-initialized cap states. They do not claim that program 2
+is admitted in production. See the [Tier A evidence](evidence/next-use-sequential-m2/README.md).
 
 Policy v3 lets a game run up to **3** next-use programs, **strictly one after
 another**:
@@ -326,15 +335,17 @@ another**:
   witnessed credit for M1 mutations (decision 5), and witnessed credit once per
   source, so a second program earns no new capacity.
 
-**Save impact (decision 7).** The saved opportunity becomes a count of settled
-programs (0..3) plus the last program id, replacing the 0/1
-`u.chaos_next_use_attempted` latch. The engine PR states which carrier changes
-and its version: next-use snapshot v6 → 7 if the values fit there, or native
-state 4 → 5 if they must move into `u.chaos`. Either way old saves are refused
-by the structural check and preserved, never migrated. No state goes into
-bones.
+**Save impact (decision 7).** Native state moves from **4 to 5**; next-use
+snapshot stays **v6**. A rejection consumes an attempt even when no runtime
+snapshot exists, so the count belongs in `u.chaos`. Its fields are
+`next_use_count` (0..3), `next_use_ordinal`, `next_use_id`, `next_use_terminal`
+and `next_use_terminal_seq`. The old attempted byte remains a consistency
+check, not admission authority. Restore rejects ledger/runtime mismatches,
+including an active ledger without its runtime. Old saves are refused and
+preserved, never migrated; incompatible native headers do not offer deletion.
+No state goes into bones.
 
-**Journals.** One journal file per program (program 1 keeps
+**Journals (PR 3; not implemented in PR 2).** One journal file per program (program 1 keeps
 `next_use-journal.jsonl`; later programs use `next_use-journal.<k>.jsonl`).
 Each is a complete, independently checked chain with today's per-file bounds.
 Restore validates the closed journals of earlier programs and the open prefix

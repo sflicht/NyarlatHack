@@ -269,6 +269,15 @@ void chaos_safe(const char *why) {
     }
     busy = 0;
 }
+/* Header incompatibility is a refusal, not permission to delete or overwrite
+ * an old save. The caller has closed its descriptor; no partial restore exists. */
+void chaos_refuse_old_save(void) {
+    clearlocks();
+    exit_nhwindows("Incompatible save header; save file preserved.");
+    program_state.panicking = 1;
+    terminate(EXIT_FAILURE);
+}
+
 void chaos_start(void) {
     int fresh = u.chaos.version == 0;
     const char *flag;

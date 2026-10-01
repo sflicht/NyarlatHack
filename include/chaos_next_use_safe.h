@@ -20,6 +20,8 @@ struct chaos_next_use_safe_request {
     int level_dlevel;
     int sanity;
     const char *run_hex;
+    /* Live save authority, retained until reset/restore: storage must outlive
+     * the admitted runtime (production passes &u.chaos, not a helper local). */
     struct chaos_state *budget;
     chaos_next_use_receipt_fn receipt;
     void *receipt_opaque;
@@ -55,7 +57,8 @@ enum chaos_next_use_safe_reason {
     CHAOS_NEXT_USE_SAFE_INTERNAL = 1 << 15,
     /* #196 (C3): a W program with no qualifying companion on screen at the
      * safe point. Nothing is charged and no telegraph is shown. */
-    CHAOS_NEXT_USE_SAFE_NO_COMPANION = 1 << 16
+    CHAOS_NEXT_USE_SAFE_NO_COMPANION = 1 << 16,
+    CHAOS_NEXT_USE_SAFE_ORIGIN_NOT_FRESH = 1 << 17
 };
 
 struct chaos_next_use_safe_result {
@@ -86,6 +89,9 @@ void chaos_next_use_safe_bind_origin(const struct chaos_next_use_origin_ref *,
 void chaos_next_use_safe_mark_restored(void);
 int chaos_next_use_safe_attempted(void);
 int chaos_next_use_safe_restore_attempted(int attempted);
+int chaos_next_use_safe_restore_state(struct chaos_state *, int attempted);
+void chaos_next_use_safe_terminal(int program_id);
+int chaos_next_use_safe_opportunity(const struct chaos_state *, long completed_seq);
 /* Startup only: resolve the restored recorder before observation boundaries. */
 void chaos_next_use_safe_resume(int dir);
 int chaos_next_use_safe_last(struct chaos_next_use_safe_result *);

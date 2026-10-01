@@ -766,13 +766,29 @@ class CosmeticProfileTests(ProfileTests):
                     self.c.validate_native_profile(self.inputs, self.schema)
         self.dwarf = original
         path = self.root / "include/chaos_protocol.h"
-        # #1: v4 is now current (door_reluctance effect slot); 5 is the probe.
-        path.write_text("#define CHAOS_STATE_VERSION 5\n")
+        # M2: v5 is supported; an unknown future v6 must still be refused.
+        path.write_text("#define CHAOS_STATE_VERSION 6\n")
         self.baseline[path] = path.read_bytes()
         with self.assertRaisesRegex(
             self.c.CalibrationError, "unsupported chaos state policy"
         ):
             self.c.validate_native_profile(self.inputs, self.schema)
+
+    def test_v5_initializer_still_requires_exact_version_size_and_body(self):
+        layout = {"size": 152, "fields": {"version": {"offset": 0, "size": 4}}}
+        ops = [
+            s.replace("$0x60,%edx", "$0x98,%edx").replace("$0x2,(%rax)", "$0x5,(%rax)")
+            for s in self.init_ops
+        ]
+        self.assertEqual(self.c._cosmetic_init(ops, layout, 5), 5)
+        for bad in (
+            ops + ["nop"],
+            [s.replace("$0x98,%edx", "$0x60,%edx") for s in ops],
+        ):
+            with self.assertRaises(self.c.CalibrationError):
+                self.c._cosmetic_init(bad, layout, 5)
+        with self.assertRaises(self.c.CalibrationError):
+            self.c._cosmetic_init(ops, layout, 4)
 
     def test_init_value_size_operand_or_extra_instruction_rejects(self):
         original = self.init_ops[:]

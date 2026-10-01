@@ -5,6 +5,7 @@
 #include "chaos_next_use.h"
 
 #include <fcntl.h>
+#include <assert.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -89,6 +90,55 @@ static void bind_origin(const char *run, int qualifying, const char *fact,
     chaos_next_use_safe_bind_origin(&origin, qualifying);
 }
 
+static int policy_checks(void)
+{
+    struct chaos_state s, saved;
+    struct chaos_next_use_safe_request req;
+    struct chaos_next_use_safe_result result;
+    chaos_next_use_safe_reset_for_test();
+    chaos_state_init(&s);
+    s.seq = 40;
+    assert(chaos_next_use_safe_opportunity(&s, 40));
+    s.next_use_count = s.next_use_ordinal = 1;
+    s.next_use_id = 7;
+    assert(!chaos_next_use_safe_opportunity(&s, 40)); /* still active */
+    s.next_use_terminal = 1;
+    s.next_use_terminal_seq = 30;
+    assert(!chaos_next_use_safe_opportunity(&s, 30)); /* same origin/boundary */
+    assert(!chaos_next_use_safe_opportunity(&s, 29));
+    assert(!chaos_next_use_safe_opportunity(&s, 41)); /* not yet observed */
+    assert(chaos_next_use_safe_opportunity(&s, 31)); /* rejected, no journal */
+    saved = s;
+    chaos_next_use_safe_reset_for_test();
+    assert(chaos_next_use_safe_restore_state(&saved, 1));
+    assert(chaos_next_use_safe_attempted());
+    assert(!chaos_next_use_safe_restore_state(&saved, 0));
+    memset(&req, 0, sizeof req);
+    req.dir = 0; req.enabled = 1; req.budget = &saved;
+    assert(chaos_next_use_safe_try(&req, &result) == CHAOS_NEXT_USE_ADMISSION_NOT_OPEN);
+    assert(!result.loaded); /* temporary journal gate: don't even read ordinal 2 */
+    assert(saved.next_use_count == 1);
+    saved.next_use_count = saved.next_use_ordinal = CHAOS_NEXT_USE_PROGRAM_CAP;
+    assert(chaos_state_valid(&saved));
+    assert(!chaos_next_use_safe_opportunity(&saved, 40));
+    assert(chaos_next_use_safe_restore_state(&saved, 1));
+    assert(chaos_next_use_safe_try(&req, &result) == CHAOS_NEXT_USE_ADMISSION_NOT_OPEN);
+    assert(saved.next_use_count == CHAOS_NEXT_USE_PROGRAM_CAP && !result.loaded);
+    ++saved.next_use_count;
+    assert(!chaos_state_valid(&saved));
+    assert(!chaos_next_use_safe_restore_state(&saved, 1));
+    saved = s;
+    saved.next_use_ordinal = 2;
+    assert(!chaos_state_valid(&saved));
+    saved = s;
+    saved.next_use_terminal_seq = 41;
+    assert(!chaos_state_valid(&saved));
+    saved = s; saved.version = 4;
+    assert(!chaos_state_valid(&saved)); /* refuse, never migrate */
+    puts("{\"policy_checks\":1}");
+    return 0;
+}
+
 int main(int argc, char **argv)
 {
     struct chaos_next_use_safe_request req;
@@ -97,8 +147,10 @@ int main(int argc, char **argv)
     const char *wrapper, *telegraph_mode, *budget_mode, *receipt_mode;
     const char *evidence_mode, *run, *clock_mode;
     int dir, polls, telegraphs = 0, before, second_caller;
+    int future_open = -1, terminal_seq = -1;
     int at_safe, at_move, dnum, dlevel, on_safe, origin_move;
 
+    if (argc == 2 && !strcmp(argv[1], "policy")) return policy_checks();
     if (argc < 9) return 2;
     dir = open(argv[1], O_RDONLY | O_DIRECTORY);
     if (dir < 0) return 2;
@@ -277,8 +329,22 @@ int main(int argc, char **argv)
             chaos_next_use_safe_last(&second);
         second_caller = budget.spent;
     }
+    if (polls == 3) {
+        budget.seq = 20;
+        assert(!chaos_next_use_safe_opportunity(&budget, 20));
+        chaos_next_use_expire(CHAOS_END_PROGRAM_EXPIRED);
+        terminal_seq = budget.next_use_terminal_seq;
+        assert(terminal_seq == 20);
+        assert(!chaos_next_use_safe_opportunity(&budget, 20));
+        budget.seq = 21;
+        future_open = chaos_next_use_safe_opportunity(&budget, 21);
+    }
     close(dir);
-    printf("{\"loaded\":%d,\"rejected\":%d,\"admitted\":%d,\"active\":%d,"
+    printf("{\"count\":%d,\"ordinal\":%d,\"last_program_id\":%d,"
+           "\"future_open\":%d,\"terminal_seq\":%d,",
+           budget.next_use_count, budget.next_use_ordinal, budget.next_use_id,
+           future_open, terminal_seq);
+    printf("\"loaded\":%d,\"rejected\":%d,\"admitted\":%d,\"active\":%d,"
            "\"pending\":%d,\"telegraph\":%d,\"spent\":%d,"
            "\"second_admitted\":%d,\"second_telegraph\":%d,\"second_spent\":%d,"
            "\"caller_spent_before\":%d,\"caller_spent\":%d,"

@@ -329,7 +329,7 @@ def validate(d):
         and all(type(v) is int for v in d["cosmetic"].values()),
         "cosmetic policy",
     )
-    require(d["versions"] == dict(request=1, event=3, state=4), "current versions")
+    require(d["versions"] == dict(request=1, event=3, state=5), "current versions")
     validate_observations(d["observations"])
     limits = d["limits"]
     require(

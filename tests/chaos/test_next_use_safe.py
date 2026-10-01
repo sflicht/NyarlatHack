@@ -173,6 +173,14 @@ class NextUseSafeAdmitTests(RetainOnFailure):
         self.assertEqual(row["telegraph"], 0)
         self.assertEqual(row["caller_spent"], row["caller_spent_before"])
 
+    def test_terminal_requires_closed_journal_and_strictly_fresh_origin(self):
+        for wrapper, expected in (("try", 0), ("on_safe", 1)):
+            with self.subTest(wrapper=wrapper):
+                row = self.run_case(self.publish(), polls=3, wrapper=wrapper)
+                self.assertEqual(row["future_open"], expected)
+                self.assertEqual(row["terminal_seq"], 20)
+                self.assertEqual(row["count"], 1)
+
     def test_admits_once_and_second_poll_is_idle(self):
         row = self.run_case(self.publish())
         self.assertEqual(row["loaded"], 1)
@@ -187,6 +195,24 @@ class NextUseSafeAdmitTests(RetainOnFailure):
         self.assertEqual(row["level_token"], 100001)
         self.assertNotEqual(row["run_token"], 1)
         self.assertNotEqual(row["level_token"], 1)
+
+    def test_policy_boundaries_restore_and_temporary_journal_gate(self):
+        result = subprocess.run(
+            [str(self.binary), "policy"], capture_output=True, text=True, timeout=5
+        )
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual(json.loads(result.stdout), {"policy_checks": 1})
+
+    def test_attempt_identity_is_saved_for_admission_and_rejection(self):
+        for mode in ("ok", "fail"):
+            with self.subTest(telegraph=mode):
+                row = self.run_case(self.publish(), telegraph=mode)
+                self.assertEqual(row["count"], 1)
+                self.assertEqual(row["ordinal"], 1)
+                self.assertEqual(row["last_program_id"], HOST["id"])
+                self.assertEqual(row["second_admitted"], 0)
+        row = self.run_case(self.publish(), at_safe=6)
+        self.assertEqual(row["count"], 0)  # pending is not a settled attempt
 
     def test_disabled_does_not_load(self):
         row = self.run_case(self.publish(), enabled=0)

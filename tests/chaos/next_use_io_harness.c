@@ -4,6 +4,8 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
+#include <stdlib.h>
+
 #include <string.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -58,6 +60,16 @@ int main(int argc, char **argv)
     dir = open(argv[1], O_RDONLY | O_DIRECTORY);
     if (dir < 0)
         return 3;
+    if (!strncmp(argv[2], "ordinal-", 8)) {
+        char buf[128];
+        size_t n = 0;
+        int ordinal = atoi(argv[2] + 8);
+        int rc = chaos_next_use_envelope_read_ordinal(dir, ordinal, buf,
+                                                     sizeof buf, &n);
+        printf("{\"rc\":%d,\"value\":%d}\n", rc, n ? atoi(buf) : -1);
+        close(dir);
+        return 0;
+    }
     if (!strcmp(argv[2], "eintr-read"))
         fail_read = 1;
     else if (!strcmp(argv[2], "short-read"))

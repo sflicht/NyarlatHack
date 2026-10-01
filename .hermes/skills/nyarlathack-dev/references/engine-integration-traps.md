@@ -47,7 +47,18 @@ adds traps found while hooking dNAO. Re-grep before trusting any function name.
   pending requests through real save/restore, cross-layout rejection, version
   rejection, target/level mismatch, no duplicate admission/spend.
 - Audit save-version discrimination explicitly when adding fields; packed sizes
-  can overlap.
+  can overlap. Check the earlier `uptodate` native-header refusal too: adding
+  player bytes may hit that branch before the CHAOS state validator. Prove it
+  preserves the file and does not offer deletion.
+- When changing `struct chaos_state`, update ctypes mirrors, the native layout
+  reporter's current-layout fixture, and version assertions together. Leave
+  historical frozen fixtures and shared-metadata checks unchanged.
+- Keep fixture ledger storage alive for callbacks after admission: use the
+  game owner or static storage, never an admission helper's automatic local.
+  An ASan stack-use-after-return probe distinguishes this from a timeout flake.
+- Keep rejected-attempt authority in a carrier that exists without a runtime
+  snapshot. Test native save/restore both after rejection and after terminal
+  journal closure; label any fixture-initialized cap state explicitly.
 - Snapshot version bumps must update the pinned version in
   `tests/chaos/test_next_use_unix_save.py` (it reads the `NUS1` header word).
 - Trace `bwrite`/`mread` compression and error semantics. Preflight before
@@ -80,6 +91,10 @@ adds traps found while hooking dNAO. Re-grep before trusting any function name.
 - Use native Sanity helpers, accounting for glyph and max HP/energy effects.
 
 ## Presentation
+
+- Include `chaos.h` after `wintty.h` declarations when adding a seam to a stock
+  file. CHAOS=0 no-op macros otherwise expand in the TTY function declarations;
+  always compile both configurations rather than trusting the enabled build.
 
 - `dog_move` alone doesn't publish the new cell; `m_move` does `newsym` on the
   moving path (`mmoved == 1`). A fixture bypassing it can falsely certify a glyph;
