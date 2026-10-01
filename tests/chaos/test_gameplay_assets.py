@@ -283,7 +283,7 @@ class GameAssetTests(unittest.TestCase):
         for name in (
             "_two_family_order",
             "_new_game_reusing_old_transport",
-            "test_m2_terminal_rejected_and_cap_save_restore",
+            "_multi_program_game",
         ):
             custom = [
                 n

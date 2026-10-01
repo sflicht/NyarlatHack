@@ -568,7 +568,7 @@ int main(int argc, char **argv)
         int present = -1, restored;
         if (!fp || !install_pending()) return 1;
         if (!chaos_next_use_snapshot_export(&snap)) return 1;
-        bwrite(fileno(fp), (void *)"NUS1", 4);
+        bwrite(fileno(fp), (void *)"NUS2", 4);
         bwrite(fileno(fp), &present, sizeof present);
         rewind(fp);
         restored = chaos_next_use_restore(fileno(fp));

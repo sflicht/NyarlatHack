@@ -21,6 +21,14 @@ static struct {
     char line[CHAOS_JOURNAL_LINE_MAX];
 } journal = { .fd = -1 };
 
+static int journal_name(char name[64], int ordinal)
+{
+    if (ordinal < 1 || ordinal > CHAOS_NEXT_USE_PROGRAM_CAP) return 0;
+    if (ordinal == 1) strcpy(name, "next_use-journal.jsonl");
+    else snprintf(name, 64, "next_use-journal.%d.jsonl", ordinal);
+    return 1;
+}
+
 static void put(const char *fmt, ...)
 {
     int n;
@@ -325,7 +333,7 @@ static int number(const char **p, const char *key, long *value)
     *value = v; *p = end + 1;
     return 1;
 }
-static int header_binding(const char *p, const struct chaos_next_use_snapshot *s)
+static int header_binding(const char *p, const struct chaos_next_use_snapshot *s, int ordinal)
 {
     static const char *fields[] = {
         "snapshot_v", "program_id", "phase", "slot_w", "slot_f", "w_runtime",
@@ -340,7 +348,8 @@ static int header_binding(const char *p, const struct chaos_next_use_snapshot *s
     size_t i;
     long v;
     char tail[256], hex[3];
-    if (!take(&p, "{\"snapshot\":{")) return 0;
+    snprintf(tail, sizeof tail, "{\"program_ordinal\":%d,\"snapshot\":{", ordinal);
+    if (!take(&p, tail)) return 0;
     for (i = 0; i < sizeof fields / sizeof fields[0]; ++i) {
         if (!number(&p, fields[i], &v)) return 0;
         if ((!i && v != CHAOS_NEXT_USE_SNAPSHOT_V)
@@ -386,9 +395,10 @@ static int inner_cursor(const char *p, unsigned long cursor, long *seq)
     }
     return v >= 0 && (unsigned long)v == cursor;
 }
-int chaos_next_use_journal_resume(int dir)
+static int resume_one(int dir, int ordinal,
+                      const struct chaos_next_use_snapshot *value, int attach)
 {
-    struct chaos_next_use_snapshot saved;
+    struct chaos_next_use_snapshot saved = *value;
     struct chaos_next_use_capture_status status;
     struct stat before, after;
     FILE *input = NULL;
@@ -396,19 +406,17 @@ int chaos_next_use_journal_resume(int dir)
     unsigned long cursor = 0;
     size_t total = 0, n, payload_length;
     long seq = 0;
-    char previous[65], digest[65], framing[256], footer[128];
+    char previous[65], digest[65], framing[256], footer[128], name[64];
     const char *kind, *data;
+    if (!journal_name(name, ordinal)) return 0;
     if (!chaos_next_use_capture_journal_enter(&status)) return 0;
-    /* Never reset an existing writer, including a closed terminal writer. */
-    if (journal.started) goto done;
-    if (!chaos_next_use_snapshot_export(&saved)) { ok = 1; goto done; }
     if (saved.journal_state == CHAOS_JOURNAL_NONE) { ok = 1; goto done; }
-    journal.started = 1;
+    if (attach) journal.started = 1;
     if (saved.journal_state == CHAOS_JOURNAL_FAILED || status.incomplete
         || status.transaction_open || dir < 0
         || fstat(dir, &before) || !S_ISDIR(before.st_mode)
         || before.st_uid != getuid() || (before.st_mode & 077)) goto rejected;
-    fd = openat(dir, "next_use-journal.jsonl",
+    fd = openat(dir, name,
                 (saved.journal_state == CHAOS_JOURNAL_COMPLETE ? O_RDONLY : O_RDWR)
                 | O_NOFOLLOW | O_NONBLOCK | O_CLOEXEC);
     if (fd < 0 || fstat(fd, &before) || !S_ISREG(before.st_mode)
@@ -453,7 +461,7 @@ int chaos_next_use_journal_resume(int dir)
         data = journal.line;
         if (!take(&data, framing)) goto rejected;
         if (lines == 1) {
-            if (!header_binding(data, &saved)) goto rejected;
+            if (!header_binding(data, &saved, ordinal)) goto rejected;
         } else if (ended) {
             snprintf(footer, sizeof footer,
                 "{\"status\":\"complete\",\"terminal_seq\":%ld}}", seq);
@@ -480,11 +488,13 @@ int chaos_next_use_journal_resume(int dir)
         fd = -1;
         if (rc) goto rejected;
     } else if (fcntl(fd, F_SETFL, O_APPEND | O_NONBLOCK) < 0) goto rejected;
-    journal.fd = fd; fd = -1;
-    journal.cursor = cursor; journal.bytes = total; journal.ended = ended;
-    memcpy(journal.previous, previous, 65);
-    /* Closed COMPLETE retains its status subscriber, never a writable fd. */
-    chaos_next_use_capture_set_sink(sink, NULL);
+    if (attach) {
+        journal.fd = fd; fd = -1;
+        journal.cursor = cursor; journal.bytes = total; journal.ended = ended;
+        memcpy(journal.previous, previous, 65);
+        /* Closed COMPLETE retains its status subscriber, never a writable fd. */
+        chaos_next_use_capture_set_sink(sink, NULL);
+    }
     ok = 1;
     goto done;
 rejected:
@@ -497,13 +507,31 @@ done:
     chaos_next_use_capture_journal_leave();
     return ok;
 }
+int chaos_next_use_journal_resume(int dir)
+{
+    struct chaos_next_use_snapshot current;
+    const struct chaos_next_use_snapshot *closed;
+    int k, ordinal = chaos_next_use_program_ordinal();
+    /* Never reset a writer on resume, including an already closed writer. */
+    if (journal.started) return 0;
+    for (k = 1; k < ordinal; ++k) {
+        closed = chaos_next_use_closed_program(k);
+        if (closed && !resume_one(dir, k, closed, 0)) return 0;
+    }
+    if (!chaos_next_use_snapshot_export(&current)) return 1;
+    return resume_one(dir, ordinal ? ordinal : 1, &current, 1);
+}
+
 int chaos_next_use_journal_begin(int dir)
 {
     struct stat st;
     struct chaos_next_use_snapshot initial;
     const struct chaos_next_use_runtime_private_record *a, *b;
     struct chaos_next_use_capture_status status;
-    int result = 0;
+    int result = 0, ordinal = chaos_next_use_program_ordinal();
+    char name[64];
+    if (!ordinal) ordinal = 1; /* runtime-only single-program fixtures */
+    if (!journal_name(name, ordinal)) return 0;
     /* Reentrant callers neither reset the writer nor release the outer guard. */
     if (!chaos_next_use_capture_journal_enter(&status)) return 0;
     if (journal.started) { chaos_next_use_capture_fail(); goto done; }
@@ -521,7 +549,7 @@ int chaos_next_use_journal_begin(int dir)
     b = chaos_next_use_runtime_private_at(1);
     if (!a || !b || a->kind != CHAOS_RUNTIME_PRIVATE_ATTEMPT
         || b->kind != CHAOS_RUNTIME_PRIVATE_ADMISSION) goto failed;
-    journal.fd = openat(dir, "next_use-journal.jsonl",
+    journal.fd = openat(dir, name,
                         O_WRONLY | O_CREAT | O_EXCL | O_NOFOLLOW | O_NONBLOCK | O_CLOEXEC, 0600);
     if (journal.fd < 0) goto failed;
     if (fstat(journal.fd, &st) || !S_ISREG(st.st_mode) || st.st_uid != getuid()
@@ -532,7 +560,7 @@ int chaos_next_use_journal_begin(int dir)
     memset(journal.previous, '0', 64); journal.previous[64] = 0;
     memcpy(journal.source_sha256, initial.source_sha256, 65);
     start_line("header", 0);
-    put("{\"snapshot\":"); snapshot(&initial);
+    put("{\"program_ordinal\":%d,\"snapshot\":", ordinal); snapshot(&initial);
     put(",\"private_records\":["); private_record(a); put(","); private_record(b);
     put("]}");
     if (!finish_line() || !sync_all(dir)) goto failed;

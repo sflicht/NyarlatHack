@@ -327,6 +327,12 @@ int chaos_next_use_snapshot_import(const struct chaos_next_use_snapshot *);
 long chaos_next_use_runtime_run_token(void);
 int chaos_next_use_snapshot_write(int fd, const struct chaos_next_use_snapshot *);
 int chaos_next_use_snapshot_read(int fd, struct chaos_next_use_snapshot *);
+/* Bounded value history; never additional executable runtime slots. */
+void chaos_next_use_history_reset(void);
+int chaos_next_use_program_ordinal(void);
+int chaos_next_use_set_ordinal(int);
+int chaos_next_use_retire_program(void);
+const struct chaos_next_use_snapshot *chaos_next_use_closed_program(int);
 int chaos_next_use_save_status(void);
 int chaos_next_use_save(int fd);
 int chaos_next_use_restore(int fd);

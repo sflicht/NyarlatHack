@@ -1,6 +1,6 @@
 /* NGPL. TEST ONLY readonly diagnostics for the uncompressed Unix fixture.
  * Never import a snapshot or alter the trusted player/snapshot identities.
- * savegamestate writes sizeof(struct you) immediately before NUS1.
+ * savegamestate writes sizeof(struct you) immediately before NUS2.
  */
 #include "hack.h"
 #include "chaos_next_use_runtime.h"
@@ -33,7 +33,7 @@ int __wrap_chaos_next_use_restore_bound(int fd, long run, long level_token)
         assert(!"native restore diagnostic requires uncompressed saves");
 #else
         /* Native raw reader has no buffered state. Read and validate a copy,
-         * then return fd to the exact NUS1 boundary before the REAL restore.
+         * then return fd to the exact NUS2 boundary before the REAL restore.
          * This proves the real codec accepted the untouched binding/digest,
          * and that restgamestate reached its trusted identity boundary. */
         struct chaos_next_use_snapshot snap, live;
@@ -45,7 +45,7 @@ int __wrap_chaos_next_use_restore_bound(int fd, long run, long level_token)
         memset(&snap, 0, sizeof snap);
         memset(&live, 0, sizeof live);
         assert(chaos_next_use_mread(fd, magic, sizeof magic));
-        assert(!memcmp(magic, "NUS1", 4));
+        assert(!memcmp(magic, "NUS2", 4));
         assert(chaos_next_use_mread(fd, &present, sizeof present) && present == 1);
         valid = chaos_next_use_snapshot_read(fd, &snap);
         assert(lseek(fd, start, SEEK_SET) == start);

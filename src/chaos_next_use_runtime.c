@@ -72,6 +72,46 @@ struct runtime_state {
     int public_count;
 };
 
+static struct {
+    int ordinal;
+    struct chaos_next_use_snapshot closed[CHAOS_NEXT_USE_PROGRAM_CAP];
+} program_history;
+
+void chaos_next_use_history_reset(void)
+{
+    memset(&program_history, 0, sizeof program_history);
+}
+
+int chaos_next_use_program_ordinal(void) { return program_history.ordinal; }
+
+int chaos_next_use_set_ordinal(int ordinal)
+{
+    if (ordinal < 1 || ordinal > CHAOS_NEXT_USE_PROGRAM_CAP
+        || ordinal != program_history.ordinal + 1) return 0;
+    program_history.ordinal = ordinal;
+    return 1;
+}
+
+const struct chaos_next_use_snapshot *chaos_next_use_closed_program(int ordinal)
+{
+    if (ordinal < 1 || ordinal >= program_history.ordinal) return NULL;
+    return program_history.closed[ordinal - 1].program_id
+        ? &program_history.closed[ordinal - 1] : NULL;
+}
+
+int chaos_next_use_retire_program(void)
+{
+    struct chaos_next_use_snapshot snap;
+    if (!chaos_next_use_runtime_run_token()) return 1; /* rejected attempt */
+    if (program_history.ordinal < 1
+        || !chaos_next_use_snapshot_export(&snap)
+        || !snap.termination_emitted || snap.capture_incomplete
+        || snap.journal_state != CHAOS_JOURNAL_COMPLETE) return 0;
+    program_history.closed[program_history.ordinal - 1] = snap;
+    chaos_next_use_runtime_reset();
+    return 1;
+}
+
 static struct runtime_state live_runtime;
 static struct runtime_state replay_runtime;
 static struct runtime_state staged_runtime;
@@ -2344,7 +2384,7 @@ int chaos_next_use_save_status(void)
 
 int chaos_next_use_save(int fd)
 {
-    static const char magic[4] = { 'N', 'U', 'S', '1' };
+    static const char magic[4] = { 'N', 'U', 'S', '2' };
     struct chaos_next_use_snapshot snap;
     int present = chaos_next_use_save_status();
 
@@ -2354,44 +2394,63 @@ int chaos_next_use_save(int fd)
         return 0;
     bwrite(fd, (genericptr_t)magic, 4);
     bwrite(fd, (genericptr_t)&present, sizeof present);
-    return present == CHAOS_SNAPSHOT_ABSENT
-        || chaos_next_use_snapshot_write(fd, &snap);
+    if (present != CHAOS_SNAPSHOT_ABSENT
+        && !chaos_next_use_snapshot_write(fd, &snap)) return 0;
+    /* NUS2 adds a bounded ordinal-indexed list of closed value snapshots.
+     * Rejections have no journal and therefore an absent slot. State v5
+     * remains the authority for the attempt count, including those slots. */
+    bwrite(fd, (genericptr_t)&program_history.ordinal, sizeof(int));
+    {
+        int i;
+        for (i = 0; i < program_history.ordinal - 1; ++i) {
+            int exists = program_history.closed[i].program_id != 0;
+            bwrite(fd, (genericptr_t)&exists, sizeof exists);
+            if (exists && !chaos_next_use_snapshot_write(fd, &program_history.closed[i]))
+                return 0;
+        }
+    }
+    return 1;
 }
 
 static int restore_snapshot(int fd, long run_token, long level_token, int bound)
 {
     char magic[4];
-    int present = 0;
-    struct chaos_next_use_snapshot snap;
+    int present = 0, ordinal, i;
+    struct chaos_next_use_snapshot snap, closed[CHAOS_NEXT_USE_PROGRAM_CAP];
 
-    if (!chaos_next_use_mread(fd, magic, 4)
-        || memcmp(magic, "NUS1", 4) != 0)
-        return 0;
-    if (!chaos_next_use_mread(fd, &present, sizeof present))
-        return 0;
-    if (present == 0) {
-        chaos_next_use_runtime_reset();
-        return 1;
-    }
-    if (present != 1)
-        return 0;
     memset(&snap, 0, sizeof snap);
-    if (!chaos_next_use_snapshot_read(fd, &snap))
-        return 0;
-    /* Admission level binds executable state, not terminal history carried
-     * by the same saved game after travelling elsewhere. Read validated the
-     * terminal phase/slots/window agreement before this identity check. */
-    if (bound && (run_token <= 0 || level_token <= 0
-                  || snap.run_token != run_token
-                  || (snap.phase != CHAOS_ATTEMPT_TERMINATED
-                      && snap.level_token != level_token)))
-        return 0;
-    if (!chaos_next_use_snapshot_import(&snap)) return 0;
-    if (bound) {
-        live_runtime.current_run_token = run_token;
-        live_runtime.current_level_token = level_token;
-        replay_runtime = live_runtime;
+    memset(closed, 0, sizeof closed);
+    if (!chaos_next_use_mread(fd, magic, 4) || memcmp(magic, "NUS2", 4)
+        || !chaos_next_use_mread(fd, &present, sizeof present)
+        || (present != 0 && present != 1)) return 0;
+    if (present && !chaos_next_use_snapshot_read(fd, &snap)) return 0;
+    if (!chaos_next_use_mread(fd, &ordinal, sizeof ordinal)
+        || ordinal < 0 || ordinal > CHAOS_NEXT_USE_PROGRAM_CAP) return 0;
+    for (i = 0; i < ordinal - 1; ++i) {
+        int exists;
+        if (!chaos_next_use_mread(fd, &exists, sizeof exists)
+            || (exists != 0 && exists != 1)) return 0;
+        if (exists && (!chaos_next_use_snapshot_read(fd, &closed[i])
+            || !closed[i].termination_emitted || closed[i].capture_incomplete
+            || closed[i].journal_state != CHAOS_JOURNAL_COMPLETE
+            || (bound && closed[i].run_token != run_token)
+            || (present && closed[i].run_token != snap.run_token))) return 0;
     }
+    /* Validate all values before publishing any runtime or history. */
+    if (present && bound && (run_token <= 0 || level_token <= 0
+        || snap.run_token != run_token
+        || (snap.phase != CHAOS_ATTEMPT_TERMINATED
+            && snap.level_token != level_token))) return 0;
+    if (present) {
+        if (!chaos_next_use_snapshot_import(&snap)) return 0;
+        if (bound) {
+            live_runtime.current_run_token = run_token;
+            live_runtime.current_level_token = level_token;
+            replay_runtime = live_runtime;
+        }
+    } else chaos_next_use_runtime_reset();
+    program_history.ordinal = ordinal;
+    memcpy(program_history.closed, closed, sizeof closed);
     return 1;
 }
 

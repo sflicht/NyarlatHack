@@ -90,6 +90,95 @@ static void bind_origin(const char *run, int qualifying, const char *fact,
     chaos_next_use_safe_bind_origin(&origin, qualifying);
 }
 
+void bwrite(int fd, genericptr_t loc, unsigned int num)
+{
+    assert(write(fd, loc, num) == (ssize_t)num);
+}
+int chaos_next_use_mread(int fd, void *loc, unsigned int num)
+{
+    return read(fd, loc, num) == (ssize_t)num;
+}
+
+static void series_restore(int dir, struct chaos_state *budget, int *telegraphs)
+{
+    FILE *save = tmpfile();
+    assert(save && chaos_next_use_save(fileno(save)));
+    rewind(save);
+    chaos_next_use_safe_reset_for_test();
+    assert(chaos_next_use_restore_bound(fileno(save), 1750000001L,
+                                        chaos_next_use_pack_level(0, 1)));
+    assert(chaos_next_use_safe_restore_state(budget, 1));
+    chaos_next_use_safe_resume(dir);
+    chaos_next_use_safe_bind_logical(1750000001L);
+    chaos_next_use_safe_bind_run("abababababababababababababababababababababababababababababababab");
+    chaos_next_use_safe_bind_telegraph(telegraph_ok, telegraphs);
+    fclose(save);
+}
+
+static void series_codec(int dir, int ordinal, const char *phase)
+{
+    char name[64];
+    struct chaos_next_use_snapshot snap;
+    int fd;
+    snprintf(name, sizeof name, "program-%d-%s.codec", ordinal, phase);
+    fd = openat(dir, name, O_WRONLY | O_CREAT | O_EXCL, 0600);
+    assert(fd >= 0 && chaos_next_use_snapshot_export(&snap));
+    assert(chaos_next_use_snapshot_write(fd, &snap));
+    assert(!close(fd));
+}
+
+static int series_checks(const char *path)
+{
+    struct chaos_state budget;
+    struct chaos_next_use_safe_result result;
+    struct chaos_next_use_snapshot snap;
+    const char *run = "abababababababababababababababababababababababababababababababab";
+    int dir = open(path, O_RDONLY | O_DIRECTORY), k, telegraphs = 0;
+    assert(dir >= 0);
+    chaos_next_use_safe_reset_for_test();
+    chaos_state_init(&budget);
+    chaos_next_use_safe_bind_logical(1750000001L);
+    chaos_next_use_safe_bind_run(run);
+    chaos_next_use_safe_bind_telegraph(telegraph_ok, &telegraphs);
+    for (k = 1; k <= 3; ++k) {
+        int root = 10 + (k - 1) * 30;
+        monstermoves = 40 + (k - 1) * 150;
+        budget.seq = root + 2;
+        bind_origin(run, 1, "ordinary_whistle", root, 1, monstermoves,
+                    CHAOS_NEXT_USE_FAMILY_W, root + 1, root + 2);
+        {
+            int rc = chaos_next_use_on_safe(dir, 6 + k, 0, &budget, 0, 1);
+            chaos_next_use_safe_last(&result);
+            fprintf(stderr, "program %d rc %d reasons %d\n", k, rc, result.reasons);
+            assert(rc == CHAOS_NEXT_USE_ADMISSION_OK);
+        }
+        assert(budget.next_use_count == k && !budget.next_use_terminal);
+        series_codec(dir, k, "initial");
+        if (getenv("SERIES_RESTORE")) {
+            series_restore(dir, &budget, &telegraphs);
+            bind_origin(run, 1, "ordinary_whistle", root, 1, monstermoves,
+                        CHAOS_NEXT_USE_FAMILY_W, root + 1, root + 2);
+        }
+        assert(chaos_next_use_on_safe(dir, 7 + k, 0, &budget, 0, 1)
+               == CHAOS_NEXT_USE_ADMISSION_NOT_OPEN);
+        budget.seq = root + 10;
+        monstermoves += 100;
+        chaos_next_use_identity_boundary(1750000001L, chaos_next_use_pack_level(0, 1));
+        assert(chaos_next_use_snapshot_export(&snap));
+        assert(snap.journal_state == CHAOS_JOURNAL_COMPLETE);
+        series_codec(dir, k, "terminal");
+        assert(chaos_next_use_on_safe(dir, 7 + k, 0, &budget, 0, 1)
+               == CHAOS_NEXT_USE_ADMISSION_NOT_OPEN); /* old origin */
+        assert(chaos_next_use_safe_last(&result) && !result.loaded);
+        assert(budget.next_use_count == k);
+        if (getenv("SERIES_RESTORE")) series_restore(dir, &budget, &telegraphs);
+    }
+    close(dir);
+    assert(telegraphs == 3);
+    puts("{\"programs\":3}");
+    return 0;
+}
+
 static int policy_checks(void)
 {
     struct chaos_state s, saved;
@@ -110,17 +199,21 @@ static int policy_checks(void)
     assert(chaos_next_use_safe_opportunity(&s, 31)); /* rejected, no journal */
     saved = s;
     chaos_next_use_safe_reset_for_test();
+    assert(!chaos_next_use_safe_restore_state(&saved, 1)); /* mismatched carrier */
+    assert(chaos_next_use_set_ordinal(1));
     assert(chaos_next_use_safe_restore_state(&saved, 1));
     assert(chaos_next_use_safe_attempted());
     assert(!chaos_next_use_safe_restore_state(&saved, 0));
     memset(&req, 0, sizeof req);
     req.dir = 0; req.enabled = 1; req.budget = &saved;
     assert(chaos_next_use_safe_try(&req, &result) == CHAOS_NEXT_USE_ADMISSION_NOT_OPEN);
-    assert(!result.loaded); /* temporary journal gate: don't even read ordinal 2 */
+    assert(!result.loaded); /* resume validation is required before polling */
     assert(saved.next_use_count == 1);
     saved.next_use_count = saved.next_use_ordinal = CHAOS_NEXT_USE_PROGRAM_CAP;
     assert(chaos_state_valid(&saved));
     assert(!chaos_next_use_safe_opportunity(&saved, 40));
+    assert(chaos_next_use_set_ordinal(2));
+    assert(chaos_next_use_set_ordinal(3));
     assert(chaos_next_use_safe_restore_state(&saved, 1));
     assert(chaos_next_use_safe_try(&req, &result) == CHAOS_NEXT_USE_ADMISSION_NOT_OPEN);
     assert(saved.next_use_count == CHAOS_NEXT_USE_PROGRAM_CAP && !result.loaded);
@@ -150,6 +243,7 @@ int main(int argc, char **argv)
     int future_open = -1, terminal_seq = -1;
     int at_safe, at_move, dnum, dlevel, on_safe, origin_move;
 
+    if (argc == 3 && !strcmp(argv[1], "series")) return series_checks(argv[2]);
     if (argc == 2 && !strcmp(argv[1], "policy")) return policy_checks();
     if (argc < 9) return 2;
     dir = open(argv[1], O_RDONLY | O_DIRECTORY);

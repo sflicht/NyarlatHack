@@ -128,9 +128,12 @@ int __wrap_chaos_next_use_save(int fd)
         copy = before;
         copy.witnessed = 0;
         assert(chaos_next_use_snapshot_validate(&copy));
-        bwrite(fd, (genericptr_t)"NUS1", 4);
+        bwrite(fd, (genericptr_t)"NUS2", 4);
         bwrite(fd, (genericptr_t)&present, sizeof present);
         result = chaos_next_use_snapshot_write(fd, &copy);
+        { int ordinal = chaos_next_use_program_ordinal();
+          assert(ordinal == 1); /* this mutation fixture is a single program */
+          bwrite(fd, (genericptr_t)&ordinal, sizeof ordinal); }
         memset(&after, 0, sizeof after);
         assert(chaos_next_use_snapshot_export(&after));
         assert(!memcmp(&before, &after, sizeof before));
@@ -288,13 +291,6 @@ void __wrap_chaos_start(void)
 void __wrap_chaos_observe(void)
 {
     __real_chaos_observe();
-    /* TEST ONLY: exercise native serialization at the declared cap while
-     * production admission is temporarily capped at one by the journal gate. */
-    if (access("m2-cap-fixture", F_OK) == 0) {
-        assert(u.chaos.next_use_count == 1 && u.chaos.next_use_terminal);
-        u.chaos.next_use_count = u.chaos.next_use_ordinal = CHAOS_NEXT_USE_PROGRAM_CAP;
-        assert(!unlink("m2-cap-fixture"));
-    }
     state();
 }
 

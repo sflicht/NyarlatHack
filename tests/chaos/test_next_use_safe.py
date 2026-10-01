@@ -81,6 +81,101 @@ class NextUseSafeAdmitTests(RetainOnFailure):
         if result.returncode:
             raise RuntimeError(result.stderr.decode())
 
+    def test_three_programs_restore_active_between_and_at_cap(self):
+        self.test_three_natural_programs_require_terminal_and_fresh_origin(restore=True)
+
+    def test_three_natural_programs_require_terminal_and_fresh_origin(
+        self, restore=False
+    ):
+        folder = self.publish()
+        for ordinal in (2, 3):
+            delta = (ordinal - 1) * 30
+            row = dict(
+                ROW,
+                origin=dict(
+                    ROW["origin"],
+                    root_seq=10 + delta,
+                    notice_seq=11 + delta,
+                    end_seq=12 + delta,
+                ),
+            )
+            from chaos.next_use_envelope import envelope_from_selection
+
+            _, encoded = envelope_from_selection(
+                row, dict(HOST, at=6 + ordinal, move=40 + (ordinal - 1) * 150)
+            )
+            path = Path(folder) / f"next_use-envelope.{ordinal}.json"
+            path.write_bytes(encoded)
+            path.chmod(0o600)
+        env = dict(os.environ)
+        env.pop("SERIES_RESTORE", None)
+        if restore:
+            env["SERIES_RESTORE"] = "1"
+        result = subprocess.run(
+            [str(self.binary), "series", str(folder)],
+            env=env,
+            capture_output=True,
+            text=True,
+            timeout=20,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(json.loads(result.stdout)["programs"], 3)
+        receipts = self.rows(folder)
+        self.assertEqual([r.get("program_ordinal") for r in receipts], [1, 2, 3])
+        self.assertEqual([r.get("program_id") for r in receipts], [1, 1, 1])
+        from chaos.next_use_journal import read_journal
+
+        paths = [
+            Path(folder) / name
+            for name in (
+                "next_use-journal.jsonl",
+                "next_use-journal.2.jsonl",
+                "next_use-journal.3.jsonl",
+            )
+        ]
+        for path in paths:
+            self.assertTrue(read_journal(path)["structurally_complete"])
+        from chaos.next_use_journal import read_journals, JournalError
+
+        traces = read_journals(paths)
+        # Execute every recorded transition through the real native replay VM,
+        # checking the saved terminal state and each private/public carrier.
+        from next_use_semantic_preflight import run_validator
+        import shutil
+
+        for ordinal, trace in enumerate(traces, 1):
+            replay = Path(folder) / f"replay-{ordinal}"
+            replay.mkdir()
+            shutil.copy2(
+                Path(folder) / f"program-{ordinal}-initial.codec",
+                replay / "initial.codec",
+            )
+            shutil.copy2(
+                Path(folder) / f"program-{ordinal}-terminal.codec",
+                replay / "middle.codec",
+            )
+            report = run_validator(trace["records"], replay)
+            self.assertEqual(report["returncode"], 0, report)
+            self.assertEqual(report["terminal"], 1)
+        self.assertEqual([t["program_ordinal"] for t in traces], [1, 2, 3])
+        for invalid in (paths[::-1], [paths[0], paths[0]], paths + [paths[0]]):
+            with self.assertRaises(JournalError):
+                read_journals(invalid)
+        # A list never quietly discards a truncated later program.
+        raw = paths[1].read_bytes()
+        paths[1].write_bytes(raw[:-1])
+        with self.assertRaises(JournalError):
+            read_journals(paths[:2])
+        paths[1].write_bytes(raw)
+        # Historical single-program header without an ordinal remains readable.
+        from next_use_semantic_preflight import rehash
+
+        records = read_journal(paths[0])["records"]
+        del records[0]["data"]["program_ordinal"]
+        historical = Path(folder) / "historical.jsonl"
+        rehash(records, historical)
+        self.assertTrue(read_journals([historical])[0]["structurally_complete"])
+
     def publish(self, move=40):
         folder = track(self, tempfile.mkdtemp(prefix="nyarl-next-use-safe-run-"))
         os.chmod(folder, 0o700)
@@ -196,7 +291,7 @@ class NextUseSafeAdmitTests(RetainOnFailure):
         self.assertNotEqual(row["run_token"], 1)
         self.assertNotEqual(row["level_token"], 1)
 
-    def test_policy_boundaries_restore_and_temporary_journal_gate(self):
+    def test_policy_boundaries_restore_and_carrier_identity(self):
         result = subprocess.run(
             [str(self.binary), "policy"], capture_output=True, text=True, timeout=5
         )

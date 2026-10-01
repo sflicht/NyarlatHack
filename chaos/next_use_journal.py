@@ -659,6 +659,36 @@ def _transition(t, s, seq, prior):
     return seq, dict(p, state=t["state"], w_runtime=t["w_runtime"]), terminal
 
 
+def read_journals(paths, *, allow_open_last=False):
+    """Validate an ordered list of at most three independently bounded chains.
+
+    Supply the expected files (from saved state/receipts), not a glob that can
+    hide a missing file. Rejected attempts have no journal, so ordinal gaps
+    are valid. Only the last chain may be open, and only by explicit request.
+    Historical single-journal headers imply ordinal 1. This is structural
+    validation, not execution/replay or proof of durable writer acknowledgement.
+    """
+    result = []
+    previous_ordinal = 0
+    run_token = None
+    for path in paths:
+        _require(len(result) < 3, "program count bound")
+        if result:
+            _require(result[-1]["structurally_complete"], "earlier program not closed")
+        trace = read_journal(path)
+        header = trace["records"][0]["data"]
+        ordinal = header.get("program_ordinal", 1)
+        _require(ordinal > previous_ordinal, "program ordinal order/duplicate")
+        token = header["snapshot"]["run_token"]
+        _require(run_token is None or token == run_token, "program run identity")
+        run_token = token
+        previous_ordinal = ordinal
+        result.append(dict(trace, program_ordinal=ordinal))
+    if result and not allow_open_last:
+        _require(result[-1]["structurally_complete"], "last program not closed")
+    return result
+
+
 def read_journal(path, *, capture_status=None):
     """Return validated values, separating bytes from capture acknowledgement.
 
@@ -700,7 +730,11 @@ def read_journal(path, *, capture_status=None):
             kind, d = payload["kind"], payload["data"]
             if index == 0:
                 _require(kind == "header" and payload["cursor"] == 0, "missing header")
-                _keys(d, "snapshot private_records")
+                if "program_ordinal" in d:
+                    _keys(d, "program_ordinal snapshot private_records")
+                    _integer(d["program_ordinal"], 1, 3)
+                else:
+                    _keys(d, "snapshot private_records")  # historical program 1
                 s = d["snapshot"]
                 source = _snapshot(s)
                 rs = d["private_records"]

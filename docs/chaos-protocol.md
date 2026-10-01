@@ -281,22 +281,21 @@ CHAOS-on builds (use CHAOS=0 to load stock saves).
 
 ## Next-use program policy v3 (M2 contract; single-journal gate)
 
-Status: **saved engine state and ordinal reader implemented; second admission
-still gated until PR 3.** Sam chose the sequential cap-three rules in
+Status: **engine sequential admission, per-program journals and resume implemented.**
+Sam chose these cap-three rules in
 [`proposals/multi-whisper-arc.md`](proposals/multi-whisper-arc.md), decisions
 1–3 and 7. `next_use_programs` generates `CHAOS_NEXT_USE_PROGRAM_CAP` and
-`NEXT_USE_PROGRAM_CAP`. PR 2 replaces the process-local latch with the saved
-count, last ordinal/id and terminal event boundary. The reader supports the
-three ordinal filenames, but production admission deliberately remains at one
-attempt until per-program journals are implemented. It cannot overwrite the
-first journal or reset the runtime to admit program 2.
+`NEXT_USE_PROGRAM_CAP`. Native state v5 saves the count, last ordinal/id and
+terminal event boundary. The temporary single-journal gate is removed together
+with ordinal journal paths and saved closed-journal validation.
 
-`chaos_next_use_safe_opportunity` separately checks terminal state, a COMPLETE
-journal acknowledgement (or a rejected attempt with no runtime), a completed
-origin strictly after the terminal event, and count below three. The linked
-safe-layer fixtures test this predicate; real save/restore tests check terminal,
-rejected and fixture-initialized cap states. They do not claim that program 2
-is admitted in production. See the [Tier A evidence](evidence/next-use-sequential-m2/README.md).
+`chaos_next_use_safe_opportunity` checks terminal state, a COMPLETE writer
+acknowledgement (or a rejected attempt without a runtime), a completed origin
+strictly after the terminal event, and count below three. The single runtime
+is reset only after durable terminal closure, when a due envelope is consumed.
+The director still publishes only ordinal 1 until PR 4. Real-game multi-program
+tests use fixtures or hand-placed later envelopes, not a multi-program director.
+See the [Tier A evidence](evidence/next-use-program-journals/README.md).
 
 Policy v3 lets a game run up to **3** next-use programs, **strictly one after
 another**:
@@ -345,11 +344,27 @@ including an active ledger without its runtime. Old saves are refused and
 preserved, never migrated; incompatible native headers do not offer deletion.
 No state goes into bones.
 
-**Journals (PR 3; not implemented in PR 2).** One journal file per program (program 1 keeps
-`next_use-journal.jsonl`; later programs use `next_use-journal.<k>.jsonl`).
-Each is a complete, independently checked chain with today's per-file bounds.
-Restore validates the closed journals of earlier programs and the open prefix
-of the current one before reconnecting.
+**Per-program journals.** Program 1 keeps `next_use-journal.jsonl`; later
+programs use `next_use-journal.<k>.jsonl`. Each is an independent chain with
+unchanged 8 MiB / 4096-transition bounds. The hashed header `program_ordinal`
+and shared receipt file's `program_ordinal`/`program_id` distinguish repeated
+IDs. Rejections consume ordinals without creating runtime journals.
+
+The outer next-use save carrier is **NUS2**: current presence/snapshot,
+settled ordinal, then at most two earlier optional COMPLETE value snapshots
+indexed by ordinal. They are closed evidence, never executable runtime slots.
+State stays v5 and each value snapshot stays v6. The ordinal must match the
+native attempt ledger; old NUS1 saves are refused and kept, never migrated.
+Restore validates earlier chains against their saved identity/bytes/cursor/hash,
+then the current exact prefix before attaching a writer. Missing, truncated,
+replaced or invalid earlier/current journals fail capture closed and prohibit
+later admissions; paid gameplay is not rolled back.
+
+`chaos.next_use_journal.read_journals(paths)` checks an explicit ordered list.
+Historical single-journal headers remain readable. Only an explicit
+`allow_open_last=True` accepts an open final prefix. Supply the expected files,
+not a glob that could hide a missing journal. Structural validation does not
+claim durable acknowledgement or native semantic replay.
 
 **Schedule file.** `next_use-schedule.jsonl` keeps its bounds (32 rows, 256
 bytes per row, 16 KiB) and keeps its first 32 rows. Measured against the #1
