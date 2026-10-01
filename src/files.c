@@ -3,13 +3,13 @@
 /* NetHack may be freely redistributed.  See license for details. */
 
 #include "hack.h"
-#include "chaos.h"
 #include "dlb.h"
 #include "system.h"
 
 #ifdef TTY_GRAPHICS
 #include "wintty.h" /* more() */
 #endif
+#include "chaos.h"
 
 #if defined(WHEREIS_FILE) && defined(UNIX)
 #include <sys/types.h> /* whereis-file chmod() */

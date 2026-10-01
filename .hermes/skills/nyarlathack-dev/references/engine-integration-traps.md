@@ -89,6 +89,10 @@ adds traps found while hooking dNAO. Re-grep before trusting any function name.
 
 ## Presentation
 
+- Include `chaos.h` after `wintty.h` declarations when adding a seam to a stock
+  file. CHAOS=0 no-op macros otherwise expand in the TTY function declarations;
+  always compile both configurations rather than trusting the enabled build.
+
 - `dog_move` alone doesn't publish the new cell; `m_move` does `newsym` on the
   moving path (`mmoved == 1`). A fixture bypassing it can falsely certify a glyph;
   mirror the real seam.
