@@ -1,0 +1,38 @@
+chaos: run directory "<retained-run-directory>" (preserved on exit)
+dNethack, Copyright 2012-2025
+    Based on NetHack, Copyright 1985-2003 by Stichting Mathematisch
+         Centrum and M. Stephenson.  See license for details.
+Choosing inheritance Pick the inheritance of your neutral male human Troubadour
+  y - Inherit from a past adventurer (start with an heirloom artifact but low st
+ n - No past inheritance
+ * - Random
+ q - Quit
+(end)
++┌───·───┐+······d││······@││···x··#│··········││···│······$│└───└───────┘ChaosRevie the Rhymer     St:8 Dx:18 Co:10 In:7 Wi:14 Ch:18   Neutral
+Dlvl:1  $:0  HP:
+13(13)
+ Pw:
+7(7)
+
+13(13)
+ Pw:
+7(7)
+ Br:1 AC:7  DR:2  Exp:1 T:1Hello ChaosReview, welcome to dNetHack!  You are a neutral male human
+Troubadour.--More--
+Press Ctrl^W or type #ward to engrave a warding sign.--More--A distant whisper brushes against your thoughts.--More--The shadows lean closer.
+13(13)
+ Pw:
+7(7)
+
+13(13)
+ Pw:
+7(7)
+ Br:1 AC:7  DR:2  Exp:1 T:1 Inventory: 184/500 weight (7/52 slots) Armor b - an uncursed +1 leather cloak (being worn) {15} c - an uncursed +0 pair of high boots (being worn) {20} Comestibles d - 3 uncursed apples {6} e - 4 uncursed oranges {8} Potions f - 5 uncursed potions of booze {100} Tools a - an uncursed wooden flute {5} g - an uncursed copper bell (weapon in hand) {30}(end) ┌───·───┐
+13(13)
+ Pw:
+7(7)
+
+13(13)
+ Pw:
+7(7)
+ Br:1 AC:7  DR:2  Exp:1 T:1
