@@ -148,6 +148,14 @@ class RealDeliveringGames(unittest.TestCase):
                 dict(turn=t, dlvl=None, kind=kind, program=None)
                 for t, kind in public_felt
             ],
+            # Arc metric: the hound once (its first step), the W program once.
+            distinct_felt={
+                "v2-bard-40.json": [dict(turn=200, kind="next_use")],
+                "v2-bard-default-path-21.json": [
+                    dict(turn=7, kind="hound"),
+                    dict(turn=344, kind="next_use"),
+                ],
+            }[name],
         )
         self.assertEqual(a, expected)
         # Hand-checked stages, from the raw rows rather than the analyser.
