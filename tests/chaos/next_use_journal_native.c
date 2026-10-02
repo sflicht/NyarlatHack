@@ -210,7 +210,7 @@ int main(int argc, char **argv)
                == CHAOS_NEXT_USE_ADMISSION_OK);
         assert(reseed_count == rng_before); /* no new game RNG draws */
         assert(u.chaos.next_use_count == 2 && !u.chaos.next_use_terminal);
-        monstermoves = 140;
+        monstermoves = 40 + CHAOS_NEXT_USE_LIFETIME_LATER; /* repaired program 2 */
         chaos_next_use_identity_boundary(u.chaos_game_token, first.level_token);
         assert(reseed_count == rng_before);
         close(dir);

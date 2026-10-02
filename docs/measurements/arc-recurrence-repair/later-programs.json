@@ -1,0 +1,1002 @@
+{
+ "by_start": {
+  "bard": {
+   "armed|end_reason=0|complete": 13,
+   "expiry|end_reason=0|complete": 9,
+   "level|end_reason=0|complete": 2,
+   "pending|end_reason=0|open": 2,
+   "suppressed|end_reason=1|complete": 33,
+   "undeclared|end_reason=0|open": 1
+  },
+  "bard-default-path": {
+   "armed|end_reason=0|complete": 4,
+   "expiry|end_reason=0|complete": 4,
+   "pending|end_reason=0|open": 5,
+   "suppressed|end_reason=1|complete": 17
+  },
+  "bard-inherited": {
+   "armed|end_reason=0|complete": 5,
+   "expiry|end_reason=0|complete": 3,
+   "pending|end_reason=0|open": 3,
+   "suppressed|end_reason=1|complete": 5
+  },
+  "wizard-default-path": {
+   "expiry|end_reason=0|complete": 2
+  }
+ },
+ "note": "Admitted later programs (2-3) on the PR side, final W/F slot from each program's journal. suppressed end_reason=1 is CHAOS_W_SUPPRESSED_NONE_IN_VIEW (whistled with no qualifying companion in view).",
+ "programs": [
+  {
+   "end_reason": 1,
+   "game": "bard-00005",
+   "journal": "complete",
+   "program": 2,
+   "slot_f": "undeclared",
+   "slot_w": "suppressed",
+   "start": "bard"
+  },
+  {
+   "end_reason": 1,
+   "game": "bard-00005",
+   "journal": "complete",
+   "program": 3,
+   "slot_f": "undeclared",
+   "slot_w": "suppressed",
+   "start": "bard"
+  },
+  {
+   "end_reason": 1,
+   "game": "bard-00008",
+   "journal": "complete",
+   "program": 2,
+   "slot_f": "undeclared",
+   "slot_w": "suppressed",
+   "start": "bard"
+  },
+  {
+   "end_reason": 1,
+   "game": "bard-00010",
+   "journal": "complete",
+   "program": 2,
+   "slot_f": "undeclared",
+   "slot_w": "suppressed",
+   "start": "bard"
+  },
+  {
+   "end_reason": 0,
+   "game": "bard-00010",
+   "journal": "open",
+   "program": 3,
+   "slot_f": "undeclared",
+   "slot_w": "pending",
+   "start": "bard"
+  },
+  {
+   "end_reason": 0,
+   "game": "bard-00012",
+   "journal": "complete",
+   "program": 3,
+   "slot_f": "undeclared",
+   "slot_w": "armed",
+   "start": "bard"
+  },
+  {
+   "end_reason": 0,
+   "game": "bard-00016",
+   "journal": "complete",
+   "program": 2,
+   "slot_f": "undeclared",
+   "slot_w": "expiry",
+   "start": "bard"
+  },
+  {
+   "end_reason": 1,
+   "game": "bard-00017",
+   "journal": "complete",
+   "program": 2,
+   "slot_f": "undeclared",
+   "slot_w": "suppressed",
+   "start": "bard"
+  },
+  {
+   "end_reason": 0,
+   "game": "bard-00017",
+   "journal": "complete",
+   "program": 3,
+   "slot_f": "undeclared",
+   "slot_w": "armed",
+   "start": "bard"
+  },
+  {
+   "end_reason": 1,
+   "game": "bard-00020",
+   "journal": "complete",
+   "program": 2,
+   "slot_f": "undeclared",
+   "slot_w": "suppressed",
+   "start": "bard"
+  },
+  {
+   "end_reason": 0,
+   "game": "bard-00020",
+   "journal": "complete",
+   "program": 3,
+   "slot_f": "undeclared",
+   "slot_w": "level",
+   "start": "bard"
+  },
+  {
+   "end_reason": 1,
+   "game": "bard-00021",
+   "journal": "complete",
+   "program": 3,
+   "slot_f": "undeclared",
+   "slot_w": "suppressed",
+   "start": "bard"
+  },
+  {
+   "end_reason": 0,
+   "game": "bard-00022",
+   "journal": "complete",
+   "program": 2,
+   "slot_f": "undeclared",
+   "slot_w": "armed",
+   "start": "bard"
+  },
+  {
+   "end_reason": 0,
+   "game": "bard-00022",
+   "journal": "complete",
+   "program": 3,
+   "slot_f": "undeclared",
+   "slot_w": "armed",
+   "start": "bard"
+  },
+  {
+   "end_reason": 0,
+   "game": "bard-00025",
+   "journal": "complete",
+   "program": 2,
+   "slot_f": "undeclared",
+   "slot_w": "armed",
+   "start": "bard"
+  },
+  {
+   "end_reason": 1,
+   "game": "bard-00025",
+   "journal": "complete",
+   "program": 3,
+   "slot_f": "undeclared",
+   "slot_w": "suppressed",
+   "start": "bard"
+  },
+  {
+   "end_reason": 1,
+   "game": "bard-00028",
+   "journal": "complete",
+   "program": 2,
+   "slot_f": "undeclared",
+   "slot_w": "suppressed",
+   "start": "bard"
+  },
+  {
+   "end_reason": 1,
+   "game": "bard-00028",
+   "journal": "complete",
+   "program": 3,
+   "slot_f": "undeclared",
+   "slot_w": "suppressed",
+   "start": "bard"
+  },
+  {
+   "end_reason": 1,
+   "game": "bard-00029",
+   "journal": "complete",
+   "program": 2,
+   "slot_f": "undeclared",
+   "slot_w": "suppressed",
+   "start": "bard"
+  },
+  {
+   "end_reason": 0,
+   "game": "bard-00030",
+   "journal": "open",
+   "program": 3,
+   "slot_f": "undeclared",
+   "slot_w": "pending",
+   "start": "bard"
+  },
+  {
+   "end_reason": 1,
+   "game": "bard-00033",
+   "journal": "complete",
+   "program": 2,
+   "slot_f": "undeclared",
+   "slot_w": "suppressed",
+   "start": "bard"
+  },
+  {
+   "end_reason": 0,
+   "game": "bard-00036",
+   "journal": "complete",
+   "program": 2,
+   "slot_f": "undeclared",
+   "slot_w": "expiry",
+   "start": "bard"
+  },
+  {
+   "end_reason": 0,
+   "game": "bard-00037",
+   "journal": "complete",
+   "program": 2,
+   "slot_f": "undeclared",
+   "slot_w": "expiry",
+   "start": "bard"
+  },
+  {
+   "end_reason": 1,
+   "game": "bard-00038",
+   "journal": "complete",
+   "program": 2,
+   "slot_f": "undeclared",
+   "slot_w": "suppressed",
+   "start": "bard"
+  },
+  {
+   "end_reason": 1,
+   "game": "bard-00038",
+   "journal": "complete",
+   "program": 3,
+   "slot_f": "undeclared",
+   "slot_w": "suppressed",
+   "start": "bard"
+  },
+  {
+   "end_reason": 0,
+   "game": "bard-00040",
+   "journal": "complete",
+   "program": 2,
+   "slot_f": "undeclared",
+   "slot_w": "armed",
+   "start": "bard"
+  },
+  {
+   "end_reason": 0,
+   "game": "bard-00042",
+   "journal": "complete",
+   "program": 2,
+   "slot_f": "undeclared",
+   "slot_w": "armed",
+   "start": "bard"
+  },
+  {
+   "end_reason": 1,
+   "game": "bard-00043",
+   "journal": "complete",
+   "program": 2,
+   "slot_f": "undeclared",
+   "slot_w": "suppressed",
+   "start": "bard"
+  },
+  {
+   "end_reason": 1,
+   "game": "bard-00043",
+   "journal": "complete",
+   "program": 3,
+   "slot_f": "undeclared",
+   "slot_w": "suppressed",
+   "start": "bard"
+  },
+  {
+   "end_reason": 0,
+   "game": "bard-00044",
+   "journal": "complete",
+   "program": 2,
+   "slot_f": "undeclared",
+   "slot_w": "expiry",
+   "start": "bard"
+  },
+  {
+   "end_reason": 1,
+   "game": "bard-00046",
+   "journal": "complete",
+   "program": 2,
+   "slot_f": "undeclared",
+   "slot_w": "suppressed",
+   "start": "bard"
+  },
+  {
+   "end_reason": 1,
+   "game": "bard-00047",
+   "journal": "complete",
+   "program": 2,
+   "slot_f": "undeclared",
+   "slot_w": "suppressed",
+   "start": "bard"
+  },
+  {
+   "end_reason": 1,
+   "game": "bard-00054",
+   "journal": "complete",
+   "program": 2,
+   "slot_f": "undeclared",
+   "slot_w": "suppressed",
+   "start": "bard"
+  },
+  {
+   "end_reason": 1,
+   "game": "bard-00055",
+   "journal": "complete",
+   "program": 2,
+   "slot_f": "undeclared",
+   "slot_w": "suppressed",
+   "start": "bard"
+  },
+  {
+   "end_reason": 0,
+   "game": "bard-00056",
+   "journal": "complete",
+   "program": 3,
+   "slot_f": "undeclared",
+   "slot_w": "armed",
+   "start": "bard"
+  },
+  {
+   "end_reason": 0,
+   "game": "bard-00057",
+   "journal": "complete",
+   "program": 2,
+   "slot_f": "undeclared",
+   "slot_w": "armed",
+   "start": "bard"
+  },
+  {
+   "end_reason": 0,
+   "game": "bard-00057",
+   "journal": "complete",
+   "program": 3,
+   "slot_f": "undeclared",
+   "slot_w": "armed",
+   "start": "bard"
+  },
+  {
+   "end_reason": 1,
+   "game": "bard-00058",
+   "journal": "complete",
+   "program": 2,
+   "slot_f": "undeclared",
+   "slot_w": "suppressed",
+   "start": "bard"
+  },
+  {
+   "end_reason": 1,
+   "game": "bard-00063",
+   "journal": "complete",
+   "program": 2,
+   "slot_f": "undeclared",
+   "slot_w": "suppressed",
+   "start": "bard"
+  },
+  {
+   "end_reason": 0,
+   "game": "bard-00063",
+   "journal": "complete",
+   "program": 3,
+   "slot_f": "undeclared",
+   "slot_w": "expiry",
+   "start": "bard"
+  },
+  {
+   "end_reason": 0,
+   "game": "bard-00064",
+   "journal": "complete",
+   "program": 2,
+   "slot_f": "undeclared",
+   "slot_w": "expiry",
+   "start": "bard"
+  },
+  {
+   "end_reason": 0,
+   "game": "bard-00069",
+   "journal": "complete",
+   "program": 2,
+   "slot_f": "undeclared",
+   "slot_w": "armed",
+   "start": "bard"
+  },
+  {
+   "end_reason": 1,
+   "game": "bard-00070",
+   "journal": "complete",
+   "program": 2,
+   "slot_f": "undeclared",
+   "slot_w": "suppressed",
+   "start": "bard"
+  },
+  {
+   "end_reason": 1,
+   "game": "bard-00072",
+   "journal": "complete",
+   "program": 2,
+   "slot_f": "undeclared",
+   "slot_w": "suppressed",
+   "start": "bard"
+  },
+  {
+   "end_reason": 0,
+   "game": "bard-00072",
+   "journal": "complete",
+   "program": 3,
+   "slot_f": "undeclared",
+   "slot_w": "level",
+   "start": "bard"
+  },
+  {
+   "end_reason": 1,
+   "game": "bard-00074",
+   "journal": "complete",
+   "program": 2,
+   "slot_f": "undeclared",
+   "slot_w": "suppressed",
+   "start": "bard"
+  },
+  {
+   "end_reason": 1,
+   "game": "bard-00077",
+   "journal": "complete",
+   "program": 2,
+   "slot_f": "undeclared",
+   "slot_w": "suppressed",
+   "start": "bard"
+  },
+  {
+   "end_reason": 0,
+   "game": "bard-00078",
+   "journal": "complete",
+   "program": 2,
+   "slot_f": "undeclared",
+   "slot_w": "armed",
+   "start": "bard"
+  },
+  {
+   "end_reason": 0,
+   "game": "bard-00079",
+   "journal": "open",
+   "program": 2,
+   "slot_f": "pending",
+   "slot_w": "undeclared",
+   "start": "bard"
+  },
+  {
+   "end_reason": 1,
+   "game": "bard-00085",
+   "journal": "complete",
+   "program": 2,
+   "slot_f": "undeclared",
+   "slot_w": "suppressed",
+   "start": "bard"
+  },
+  {
+   "end_reason": 1,
+   "game": "bard-00085",
+   "journal": "complete",
+   "program": 3,
+   "slot_f": "undeclared",
+   "slot_w": "suppressed",
+   "start": "bard"
+  },
+  {
+   "end_reason": 1,
+   "game": "bard-00089",
+   "journal": "complete",
+   "program": 3,
+   "slot_f": "undeclared",
+   "slot_w": "suppressed",
+   "start": "bard"
+  },
+  {
+   "end_reason": 1,
+   "game": "bard-00090",
+   "journal": "complete",
+   "program": 2,
+   "slot_f": "undeclared",
+   "slot_w": "suppressed",
+   "start": "bard"
+  },
+  {
+   "end_reason": 0,
+   "game": "bard-00090",
+   "journal": "complete",
+   "program": 3,
+   "slot_f": "undeclared",
+   "slot_w": "expiry",
+   "start": "bard"
+  },
+  {
+   "end_reason": 0,
+   "game": "bard-00092",
+   "journal": "complete",
+   "program": 2,
+   "slot_f": "undeclared",
+   "slot_w": "expiry",
+   "start": "bard"
+  },
+  {
+   "end_reason": 1,
+   "game": "bard-00095",
+   "journal": "complete",
+   "program": 2,
+   "slot_f": "undeclared",
+   "slot_w": "suppressed",
+   "start": "bard"
+  },
+  {
+   "end_reason": 0,
+   "game": "bard-00096",
+   "journal": "complete",
+   "program": 2,
+   "slot_f": "undeclared",
+   "slot_w": "expiry",
+   "start": "bard"
+  },
+  {
+   "end_reason": 1,
+   "game": "bard-00097",
+   "journal": "complete",
+   "program": 2,
+   "slot_f": "undeclared",
+   "slot_w": "suppressed",
+   "start": "bard"
+  },
+  {
+   "end_reason": 1,
+   "game": "bard-00097",
+   "journal": "complete",
+   "program": 3,
+   "slot_f": "undeclared",
+   "slot_w": "suppressed",
+   "start": "bard"
+  },
+  {
+   "end_reason": 0,
+   "game": "bard-00099",
+   "journal": "complete",
+   "program": 2,
+   "slot_f": "undeclared",
+   "slot_w": "armed",
+   "start": "bard"
+  },
+  {
+   "end_reason": 0,
+   "game": "bard-default-path-00004",
+   "journal": "complete",
+   "program": 3,
+   "slot_f": "undeclared",
+   "slot_w": "expiry",
+   "start": "bard-default-path"
+  },
+  {
+   "end_reason": 0,
+   "game": "bard-default-path-00007",
+   "journal": "complete",
+   "program": 3,
+   "slot_f": "undeclared",
+   "slot_w": "armed",
+   "start": "bard-default-path"
+  },
+  {
+   "end_reason": 0,
+   "game": "bard-default-path-00011",
+   "journal": "open",
+   "program": 2,
+   "slot_f": "undeclared",
+   "slot_w": "pending",
+   "start": "bard-default-path"
+  },
+  {
+   "end_reason": 1,
+   "game": "bard-default-path-00012",
+   "journal": "complete",
+   "program": 2,
+   "slot_f": "undeclared",
+   "slot_w": "suppressed",
+   "start": "bard-default-path"
+  },
+  {
+   "end_reason": 1,
+   "game": "bard-default-path-00018",
+   "journal": "complete",
+   "program": 2,
+   "slot_f": "undeclared",
+   "slot_w": "suppressed",
+   "start": "bard-default-path"
+  },
+  {
+   "end_reason": 0,
+   "game": "bard-default-path-00021",
+   "journal": "open",
+   "program": 2,
+   "slot_f": "undeclared",
+   "slot_w": "pending",
+   "start": "bard-default-path"
+  },
+  {
+   "end_reason": 1,
+   "game": "bard-default-path-00022",
+   "journal": "complete",
+   "program": 2,
+   "slot_f": "undeclared",
+   "slot_w": "suppressed",
+   "start": "bard-default-path"
+  },
+  {
+   "end_reason": 1,
+   "game": "bard-default-path-00025",
+   "journal": "complete",
+   "program": 2,
+   "slot_f": "undeclared",
+   "slot_w": "suppressed",
+   "start": "bard-default-path"
+  },
+  {
+   "end_reason": 0,
+   "game": "bard-default-path-00027",
+   "journal": "complete",
+   "program": 2,
+   "slot_f": "undeclared",
+   "slot_w": "armed",
+   "start": "bard-default-path"
+  },
+  {
+   "end_reason": 1,
+   "game": "bard-default-path-00032",
+   "journal": "complete",
+   "program": 2,
+   "slot_f": "undeclared",
+   "slot_w": "suppressed",
+   "start": "bard-default-path"
+  },
+  {
+   "end_reason": 1,
+   "game": "bard-default-path-00033",
+   "journal": "complete",
+   "program": 2,
+   "slot_f": "undeclared",
+   "slot_w": "suppressed",
+   "start": "bard-default-path"
+  },
+  {
+   "end_reason": 0,
+   "game": "bard-default-path-00056",
+   "journal": "complete",
+   "program": 3,
+   "slot_f": "undeclared",
+   "slot_w": "armed",
+   "start": "bard-default-path"
+  },
+  {
+   "end_reason": 1,
+   "game": "bard-default-path-00064",
+   "journal": "complete",
+   "program": 2,
+   "slot_f": "undeclared",
+   "slot_w": "suppressed",
+   "start": "bard-default-path"
+  },
+  {
+   "end_reason": 1,
+   "game": "bard-default-path-00065",
+   "journal": "complete",
+   "program": 2,
+   "slot_f": "undeclared",
+   "slot_w": "suppressed",
+   "start": "bard-default-path"
+  },
+  {
+   "end_reason": 1,
+   "game": "bard-default-path-00070",
+   "journal": "complete",
+   "program": 3,
+   "slot_f": "undeclared",
+   "slot_w": "suppressed",
+   "start": "bard-default-path"
+  },
+  {
+   "end_reason": 1,
+   "game": "bard-default-path-00072",
+   "journal": "complete",
+   "program": 2,
+   "slot_f": "undeclared",
+   "slot_w": "suppressed",
+   "start": "bard-default-path"
+  },
+  {
+   "end_reason": 1,
+   "game": "bard-default-path-00074",
+   "journal": "complete",
+   "program": 2,
+   "slot_f": "undeclared",
+   "slot_w": "suppressed",
+   "start": "bard-default-path"
+  },
+  {
+   "end_reason": 1,
+   "game": "bard-default-path-00077",
+   "journal": "complete",
+   "program": 2,
+   "slot_f": "undeclared",
+   "slot_w": "suppressed",
+   "start": "bard-default-path"
+  },
+  {
+   "end_reason": 0,
+   "game": "bard-default-path-00078",
+   "journal": "open",
+   "program": 2,
+   "slot_f": "undeclared",
+   "slot_w": "pending",
+   "start": "bard-default-path"
+  },
+  {
+   "end_reason": 0,
+   "game": "bard-default-path-00079",
+   "journal": "open",
+   "program": 2,
+   "slot_f": "undeclared",
+   "slot_w": "pending",
+   "start": "bard-default-path"
+  },
+  {
+   "end_reason": 0,
+   "game": "bard-default-path-00081",
+   "journal": "complete",
+   "program": 2,
+   "slot_f": "undeclared",
+   "slot_w": "expiry",
+   "start": "bard-default-path"
+  },
+  {
+   "end_reason": 1,
+   "game": "bard-default-path-00085",
+   "journal": "complete",
+   "program": 2,
+   "slot_f": "undeclared",
+   "slot_w": "suppressed",
+   "start": "bard-default-path"
+  },
+  {
+   "end_reason": 1,
+   "game": "bard-default-path-00089",
+   "journal": "complete",
+   "program": 2,
+   "slot_f": "undeclared",
+   "slot_w": "suppressed",
+   "start": "bard-default-path"
+  },
+  {
+   "end_reason": 1,
+   "game": "bard-default-path-00090",
+   "journal": "complete",
+   "program": 2,
+   "slot_f": "undeclared",
+   "slot_w": "suppressed",
+   "start": "bard-default-path"
+  },
+  {
+   "end_reason": 1,
+   "game": "bard-default-path-00090",
+   "journal": "complete",
+   "program": 3,
+   "slot_f": "undeclared",
+   "slot_w": "suppressed",
+   "start": "bard-default-path"
+  },
+  {
+   "end_reason": 0,
+   "game": "bard-default-path-00091",
+   "journal": "complete",
+   "program": 2,
+   "slot_f": "undeclared",
+   "slot_w": "expiry",
+   "start": "bard-default-path"
+  },
+  {
+   "end_reason": 0,
+   "game": "bard-default-path-00092",
+   "journal": "open",
+   "program": 2,
+   "slot_f": "undeclared",
+   "slot_w": "pending",
+   "start": "bard-default-path"
+  },
+  {
+   "end_reason": 0,
+   "game": "bard-default-path-00095",
+   "journal": "complete",
+   "program": 2,
+   "slot_f": "undeclared",
+   "slot_w": "armed",
+   "start": "bard-default-path"
+  },
+  {
+   "end_reason": 0,
+   "game": "bard-default-path-00096",
+   "journal": "complete",
+   "program": 2,
+   "slot_f": "undeclared",
+   "slot_w": "expiry",
+   "start": "bard-default-path"
+  },
+  {
+   "end_reason": 1,
+   "game": "bard-default-path-00099",
+   "journal": "complete",
+   "program": 2,
+   "slot_f": "undeclared",
+   "slot_w": "suppressed",
+   "start": "bard-default-path"
+  },
+  {
+   "end_reason": 0,
+   "game": "bard-inherited-00008",
+   "journal": "complete",
+   "program": 2,
+   "slot_f": "undeclared",
+   "slot_w": "armed",
+   "start": "bard-inherited"
+  },
+  {
+   "end_reason": 0,
+   "game": "bard-inherited-00020",
+   "journal": "open",
+   "program": 2,
+   "slot_f": "undeclared",
+   "slot_w": "pending",
+   "start": "bard-inherited"
+  },
+  {
+   "end_reason": 0,
+   "game": "bard-inherited-00026",
+   "journal": "complete",
+   "program": 2,
+   "slot_f": "undeclared",
+   "slot_w": "armed",
+   "start": "bard-inherited"
+  },
+  {
+   "end_reason": 0,
+   "game": "bard-inherited-00029",
+   "journal": "complete",
+   "program": 2,
+   "slot_f": "undeclared",
+   "slot_w": "armed",
+   "start": "bard-inherited"
+  },
+  {
+   "end_reason": 0,
+   "game": "bard-inherited-00030",
+   "journal": "open",
+   "program": 2,
+   "slot_f": "undeclared",
+   "slot_w": "pending",
+   "start": "bard-inherited"
+  },
+  {
+   "end_reason": 1,
+   "game": "bard-inherited-00035",
+   "journal": "complete",
+   "program": 2,
+   "slot_f": "undeclared",
+   "slot_w": "suppressed",
+   "start": "bard-inherited"
+  },
+  {
+   "end_reason": 0,
+   "game": "bard-inherited-00040",
+   "journal": "open",
+   "program": 2,
+   "slot_f": "undeclared",
+   "slot_w": "pending",
+   "start": "bard-inherited"
+  },
+  {
+   "end_reason": 0,
+   "game": "bard-inherited-00051",
+   "journal": "complete",
+   "program": 2,
+   "slot_f": "undeclared",
+   "slot_w": "expiry",
+   "start": "bard-inherited"
+  },
+  {
+   "end_reason": 1,
+   "game": "bard-inherited-00053",
+   "journal": "complete",
+   "program": 2,
+   "slot_f": "undeclared",
+   "slot_w": "suppressed",
+   "start": "bard-inherited"
+  },
+  {
+   "end_reason": 0,
+   "game": "bard-inherited-00060",
+   "journal": "complete",
+   "program": 2,
+   "slot_f": "undeclared",
+   "slot_w": "armed",
+   "start": "bard-inherited"
+  },
+  {
+   "end_reason": 1,
+   "game": "bard-inherited-00084",
+   "journal": "complete",
+   "program": 2,
+   "slot_f": "undeclared",
+   "slot_w": "suppressed",
+   "start": "bard-inherited"
+  },
+  {
+   "end_reason": 0,
+   "game": "bard-inherited-00087",
+   "journal": "complete",
+   "program": 2,
+   "slot_f": "undeclared",
+   "slot_w": "expiry",
+   "start": "bard-inherited"
+  },
+  {
+   "end_reason": 1,
+   "game": "bard-inherited-00089",
+   "journal": "complete",
+   "program": 2,
+   "slot_f": "undeclared",
+   "slot_w": "suppressed",
+   "start": "bard-inherited"
+  },
+  {
+   "end_reason": 0,
+   "game": "bard-inherited-00097",
+   "journal": "complete",
+   "program": 2,
+   "slot_f": "undeclared",
+   "slot_w": "expiry",
+   "start": "bard-inherited"
+  },
+  {
+   "end_reason": 1,
+   "game": "bard-inherited-00099",
+   "journal": "complete",
+   "program": 2,
+   "slot_f": "undeclared",
+   "slot_w": "suppressed",
+   "start": "bard-inherited"
+  },
+  {
+   "end_reason": 0,
+   "game": "bard-inherited-00100",
+   "journal": "complete",
+   "program": 2,
+   "slot_f": "undeclared",
+   "slot_w": "armed",
+   "start": "bard-inherited"
+  },
+  {
+   "end_reason": 0,
+   "game": "wizard-default-path-00041",
+   "journal": "complete",
+   "program": 2,
+   "slot_f": "undeclared",
+   "slot_w": "expiry",
+   "start": "wizard-default-path"
+  },
+  {
+   "end_reason": 0,
+   "game": "wizard-default-path-00041",
+   "journal": "complete",
+   "program": 3,
+   "slot_f": "undeclared",
+   "slot_w": "expiry",
+   "start": "wizard-default-path"
+  }
+ ]
+}
