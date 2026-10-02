@@ -362,6 +362,20 @@ Proposed acceptance for M2 (Decision 8): on bard-default-path, games with two
 or more felt consequences rise from 21 to at least 35 of 100, and the hound
 guard holds.
 
+### Adopted gate for arc work
+
+Adopted by Sam after #231 (2026-10-02). It supersedes the raw-count acceptance
+above for arc work, because that count was mostly hound steps. Metric and
+baseline: [`docs/measurements/arc-metric-distinct-felt/`](../measurements/arc-metric-distinct-felt/).
+
+> On bard-default-path seeds 1-100 (baseline-v2), games with 2+ distinct felt
+> whispers excluding the hound rise from 2/100 to at least 10/100, hound
+> admission is unchanged from `main`, and at least 3/100 games feel two
+> next-use programs.
+
+Why later programs are not felt today, and the options to meet the gate:
+[`docs/measurements/arc-unfelt-diagnosis/`](../measurements/arc-unfelt-diagnosis/).
+
 ## 6. Decisions for Sam
 
 1. **M2 shape.** A, strictly sequential and capped; B, one per new deepest

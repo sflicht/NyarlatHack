@@ -87,10 +87,11 @@ Plainly: Arc 1 barely registers. The recurrence telegraph appeared in 14 of
 arc it announces never completes in the sweep. Admission is not the
 bottleneck: later programs reach the player and then do nothing felt. Of the 45
 admitted program-2/3 instances (41 games), 18 triggered but had no native
-effect, 21 never triggered before they completed or expired (14
-`program_expired`, 7 `completed`, 2 `origin_expired`), and 4 were still open
-at game end. None was delivered. The old 69/100 figure on bard-default-path was
-almost entirely hound steps. Counting sources, it is 23/100. Without the hound
+effect, 23 never triggered before they completed or expired (14
+`program_expired`, 7 `completed`, 2 `origin_expired`; corrected from "21" by
+the [diagnosis](../arc-unfelt-diagnosis/)), and 4 were still open at game end.
+None was delivered. The old 69/100 figure on bard-default-path was almost
+entirely hound steps. Counting sources, it is 23/100. Without the hound
 it is 2/100: seed 28 (two door effects) and seed 56 (next-use program 1, then a
 door effect). Neither game felt two next-use programs.
 
