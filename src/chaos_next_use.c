@@ -1,5 +1,6 @@
 /* NetHack General Public License. Closed next-use JSON/JCS/SHA interface. */
 #include "chaos_next_use.h"
+#include "chaos_protocol.h"
 
 #include <math.h>
 #include <stdint.h>
@@ -939,5 +940,11 @@ const char *chaos_next_use_player_warning(const char *identifier)
         return "The next fountain drink may take a different course.";
     if (!strcmp(identifier, "next-use-v2-WF"))
         return "The next whistle or fountain drink may not behave as usual.";
+    /* Arc 1 recurrence lines: contract telegraph_extensions ids 5 and 6. */
+#define CHAOS_NU_AGAIN(id, text) \
+    if ((id == 5 && !strcmp(identifier, CHAOS_NEXT_USE_AGAIN_W)) \
+        || (id == 6 && !strcmp(identifier, CHAOS_NEXT_USE_AGAIN_F))) return text;
+    CHAOS_SIGNAL_ROWS(CHAOS_NU_AGAIN)
+#undef CHAOS_NU_AGAIN
     return 0;
 }

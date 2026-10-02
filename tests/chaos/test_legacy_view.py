@@ -59,7 +59,12 @@ class LegacyView(unittest.TestCase):
         # The additions are visible only through the new sections.
         self.assertEqual(
             data["telegraph_extensions"],
-            [dict(id=4, text="The doors of this place seem to lean against you.")],
+            [
+                dict(id=4, text="The doors of this place seem to lean against you."),
+                # Arc 1 recurrence lines (next-use W and F), additive only.
+                dict(id=5, text="Again, the whistle carries farther than it should."),
+                dict(id=6, text="Again, the fountain's water may not run true."),
+            ],
         )
         self.assertEqual(data["mutation_limits"], dict(duration_cap=300))
         self.assertEqual(DURATION_CAP, 300)
@@ -67,7 +72,7 @@ class LegacyView(unittest.TestCase):
         self.assertEqual(data["next_use_programs"], dict(per_game_cap=3))
         self.assertEqual(NEXT_USE_PROGRAM_CAP, 3)
         self.assertNotIn("next_use_programs", base)
-        self.assertEqual(sorted(TELEGRAPHS), [1, 2, 3, 4])
+        self.assertEqual(sorted(TELEGRAPHS), [1, 2, 3, 4, 5, 6])
         for row in base["telegraphs"]:
             self.assertEqual(TELEGRAPHS[row["id"]], row["text"])
 

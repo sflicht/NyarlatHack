@@ -309,11 +309,14 @@ void chaos_reveal_event_line(struct chaos_reveal *r, const char *line)
 void chaos_reveal_receipt_line(struct chaos_reveal *r, const char *line)
 {
     const char *o, *p;
-    int kind, n = 0;
+    int kind, n = 0, ordinal = 0;
     long published, bound;
     if (is_str(line, "decision", "rejected")) { ++r->receipt_rejected; return; }
     if (!get_int(line, "kind", &kind) || kind != 2) return;
     r->receipt_ops = 0;
+    if (get_int(line, "program_ordinal", &ordinal)
+        && (ordinal < 1 || ordinal > CHAOS_REVEAL_PROGRAMS)) ordinal = 0;
+    r->receipt_by_ops[ordinal] = 0;
     if (!(o = field(line, "origins")) || *o != '[') return;
     for (p = o + 1; *p == '{' && n < 2; ++n) {
         const char *end = skip_value(p);
@@ -326,10 +329,14 @@ void chaos_reveal_receipt_line(struct chaos_reveal *r, const char *line)
         r->receipt[n].fountain = fountain;
         r->receipt[n].published = published;
         r->receipt[n].bound = bound;
+        r->receipt_by[ordinal][n].fountain = fountain;
+        r->receipt_by[ordinal][n].published = published;
+        r->receipt_by[ordinal][n].bound = bound;
         p = end;
         if (*p == ',') ++p;
     }
     r->receipt_ops = n;
+    r->receipt_by_ops[ordinal] = n;
 }
 
 /* Same ownership/no-follow rule as chaos_io.c; bounded bytes and line size. */
@@ -379,22 +386,53 @@ int chaos_reveal_read(struct chaos_reveal *r, int dir)
     return read_lines(r, dir, "next_use-receipt.jsonl", chaos_reveal_receipt_line) && ok;
 }
 
+/* The program an entry describes: the live one, or a closed earlier one. */
+static const struct chaos_reveal_next_use *program_of(const struct chaos_reveal_entry *e,
+                                                      const struct chaos_reveal_host *h)
+{
+    return e->program > 0 && e->program <= h->prior_count ? &h->prior[e->program - 1]
+                                                          : &h->nu;
+}
+
+static int nu_w(const struct chaos_reveal_next_use *nu)
+{
+    return nu->slot_w != CHAOS_REVEAL_W_UNDECLARED;
+}
+static int nu_f(const struct chaos_reveal_next_use *nu)
+{
+    return nu->slot_f != CHAOS_REVEAL_F_UNDECLARED;
+}
+static int nu_felt_w(const struct chaos_reveal_next_use *nu) { return nu->witnessed != 0; }
+static int nu_felt_f(const struct chaos_reveal_next_use *nu)
+{
+    return nu->slot_f == CHAOS_REVEAL_F_CONSUMED_APPLIED;
+}
+
 static int delivered(const struct chaos_reveal_entry *e, const struct chaos_reveal_host *h)
 {
+    const struct chaos_reveal_next_use *nu;
     switch (e->kind) {
     case CHAOS_REVEAL_WHISPER: return e->mutation == CHAOS_AMBIENT;
     case CHAOS_REVEAL_CURIO: return e->uses > 0;
     case CHAOS_REVEAL_HAUNT: return e->steps > 0;
     case CHAOS_REVEAL_NEXT_USE:
-        return h->nu.witnessed != 0 || h->nu.slot_f == CHAOS_REVEAL_F_CONSUMED_APPLIED;
+        nu = program_of(e, h);
+        return nu_felt_w(nu) || nu_felt_f(nu);
     }
     return 0;
 }
 
 void chaos_reveal_finish(struct chaos_reveal *r)
 {
-    struct chaos_reveal_entry tmp;
+    struct chaos_reveal_entry tmp, *e;
     int i, j;
+    if (r->host.prior_count < 0) r->host.prior_count = 0;
+    if (r->host.prior_count > CHAOS_REVEAL_PROGRAMS - 1)
+        r->host.prior_count = CHAOS_REVEAL_PROGRAMS - 1;
+    for (i = 0; i < r->host.prior_count; ++i)
+        if (r->host.prior[i].present
+            && (e = add(r, CHAOS_REVEAL_NEXT_USE, r->host.prior[i].admission_move)))
+            e->program = i + 1;
     if (r->host.nu.present)
         (void)add(r, CHAOS_REVEAL_NEXT_USE, r->host.nu.admission_move);
     /* A refused next-use candidate is one count: the receipt's recorded
@@ -573,21 +611,30 @@ static int origin_turn(const struct chaos_reveal *r, long root, int fountain, lo
     return 0;
 }
 
-static void origin_line(const struct chaos_reveal *r, int fountain, long root,
-                        chaos_reveal_emit emit, void *arg)
+static void origin_line(const struct chaos_reveal *r, const struct chaos_reveal_next_use *nu,
+                        int fountain, long root, chaos_reveal_emit emit, void *arg)
 {
     const char *act = fountain ? "you drank from a fountain" : "you whistled";
     char where[24];
     long turn, published = 0;
-    int i, rebound = 0;
-    if (r->host.nu.depth > 0) snprintf(where, sizeof where, " on DL%d", r->host.nu.depth);
+    int i, rebound = 0, k = nu->ordinal;
+    if (nu->depth > 0) snprintf(where, sizeof where, " on DL%d", nu->depth);
     else where[0] = 0;
-    for (i = 0; i < r->receipt_ops; ++i)
-        if (r->receipt[i].fountain == fountain && r->receipt[i].bound == root
-            && r->receipt[i].published != root) {
-            rebound = 1;
-            published = r->receipt[i].published;
-        }
+    if (k >= 1 && k <= CHAOS_REVEAL_PROGRAMS && r->receipt_by_ops[k]) {
+        for (i = 0; i < r->receipt_by_ops[k]; ++i)
+            if (r->receipt_by[k][i].fountain == fountain && r->receipt_by[k][i].bound == root
+                && r->receipt_by[k][i].published != root) {
+                rebound = 1;
+                published = r->receipt_by[k][i].published;
+            }
+    } else if (k <= 1 || !r->host.prior_count) {
+        for (i = 0; i < r->receipt_ops; ++i)
+            if (r->receipt[i].fountain == fountain && r->receipt[i].bound == root
+                && r->receipt[i].published != root) {
+                rebound = 1;
+                published = r->receipt[i].published;
+            }
+    }
     if (origin_turn(r, root, fountain, &turn))
         out(emit, arg, "    Origin: %s%s on turn %ld.", act, where, turn);
     else
@@ -602,19 +649,39 @@ static void origin_line(const struct chaos_reveal *r, int fountain, long root,
     }
 }
 
+/* Arc 1, mirroring the engine's admission rule: the recurrence line fired for
+ * program k when an earlier closed program of the game delivered that family. */
+static int felt_before(const struct chaos_reveal_host *h, int program, int fountain)
+{
+    int k, last = program > 0 ? program - 1 : h->prior_count;
+    for (k = 0; k < last && k < h->prior_count; ++k)
+        if (h->prior[k].present
+            && (fountain ? nu_felt_f(&h->prior[k]) : nu_felt_w(&h->prior[k])))
+            return 1;
+    return 0;
+}
+
 static void next_use_entry(const struct chaos_reveal_entry *e, const struct chaos_reveal *r,
                            chaos_reveal_emit emit, void *arg)
 {
-    const struct chaos_reveal_next_use *nu = &r->host.nu;
-    const char *w = nu->slot_w != CHAOS_REVEAL_W_UNDECLARED ? w_outcome(nu->slot_w) : 0;
-    const char *f = nu->slot_f != CHAOS_REVEAL_F_UNDECLARED ? f_outcome(nu->slot_f) : 0;
+    const struct chaos_reveal_next_use *nu = program_of(e, &r->host);
+    const char *w = nu_w(nu) ? w_outcome(nu->slot_w) : 0;
+    const char *f = nu_f(nu) ? f_outcome(nu->slot_f) : 0;
     const char *telegraph = w && f ? "The next whistle or fountain drink may not behave as usual."
                             : w ? "The next whistle may call unusual attention."
                             : f ? "The next fountain drink may take a different course."
                             : 0;
-    out(emit, arg, "  Turn %ld: a next-use program was admitted.", e->turn);
-    if (w && nu->origin_w > 0) origin_line(r, 0, nu->origin_w, emit, arg);
-    if (f && nu->origin_f > 0) origin_line(r, 1, nu->origin_f, emit, arg);
+    if (r->host.prior_count)
+        out(emit, arg, "  Turn %ld: next-use program %d was admitted.", e->turn,
+            e->program ? e->program : r->host.prior_count + 1);
+    else
+        out(emit, arg, "  Turn %ld: a next-use program was admitted.", e->turn);
+    if (w && nu->origin_w > 0) origin_line(r, nu, 0, nu->origin_w, emit, arg);
+    if (f && nu->origin_f > 0) origin_line(r, nu, 1, nu->origin_f, emit, arg);
+    if (w && felt_before(&r->host, e->program, 0))
+        out(emit, arg, "    Recurrence: \"%s\"", signal_text(5));
+    if (f && felt_before(&r->host, e->program, 1))
+        out(emit, arg, "    Recurrence: \"%s\"", signal_text(6));
     out(emit, arg, "    Telegraph: \"%s\"", telegraph ? telegraph : "(unknown)");
     out(emit, arg, "    Effect: %s%s%s.", w ? w : "", w && f ? "; " : "",
         f ? f : (w ? "" : "(unknown)"));
@@ -634,9 +701,42 @@ static void next_use_entry(const struct chaos_reveal_entry *e, const struct chao
         : "still pending when the game ended.");
 }
 
+/* Arc 1 motif: a program's family is its first declared operation (W before
+ * F, the engine's order); 0 whistle, 1 fountain. */
+static int motif_of(const struct chaos_reveal_entry *e, const struct chaos_reveal_host *h)
+{
+    return nu_w(program_of(e, h)) ? 0 : 1;
+}
+
+/* Programs of one game, grouped by motif in first-appearance order. Only
+ * when the game had more than one program; one program renders as before. */
+static void next_use_motifs(const struct chaos_reveal *r, chaos_reveal_emit emit, void *arg)
+{
+    int order[2], n = 0, m, i, programs, felt;
+    for (i = 0; i < r->count; ++i)
+        if (r->e[i].kind == CHAOS_REVEAL_NEXT_USE) {
+            int motif = motif_of(&r->e[i], &r->host);
+            if (!n || (n == 1 && order[0] != motif)) order[n++] = motif;
+        }
+    for (m = 0; m < n; ++m) {
+        programs = felt = 0;
+        for (i = 0; i < r->count; ++i)
+            if (r->e[i].kind == CHAOS_REVEAL_NEXT_USE && motif_of(&r->e[i], &r->host) == order[m]) {
+                ++programs;
+                felt += delivered(&r->e[i], &r->host);
+            }
+        out(emit, arg, "  Motif: the %s, %d program%s, felt %d time%s.",
+            order[m] ? "fountain" : "whistle", programs, programs == 1 ? "" : "s",
+            felt, felt == 1 ? "" : "s");
+        for (i = 0; i < r->count; ++i)
+            if (r->e[i].kind == CHAOS_REVEAL_NEXT_USE && motif_of(&r->e[i], &r->host) == order[m])
+                next_use_entry(&r->e[i], r, emit, arg);
+    }
+}
+
 void chaos_reveal_render(const struct chaos_reveal *r, chaos_reveal_emit emit, void *arg)
 {
-    int i;
+    int i, grouped = r->host.prior_count > 0, motifs_done = 0;
     if (!r->admitted) return;
     emit(arg, "The Crawling Chaos remembers.");
     for (i = 0; i < r->count; ++i) {
@@ -645,7 +745,10 @@ void chaos_reveal_render(const struct chaos_reveal *r, chaos_reveal_emit emit, v
         case CHAOS_REVEAL_WHISPER: whisper(e, emit, arg); break;
         case CHAOS_REVEAL_CURIO: curio_entry(e, &r->host, emit, arg); break;
         case CHAOS_REVEAL_HAUNT: haunt_entry(e, r, emit, arg); break;
-        case CHAOS_REVEAL_NEXT_USE: next_use_entry(e, r, emit, arg); break;
+        case CHAOS_REVEAL_NEXT_USE:
+            if (!grouped) next_use_entry(e, r, emit, arg);
+            else if (!motifs_done) { next_use_motifs(r, emit, arg); motifs_done = 1; }
+            break;
         }
     }
     if (r->overflow)

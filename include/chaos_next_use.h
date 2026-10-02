@@ -113,5 +113,10 @@ long chaos_next_use_game_identity(void);
 long chaos_next_use_pack_level(int dnum, int dlevel);
 void chaos_next_use_identity_boundary(long run_token, long level_token);
 const char *chaos_next_use_player_warning(const char *identifier);
+/* Arc 1: recurrence telegraph identifiers (contract ids 5 W and 6 F). Shown
+ * at admission, before the program's own telegraph, only for program 2+ of a
+ * family an earlier closed program of this game delivered to the player. */
+#define CHAOS_NEXT_USE_AGAIN_W "next-use-again-W"
+#define CHAOS_NEXT_USE_AGAIN_F "next-use-again-F"
 
 #endif

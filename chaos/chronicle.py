@@ -78,6 +78,8 @@ class Entry:
     heading: str
     details: list[str] = field(default_factory=list)
     intent: str | None = None
+    # Arc 1: the motif group this entry belongs to (multi-program games only).
+    motif: str | None = None
 
 
 @dataclass
@@ -167,6 +169,7 @@ def load(run_dir: Path) -> Chronicle:
     entries: list[Entry] = []
     notes: list[str] = []
     tally: list[str] = []
+    motif = None
     for line in lines[1:]:
         if line == "":
             continue
@@ -174,8 +177,14 @@ def load(run_dir: Path) -> Chronicle:
             if not entries:
                 raise ChronicleError(f"{RECORD}: detail line before any entry")
             entries[-1].details.append(line.strip())
+        elif line.startswith("  Motif: "):
+            motif = line.strip()
         elif line.startswith("  Turn "):
-            entries.append(Entry(line.strip()))
+            heading = line.strip()
+            # A motif group holds only next-use programs; anything else ends it.
+            if "next-use program" not in heading:
+                motif = None
+            entries.append(Entry(heading, motif=motif))
         elif line.startswith("  Admitted ") or line.endswith("none took effect."):
             tally.append(line.strip())
         elif line.startswith("  ("):
@@ -312,7 +321,11 @@ def render_markdown(c: Chronicle) -> str:
         out += [f"**{_md_text(who)}**", ""]
     elif c.character_note:
         out += [f"_{_md_text(c.character_note)}_", ""]
+    motif = None
     for i, e in enumerate(c.entries, 1):
+        if e.motif and e.motif != motif:
+            out += [f"### {_md_text(e.motif)}", ""]
+        motif = e.motif
         out.append(f"## {i}. {_md_text(e.heading)}")
         out.append("")
         out.extend(f"- {_md_text(d)}" for d in e.details)
@@ -347,6 +360,9 @@ margin-top:1.6rem;padding-top:.6rem}
 """
 
 
+MOTIF_CSS = ".motif{color:#d6a857;font-weight:normal;margin:1.8rem 0 0}\n"
+
+
 def render_html(c: Chronicle) -> str:
     e_ = html.escape
     body = [
@@ -356,7 +372,10 @@ def render_html(c: Chronicle) -> str:
         '<meta http-equiv="Content-Security-Policy" content="default-src \'none\';'
         " style-src 'unsafe-inline'\">",
         "<title>What watched you</title>",
-        f"<style>{CSS}</style></head><body>",
+        # Arc 1: the motif rule only when a game has motif groups, so a
+        # single-program page is byte-for-byte what it was.
+        f"<style>{CSS + MOTIF_CSS if any(e.motif for e in c.entries) else CSS}"
+        "</style></head><body>",
         "<h1>What watched you</h1>",
         f'<p class="meta"><em>{e_(HEADER)}</em> The game ended on turn {c.final_turn}.</p>',
     ]
@@ -365,7 +384,11 @@ def render_html(c: Chronicle) -> str:
         body.append(f'<p class="who">{e_(who)}</p>')
     elif c.character_note:
         body.append(f'<p class="meta">{e_(c.character_note)}</p>')
+    motif = None
     for i, e in enumerate(c.entries, 1):
+        if e.motif and e.motif != motif:
+            body.append(f'<h3 class="motif">{e_(e.motif)}</h3>')
+        motif = e.motif
         body.append(f'<section class="entry"><h2>{i}. {e_(e.heading)}</h2><ul>')
         body.extend(f"<li>{e_(d)}</li>" for d in e.details)
         body.append("</ul>")

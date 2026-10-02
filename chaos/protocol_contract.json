@@ -1035,6 +1035,14 @@
     {
       "id": 4,
       "text": "The doors of this place seem to lean against you."
+    },
+    {
+      "id": 5,
+      "text": "Again, the whistle carries farther than it should."
+    },
+    {
+      "id": 6,
+      "text": "Again, the fountain's water may not run true."
     }
   ],
   "mutation_limits": {

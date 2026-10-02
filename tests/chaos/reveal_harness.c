@@ -34,6 +34,19 @@ int main(int argc, char **argv)
                        &nu->origin_w, &nu->origin_f, &nu->depth) != 8)
                 return 2;
             nu->present = 1;
+        } else if (!strncmp(argv[i], "prior=", 6)) {
+            /* Arc 1: an earlier closed program, same fields as nu=, oldest
+             * first; the live nu= program then becomes the next ordinal. */
+            struct chaos_reveal_next_use *p;
+            if (r.host.prior_count >= CHAOS_REVEAL_PROGRAMS - 1) return 2;
+            p = &r.host.prior[r.host.prior_count];
+            if (sscanf(argv[i] + 6, "%d,%d,%d,%d,%ld,%ld,%ld,%d", &p->slot_w, &p->slot_f,
+                       &p->witnessed, &p->terminated, &p->admission_move,
+                       &p->origin_w, &p->origin_f, &p->depth) != 8)
+                return 2;
+            p->present = 1;
+            p->ordinal = ++r.host.prior_count;
+            nu->ordinal = r.host.prior_count + 1;
         } else if (!strcmp(argv[i], "next_use_rejected")) {
             r.host.next_use_last_rejected = 1;
         } else if (!strcmp(argv[i], "haunt_active")) {

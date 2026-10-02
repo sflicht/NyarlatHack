@@ -82,6 +82,10 @@ void chaos_next_use_safe_reset_for_test(void);
 void chaos_next_use_safe_bind_run(const char *);
 void chaos_next_use_safe_bind_logical(long run_token);
 void chaos_next_use_safe_bind_telegraph(int (*)(void *, const char *), void *);
+/* Arc 1: 1 when any of the closed program snapshots delivered `family` to
+ * the player (witnessed W, applied F). Pure; NULL entries are skipped. */
+struct chaos_next_use_snapshot;
+int chaos_next_use_felt_in(const struct chaos_next_use_snapshot *const *, int, int);
 void chaos_next_use_safe_bind_companion(int (*)(void *), void *);
 void chaos_next_use_safe_bind_receipt(chaos_next_use_receipt_fn, void *);
 void chaos_next_use_safe_bind_origin(const struct chaos_next_use_origin_ref *,

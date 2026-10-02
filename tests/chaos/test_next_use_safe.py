@@ -305,6 +305,14 @@ class NextUseSafeAdmitTests(RetainOnFailure):
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertEqual(json.loads(result.stdout), {"policy_checks": 1})
 
+    def test_recurrence_needs_an_earlier_felt_program_of_that_family(self):
+        # Arc 1: only a witnessed W or an applied F in a closed program counts.
+        result = subprocess.run(
+            [str(self.binary), "felt"], capture_output=True, text=True, timeout=5
+        )
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual(json.loads(result.stdout), {"felt_checks": 1})
+
     def test_attempt_identity_is_saved_for_admission_and_rejection(self):
         for mode in ("ok", "fail"):
             with self.subTest(telegraph=mode):

@@ -53,21 +53,37 @@ static int level_depth(long token)
 /* Next-use facts are the engine's own runtime snapshot values, copied as-is.
  * The origin roots are the bound origins (after any rebind); the published
  * ones come from the receipt row the core reads. */
+static void copy_program(struct chaos_reveal_next_use *nu,
+                         const struct chaos_next_use_snapshot *s, int ordinal)
+{
+    nu->present = 1;
+    nu->terminated = s->phase == CHAOS_ATTEMPT_TERMINATED;
+    nu->slot_w = s->slot_w;
+    nu->slot_f = s->slot_f;
+    nu->witnessed = s->witnessed != 0;
+    nu->admission_move = s->admission_move;
+    nu->origin_w = s->origin_w;
+    nu->origin_f = s->origin_f;
+    nu->depth = level_depth(s->level_token);
+    nu->ordinal = ordinal;
+}
+
 static void next_use_facts(struct chaos_reveal_host *h)
 {
     static struct chaos_next_use_snapshot s;
     struct chaos_next_use_safe_result last;
+    const struct chaos_next_use_snapshot *closed;
+    int k, ordinal = chaos_next_use_program_ordinal();
     if (chaos_next_use_safe_last(&last) && last.rejected) h->next_use_last_rejected = 1;
+    /* Arc 1: earlier programs are the engine's saved closed snapshots. */
+    for (k = 1; k < ordinal && k < CHAOS_REVEAL_PROGRAMS; ++k)
+        if ((closed = chaos_next_use_closed_program(k))
+            && closed->phase >= CHAOS_ATTEMPT_COMMITTED) {
+            copy_program(&h->prior[k - 1], closed, k);
+            h->prior_count = k;
+        }
     if (!chaos_next_use_snapshot_export(&s) || s.phase < CHAOS_ATTEMPT_COMMITTED) return;
-    h->nu.present = 1;
-    h->nu.terminated = s.phase == CHAOS_ATTEMPT_TERMINATED;
-    h->nu.slot_w = s.slot_w;
-    h->nu.slot_f = s.slot_f;
-    h->nu.witnessed = s.witnessed != 0;
-    h->nu.admission_move = s.admission_move;
-    h->nu.origin_w = s.origin_w;
-    h->nu.origin_f = s.origin_f;
-    h->nu.depth = level_depth(s.level_token);
+    copy_program(&h->nu, &s, ordinal > 0 ? ordinal : 1);
 }
 
 /* Read-only reopen of this process's run directory, with the ownership and
