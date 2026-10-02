@@ -118,5 +118,17 @@ const char *chaos_next_use_player_warning(const char *identifier);
  * family an earlier closed program of this game delivered to the player. */
 #define CHAOS_NEXT_USE_AGAIN_W "next-use-again-W"
 #define CHAOS_NEXT_USE_AGAIN_F "next-use-again-F"
+/* Recurrence repair (B). The envelope declares its program's ttl and the
+ * engine validates it: program 1 always lives 100 native moves. Programs 2-3
+ * live 100 under the pre-repair rules (a v3 ordinary-choice record, or any
+ * game saved before the repair) or 300 under the repair, which also moves
+ * their companion check from admission to the whistle. */
+#define CHAOS_NEXT_USE_LIFETIME_FIRST 100
+#define CHAOS_NEXT_USE_LIFETIME_LATER 300
+#define CHAOS_NEXT_USE_LIFETIME_OK(ordinal, ttl) \
+    ((ttl) == CHAOS_NEXT_USE_LIFETIME_FIRST \
+     || ((ordinal) >= 2 && (ttl) == CHAOS_NEXT_USE_LIFETIME_LATER))
+#define CHAOS_NEXT_USE_REPAIRED(ordinal, ttl) \
+    ((ordinal) >= 2 && (ttl) == CHAOS_NEXT_USE_LIFETIME_LATER)
 
 #endif

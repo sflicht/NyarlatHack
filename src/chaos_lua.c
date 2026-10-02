@@ -531,7 +531,7 @@ int chaos_lua_next_use_on_action(const char *source, size_t length,
     memset(intent, 0, sizeof *intent);
     memset(&request, 0, sizeof request);
     if (!context ||
-        context->age < 0 || context->age > 99 ||
+        context->age < 0 || context->age > CHAOS_NEXT_USE_LIFETIME_LATER - 1 ||
         context->fountain_count < 0 || context->fountain_count > 3 ||
         context->own_witnessed < 0 || context->own_witnessed > 1 ||
         context->state < 0 || context->state > 3 ||

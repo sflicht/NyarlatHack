@@ -118,6 +118,52 @@ class MultiScheduleTests(unittest.TestCase):
         self.append_action(3)
         self.assertEqual(scheduler.poll()["status"], "envelope_published_not_admitted")
 
+    def series(self, repair):
+        from chaos.next_use_compose import lua_source
+
+        scheduler = NextUseScheduler(self.root, seed=0, programs=3, repair=repair)
+        found = []
+        for ordinal in (1, 2, 3):
+            self.append_action(ordinal)
+            self.assertEqual(scheduler.poll()["program"], ordinal)
+            name = (
+                "next_use-envelope.json"
+                if ordinal == 1
+                else f"next_use-envelope.{ordinal}.json"
+            )
+            envelope = json.loads((self.root / name).read_text())
+            op = next(
+                op
+                for op in ("quiet", "whistle_attention")
+                if envelope["source"] == lua_source(op)
+            )
+            found.append((op, envelope["ttl"]))
+            self.close_program(ordinal, 2 + 3 * ordinal, "completed")
+        return found
+
+    def test_recurrence_repair_later_programs_author_the_effect(self):
+        # Program 1 keeps its seeded choice (seed 0 picks the effect); programs
+        # 2-3 never draw quiet and live 300 moves.
+        self.assertEqual(
+            self.series(repair=True),
+            [("whistle_attention", 100), ("whistle_attention", 300)] * 1
+            + [("whistle_attention", 300)],
+        )
+
+    def test_without_repair_later_programs_keep_the_seeded_quiet(self):
+        # The pre-repair rules (a v3 ordinary-choice record): seeds 1 and 2
+        # pick quiet from the two-row menu, and every program lives 100 moves.
+        self.assertEqual(
+            self.series(repair=False),
+            [("whistle_attention", 100), ("quiet", 100), ("quiet", 100)],
+        )
+
+    def test_repair_requires_the_m2_cap(self):
+        with self.assertRaises(ValueError):
+            NextUseScheduler(self.root, seed=0, programs=1, repair=True)
+        with self.assertRaises(ValueError):
+            NextUseScheduler(self.root, seed=0, programs=3, repair=1)
+
     def test_legacy_single_program_ignores_lifecycle_and_new_origins(self):
         scheduler = NextUseScheduler(self.root, seed=0, programs=1)
         scheduler.poll()

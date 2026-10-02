@@ -84,9 +84,9 @@ class OrdinaryDefaultTests(unittest.TestCase):
         choice = self.choice(run)
         self.assertEqual(
             {k: choice[k] for k in ("v", "haunt", "next_use", "whispers")},
-            dict(v=3, haunt=True, next_use=True, whispers=dict(backend="m1", seed=0)),
+            dict(v=4, haunt=True, next_use=True, whispers=dict(backend="m1", seed=0)),
         )
-        self.assertEqual(choice["m2"], {"enabled": True, "cap": 3})
+        self.assertEqual(choice["m2"], {"enabled": True, "cap": 3, "repair": True})
         self.assertEqual(choice["haunt_pack"], str(HAUNT_DEFAULT))
         self.assertEqual(os.stat(run / "ordinary-choice.json").st_mode & 0o777, 0o600)
 
@@ -98,8 +98,8 @@ class OrdinaryDefaultTests(unittest.TestCase):
         self.assertEqual(
             self.choice(run),
             dict(
-                v=3,
-                m2=dict(enabled=False, cap=3),
+                v=4,
+                m2=dict(enabled=False, cap=3, repair=False),
                 haunt=False,
                 haunt_pack=None,
                 haunt_sha256=None,
@@ -246,6 +246,24 @@ class OrdinaryDefaultTests(unittest.TestCase):
             self.assertIsNone(launcher._resolve_choice(args, run))
             self.assertTrue(args.next_use)
             self.assertEqual(args.next_use_programs, cap)
+            # A v3 record predates the recurrence repair and keeps its rules.
+            self.assertFalse(args.next_use_repair)
+        for enabled, cap in ((True, 3), (False, 1)):
+            target.write_text(
+                json.dumps(
+                    dict(
+                        record,
+                        v=4,
+                        next_use=True,
+                        whispers=None,
+                        m2=dict(enabled=enabled, cap=3, repair=enabled),
+                    )
+                )
+            )
+            args.next_use = False
+            self.assertIsNone(launcher._resolve_choice(args, run))
+            self.assertEqual(args.next_use_programs, cap)
+            self.assertEqual(args.next_use_repair, enabled)
 
     def test_invalid_choice_record_fails_closed(self):
         base = dict(
@@ -262,6 +280,11 @@ class OrdinaryDefaultTests(unittest.TestCase):
             dict(base, v=3, whispers=None, m2=dict(enabled=True, cap=3)),
             dict(base, v=3, whispers=None, m2=dict(enabled=False, cap=True)),
             dict(base, v=3, whispers=None, m2=dict(enabled=False, cap=4)),
+            dict(base, v=3, whispers=None, m2=dict(enabled=False, cap=3, repair=False)),
+            dict(base, v=4, whispers=None, m2=dict(enabled=False, cap=3)),
+            dict(base, v=4, whispers=None, m2=dict(enabled=False, cap=3, repair=True)),
+            dict(base, v=4, whispers=None, m2=dict(enabled=False, cap=3, repair=0)),
+            dict(base, v=5, whispers=None, m2=dict(enabled=False, cap=3, repair=False)),
         ]
         for raw in (b"{}", b"[]", b'{"v":2}', b"not json") + tuple(
             json.dumps(r).encode() for r in bad_v2

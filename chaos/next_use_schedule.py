@@ -233,10 +233,14 @@ class NextUseScheduler:
     retimed to a later safe point. No retry or substitution after a decision.
     """
 
-    def __init__(self, directory, *, seed, programs=1):
+    def __init__(self, directory, *, seed, programs=1, repair=False):
         if type(programs) is not int or programs not in (1, 3):
             raise ValueError("program cap")
+        if type(repair) is not bool or (repair and programs == 1):
+            raise ValueError("recurrence repair needs the M2 program cap")
         self.programs = programs
+        # Recurrence repair: programs 2-3 author the effect and live 300 moves.
+        self.repair = repair
         self.ordinal = 1
         self.fresh_after = 0
         self.seed = seed
@@ -369,6 +373,11 @@ class NextUseScheduler:
                 if row["end_seq"] <= self.fresh_after:
                     continue
                 choices = [choice for choice in menu if _matches(row, choice)]
+                if self.repair and self.ordinal > 1:
+                    # Recurrence repair: programs 2-3 always author the effect,
+                    # so a recurrence telegraph announces something that
+                    # follows. The engine still validates and admits as before.
+                    choices = [choice for choice in choices if choice["op"] != "quiet"]
                 if not choices:
                     continue
                 end = parse_episode_event(self.lines[row["end_seq"] - 1])
@@ -408,6 +417,7 @@ class NextUseScheduler:
                     ),
                     box,
                     ordinal=self.ordinal,
+                    repair=self.repair,
                 )
                 self.published[self.ordinal] = result["id"]
                 self.terminal = "already_published" if self.programs == 1 else None

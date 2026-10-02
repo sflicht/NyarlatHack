@@ -2074,9 +2074,13 @@ int chaos_next_use_snapshot_validate(const struct chaos_next_use_snapshot *in)
         || in->variant < 0 || in->variant > 2)
         return 0;
     /* Snapshot scalars must fit their wire representation before casting.
-     * TTL is fixed at 100 native moves by the envelope contract. */
-    if (in->admission_move < 0 || in->admission_move > INT32_MAX - 100
-        || in->program_expiry != in->admission_move + 100
+     * TTL is 100 native moves, or 300 for a repaired program 2-3; restore
+     * binds it to the saved ordinal. */
+    if (in->admission_move < 0
+        || in->admission_move > INT32_MAX - CHAOS_NEXT_USE_LIFETIME_LATER
+        || (in->program_expiry != in->admission_move + CHAOS_NEXT_USE_LIFETIME_FIRST
+            && in->program_expiry
+               != in->admission_move + CHAOS_NEXT_USE_LIFETIME_LATER)
         || in->delay_until < 0
         || (!in->delay_used && in->delay_until != 0)
         || (in->delay_used && in->delay_until < in->admission_move + 10)
@@ -2436,6 +2440,14 @@ static int restore_snapshot(int fd, long run_token, long level_token, int bound)
             || (bound && closed[i].run_token != run_token)
             || (present && closed[i].run_token != snap.run_token))) return 0;
     }
+    /* Recurrence repair: program 1 always lived 100 moves; programs 2-3
+     * lived 100 or 300. The live program is ordinal `ordinal`; closed slot i
+     * is ordinal i + 1. Saves from before the repair pass unchanged. */
+    if (present && !CHAOS_NEXT_USE_LIFETIME_OK(ordinal,
+                    snap.program_expiry - snap.admission_move)) return 0;
+    for (i = 0; i < ordinal - 1; ++i)
+        if (closed[i].program_id && !CHAOS_NEXT_USE_LIFETIME_OK(i + 1,
+                closed[i].program_expiry - closed[i].admission_move)) return 0;
     /* Validate all values before publishing any runtime or history. */
     if (present && bound && (run_token <= 0 || level_token <= 0
         || snap.run_token != run_token

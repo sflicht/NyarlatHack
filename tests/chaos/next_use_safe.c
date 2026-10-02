@@ -147,7 +147,7 @@ static int series_checks(const char *path)
     chaos_next_use_safe_bind_telegraph(telegraph_ok, &telegraphs);
     for (k = 1; k <= 3; ++k) {
         int root = 10 + (k - 1) * 30;
-        monstermoves = 40 + (k - 1) * 150;
+        monstermoves = 40 + (k - 1) * 400;
         budget.seq = root + 2;
         bind_origin(run, 1, "ordinary_whistle", root, 1, monstermoves,
                     CHAOS_NEXT_USE_FAMILY_W, root + 1, root + 2);
@@ -167,7 +167,8 @@ static int series_checks(const char *path)
         assert(chaos_next_use_on_safe(dir, 7 + k, 0, &budget, 0, 1)
                == CHAOS_NEXT_USE_ADMISSION_NOT_OPEN);
         budget.seq = root + 10;
-        monstermoves += 100;
+        monstermoves += k == 1 ? CHAOS_NEXT_USE_LIFETIME_FIRST
+                               : CHAOS_NEXT_USE_LIFETIME_LATER;
         chaos_next_use_identity_boundary(1750000001L, chaos_next_use_pack_level(0, 1));
         assert(chaos_next_use_snapshot_export(&snap));
         assert(snap.journal_state == CHAOS_JOURNAL_COMPLETE);
@@ -188,6 +189,57 @@ static int series_checks(const char *path)
         assert(closed && !closed->witnessed);
     }
     puts("{\"programs\":3,\"recurrence_lines\":0}");
+    return 0;
+}
+
+/* Recurrence repair: program 1 (companion in view) closes, then program 2
+ * meets the safe point with NO companion in view. A repaired envelope (ttl
+ * 300) is admitted without asking about a companion; a pre-repair envelope
+ * (ttl 100) keeps the #196 admission check and is rejected. */
+static int repair_checks(const char *path)
+{
+    struct chaos_state budget;
+    struct chaos_next_use_safe_result result;
+    struct chaos_next_use_snapshot snap;
+    const char *run = "abababababababababababababababababababababababababababababababab";
+    int dir = open(path, O_RDONLY | O_DIRECTORY), k, telegraphs = 0, rc = 0;
+    long lifetime = 0;
+    assert(dir >= 0);
+    chaos_next_use_safe_reset_for_test();
+    chaos_state_init(&budget);
+    chaos_next_use_safe_bind_logical(1750000001L);
+    chaos_next_use_safe_bind_run(run);
+    chaos_next_use_safe_bind_telegraph(telegraph_ok, &telegraphs);
+    companion_calls = 0;
+    memset(&result, 0, sizeof result);
+    for (k = 1; k <= 2; ++k) {
+        int root = 10 + (k - 1) * 30;
+        monstermoves = 40 + (k - 1) * 400;
+        budget.seq = root + 2;
+        bind_origin(run, 1, "ordinary_whistle", root, 1, monstermoves,
+                    CHAOS_NEXT_USE_FAMILY_W, root + 1, root + 2);
+        chaos_next_use_safe_bind_companion(companion_fixed,
+                                           k == 1 ? (void *)&companion_calls : NULL);
+        rc = chaos_next_use_on_safe(dir, 6 + k, 0, &budget, 0, 1);
+        chaos_next_use_safe_last(&result);
+        if (k == 1) {
+            assert(rc == CHAOS_NEXT_USE_ADMISSION_OK && companion_calls == 1);
+            budget.seq = root + 10;
+            monstermoves += CHAOS_NEXT_USE_LIFETIME_FIRST;
+            chaos_next_use_identity_boundary(1750000001L,
+                                             chaos_next_use_pack_level(0, 1));
+            assert(chaos_next_use_snapshot_export(&snap));
+            assert(snap.journal_state == CHAOS_JOURNAL_COMPLETE);
+        } else if (rc == CHAOS_NEXT_USE_ADMISSION_OK) {
+            assert(chaos_next_use_snapshot_export(&snap));
+            lifetime = (long)snap.program_expiry - snap.admission_move;
+        }
+    }
+    close(dir);
+    printf("{\"admitted\":%d,\"reasons\":%d,\"companion_calls\":%d,"
+           "\"lifetime\":%ld,\"telegraphs\":%d,\"count\":%d}\n",
+           rc == CHAOS_NEXT_USE_ADMISSION_OK, result.reasons, companion_calls,
+           lifetime, telegraphs, budget.next_use_count);
     return 0;
 }
 
@@ -291,6 +343,7 @@ int main(int argc, char **argv)
     int at_safe, at_move, dnum, dlevel, on_safe, origin_move;
 
     if (argc == 3 && !strcmp(argv[1], "series")) return series_checks(argv[2]);
+    if (argc == 3 && !strcmp(argv[1], "repair")) return repair_checks(argv[2]);
     if (argc == 2 && !strcmp(argv[1], "policy")) return policy_checks();
     if (argc == 2 && !strcmp(argv[1], "felt")) return felt_checks();
     if (argc < 9) return 2;
