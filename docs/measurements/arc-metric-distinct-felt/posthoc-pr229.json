@@ -1,0 +1,291 @@
+{
+ "note": "Post hoc: PR #229's retained paired reports re-analysed with this PR's distinct_felt (door rows grouped by the 300-turn cap; no re-run).",
+ "paired": {
+  "bard": {
+   "seeds_changed": [],
+   "seeds_compared": 100
+  },
+  "bard-default-path": {
+   "seeds_changed": [],
+   "seeds_compared": 100
+  },
+  "bard-inherited": {
+   "seeds_changed": [],
+   "seeds_compared": 100
+  },
+  "madman": {
+   "seeds_changed": [],
+   "seeds_compared": 100
+  },
+  "wizard-default-path": {
+   "seeds_changed": [
+    {
+     "main": [
+      2,
+      1
+     ],
+     "pr": [
+      1,
+      0
+     ],
+     "seed": 58
+    }
+   ],
+   "seeds_compared": 100
+  }
+ },
+ "revisions": {
+  "main": "44531194eac57a9534358fddde2d189f0ab2853d",
+  "pr": "a8d4137381dc48cce193f611c232c56902269e30"
+ },
+ "sides": {
+  "main": {
+   "games": 500,
+   "starts": {
+    "bard": {
+     "games": 100,
+     "games_2plus": 5,
+     "games_2plus_excluding_hound": 5,
+     "games_2plus_raw_felt_events": 12,
+     "games_by_kind": {
+      "door": 19,
+      "hound": 0,
+      "hunger": 0,
+      "next_use": 17
+     },
+     "harness_errors": 2,
+     "per_game": {
+      "0": 69,
+      "1": 26,
+      "2": 5
+     },
+     "sources_by_kind": {
+      "door": 19,
+      "hound": 0,
+      "hunger": 0,
+      "next_use": 17
+     }
+    },
+    "bard-default-path": {
+     "games": 100,
+     "games_2plus": 23,
+     "games_2plus_excluding_hound": 2,
+     "games_2plus_raw_felt_events": 69,
+     "games_by_kind": {
+      "door": 15,
+      "hound": 77,
+      "hunger": 0,
+      "next_use": 12
+     },
+     "harness_errors": 0,
+     "per_game": {
+      "0": 20,
+      "1": 57,
+      "2": 21,
+      "3": 2
+     },
+     "sources_by_kind": {
+      "door": 16,
+      "hound": 77,
+      "hunger": 0,
+      "next_use": 12
+     }
+    },
+    "bard-inherited": {
+     "games": 100,
+     "games_2plus": 0,
+     "games_2plus_excluding_hound": 0,
+     "games_2plus_raw_felt_events": 1,
+     "games_by_kind": {
+      "door": 1,
+      "hound": 0,
+      "hunger": 0,
+      "next_use": 6
+     },
+     "harness_errors": 0,
+     "per_game": {
+      "0": 93,
+      "1": 7
+     },
+     "sources_by_kind": {
+      "door": 1,
+      "hound": 0,
+      "hunger": 0,
+      "next_use": 6
+     }
+    },
+    "madman": {
+     "games": 100,
+     "games_2plus": 0,
+     "games_2plus_excluding_hound": 0,
+     "games_2plus_raw_felt_events": 0,
+     "games_by_kind": {
+      "door": 0,
+      "hound": 0,
+      "hunger": 5,
+      "next_use": 0
+     },
+     "harness_errors": 0,
+     "per_game": {
+      "0": 95,
+      "1": 5
+     },
+     "sources_by_kind": {
+      "door": 0,
+      "hound": 0,
+      "hunger": 5,
+      "next_use": 0
+     }
+    },
+    "wizard-default-path": {
+     "games": 100,
+     "games_2plus": 11,
+     "games_2plus_excluding_hound": 0,
+     "games_2plus_raw_felt_events": 63,
+     "games_by_kind": {
+      "door": 11,
+      "hound": 79,
+      "hunger": 0,
+      "next_use": 0
+     },
+     "harness_errors": 0,
+     "per_game": {
+      "0": 21,
+      "1": 68,
+      "2": 11
+     },
+     "sources_by_kind": {
+      "door": 11,
+      "hound": 79,
+      "hunger": 0,
+      "next_use": 0
+     }
+    }
+   }
+  },
+  "pr": {
+   "games": 500,
+   "starts": {
+    "bard": {
+     "games": 100,
+     "games_2plus": 5,
+     "games_2plus_excluding_hound": 5,
+     "games_2plus_raw_felt_events": 12,
+     "games_by_kind": {
+      "door": 19,
+      "hound": 0,
+      "hunger": 0,
+      "next_use": 17
+     },
+     "harness_errors": 2,
+     "per_game": {
+      "0": 69,
+      "1": 26,
+      "2": 5
+     },
+     "sources_by_kind": {
+      "door": 19,
+      "hound": 0,
+      "hunger": 0,
+      "next_use": 17
+     }
+    },
+    "bard-default-path": {
+     "games": 100,
+     "games_2plus": 23,
+     "games_2plus_excluding_hound": 2,
+     "games_2plus_raw_felt_events": 69,
+     "games_by_kind": {
+      "door": 15,
+      "hound": 77,
+      "hunger": 0,
+      "next_use": 12
+     },
+     "harness_errors": 0,
+     "per_game": {
+      "0": 20,
+      "1": 57,
+      "2": 21,
+      "3": 2
+     },
+     "sources_by_kind": {
+      "door": 16,
+      "hound": 77,
+      "hunger": 0,
+      "next_use": 12
+     }
+    },
+    "bard-inherited": {
+     "games": 100,
+     "games_2plus": 0,
+     "games_2plus_excluding_hound": 0,
+     "games_2plus_raw_felt_events": 1,
+     "games_by_kind": {
+      "door": 1,
+      "hound": 0,
+      "hunger": 0,
+      "next_use": 6
+     },
+     "harness_errors": 0,
+     "per_game": {
+      "0": 93,
+      "1": 7
+     },
+     "sources_by_kind": {
+      "door": 1,
+      "hound": 0,
+      "hunger": 0,
+      "next_use": 6
+     }
+    },
+    "madman": {
+     "games": 100,
+     "games_2plus": 0,
+     "games_2plus_excluding_hound": 0,
+     "games_2plus_raw_felt_events": 0,
+     "games_by_kind": {
+      "door": 0,
+      "hound": 0,
+      "hunger": 5,
+      "next_use": 0
+     },
+     "harness_errors": 0,
+     "per_game": {
+      "0": 95,
+      "1": 5
+     },
+     "sources_by_kind": {
+      "door": 0,
+      "hound": 0,
+      "hunger": 5,
+      "next_use": 0
+     }
+    },
+    "wizard-default-path": {
+     "games": 100,
+     "games_2plus": 10,
+     "games_2plus_excluding_hound": 0,
+     "games_2plus_raw_felt_events": 63,
+     "games_by_kind": {
+      "door": 10,
+      "hound": 79,
+      "hunger": 0,
+      "next_use": 0
+     },
+     "harness_errors": 2,
+     "per_game": {
+      "0": 21,
+      "1": 69,
+      "2": 10
+     },
+     "sources_by_kind": {
+      "door": 10,
+      "hound": 79,
+      "hunger": 0,
+      "next_use": 0
+     }
+    }
+   }
+  }
+ }
+}
