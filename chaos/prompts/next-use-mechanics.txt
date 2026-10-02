@@ -1,5 +1,5 @@
 Next-use mechanics guide v1 (trusted instructions, not public history)
-SOURCE revision: a8d4137381dc48cce193f611c232c56902269e30.
+SOURCE revision: d6fe470fb944abf7f5c50feaae937fa9573a3ecb.
 Exact referenced file hashes: next-use-mechanics-sources.json. The builder checks
 these before transport; source drift requires review, not a silently newer guide.
 LEGAL means representation bounds; SOURCE means native semantics; MEASURED and
@@ -22,7 +22,7 @@ early, not a typical value. Do not transplant that condition into this callback:
 Sanity/Insight are public authoring background only, not runtime callback fields.
 
 W/F capabilities — only supplied operations may be admitted
-LEGAL: source 1..4096 bytes; response <=8192; state 0..3; age 0..99;
+LEGAL: source 1..4096 bytes; response <=8192; state 0..3; age 0..299;
 whistle_count/fountain_count 0..3; variant 0..2; trigger W or F;
 own_witnessed none or W (include/chaos_next_use.h; src/chaos_next_use.c:
 schema_author, schema_context). source_sha256 identifies exact retained bytes.
@@ -36,8 +36,8 @@ Production currently supplies both counts as zero at installation
 observation totals. Do not infer observed frequencies from them. Nonzero count
 inputs in component fixtures are not evidence of nonzero production history.
 
-SOURCE: schema_envelope in src/chaos_next_use.c fixes TTL=100 and cost=number
-of admitted families (one each, WF costs two); canonical operation order is W,F.
+SOURCE: schema_envelope in src/chaos_next_use.c: TTL=100, 300 for repaired
+programs 2-3 (effect only); cost=families (WF costs 2); canonical order W,F.
 Telegraph ids are next-use-v2-W/F/WF; host-built origins bind run/schedule.
 These are representation/authority limits, not a recommendation to spend more.
 SOURCE: chaos/history.py retains exact chronology for 32 roots, separate from

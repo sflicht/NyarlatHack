@@ -634,7 +634,10 @@ static int schema_envelope(const struct json_value *root,
     if (!json_integer(json_member(root,"next_use_program_v"),2,2,&v) ||
         !json_integer(json_member(root,"at"),0,2147483647,&out->at) ||
         !json_integer(json_member(root,"id"),1,2147483647,&out->id) ||
-        !json_integer(json_member(root,"ttl"),100,100,&out->ttl) ||
+        !json_integer(json_member(root,"ttl"),CHAOS_NEXT_USE_LIFETIME_FIRST,
+            CHAOS_NEXT_USE_LIFETIME_LATER,&out->ttl) ||
+        (out->ttl != CHAOS_NEXT_USE_LIFETIME_FIRST
+         && out->ttl != CHAOS_NEXT_USE_LIFETIME_LATER) ||
         !json_integer(json_member(root,"variant"),0,2,&out->variant)) return 0;
     operations=json_member(root,"operations"); origins=json_member(root,"origin_refs");
     if (!operations || operations->type != J_ARRAY || operations->item_count < 1 ||
@@ -680,7 +683,7 @@ static int schema_context(const struct json_value *root,
     if (!root || root->type!=J_OBJECT || root->member_count!=9) return 0;
     for(i=0;i<9;++i) if(!json_member(root,names[i])) return 0;
     if(!json_integer(json_member(root,"next_use_context_v"),2,2,&v) ||
-       !json_integer(json_member(root,"age"),0,99,&out->age) ||
+       !json_integer(json_member(root,"age"),0,CHAOS_NEXT_USE_LIFETIME_LATER-1,&out->age) ||
        !json_integer(json_member(root,"fountain_count"),0,3,&out->fountain_count) ||
        !json_integer(json_member(root,"state"),0,3,&out->state) ||
        !json_integer(json_member(root,"variant"),0,2,&out->variant) ||

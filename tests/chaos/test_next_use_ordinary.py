@@ -597,10 +597,10 @@ class OrdinaryNextUseTests(unittest.TestCase):
                     b"chaos: next-use: no_eligible_origin",
                 ],
             )
-            # The restored v3 scheduler finishes program 1, then waits at
+            # The restored v4 scheduler finishes program 1, then waits at
             # program 2 for a new completed origin. This continuation never
             # supplies one: neither restore nor a terminal program is a retry.
-            self.assertEqual(rows(game.run / "ordinary-choice.json")[0]["v"], 3)
+            self.assertEqual(rows(game.run / "ordinary-choice.json")[0]["v"], 4)
             lifecycle = rows(game.run / "next_use-lifecycle.jsonl")
             self.assertEqual(len(lifecycle), 1)
             self.assertEqual(lifecycle[0]["program_ordinal"], 1)

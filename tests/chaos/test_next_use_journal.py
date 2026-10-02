@@ -74,7 +74,7 @@ class NextUseJournalTests(RetainOnFailure):
             ),
         )
         _, encoded = envelope_from_selection(
-            row, dict(native.HOST, at=8, run=engine_run_hex(folder))
+            row, dict(native.HOST, at=8, run=engine_run_hex(folder)), 2
         )
         second = folder / "next_use-envelope.2.json"
         second.write_bytes(encoded)

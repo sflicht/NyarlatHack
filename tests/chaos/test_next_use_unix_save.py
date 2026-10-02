@@ -256,7 +256,7 @@ class NextUseUnixSaveTests(unittest.TestCase):
                 "run": engine_run_hex(game.run),
                 "variant": 0,
             }
-            _, encoded = envelope_from_selection(row, host)
+            _, encoded = envelope_from_selection(row, host, ordinal)
             name = (
                 "next_use-envelope.json"
                 if ordinal == 1

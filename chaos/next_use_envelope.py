@@ -35,8 +35,21 @@ def _int_range(value, lo, hi):
     return type(value) is int and lo <= value <= hi
 
 
-def envelope_from_selection(selected, host):
+def program_lifetime(ordinal, repair=True):
+    """Native moves a program lives: 100, or 300 for a repaired program 2-3.
+
+    The envelope's ttl also selects the engine's rules for programs 2-3:
+    300 checks the companion only at the whistle (recurrence repair); 100 keeps
+    the pre-repair admission check, for runs recorded before the repair.
+    """
+    if type(ordinal) is not int or not 1 <= ordinal <= 3 or type(repair) is not bool:
+        raise ValueError("next-use program ordinal")
+    return 300 if repair and ordinal > 1 else 100
+
+
+def envelope_from_selection(selected, host, ordinal=1, repair=True):
     """Map one trusted row plus host scheduling into the C envelope schema."""
+    ttl = program_lifetime(ordinal, repair)
     if type(host) is not dict:
         raise ValueError("host scheduling fields required")
     required = (
@@ -84,7 +97,7 @@ def envelope_from_selection(selected, host):
         "source": composed["source"],
         "source_sha256": composed["source_sha256"],
         "telegraph": _TELEGRAPH[family],
-        "ttl": 100,
+        "ttl": ttl,
         "variant": host["variant"],
     }
     encoded = json.dumps(
@@ -110,10 +123,10 @@ def envelope_name(ordinal=1):
     return _ENVELOPE_NAME if ordinal == 1 else f"next_use-envelope.{ordinal}.json"
 
 
-def publish_envelope(directory, selected, host, box=None, ordinal=1):
+def publish_envelope(directory, selected, host, box=None, ordinal=1, repair=True):
     """Write one complete envelope artifact. Never admits."""
     name = envelope_name(ordinal)
-    envelope, encoded = envelope_from_selection(selected, host)
+    envelope, encoded = envelope_from_selection(selected, host, ordinal, repair)
 
     def write(held):
         target = held.path / name

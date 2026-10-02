@@ -377,6 +377,48 @@ whether program 2 has a fresh origin: it trims fresh rows in 7 games but
 leaves at least 8 in each. Once the file is full, new rows fail closed as today.
 Raising the bound is a separate decision.
 
+### Recurrence repair (B)
+
+Sam chose option B of the [unfelt diagnosis](measurements/arc-unfelt-diagnosis/)
+on 2026-10-02. It changes only programs 2 and 3; program 1 is unchanged.
+
+- **Effect authored.** The director never authors quiet for a later
+  program. Its menu for program 2 or 3 drops the `quiet` row, so the seeded
+  choice picks among effect rows only. Program 1 keeps its seeded choice. The
+  engine still validates and admits the envelope exactly as before: budget,
+  fresh origin, telegraph, terminal before next, cap 3.
+- **Companion at the whistle only.** Admission no longer rejects a later W
+  program for having no qualifying companion on screen (`no_companion_in_view`,
+  #196 C3). The whistle-time check stays: when the player whistles with no
+  qualifying companion, the capture is suppressed and the program completes,
+  as for program 1.
+- **Lifetime 300.** A later program lives 300 native moves instead of 100.
+  The origin lifetime (300) is unchanged.
+
+**Carrier.** The envelope's existing `ttl` field carries the rule. Program 1
+must declare 100. A program 2 or 3 may declare 100 (the pre-repair rules:
+admission companion check, 100 moves) or 300 (repaired). The engine validates
+the value against the ordinal and saves the resulting `program_expiry`, so a
+restored program keeps the rules it was admitted under. No new saved field is
+needed: native state stays **5** and the next-use snapshot stays **v6**.
+
+**Old saves.** A state-5 save from before the repair restores and continues
+under the pre-repair rules. Every program it already admitted was admitted
+with a 100-move lifetime, which the engine still accepts. The director that
+continues it publishes its later envelopes from the run's recorded choice:
+
+- an `ordinary-choice.json` **v3** record (written before the repair) keeps
+  the pre-repair director: seeded quiet-or-effect choice and `ttl` 100, so the
+  engine keeps the admission companion check;
+- a fresh ordinary run writes **v4**, whose `m2` object adds `repair`
+  (equal to `enabled`); restore follows it;
+- a run directory with no record (before #198) keeps explicit flags only and
+  has no later programs.
+
+This is not refuse-and-keep: nothing in the saved layout changed, so there is
+nothing to refuse. The rule that applies to an old save is "continue under the
+rules it was recorded with".
+
 ### Public program receipts (M2 PR 4)
 
 `next_use-lifecycle.jsonl` is a diagnostic-only public terminal boundary. Each row

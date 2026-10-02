@@ -728,9 +728,16 @@ int chaos_next_use_safe_try(const struct chaos_next_use_safe_request *request,
         reasons |= CHAOS_NEXT_USE_SAFE_BUDGET_STATE;
     memset(bound, 0, sizeof bound);
     reasons |= envelope_origin_reasons(&envelope, request, bound, &rebound, fresh_after);
+    /* Recurrence repair: program 1 must declare 100 moves; programs 2-3 may
+     * declare 100 (pre-repair rules) or 300 (repaired). */
+    if (!CHAOS_NEXT_USE_LIFETIME_OK(chaos_next_use_program_ordinal(), envelope.ttl))
+        reasons |= CHAOS_NEXT_USE_SAFE_SCHEMA;
     /* #196 (C3): a W program needs a qualifying companion on screen now.
-     * Checked with the other cheap checks, before telegraph and charge. */
-    if (request->companion) {
+     * Checked with the other cheap checks, before telegraph and charge.
+     * A repaired program 2-3 is checked only at the whistle instead
+     * (chaos_next_use_whistle_completed suppresses when none qualifies). */
+    if (request->companion
+        && !CHAOS_NEXT_USE_REPAIRED(chaos_next_use_program_ordinal(), envelope.ttl)) {
         int i, has_w = 0;
         for (i = 0; i < envelope.operation_count && i < 2; ++i)
             if (envelope.operations[i] == CHAOS_NEXT_USE_FAMILY_W) has_w = 1;

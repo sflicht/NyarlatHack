@@ -102,7 +102,7 @@ class NextUseSafeAdmitTests(RetainOnFailure):
             from chaos.next_use_envelope import envelope_from_selection
 
             _, encoded = envelope_from_selection(
-                row, dict(HOST, at=6 + ordinal, move=40 + (ordinal - 1) * 150)
+                row, dict(HOST, at=6 + ordinal, move=40 + (ordinal - 1) * 400), ordinal
             )
             path = Path(folder) / f"next_use-envelope.{ordinal}.json"
             path.write_bytes(encoded)
@@ -890,6 +890,59 @@ class NextUseSafeRecordedDecisionTests(unittest.TestCase):
         ):
             self.assertEqual(seen[key], plain[key], key)
         self.assertEqual(seen["admitted"], 1)
+
+    def repair_case(self, repair):
+        folder = self.publish()
+        row = dict(
+            ROW,
+            origin=dict(ROW["origin"], root_seq=40, notice_seq=41, end_seq=42),
+        )
+        from chaos.next_use_envelope import envelope_from_selection
+
+        envelope, encoded = envelope_from_selection(
+            row, dict(HOST, at=8, move=440), 2, repair
+        )
+        self.assertEqual(envelope["ttl"], 300 if repair else 100)
+        path = Path(folder) / "next_use-envelope.2.json"
+        path.write_bytes(encoded)
+        path.chmod(0o600)
+        result = subprocess.run(
+            [str(self.binary), "repair", str(folder)],
+            capture_output=True,
+            text=True,
+            timeout=20,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        return json.loads(result.stdout)
+
+    # Recurrence repair: a later program's companion check moves from
+    # admission to the whistle; its lifetime is 300 native moves.
+    def test_repaired_later_program_admits_without_companion_in_view(self):
+        row = self.repair_case(repair=True)
+        self.assertEqual(row["admitted"], 1, row)
+        self.assertEqual(row["reasons"], 0)
+        self.assertEqual(row["companion_calls"], 1)  # program 1's check only
+        self.assertEqual(row["lifetime"], 300)
+        self.assertEqual(row["telegraphs"], 2)
+        self.assertEqual(row["count"], 2)
+
+    def test_pre_repair_later_program_keeps_admission_companion_check(self):
+        row = self.repair_case(repair=False)
+        self.assertEqual(row["admitted"], 0, row)
+        self.assertEqual(row["reasons"], REASON_BITS["no_companion_in_view"])
+        self.assertEqual(row["companion_calls"], 2)
+        self.assertEqual(row["telegraphs"], 1)  # no telegraph, no charge
+        self.assertEqual(row["count"], 2)  # settled: the attempt is spent
+
+    def test_program_one_must_declare_the_100_move_lifetime(self):
+        folder = self.publish()
+        path = Path(folder) / "next_use-envelope.json"
+        payload = json.loads(path.read_text())
+        payload["ttl"] = 300
+        path.write_text(json.dumps(payload, separators=(",", ":"), sort_keys=True))
+        os.chmod(path, 0o600)
+        decision = self.assert_reason("schema", folder)
+        self.assertEqual(decision["reasons"], ["schema"])
 
     def test_companion_check_ignores_fountain_only_programs(self):
         row = self.run_case(

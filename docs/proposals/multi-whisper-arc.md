@@ -376,6 +376,11 @@ baseline: [`docs/measurements/arc-metric-distinct-felt/`](../measurements/arc-me
 Why later programs are not felt today, and the options to meet the gate:
 [`docs/measurements/arc-unfelt-diagnosis/`](../measurements/arc-unfelt-diagnosis/).
 
+Option B (recurrence repair) was measured against this gate: 2/100 and 0/100,
+hound admission unchanged. It misses both counts because the companion check
+moved to the whistle and still suppresses most later programs there:
+[`docs/measurements/arc-recurrence-repair/`](../measurements/arc-recurrence-repair/).
+
 ## 6. Decisions for Sam
 
 1. **M2 shape.** A, strictly sequential and capped; B, one per new deepest

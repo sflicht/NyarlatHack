@@ -199,7 +199,7 @@ def _snapshot(s):
     _require(
         s["phase"] == 3
         and s["next_seq"] == 3
-        and s["program_expiry"] == s["admission_move"] + 100
+        and s["program_expiry"] - s["admission_move"] in (100, 300)
         and s["run_token"] > 0
         and s["level_token"] > 0,
         "initial snapshot",
@@ -363,10 +363,11 @@ def _envelope(d, s, source):
         ("cost", 1, 2),
         ("id", 1, I32),
         ("next_use_program_v", 2, 2),
-        ("ttl", 100, 100),
+        ("ttl", 100, 300),
         ("variant", 0, 2),
     ):
         _integer(e[key], lo, hi)
+    _require(e["ttl"] == s["program_expiry"] - s["admission_move"], "envelope lifetime")
     _require(
         type(e["source"]) is str
         and e["source"].encode("utf-8") == source
@@ -531,7 +532,8 @@ def _transition(t, s, seq, prior):
             )
             age = t["at_move"] - s["admission_move"]
             _require(
-                0 <= age < 100 and t["at_move"] < s["program_expiry"],
+                0 <= age < s["program_expiry"] - s["admission_move"]
+                and t["at_move"] < s["program_expiry"],
                 "callback age/expiry",
             )
             context = {
@@ -737,6 +739,15 @@ def read_journal(path, *, capture_status=None):
                     _keys(d, "snapshot private_records")  # historical program 1
                 s = d["snapshot"]
                 source = _snapshot(s)
+                # Recurrence repair: program 1 lives 100 moves, 2-3 live 300.
+                # Journals from state-v5 games (before the repair) gave later
+                # programs 100; native restore refuses those saves, but their
+                # retained journals stay readable.
+                _require(
+                    s["program_expiry"] - s["admission_move"]
+                    in ((100,) if d.get("program_ordinal", 1) == 1 else (100, 300)),
+                    "program lifetime for ordinal",
+                )
                 rs = d["private_records"]
                 _require(type(rs) is list and len(rs) == 2, "header carriers")
                 for n, r in enumerate(rs, 1):

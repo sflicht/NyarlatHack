@@ -94,7 +94,9 @@ int chaos_next_use_debit(struct chaos_next_use_admission *destination,
         envelope->operation_count < 1 || envelope->operation_count > 2 ||
         envelope->cost != envelope->operation_count ||
         envelope->at < 0 || envelope->at > 2147483647 ||
-        at_move < 0 || at_move > 2147483547 ||
+        (envelope->ttl != CHAOS_NEXT_USE_LIFETIME_FIRST
+         && envelope->ttl != CHAOS_NEXT_USE_LIFETIME_LATER) ||
+        at_move < 0 || at_move > 2147483647 - envelope->ttl ||
         envelope->id < 1 || envelope->id > 2147483647)
         return CHAOS_NEXT_USE_ADMISSION_SCHEMA;
     cost = envelope->cost;
@@ -111,7 +113,7 @@ int chaos_next_use_debit(struct chaos_next_use_admission *destination,
     commit.program.delay_used = 0;
     commit.program.callback_ordinal = 0;
     commit.program.program_id = envelope->id;
-    commit.program.program_expiry = at_move + 100;
+    commit.program.program_expiry = at_move + envelope->ttl;
     commit.program.slot_w = CHAOS_SLOT_UNDECLARED;
     commit.program.slot_f = CHAOS_SLOT_UNDECLARED;
     commit.program.w_runtime = CHAOS_W_INACTIVE;
@@ -199,7 +201,7 @@ static int admission_record(struct chaos_next_use_private_record *record,
     record->data.admission.at_safe = envelope->at;
     record->data.admission.cost = envelope->cost;
     record->data.admission.operation_count = envelope->operation_count;
-    record->data.admission.program_expiry = at_move + 100;
+    record->data.admission.program_expiry = at_move + envelope->ttl;
     for (index = 0; index < envelope->operation_count; ++index) {
         record->data.admission.operations[index] = envelope->operations[index];
         record->data.admission.origin_roots[index] = envelope->origin_refs[index].root;

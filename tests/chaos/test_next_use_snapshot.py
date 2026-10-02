@@ -188,6 +188,9 @@ class NextUseSnapshotTests(unittest.TestCase):
             ("level_token", -1),
             ("program_expiry", 139),
             ("program_expiry", 141),
+            ("program_expiry", 240),
+            ("program_expiry", 339),
+            ("program_expiry", 341),
             ("origin_w", 2147483648),
             ("origin_w_deadline", 2147483648),
             ("activation_monstermoves", 2147483648),
@@ -212,6 +215,17 @@ class NextUseSnapshotTests(unittest.TestCase):
                     self.binding_digest(**{field: value}),
                 )[-1]
                 self.assertEqual(row, {"validated": 0, "imported": 0, "unchanged": 1})
+
+    def test_repaired_lifetime_validates(self):
+        # Recurrence repair: a 300-move lifetime is a valid snapshot value.
+        # Restore separately binds it to ordinal 2-3 (test_next_use_safe).
+        row = self.run_mode(
+            "snapshot_change",
+            "program_expiry",
+            340,
+            self.binding_digest(program_expiry=340),
+        )[-1]
+        self.assertEqual(row["validated"], 1)
 
     def test_binding_integrity_is_separate_from_valid_value_semantics(self):
         for field, value in (
