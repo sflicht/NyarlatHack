@@ -18,7 +18,11 @@ class ProgramFunnelTests(unittest.TestCase):
         root = ROOT / "docs/measurements/next-use-director-m2/ordinary"
         saved = json.loads((root / "result.json").read_text())
         result = sweep_funnel.analyse(root, felt=True)
+        # The committed golden predates the arc metric: every saved field is
+        # unchanged, and distinct_felt is the only addition (program 1 once).
+        distinct = result.pop("distinct_felt")
         self.assertEqual(result, saved["metrics"])
+        self.assertEqual(distinct, [{"turn": 9, "kind": "next_use"}])
         self.assertEqual([p["admitted"] for p in result["programs"]], [1, 1, 0])
         self.assertEqual([p["felt"] for p in result["programs"]], [1, 0, 0])
         self.assertEqual(result["session_details"], ["new", "restore"])

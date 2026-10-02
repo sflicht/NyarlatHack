@@ -269,6 +269,39 @@ def aggregate_v2(rows):
             for k in ("prayers", "flees", "rests", "whistles_found")
         },
         "games_with_whistle": sum(1 for g in rows if g["whistle_in_inventory"]),
+        "distinct_felt": aggregate_distinct(rows),
+    }
+
+
+def game_distinct(g):
+    """Per-game distinct felt sources; post hoc for reports that predate it."""
+    from sweep_programs import distinct_felt
+
+    f = g["funnel"]
+    if "distinct_felt" in f:
+        return f["distinct_felt"]
+    return distinct_felt(f.get("felt_events", []))
+
+
+def aggregate_distinct(rows):
+    """Arc metric beside, never instead of, the raw felt-event count."""
+    from sweep_programs import DISTINCT_KINDS
+
+    per = [game_distinct(g) for g in rows]
+    raw = [len(g["funnel"].get("felt_events", [])) for g in rows]
+    return {
+        "games_2plus": sum(len(d) >= 2 for d in per),
+        "games_2plus_excluding_hound": sum(
+            sum(e["kind"] != "hound" for e in d) >= 2 for d in per
+        ),
+        "games_2plus_raw_felt_events": sum(n >= 2 for n in raw),
+        "per_game": dict(sorted(Counter(len(d) for d in per).items())),
+        "sources_by_kind": {
+            k: sum(e["kind"] == k for d in per for e in d) for k in DISTINCT_KINDS
+        },
+        "games_by_kind": {
+            k: sum(any(e["kind"] == k for e in d) for d in per) for k in DISTINCT_KINDS
+        },
     }
 
 
@@ -342,6 +375,14 @@ def markdown(report):
                 f"- Rates (#164): per 1000 turns {a['per_1000_turns']}; per level "
                 f"visited {a['per_level']} ({a['turns_played']} turns, "
                 f"{a['levels_visited']} levels)"
+            )
+            d = a["distinct_felt"]
+            lines.append(
+                f"- Distinct felt whispers (arc metric): 2+ in {d['games_2plus']}/{n} "
+                f"games, 2+ excluding the hound {d['games_2plus_excluding_hound']}/{n}; "
+                f"raw 2+ felt events {d['games_2plus_raw_felt_events']}/{n}; "
+                f"per game {d['per_game']}; sources by kind {d['sources_by_kind']}; "
+                f"games by kind {d['games_by_kind']}"
             )
             lines.append(
                 f"- Hound: accepted in {a['hound']['games_accepted']} games, "
