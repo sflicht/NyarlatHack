@@ -7,6 +7,7 @@ import subprocess
 import tempfile
 import unittest
 
+from chaos._protocol_contract import TELEGRAPHS
 from chaos.next_use_compose import compose
 from chaos.next_use_envelope import (
     engine_run_hex,
@@ -161,7 +162,16 @@ class EnvelopePublishTests(unittest.TestCase):
                 "next-use-v2-W": "The next whistle may call unusual attention.",
                 "next-use-v2-F": "The next fountain drink may take a different course.",
                 "next-use-v2-WF": "The next whistle or fountain drink may not behave as usual.",
+                # Arc 1 recurrence lines: contract telegraph ids 5 and 6.
+                "next-use-again-W": TELEGRAPHS[5],
+                "next-use-again-F": TELEGRAPHS[6],
             }
+            self.assertEqual(
+                TELEGRAPHS[5], "Again, the whistle carries farther than it should."
+            )
+            self.assertEqual(
+                TELEGRAPHS[6], "Again, the fountain's water may not run true."
+            )
             for identifier, prose in cases.items():
                 out = subprocess.check_output(
                     [str(binary), "warn", identifier], text=True

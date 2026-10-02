@@ -67,6 +67,7 @@ struct chaos_reveal_entry {
     int uses, actual;            /* curio: application receipts, Sanity sum */
     int placement;
     long placed_turn;
+    int program;                 /* next-use: 0 live host.nu, k host.prior[k-1] */
 };
 
 /* Values copied verbatim from the engine's next-use runtime snapshot. */
@@ -78,7 +79,9 @@ struct chaos_reveal_next_use {
     long admission_move;
     long origin_w, origin_f;     /* bound origin roots: event sequence numbers */
     int depth;                   /* dungeon depth of the program's level, or 0 */
+    int ordinal;                 /* M2 program ordinal 1..3; 0 means 1 (legacy) */
 };
+#define CHAOS_REVEAL_PROGRAMS 3
 
 /* Engine-state facts copied by the game host. */
 struct chaos_reveal_host {
@@ -86,7 +89,11 @@ struct chaos_reveal_host {
     long haunt_until;
     int curio_charges, curio_placed;
     int next_use_last_rejected;  /* the engine's last next-use attempt refused */
-    struct chaos_reveal_next_use nu;
+    struct chaos_reveal_next_use nu;   /* the live (latest) program */
+    /* Arc 1: earlier, closed programs of this game, oldest first, copied
+     * from the engine's saved closed-program snapshots. */
+    int prior_count;
+    struct chaos_reveal_next_use prior[CHAOS_REVEAL_PROGRAMS - 1];
 };
 
 struct chaos_reveal {
@@ -105,6 +112,10 @@ struct chaos_reveal {
     /* Last next-use admission receipt row; published/bound per family. */
     int receipt_ops;
     struct { int fountain; long published, bound; } receipt[2];
+    /* Same, per program ordinal 1..3 when the row names one (M2). */
+    int receipt_by_ops[CHAOS_REVEAL_PROGRAMS + 1];
+    struct { int fountain; long published, bound; }
+        receipt_by[CHAOS_REVEAL_PROGRAMS + 1][2];
     int receipt_rejected;        /* recorded next-use rejection rows */
     int haunt_budget_seen;       /* #165: 0 none, 1 counted refusal, 2 later admitted */
 };

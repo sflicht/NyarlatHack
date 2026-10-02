@@ -21,7 +21,7 @@ sys.path.insert(0, str(ROOT))
 from chaos import chronicle  # noqa: E402
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
-from test_reveal import HUNGER, REQUEST, WARD, event_row  # noqa: E402
+from test_reveal import HUNGER, REQUEST, WARD, event_row, observation_row  # noqa: E402
 
 CC = ["cc", "-std=c99", "-Wall", "-Wextra", "-Werror", "-pedantic"]
 HOSTILE = "<script>alert(1)</script>&\"'*_[x](javascript:y)"
@@ -138,6 +138,39 @@ class ChronicleTests(unittest.TestCase):
             self.assertIn(chronicle._md_text(line), page)
 
     # --- refused, unqualified and undelivered never become admitted ---------
+    def test_programs_group_by_motif_and_single_program_is_unchanged(self):
+        # Arc 1: the chronicle groups only what the engine's lines group.
+        self.append(
+            observation_row(12, 30, "whistling") + observation_row(40, 90, "whistling")
+        )
+        self.engine_record("nu=2,0,1,1,41,12,0,1")
+        single = chronicle.load(self.run_dir)
+        self.assertEqual([e.motif for e in single.entries], [None])
+        self.assertNotIn("motif", self.chronicle("html"))
+        self.assertNotIn("###", self.chronicle("md"))
+        section = self.engine_record("prior=2,0,1,1,41,12,0,1", "nu=2,0,0,1,95,40,0,1")
+        c = chronicle.load(self.run_dir)
+        motif = "Motif: the whistle, 2 programs, felt 1 time."
+        self.assertEqual([e.motif for e in c.entries], [motif, motif])
+        lines = [x.strip() for x in section.splitlines()[1:] if x.strip()]
+        rendered = (
+            [x for e in c.entries for x in [e.heading, *e.details]]
+            + [motif]
+            + c.notes
+            + c.tally
+        )
+        self.assertEqual(sorted(rendered), sorted(lines))
+        page = self.chronicle("md")
+        self.assertEqual(page.count("### " + chronicle._md_text(motif)), 1)
+        self.assertIn(
+            chronicle._md_text(
+                'Recurrence: "Again, the whistle carries farther than it should."'
+            ),
+            page,
+        )
+        html_page = self.chronicle("html")
+        self.assertEqual(html_page.count('<h3 class="motif">'), 1)
+
     def test_refused_only_game_has_no_record_and_no_page(self):
         self.transport(WARD, "poor")
         self.assertEqual(self.engine_record(), "")

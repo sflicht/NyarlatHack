@@ -280,7 +280,9 @@ MAX_INT = 2147483647
 TELEGRAPHS = {1: 'A distant whisper brushes against your thoughts.',
  2: 'The lines of your wards seem thin and uncertain.',
  3: 'An unnatural hunger coils in your stomach.',
- 4: 'The doors of this place seem to lean against you.'}
+ 4: 'The doors of this place seem to lean against you.',
+ 5: 'Again, the whistle carries farther than it should.',
+ 6: "Again, the fountain's water may not run true."}
 DURATION_CAP = 300
 NEXT_USE_PROGRAM_CAP = 3
 FIELDS = ('v', 'id', 'mutation', 'value', 'duration', 'telegraph', 'at')

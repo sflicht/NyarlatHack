@@ -194,6 +194,54 @@ int chaos_next_use_safe_opportunity(const struct chaos_state *state,
         && !snapshot.capture_incomplete;
 }
 
+/* Arc 1: was this family felt in an earlier, closed program of this game?
+ * Only the engine's own saved closed-program snapshots are read: a W the
+ * player saw answered (witnessed), or an F drink that was changed (applied).
+ * The same facts publish next_use-felt.jsonl. Rejected attempts have no
+ * snapshot and never count. */
+int chaos_next_use_felt_in(const struct chaos_next_use_snapshot *const *closed,
+                           int n, int family)
+{
+    int k;
+    for (k = 0; closed && k < n; ++k) {
+        const struct chaos_next_use_snapshot *s = closed[k];
+        if (!s) continue;
+        if (family == CHAOS_NEXT_USE_FAMILY_W && s->witnessed) return 1;
+        if (family == CHAOS_NEXT_USE_FAMILY_F
+            && s->slot_f == CHAOS_SLOT_F_CONSUMED_APPLIED) return 1;
+    }
+    return 0;
+}
+
+static int family_felt_before(int family)
+{
+    const struct chaos_next_use_snapshot *closed[CHAOS_NEXT_USE_PROGRAM_CAP];
+    int k, n = 0, ordinal = chaos_next_use_program_ordinal();
+    for (k = 1; k < ordinal && k <= CHAOS_NEXT_USE_PROGRAM_CAP; ++k)
+        closed[n++] = chaos_next_use_closed_program(k);
+    return chaos_next_use_felt_in(closed, n, family);
+}
+
+/* Shown before the program's own telegraph, so before any effect. Text is
+ * fixed engine wording about an engine fact; no hidden state is named.
+ * Presentation only: the result is ignored, so admission, budget, RNG and
+ * saves are exactly as without it. */
+static void recurrence_telegraph(const struct chaos_next_use_safe_request *request,
+                                 const struct chaos_next_use_envelope *envelope)
+{
+    int i, family;
+    if (chaos_next_use_program_ordinal() < 2) return;
+    for (family = CHAOS_NEXT_USE_FAMILY_W; family <= CHAOS_NEXT_USE_FAMILY_F; ++family)
+        for (i = 0; i < envelope->operation_count && i < 2; ++i)
+            if (envelope->operations[i] == family) {
+                if (family_felt_before(family))
+                    (void)request->telegraph(request->telegraph_opaque,
+                        family == CHAOS_NEXT_USE_FAMILY_W ? CHAOS_NEXT_USE_AGAIN_W
+                                                          : CHAOS_NEXT_USE_AGAIN_F);
+                break;
+            }
+}
+
 static int settle_attempt(struct chaos_state *state, int id)
 {
     if (!state || !chaos_state_valid(state)) {
@@ -696,6 +744,7 @@ int chaos_next_use_safe_try(const struct chaos_next_use_safe_request *request,
         reasons |= CHAOS_NEXT_USE_SAFE_SOURCE;
     if (reasons)
         return reject(result, reasons, CHAOS_NEXT_USE_ADMISSION_SCHEMA);
+    if (request->telegraph) recurrence_telegraph(request, &envelope);
     if (!request->telegraph
         || !request->telegraph(request->telegraph_opaque, envelope.telegraph))
         return reject(result, CHAOS_NEXT_USE_SAFE_TELEGRAPH,

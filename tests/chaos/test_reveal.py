@@ -467,6 +467,104 @@ class RevealTests(unittest.TestCase):
         self.assertIn("    Origin: you drank from a fountain on turn 18.", section)
         self.assertIn("Delivered: no;", section)
 
+    # --- Arc 1: programs of one game, grouped by motif ----------------------
+    def prior(self, *args):
+        return "prior" + nu(*args)[2:]
+
+    def test_single_program_render_is_unchanged_by_grouping(self):
+        # Legacy shape: no Motif header, no program number, no Recurrence.
+        self.append(observation_row(12, 30, "whistling"))
+        section, _ = self.reveal_of(nu(W_ARMED, 0, 1, 1, 41, 12, 0, 3))
+        self.assertIn("  Turn 41: a next-use program was admitted.", section)
+        self.assertNotIn("Motif:", section)
+        self.assertNotIn("program 1", section)
+        self.assertNotIn("Recurrence", section)
+
+    def test_two_whistle_programs_group_under_one_motif_with_recurrence(self):
+        self.append(
+            observation_row(12, 30, "whistling") + observation_row(40, 90, "whistling")
+        )
+        self.receipt(
+            {
+                "next_use_private_v": 2,
+                "kind": 2,
+                "seq": 2,
+                "program_ordinal": 1,
+                "origins": [{"family": "W", "published": 12, "bound": 12}],
+            },
+            {
+                "next_use_private_v": 2,
+                "kind": 2,
+                "seq": 2,
+                "program_ordinal": 2,
+                "origins": [{"family": "W", "published": 40, "bound": 40}],
+            },
+        )
+        section, xlog = self.reveal_of(
+            self.prior(W_ARMED, 0, 1, 1, 41, 12, 0, 1),
+            nu(W_ARMED, 0, 0, 1, 95, 40, 0, 1),
+        )
+        lines = section.splitlines()
+        motif = lines.index("  Motif: the whistle, 2 programs, felt 1 time.")
+        first = lines.index("  Turn 41: next-use program 1 was admitted.")
+        second = lines.index("  Turn 95: next-use program 2 was admitted.")
+        self.assertLess(motif, first)
+        self.assertLess(first, second)
+        # Recurrence only on program 2, and only because program 1 was felt.
+        recurrence = (
+            '    Recurrence: "Again, the whistle carries farther than it should."'
+        )
+        self.assertEqual(lines.count(recurrence), 1)
+        self.assertGreater(lines.index(recurrence), second)
+        self.assertEqual(len(self.entries(section)), 2)
+        self.assertNotIn("Rebound", section)
+        self.assertTrue(all(len(x) <= 79 for x in lines), section)
+        self.assertEqual(xlog, ":chaos_admitted=2:chaos_delivered=1:chaos_spent=3")
+
+    def test_unfelt_first_program_gives_no_recurrence(self):
+        self.append(
+            observation_row(12, 30, "whistling") + observation_row(40, 90, "whistling")
+        )
+        section, xlog = self.reveal_of(
+            self.prior(W_ARMED, 0, 0, 1, 41, 12, 0, 1),
+            nu(W_ARMED, 0, 1, 1, 95, 40, 0, 1),
+        )
+        self.assertIn("  Motif: the whistle, 2 programs, felt 1 time.", section)
+        self.assertNotIn("Recurrence", section)
+        self.assertEqual(xlog, ":chaos_admitted=2:chaos_delivered=1:chaos_spent=3")
+
+    def test_mixed_families_form_two_motifs_in_first_seen_order(self):
+        self.append(
+            observation_row(7, 18, "fountain_drink")
+            + observation_row(12, 30, "whistling")
+            + observation_row(30, 70, "fountain_drink")
+        )
+        section, _ = self.reveal_of(
+            self.prior(0, F_APPLIED, 0, 1, 25, 0, 7, 1),
+            self.prior(W_ARMED, 0, 0, 1, 41, 12, 0, 1),
+            nu(0, F_NATIVE, 0, 1, 80, 0, 30, 2),
+        )
+        lines = section.splitlines()
+        fountain = lines.index("  Motif: the fountain, 2 programs, felt 1 time.")
+        whistle = lines.index("  Motif: the whistle, 1 program, felt 0 times.")
+        self.assertLess(fountain, whistle)
+        order = [x for x in lines if x.startswith("  Turn ")]
+        self.assertEqual(
+            order,
+            [
+                "  Turn 25: next-use program 1 was admitted.",
+                "  Turn 80: next-use program 3 was admitted.",
+                "  Turn 41: next-use program 2 was admitted.",
+            ],
+        )
+        self.assertEqual(
+            lines.count(
+                '    Recurrence: "Again, the fountain\'s water may not run true."'
+            ),
+            1,
+        )
+        self.assertNotIn("Again, the whistle", section)
+
     def test_rejected_next_use_candidate_is_one_count_line(self):
         # A refused next-use candidate is never an entry: no admission in the
         # snapshot, only the engine's recorded decision rows.

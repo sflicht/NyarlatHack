@@ -158,6 +158,32 @@ TERMINATION_REASONS = (
 )
 
 
+FELT_FAMILY = {1: "W", 2: "F"}
+
+
+def parse_felt(line):
+    """Public felt receipt (witnessed W / changed F): no private journal state."""
+    row = strict_json(line, 256)
+    if (
+        type(row) is not dict
+        or set(row)
+        != {"next_use_felt_v", "program_ordinal", "program_id", "family", "root_seq"}
+        or row["next_use_felt_v"] != 1
+        or any(type(row[k]) is not int for k in row)
+        or row["program_ordinal"] not in (1, 2, 3)
+        or row["family"] not in FELT_FAMILY
+        or row["program_id"] < 1
+        or row["root_seq"] < 1
+    ):
+        raise ValueError("felt receipt schema")
+    return row
+
+
+def preferred_family(felt_rows):
+    """Arc 1: the family the player most recently felt, else None."""
+    return FELT_FAMILY[felt_rows[-1]["family"]] if felt_rows else None
+
+
 def parse_lifecycle(line):
     """Public diagnostic, deliberately excludes private runtime/replay state."""
     row = strict_json(line, 512)
@@ -219,6 +245,11 @@ class NextUseScheduler:
         )
         self.closed = {}
         self.published = {}
+        # Arc 1: public felt receipts only (never journals or replay clocks).
+        self.felt_reader = EventReader(
+            "next_use-felt.jsonl", 6 * 256, 6, max_line=255, parser=parse_felt
+        )
+        self.felt = []
         self.path = Path(directory).absolute()
         self.schedule = _schedule_reader("next_use-schedule.jsonl")
         self.events = EventReader("events.jsonl", parser=_history_line, max_line=4096)
@@ -330,6 +361,10 @@ class NextUseScheduler:
             ):
                 return {"status": "no_eligible_origin"}
             menu = next_use_menu(history)
+            if self.programs > 1:
+                self.felt.extend(self.felt_reader.read(dir_fd=directory))
+            prefer = preferred_family(self.felt) if self.ordinal > 1 else None
+            ready = []
             for row in sorted(self.rows, key=lambda r: r["end_seq"]):
                 if row["end_seq"] <= self.fresh_after:
                     continue
@@ -341,6 +376,13 @@ class NextUseScheduler:
                 # fishing for a later admission window after missing this one.
                 if end["safe"] != history.safe or end["last_id"] != history.last_id:
                     continue
+                ready.append((row, choices, end))
+            # Arc 1 family preference: among origins ready at this exact safe
+            # point, take the felt family when one is present. It narrows the
+            # menu, never retimes, waits or substitutes a later origin.
+            if prefer is not None and any(r["family"] == prefer for r, _, _ in ready):
+                ready = [x for x in ready if x[0]["family"] == prefer]
+            for row, choices, end in ready[:1]:
                 self.terminal = "abstained"  # Even a null choice is final.
                 selected = self.selector.choose_next_use(
                     public_context(history), choices

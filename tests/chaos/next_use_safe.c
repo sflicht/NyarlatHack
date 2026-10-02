@@ -30,10 +30,15 @@ void panic(const char *str, ...)
 static struct chaos_state *budget_watch;
 static int spent_at_telegraph = -1;
 
+static int recurrence_lines;  /* Arc 1: "again" telegraphs shown */
 static int telegraph_ok(void *opaque, const char *text)
 {
     int *count = opaque;
     if (!text || !text[0]) return 0;
+    if (!strncmp(text, "next-use-again-", 15)) {
+        ++recurrence_lines;  /* not a program telegraph; never counted as one */
+        return 1;
+    }
     if (budget_watch) spent_at_telegraph = budget_watch->spent;
     if (count) ++*count;
     return 1;
@@ -175,7 +180,49 @@ static int series_checks(const char *path)
     }
     close(dir);
     assert(telegraphs == 3);
-    puts("{\"programs\":3}");
+    /* Arc 1: no program in this series delivered (nothing witnessed or
+     * applied), so programs 2 and 3 carry no recurrence line. */
+    assert(recurrence_lines == 0);
+    for (k = 1; k <= 2; ++k) {
+        const struct chaos_next_use_snapshot *closed = chaos_next_use_closed_program(k);
+        assert(closed && !closed->witnessed);
+    }
+    puts("{\"programs\":3,\"recurrence_lines\":0}");
+    return 0;
+}
+
+/* Arc 1: the felt rule over closed program snapshots, as the engine applies
+ * it at admission. Only a witnessed W or an applied F counts; a declared,
+ * armed, quiet or native-course program is not felt. */
+static int felt_checks(void)
+{
+    struct chaos_next_use_snapshot w, f, quiet;
+    const struct chaos_next_use_snapshot *list[3];
+    memset(&w, 0, sizeof w);
+    memset(&f, 0, sizeof f);
+    memset(&quiet, 0, sizeof quiet);
+    w.slot_w = CHAOS_SLOT_W_CONSUMED_ARMED;
+    w.witnessed = 1;
+    f.slot_f = CHAOS_SLOT_F_CONSUMED_APPLIED;
+    quiet.slot_w = CHAOS_SLOT_W_CONSUMED_ARMED;  /* armed, never seen */
+    quiet.slot_f = CHAOS_SLOT_F_CONSUMED_NONREMAPPABLE;
+    assert(!chaos_next_use_felt_in(NULL, 0, CHAOS_NEXT_USE_FAMILY_W));
+    list[0] = &quiet;
+    assert(!chaos_next_use_felt_in(list, 1, CHAOS_NEXT_USE_FAMILY_W));
+    assert(!chaos_next_use_felt_in(list, 1, CHAOS_NEXT_USE_FAMILY_F));
+    list[1] = &w;
+    assert(chaos_next_use_felt_in(list, 2, CHAOS_NEXT_USE_FAMILY_W));
+    assert(!chaos_next_use_felt_in(list, 2, CHAOS_NEXT_USE_FAMILY_F));
+    list[1] = NULL;  /* a rejected attempt has no snapshot */
+    list[2] = &f;
+    assert(!chaos_next_use_felt_in(list, 3, CHAOS_NEXT_USE_FAMILY_W));
+    assert(chaos_next_use_felt_in(list, 3, CHAOS_NEXT_USE_FAMILY_F));
+    assert(!chaos_next_use_felt_in(list, 2, CHAOS_NEXT_USE_FAMILY_F)); /* bounded */
+    assert(!strcmp(chaos_next_use_player_warning(CHAOS_NEXT_USE_AGAIN_W),
+                   "Again, the whistle carries farther than it should."));
+    assert(!strcmp(chaos_next_use_player_warning(CHAOS_NEXT_USE_AGAIN_F),
+                   "Again, the fountain's water may not run true."));
+    puts("{\"felt_checks\":1}");
     return 0;
 }
 
@@ -245,6 +292,7 @@ int main(int argc, char **argv)
 
     if (argc == 3 && !strcmp(argv[1], "series")) return series_checks(argv[2]);
     if (argc == 2 && !strcmp(argv[1], "policy")) return policy_checks();
+    if (argc == 2 && !strcmp(argv[1], "felt")) return felt_checks();
     if (argc < 9) return 2;
     dir = open(argv[1], O_RDONLY | O_DIRECTORY);
     if (dir < 0) return 2;
