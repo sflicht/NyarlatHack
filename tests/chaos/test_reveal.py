@@ -485,10 +485,20 @@ class RevealTests(unittest.TestCase):
             observation_row(12, 30, "whistling") + observation_row(40, 90, "whistling")
         )
         self.receipt(
-            {"next_use_private_v": 2, "kind": 2, "seq": 2, "program_ordinal": 1,
-             "origins": [{"family": "W", "published": 12, "bound": 12}]},
-            {"next_use_private_v": 2, "kind": 2, "seq": 2, "program_ordinal": 2,
-             "origins": [{"family": "W", "published": 40, "bound": 40}]},
+            {
+                "next_use_private_v": 2,
+                "kind": 2,
+                "seq": 2,
+                "program_ordinal": 1,
+                "origins": [{"family": "W", "published": 12, "bound": 12}],
+            },
+            {
+                "next_use_private_v": 2,
+                "kind": 2,
+                "seq": 2,
+                "program_ordinal": 2,
+                "origins": [{"family": "W", "published": 40, "bound": 40}],
+            },
         )
         section, xlog = self.reveal_of(
             self.prior(W_ARMED, 0, 1, 1, 41, 12, 0, 1),
@@ -549,7 +559,7 @@ class RevealTests(unittest.TestCase):
         )
         self.assertEqual(
             lines.count(
-                "    Recurrence: \"Again, the fountain's water may not run true.\""
+                '    Recurrence: "Again, the fountain\'s water may not run true."'
             ),
             1,
         )

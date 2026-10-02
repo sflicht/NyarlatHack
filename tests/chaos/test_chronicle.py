@@ -148,9 +148,7 @@ class ChronicleTests(unittest.TestCase):
         self.assertEqual([e.motif for e in single.entries], [None])
         self.assertNotIn("motif", self.chronicle("html"))
         self.assertNotIn("###", self.chronicle("md"))
-        section = self.engine_record(
-            "prior=2,0,1,1,41,12,0,1", "nu=2,0,0,1,95,40,0,1"
-        )
+        section = self.engine_record("prior=2,0,1,1,41,12,0,1", "nu=2,0,0,1,95,40,0,1")
         c = chronicle.load(self.run_dir)
         motif = "Motif: the whistle, 2 programs, felt 1 time."
         self.assertEqual([e.motif for e in c.entries], [motif, motif])

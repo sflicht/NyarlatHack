@@ -169,7 +169,9 @@ class EnvelopePublishTests(unittest.TestCase):
             self.assertEqual(
                 TELEGRAPHS[5], "Again, the whistle carries farther than it should."
             )
-            self.assertEqual(TELEGRAPHS[6], "Again, the fountain's water may not run true.")
+            self.assertEqual(
+                TELEGRAPHS[6], "Again, the fountain's water may not run true."
+            )
             for identifier, prose in cases.items():
                 out = subprocess.check_output(
                     [str(binary), "warn", identifier], text=True
