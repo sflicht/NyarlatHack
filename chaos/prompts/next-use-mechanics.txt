@@ -1,5 +1,5 @@
 Next-use mechanics guide v1 (trusted instructions, not public history)
-SOURCE revision: cb99b7e293bedbddc0e44ef535f779123cfc0be5.
+SOURCE revision: a8d4137381dc48cce193f611c232c56902269e30.
 Exact referenced file hashes: next-use-mechanics-sources.json. The builder checks
 these before transport; source drift requires review, not a silently newer guide.
 LEGAL means representation bounds; SOURCE means native semantics; MEASURED and
@@ -47,6 +47,7 @@ chaos/next_use_schedule.py matches exact root/notice/end sequences across bounde
 repeated/mixed schedule rows, in either history order. W,F is envelope order only.
 M2 caps programs at 3: terminal receipt, then fresh completion. No retiming;
 completion safe/last_id must equal the snapshot. The engine is the authority.
+Arc 1: among origins ready at once it may prefer the last felt family; no wait.
 SOURCE: chaos_next_use_on_action consumes the triggering slot on quiet or delay;
 quiet does not arm an effect. One delay is allowed globally and consumes that
 family's slot; it suppresses callbacks until max(admission_move+10,now+10).

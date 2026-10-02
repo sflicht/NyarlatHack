@@ -3,20 +3,20 @@
     "chaos/history.py": "fe52fb08eb1ba235d5d19e472579abd295624bc7c868b373a467e25c1d3f5b1b",
     "chaos/next_use_envelope.py": "03d7a9e299614a753a9c21bb1c89a2e4a74fab2c070a07e864fb3776a74f0e0e",
     "chaos/next_use_history.py": "f29742c761501071761dc0e3d4432203fc0bb74c18ae097fc28b4fbec56e1670",
-    "chaos/next_use_schedule.py": "6f60fbb5aadf6b36fb53d9a0aa9c656b477e73f647a82c941504f9218ca74a50",
-    "include/chaos_next_use.h": "eece583adaeea6db5af8fdac8b427cde9d0c9c4aa40225ddd06dc89c50748f77",
+    "chaos/next_use_schedule.py": "8512145bad3b25ffd1ae03d5e87c00834b9440e0e06574df027a3ade6b045828",
+    "include/chaos_next_use.h": "fbd5c4de17f888f4cbe76e01a030d105854b2c53c0120c31f189ed24c08edf5a",
     "include/chaos_presentation.h": "62065aef9506a12b7ee71c5f6d413e5193fb78776534cfb702c8af5517d6499c",
     "src/attrib.c": "cef325e4e78bb1ccafa5004b8241418194c44fe3ab9c7ccb9d00032f70205acd",
     "src/chaos_engine.c": "44c8a7f7b102fa371d778f1d2cbf9e48e7de6ecabc9687e4edd988fc9c119e11",
     "src/chaos_lua.c": "62a68112a8155aa10622bd124c00400b9aad9127f48e18dd5fbcdc240f52042f",
-    "src/chaos_next_use.c": "0e2e4c81577612035b221bfdd35fdb8f227b8e006a05988907d9bd8094b96a8c",
+    "src/chaos_next_use.c": "7639fc6b63d4a3a0387408bf2eeaeb5f21d489d0719da046187c43f542dfeda7",
     "src/chaos_next_use_runtime.c": "fcc3375e3bc9066979a00894750594e330dd7567da324efc8dc1a491a14c9567",
-    "src/chaos_next_use_safe.c": "5a75328949c8f1e6d3ace7aafa6757fed1d0cfc5287383cce5373f6558789777",
+    "src/chaos_next_use_safe.c": "d2a4a3852b362e532e5f7879e43ac71f743a509b4842c3114c331258efb1dea3",
     "src/chaos_presentation.c": "fa405cf41bb8852193b63e8f5c56d58dd7383129348f756bb16fb91ca2fda309",
     "src/dogmove.c": "0616a245bbfcb37a76443064619d1832334d6867be13b5fa99a930c4b165f7cf",
     "src/fountain.c": "418d5bddeb8a22ad427e18b97b88560f08071dc0ddc051a00ba6e34e85f41f86",
     "src/u_init.c": "9c9a4788d2c3ceffc91d18ed9c7168556571781d99ea3fe44ed95fbd01e5db68",
     "win/tty/wintty.c": "814b162e0923c1d880f1c6ab1655c0d1df8796aa431a4dc660e2fbd0f50bab41"
   },
-  "revision": "cb99b7e293bedbddc0e44ef535f779123cfc0be5"
+  "revision": "a8d4137381dc48cce193f611c232c56902269e30"
 }
