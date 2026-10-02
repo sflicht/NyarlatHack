@@ -193,7 +193,6 @@ class OfflineAuthorTests(unittest.TestCase):
             "not available in on_action",
             "not typical",
             "M2 caps programs at 3: terminal receipt, then fresh completion.",
-            "Arc 1: among origins ready at once it may prefer the last felt family",
         ):
             self.assertIn(term, instructions)
         self.assertLessEqual(

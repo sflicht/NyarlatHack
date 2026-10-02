@@ -1,0 +1,195 @@
+{
+ "by_start": {
+  "bard": {
+   "felt_2plus_gained": 0,
+   "felt_2plus_lost": 0,
+   "felt_changed_seeds": 0,
+   "hound_admission_identical_per_seed": true,
+   "hound_steps_identical_per_seed": true,
+   "main": {
+    "admitted": 64,
+    "delivered": 14,
+    "felt_1plus": 31,
+    "felt_2plus": 12,
+    "felt_total": 49,
+    "games": 100,
+    "harness_errors": 2,
+    "hound_games": 0,
+    "hound_steps": 0
+   },
+   "pr": {
+    "admitted": 64,
+    "delivered": 14,
+    "felt_1plus": 31,
+    "felt_2plus": 12,
+    "felt_total": 49,
+    "games": 100,
+    "harness_errors": 2,
+    "hound_games": 0,
+    "hound_steps": 0
+   }
+  },
+  "bard-default-path": {
+   "felt_2plus_gained": 0,
+   "felt_2plus_lost": 0,
+   "felt_changed_seeds": 0,
+   "hound_admission_identical_per_seed": true,
+   "hound_steps_identical_per_seed": true,
+   "main": {
+    "admitted": 50,
+    "delivered": 10,
+    "felt_1plus": 80,
+    "felt_2plus": 69,
+    "felt_total": 237,
+    "games": 100,
+    "harness_errors": 0,
+    "hound_games": 88,
+    "hound_steps": 196
+   },
+   "pr": {
+    "admitted": 50,
+    "delivered": 10,
+    "felt_1plus": 80,
+    "felt_2plus": 69,
+    "felt_total": 237,
+    "games": 100,
+    "harness_errors": 0,
+    "hound_games": 88,
+    "hound_steps": 196
+   }
+  },
+  "bard-inherited": {
+   "felt_2plus_gained": 0,
+   "felt_2plus_lost": 0,
+   "felt_changed_seeds": 0,
+   "hound_admission_identical_per_seed": true,
+   "hound_steps_identical_per_seed": true,
+   "main": {
+    "admitted": 41,
+    "delivered": 5,
+    "felt_1plus": 7,
+    "felt_2plus": 1,
+    "felt_total": 8,
+    "games": 100,
+    "harness_errors": 0,
+    "hound_games": 0,
+    "hound_steps": 0
+   },
+   "pr": {
+    "admitted": 41,
+    "delivered": 5,
+    "felt_1plus": 7,
+    "felt_2plus": 1,
+    "felt_total": 8,
+    "games": 100,
+    "harness_errors": 0,
+    "hound_games": 0,
+    "hound_steps": 0
+   }
+  },
+  "madman": {
+   "felt_2plus_gained": 0,
+   "felt_2plus_lost": 0,
+   "felt_changed_seeds": 0,
+   "hound_admission_identical_per_seed": true,
+   "hound_steps_identical_per_seed": true,
+   "main": {
+    "admitted": 8,
+    "delivered": 0,
+    "felt_1plus": 5,
+    "felt_2plus": 0,
+    "felt_total": 5,
+    "games": 100,
+    "harness_errors": 0,
+    "hound_games": 0,
+    "hound_steps": 0
+   },
+   "pr": {
+    "admitted": 8,
+    "delivered": 0,
+    "felt_1plus": 5,
+    "felt_2plus": 0,
+    "felt_total": 5,
+    "games": 100,
+    "harness_errors": 0,
+    "hound_games": 0,
+    "hound_steps": 0
+   }
+  },
+  "wizard-default-path": {
+   "felt_2plus_gained": 0,
+   "felt_2plus_lost": 0,
+   "felt_changed_seeds": 1,
+   "hound_admission_identical_per_seed": true,
+   "hound_steps_identical_per_seed": true,
+   "main": {
+    "admitted": 3,
+    "delivered": 0,
+    "felt_1plus": 79,
+    "felt_2plus": 63,
+    "felt_total": 230,
+    "games": 100,
+    "harness_errors": 0,
+    "hound_games": 88,
+    "hound_steps": 210
+   },
+   "pr": {
+    "admitted": 3,
+    "delivered": 0,
+    "felt_1plus": 79,
+    "felt_2plus": 63,
+    "felt_total": 227,
+    "games": 100,
+    "harness_errors": 2,
+    "hound_games": 88,
+    "hound_steps": 210
+   }
+  }
+ },
+ "envelope_family_differences": 0,
+ "gate": {
+  "felt_2plus_pr": 69,
+  "felt_2plus_threshold": 35,
+  "felt_pass": true,
+  "hound_unchanged": true,
+  "hound_unchanged_per_seed": true,
+  "pass": true
+ },
+ "harness_error_reruns": {
+  "wizard-default-path": {
+   "57": {
+    "felt_main": 0,
+    "felt_pr": 0,
+    "main": "died",
+    "pr": "died"
+   },
+   "58": {
+    "felt_main": 9,
+    "felt_pr": 9,
+    "main": "died",
+    "pr": "died"
+   }
+  }
+ },
+ "main_report_sha256": "29e5be459403a3ecd8e6f51f2c2c6e3c4d2b17e102e15aef1b883e0c06522cbd",
+ "main_revision": "44531194eac57a9534358fddde2d189f0ab2853d",
+ "policy": "baseline-v2",
+ "pr_report_sha256": "c4fad4587862feb2100d34ef3c816651b9b43581a18cace2fb187594d2a151f8",
+ "pr_revision": "a8d4137381dc48cce193f611c232c56902269e30",
+ "recurrence_lines_in_transcripts": {
+  "main": {
+   "F": 0,
+   "W": 0,
+   "games": 0
+  },
+  "pr": {
+   "F": 0,
+   "W": 19,
+   "games": 14
+  }
+ },
+ "seeds": [
+  1,
+  100
+ ]
+}
