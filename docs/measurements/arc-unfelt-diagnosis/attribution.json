@@ -1,0 +1,1130 @@
+{
+ "authored_op_by_program_at_director_seed_0": {
+  "F": [
+   "fountain_refresh",
+   "quiet",
+   "quiet"
+  ],
+  "W": [
+   "whistle_attention",
+   "quiet",
+   "quiet"
+  ]
+ },
+ "binding_by_start": {
+  "bard": {
+   "origin_deadline_300_no_use": 1,
+   "program_expiry_100_no_use": 9,
+   "triggered_quiet_authored": 12
+  },
+  "bard-default-path": {
+   "open_at_game_end": 2,
+   "origin_deadline_300_no_use": 1,
+   "program_expiry_100_no_use": 2,
+   "triggered_quiet_authored": 2,
+   "w_capture_suppressed_at_use": 5
+  },
+  "bard-inherited": {
+   "open_at_game_end": 2,
+   "program_expiry_100_no_use": 3,
+   "triggered_quiet_authored": 4,
+   "w_capture_suppressed_at_use": 2
+  }
+ },
+ "binding_counts": {
+  "open_at_game_end": 4,
+  "origin_deadline_300_no_use": 2,
+  "program_expiry_100_no_use": 14,
+  "triggered_quiet_authored": 18,
+  "w_capture_suppressed_at_use": 7
+ },
+ "expired_no_use": {
+  "expected_no_whistle_in_100_moves_at_game_rate": 4.8,
+  "n": 16
+ },
+ "later_admitted": 45,
+ "later_admitted_games": 41,
+ "later_publications": {
+  "bard": {
+   "admitted": 22,
+   "no_decision_before_game_end": 50,
+   "not_published": 68,
+   "rejected:budget": 4,
+   "rejected:no_companion_in_view": 49,
+   "rejected:origin_or_index": 7
+  },
+  "bard-default-path": {
+   "admitted": 12,
+   "no_decision_before_game_end": 53,
+   "not_published": 69,
+   "rejected:budget": 17,
+   "rejected:no_companion_in_view": 48,
+   "rejected:origin_or_index": 1
+  },
+  "bard-inherited": {
+   "admitted": 11,
+   "no_decision_before_game_end": 43,
+   "not_published": 131,
+   "rejected:budget": 2,
+   "rejected:no_companion_in_view": 10,
+   "rejected:origin_or_index": 3
+  }
+ },
+ "program1_rates": {
+  "companion_ok_at_use": 0.833,
+  "felt": 29,
+  "native": 59,
+  "triggered": 60,
+  "w_suppressed_at_use": 12,
+  "witnessed_given_armed": 0.492
+ },
+ "projections": {
+  "1_policy_only": {
+   "bard": [
+    6.0,
+    2.7
+   ],
+   "bard-default-path": [
+    2.6,
+    0.4
+   ],
+   "bard-default-path_half_reuse_rate": [
+    2.6,
+    0.4
+   ],
+   "params": {
+    "always_reuse": true,
+    "c3_at_use": false,
+    "effect": 0.5,
+    "every_use": false,
+    "life": 100,
+    "rate": 1.0,
+    "rescue_expired": true
+   }
+  },
+  "2_effect_authoring_only": {
+   "bard": [
+    4.5,
+    3.0
+   ],
+   "bard-default-path": [
+    2.0,
+    0.0
+   ],
+   "bard-default-path_half_reuse_rate": [
+    2.0,
+    0.0
+   ],
+   "params": {
+    "always_reuse": false,
+    "c3_at_use": false,
+    "effect": 1.0,
+    "every_use": false,
+    "life": 100,
+    "rate": 1.0,
+    "rescue_expired": false
+   }
+  },
+  "2_recurrence_repair": {
+   "bard": [
+    14.8,
+    7.8
+   ],
+   "bard-default-path": [
+    8.0,
+    3.4
+   ],
+   "bard-default-path_half_reuse_rate": [
+    7.1,
+    2.8
+   ],
+   "params": {
+    "always_reuse": false,
+    "c3_at_use": true,
+    "effect": 1.0,
+    "every_use": false,
+    "life": 300,
+    "rate": 1.0,
+    "rescue_expired": true
+   }
+  },
+  "2_recurrence_repair_life100": {
+   "bard": [
+    12.2,
+    6.1
+   ],
+   "bard-default-path": [
+    6.3,
+    2.3
+   ],
+   "bard-default-path_half_reuse_rate": [
+    4.8,
+    1.4
+   ],
+   "params": {
+    "always_reuse": false,
+    "c3_at_use": true,
+    "effect": 1.0,
+    "every_use": false,
+    "life": 100,
+    "rate": 1.0,
+    "rescue_expired": true
+   }
+  },
+  "3_sam_as_worded_life100": {
+   "bard": [
+    6.0,
+    0.0
+   ],
+   "bard-default-path": [
+    3.8,
+    0.0
+   ],
+   "bard-default-path_half_reuse_rate": [
+    3.0,
+    0.0
+   ],
+   "params": {
+    "always_reuse": false,
+    "c3_at_use": false,
+    "effect": 0.0,
+    "every_use": true,
+    "life": 100,
+    "rate": 1.0,
+    "rescue_expired": true
+   }
+  },
+  "3_sam_as_worded_life300": {
+   "bard": [
+    7.4,
+    0.0
+   ],
+   "bard-default-path": [
+    5.3,
+    0.0
+   ],
+   "bard-default-path_half_reuse_rate": [
+    4.3,
+    0.0
+   ],
+   "params": {
+    "always_reuse": false,
+    "c3_at_use": false,
+    "effect": 0.0,
+    "every_use": true,
+    "life": 300,
+    "rate": 1.0,
+    "rescue_expired": true
+   }
+  },
+  "3_sam_plus_effect_life100": {
+   "bard": [
+    9.6,
+    5.6
+   ],
+   "bard-default-path": [
+    4.9,
+    1.5
+   ],
+   "bard-default-path_half_reuse_rate": [
+    3.6,
+    0.8
+   ],
+   "params": {
+    "always_reuse": false,
+    "c3_at_use": false,
+    "effect": 1.0,
+    "every_use": true,
+    "life": 100,
+    "rate": 1.0,
+    "rescue_expired": true
+   }
+  },
+  "3_sam_plus_effect_life300": {
+   "bard": [
+    14.0,
+    8.2
+   ],
+   "bard-default-path": [
+    7.6,
+    3.2
+   ],
+   "bard-default-path_half_reuse_rate": [
+    5.9,
+    2.1
+   ],
+   "params": {
+    "always_reuse": false,
+    "c3_at_use": false,
+    "effect": 1.0,
+    "every_use": true,
+    "life": 300,
+    "rate": 1.0,
+    "rescue_expired": true
+   }
+  },
+  "3plus_sam_completed_life100": {
+   "bard": [
+    17.5,
+    10.5
+   ],
+   "bard-default-path": [
+    9.9,
+    5.1
+   ],
+   "bard-default-path_half_reuse_rate": [
+    6.3,
+    2.3
+   ],
+   "params": {
+    "always_reuse": false,
+    "c3_at_use": true,
+    "effect": 1.0,
+    "every_use": true,
+    "life": 100,
+    "rate": 1.0,
+    "rescue_expired": true
+   }
+  },
+  "3plus_sam_completed_life300": {
+   "bard": [
+    28.5,
+    22.2
+   ],
+   "bard-default-path": [
+    18.1,
+    12.6
+   ],
+   "bard-default-path_half_reuse_rate": [
+    12.8,
+    7.6
+   ],
+   "params": {
+    "always_reuse": false,
+    "c3_at_use": true,
+    "effect": 1.0,
+    "every_use": true,
+    "life": 300,
+    "rate": 1.0,
+    "rescue_expired": true
+   }
+  },
+  "3plus_sam_completed_life300_effect_half": {
+   "bard": [
+    22.1,
+    13.8
+   ],
+   "bard-default-path": [
+    13.6,
+    8.0
+   ],
+   "bard-default-path_half_reuse_rate": [
+    9.1,
+    4.1
+   ],
+   "params": {
+    "always_reuse": false,
+    "c3_at_use": true,
+    "effect": 0.5,
+    "every_use": true,
+    "life": 300,
+    "rate": 1.0,
+    "rescue_expired": true
+   }
+  },
+  "today": {
+   "bard": [
+    4.0,
+    0.0
+   ],
+   "bard-default-path": [
+    2.0,
+    0.0
+   ],
+   "bard-default-path_half_reuse_rate": [
+    2.0,
+    0.0
+   ],
+   "params": {
+    "always_reuse": false,
+    "c3_at_use": false,
+    "effect": 0.0,
+    "every_use": false,
+    "life": 100,
+    "rate": 1.0,
+    "rescue_expired": false
+   }
+  }
+ },
+ "rows": [
+  {
+   "binding": "triggered_quiet_authored",
+   "fountain_drinks": 0,
+   "last_turn": 2020,
+   "levels": 4,
+   "native_effect": 0,
+   "outcome": "turn_limit",
+   "program": 3,
+   "program1_felt": false,
+   "seed": 12,
+   "start": "bard",
+   "termination": "completed",
+   "trigger": 1,
+   "whistles": 31,
+   "whistles_found": 0,
+   "whistles_per_100_turns": 1.53
+  },
+  {
+   "binding": "program_expiry_100_no_use",
+   "fountain_drinks": 0,
+   "last_turn": 2039,
+   "levels": 2,
+   "native_effect": 0,
+   "outcome": "turn_limit",
+   "program": 2,
+   "program1_felt": false,
+   "seed": 17,
+   "start": "bard",
+   "termination": "program_expired",
+   "trigger": 0,
+   "whistles": 19,
+   "whistles_found": 0,
+   "whistles_per_100_turns": 0.93
+  },
+  {
+   "binding": "triggered_quiet_authored",
+   "fountain_drinks": 0,
+   "last_turn": 2039,
+   "levels": 2,
+   "native_effect": 0,
+   "outcome": "turn_limit",
+   "program": 3,
+   "program1_felt": false,
+   "seed": 17,
+   "start": "bard",
+   "termination": "completed",
+   "trigger": 1,
+   "whistles": 19,
+   "whistles_found": 0,
+   "whistles_per_100_turns": 0.93
+  },
+  {
+   "binding": "triggered_quiet_authored",
+   "fountain_drinks": 1,
+   "last_turn": 2011,
+   "levels": 3,
+   "native_effect": 0,
+   "outcome": "turn_limit",
+   "program": 2,
+   "program1_felt": true,
+   "seed": 22,
+   "start": "bard",
+   "termination": "completed",
+   "trigger": 1,
+   "whistles": 32,
+   "whistles_found": 0,
+   "whistles_per_100_turns": 1.59
+  },
+  {
+   "binding": "triggered_quiet_authored",
+   "fountain_drinks": 1,
+   "last_turn": 2011,
+   "levels": 3,
+   "native_effect": 0,
+   "outcome": "turn_limit",
+   "program": 3,
+   "program1_felt": true,
+   "seed": 22,
+   "start": "bard",
+   "termination": "completed",
+   "trigger": 1,
+   "whistles": 32,
+   "whistles_found": 0,
+   "whistles_per_100_turns": 1.59
+  },
+  {
+   "binding": "triggered_quiet_authored",
+   "fountain_drinks": 0,
+   "last_turn": 1346,
+   "levels": 3,
+   "native_effect": 0,
+   "outcome": "died",
+   "program": 2,
+   "program1_felt": false,
+   "seed": 25,
+   "start": "bard",
+   "termination": "completed",
+   "trigger": 1,
+   "whistles": 15,
+   "whistles_found": 0,
+   "whistles_per_100_turns": 1.11
+  },
+  {
+   "binding": "program_expiry_100_no_use",
+   "fountain_drinks": 0,
+   "last_turn": 2005,
+   "levels": 1,
+   "native_effect": 0,
+   "outcome": "turn_limit",
+   "program": 2,
+   "program1_felt": true,
+   "seed": 40,
+   "start": "bard",
+   "termination": "program_expired",
+   "trigger": 0,
+   "whistles": 15,
+   "whistles_found": 0,
+   "whistles_per_100_turns": 0.75
+  },
+  {
+   "binding": "triggered_quiet_authored",
+   "fountain_drinks": 2,
+   "last_turn": 2021,
+   "levels": 2,
+   "native_effect": 0,
+   "outcome": "turn_limit",
+   "program": 2,
+   "program1_felt": true,
+   "seed": 42,
+   "start": "bard",
+   "termination": "completed",
+   "trigger": 1,
+   "whistles": 31,
+   "whistles_found": 0,
+   "whistles_per_100_turns": 1.53
+  },
+  {
+   "binding": "program_expiry_100_no_use",
+   "fountain_drinks": 1,
+   "last_turn": 2015,
+   "levels": 2,
+   "native_effect": 0,
+   "outcome": "turn_limit",
+   "program": 2,
+   "program1_felt": true,
+   "seed": 55,
+   "start": "bard",
+   "termination": "program_expired",
+   "trigger": 0,
+   "whistles": 35,
+   "whistles_found": 0,
+   "whistles_per_100_turns": 1.74
+  },
+  {
+   "binding": "triggered_quiet_authored",
+   "fountain_drinks": 0,
+   "last_turn": 1827,
+   "levels": 4,
+   "native_effect": 0,
+   "outcome": "died",
+   "program": 3,
+   "program1_felt": true,
+   "seed": 56,
+   "start": "bard",
+   "termination": "completed",
+   "trigger": 1,
+   "whistles": 32,
+   "whistles_found": 0,
+   "whistles_per_100_turns": 1.75
+  },
+  {
+   "binding": "triggered_quiet_authored",
+   "fountain_drinks": 1,
+   "last_turn": 2023,
+   "levels": 4,
+   "native_effect": 0,
+   "outcome": "turn_limit",
+   "program": 2,
+   "program1_felt": true,
+   "seed": 57,
+   "start": "bard",
+   "termination": "completed",
+   "trigger": 1,
+   "whistles": 32,
+   "whistles_found": 0,
+   "whistles_per_100_turns": 1.58
+  },
+  {
+   "binding": "triggered_quiet_authored",
+   "fountain_drinks": 1,
+   "last_turn": 2023,
+   "levels": 4,
+   "native_effect": 0,
+   "outcome": "turn_limit",
+   "program": 3,
+   "program1_felt": true,
+   "seed": 57,
+   "start": "bard",
+   "termination": "completed",
+   "trigger": 1,
+   "whistles": 32,
+   "whistles_found": 0,
+   "whistles_per_100_turns": 1.58
+  },
+  {
+   "binding": "program_expiry_100_no_use",
+   "fountain_drinks": 0,
+   "last_turn": 1868,
+   "levels": 2,
+   "native_effect": 0,
+   "outcome": "died",
+   "program": 2,
+   "program1_felt": false,
+   "seed": 58,
+   "start": "bard",
+   "termination": "program_expired",
+   "trigger": 0,
+   "whistles": 21,
+   "whistles_found": 0,
+   "whistles_per_100_turns": 1.12
+  },
+  {
+   "binding": "triggered_quiet_authored",
+   "fountain_drinks": 0,
+   "last_turn": 2000,
+   "levels": 2,
+   "native_effect": 0,
+   "outcome": "turn_limit",
+   "program": 2,
+   "program1_felt": false,
+   "seed": 69,
+   "start": "bard",
+   "termination": "completed",
+   "trigger": 1,
+   "whistles": 26,
+   "whistles_found": 0,
+   "whistles_per_100_turns": 1.3
+  },
+  {
+   "binding": "program_expiry_100_no_use",
+   "fountain_drinks": 2,
+   "last_turn": 2000,
+   "levels": 2,
+   "native_effect": 0,
+   "outcome": "turn_limit",
+   "program": 2,
+   "program1_felt": false,
+   "seed": 70,
+   "start": "bard",
+   "termination": "program_expired",
+   "trigger": 0,
+   "whistles": 29,
+   "whistles_found": 0,
+   "whistles_per_100_turns": 1.45
+  },
+  {
+   "binding": "triggered_quiet_authored",
+   "fountain_drinks": 2,
+   "last_turn": 2000,
+   "levels": 1,
+   "native_effect": 0,
+   "outcome": "turn_limit",
+   "program": 2,
+   "program1_felt": false,
+   "seed": 78,
+   "start": "bard",
+   "termination": "completed",
+   "trigger": 1,
+   "whistles": 25,
+   "whistles_found": 0,
+   "whistles_per_100_turns": 1.25
+  },
+  {
+   "binding": "program_expiry_100_no_use",
+   "fountain_drinks": 2,
+   "last_turn": 1021,
+   "levels": 2,
+   "native_effect": 0,
+   "outcome": "died",
+   "program": 2,
+   "program1_felt": false,
+   "seed": 79,
+   "start": "bard",
+   "termination": "program_expired",
+   "trigger": 0,
+   "whistles": 16,
+   "whistles_found": 0,
+   "whistles_per_100_turns": 1.57
+  },
+  {
+   "binding": "origin_deadline_300_no_use",
+   "fountain_drinks": 0,
+   "last_turn": 2017,
+   "levels": 1,
+   "native_effect": 0,
+   "outcome": "turn_limit",
+   "program": 2,
+   "program1_felt": false,
+   "seed": 92,
+   "start": "bard",
+   "termination": "origin_expired",
+   "trigger": 0,
+   "whistles": 22,
+   "whistles_found": 0,
+   "whistles_per_100_turns": 1.09
+  },
+  {
+   "binding": "program_expiry_100_no_use",
+   "fountain_drinks": 4,
+   "last_turn": 2022,
+   "levels": 3,
+   "native_effect": 0,
+   "outcome": "turn_limit",
+   "program": 2,
+   "program1_felt": true,
+   "seed": 95,
+   "start": "bard",
+   "termination": "program_expired",
+   "trigger": 0,
+   "whistles": 20,
+   "whistles_found": 0,
+   "whistles_per_100_turns": 0.99
+  },
+  {
+   "binding": "triggered_quiet_authored",
+   "fountain_drinks": 4,
+   "last_turn": 2022,
+   "levels": 3,
+   "native_effect": 0,
+   "outcome": "turn_limit",
+   "program": 3,
+   "program1_felt": true,
+   "seed": 95,
+   "start": "bard",
+   "termination": "completed",
+   "trigger": 1,
+   "whistles": 20,
+   "whistles_found": 0,
+   "whistles_per_100_turns": 0.99
+  },
+  {
+   "binding": "program_expiry_100_no_use",
+   "fountain_drinks": 0,
+   "last_turn": 2007,
+   "levels": 2,
+   "native_effect": 0,
+   "outcome": "turn_limit",
+   "program": 2,
+   "program1_felt": true,
+   "seed": 96,
+   "start": "bard",
+   "termination": "program_expired",
+   "trigger": 0,
+   "whistles": 25,
+   "whistles_found": 0,
+   "whistles_per_100_turns": 1.25
+  },
+  {
+   "binding": "program_expiry_100_no_use",
+   "fountain_drinks": 0,
+   "last_turn": 1621,
+   "levels": 2,
+   "native_effect": 0,
+   "outcome": "died",
+   "program": 2,
+   "program1_felt": true,
+   "seed": 99,
+   "start": "bard",
+   "termination": "program_expired",
+   "trigger": 0,
+   "whistles": 35,
+   "whistles_found": 0,
+   "whistles_per_100_turns": 2.16
+  },
+  {
+   "binding": "triggered_quiet_authored",
+   "fountain_drinks": 2,
+   "last_turn": 452,
+   "levels": 2,
+   "native_effect": 0,
+   "outcome": "died",
+   "program": 2,
+   "program1_felt": false,
+   "seed": 8,
+   "start": "bard-inherited",
+   "termination": "completed",
+   "trigger": 1,
+   "whistles": 15,
+   "whistles_found": 0,
+   "whistles_per_100_turns": 3.32
+  },
+  {
+   "binding": "open_at_game_end",
+   "fountain_drinks": 1,
+   "last_turn": 364,
+   "levels": 2,
+   "native_effect": 0,
+   "outcome": "died",
+   "program": 2,
+   "program1_felt": false,
+   "seed": 20,
+   "start": "bard-inherited",
+   "termination": null,
+   "trigger": 0,
+   "whistles": 8,
+   "whistles_found": 0,
+   "whistles_per_100_turns": 2.2
+  },
+  {
+   "binding": "triggered_quiet_authored",
+   "fountain_drinks": 0,
+   "last_turn": 2000,
+   "levels": 3,
+   "native_effect": 0,
+   "outcome": "turn_limit",
+   "program": 2,
+   "program1_felt": false,
+   "seed": 26,
+   "start": "bard-inherited",
+   "termination": "completed",
+   "trigger": 1,
+   "whistles": 12,
+   "whistles_found": 0,
+   "whistles_per_100_turns": 0.6
+  },
+  {
+   "binding": "program_expiry_100_no_use",
+   "fountain_drinks": 0,
+   "last_turn": 1030,
+   "levels": 2,
+   "native_effect": 0,
+   "outcome": "died",
+   "program": 2,
+   "program1_felt": false,
+   "seed": 30,
+   "start": "bard-inherited",
+   "termination": "program_expired",
+   "trigger": 0,
+   "whistles": 9,
+   "whistles_found": 0,
+   "whistles_per_100_turns": 0.87
+  },
+  {
+   "binding": "open_at_game_end",
+   "fountain_drinks": 0,
+   "last_turn": 398,
+   "levels": 2,
+   "native_effect": 0,
+   "outcome": "died",
+   "program": 2,
+   "program1_felt": false,
+   "seed": 40,
+   "start": "bard-inherited",
+   "termination": null,
+   "trigger": 0,
+   "whistles": 4,
+   "whistles_found": 0,
+   "whistles_per_100_turns": 1.01
+  },
+  {
+   "binding": "program_expiry_100_no_use",
+   "fountain_drinks": 2,
+   "last_turn": 961,
+   "levels": 2,
+   "native_effect": 0,
+   "outcome": "died",
+   "program": 2,
+   "program1_felt": true,
+   "seed": 51,
+   "start": "bard-inherited",
+   "termination": "program_expired",
+   "trigger": 0,
+   "whistles": 12,
+   "whistles_found": 0,
+   "whistles_per_100_turns": 1.25
+  },
+  {
+   "binding": "w_capture_suppressed_at_use",
+   "fountain_drinks": 0,
+   "last_turn": 417,
+   "levels": 2,
+   "native_effect": 0,
+   "outcome": "died",
+   "program": 2,
+   "program1_felt": false,
+   "seed": 53,
+   "start": "bard-inherited",
+   "termination": "completed",
+   "trigger": 0,
+   "whistles": 4,
+   "whistles_found": 0,
+   "whistles_per_100_turns": 0.96
+  },
+  {
+   "binding": "triggered_quiet_authored",
+   "fountain_drinks": 0,
+   "last_turn": 1346,
+   "levels": 1,
+   "native_effect": 0,
+   "outcome": "died",
+   "program": 2,
+   "program1_felt": true,
+   "seed": 60,
+   "start": "bard-inherited",
+   "termination": "completed",
+   "trigger": 1,
+   "whistles": 10,
+   "whistles_found": 0,
+   "whistles_per_100_turns": 0.74
+  },
+  {
+   "binding": "program_expiry_100_no_use",
+   "fountain_drinks": 0,
+   "last_turn": 1034,
+   "levels": 2,
+   "native_effect": 0,
+   "outcome": "died",
+   "program": 2,
+   "program1_felt": false,
+   "seed": 87,
+   "start": "bard-inherited",
+   "termination": "program_expired",
+   "trigger": 0,
+   "whistles": 6,
+   "whistles_found": 0,
+   "whistles_per_100_turns": 0.58
+  },
+  {
+   "binding": "w_capture_suppressed_at_use",
+   "fountain_drinks": 0,
+   "last_turn": 1629,
+   "levels": 3,
+   "native_effect": 0,
+   "outcome": "died",
+   "program": 2,
+   "program1_felt": false,
+   "seed": 89,
+   "start": "bard-inherited",
+   "termination": "completed",
+   "trigger": 0,
+   "whistles": 7,
+   "whistles_found": 0,
+   "whistles_per_100_turns": 0.43
+  },
+  {
+   "binding": "triggered_quiet_authored",
+   "fountain_drinks": 0,
+   "last_turn": 766,
+   "levels": 1,
+   "native_effect": 0,
+   "outcome": "died",
+   "program": 2,
+   "program1_felt": false,
+   "seed": 100,
+   "start": "bard-inherited",
+   "termination": "completed",
+   "trigger": 1,
+   "whistles": 12,
+   "whistles_found": 0,
+   "whistles_per_100_turns": 1.57
+  },
+  {
+   "binding": "triggered_quiet_authored",
+   "fountain_drinks": 3,
+   "last_turn": 1681,
+   "levels": 4,
+   "native_effect": 0,
+   "outcome": "depth_limit",
+   "program": 3,
+   "program1_felt": false,
+   "seed": 7,
+   "start": "bard-default-path",
+   "termination": "completed",
+   "trigger": 1,
+   "whistles": 29,
+   "whistles_found": 0,
+   "whistles_per_100_turns": 1.73
+  },
+  {
+   "binding": "w_capture_suppressed_at_use",
+   "fountain_drinks": 0,
+   "last_turn": 2001,
+   "levels": 2,
+   "native_effect": 0,
+   "outcome": "turn_limit",
+   "program": 2,
+   "program1_felt": false,
+   "seed": 18,
+   "start": "bard-default-path",
+   "termination": "completed",
+   "trigger": 0,
+   "whistles": 18,
+   "whistles_found": 0,
+   "whistles_per_100_turns": 0.9
+  },
+  {
+   "binding": "w_capture_suppressed_at_use",
+   "fountain_drinks": 0,
+   "last_turn": 2018,
+   "levels": 3,
+   "native_effect": 0,
+   "outcome": "turn_limit",
+   "program": 2,
+   "program1_felt": true,
+   "seed": 25,
+   "start": "bard-default-path",
+   "termination": "completed",
+   "trigger": 0,
+   "whistles": 18,
+   "whistles_found": 0,
+   "whistles_per_100_turns": 0.89
+  },
+  {
+   "binding": "program_expiry_100_no_use",
+   "fountain_drinks": 0,
+   "last_turn": 1943,
+   "levels": 3,
+   "native_effect": 0,
+   "outcome": "died",
+   "program": 2,
+   "program1_felt": false,
+   "seed": 27,
+   "start": "bard-default-path",
+   "termination": "program_expired",
+   "trigger": 0,
+   "whistles": 36,
+   "whistles_found": 0,
+   "whistles_per_100_turns": 1.85
+  },
+  {
+   "binding": "program_expiry_100_no_use",
+   "fountain_drinks": 2,
+   "last_turn": 2000,
+   "levels": 3,
+   "native_effect": 0,
+   "outcome": "turn_limit",
+   "program": 3,
+   "program1_felt": true,
+   "seed": 56,
+   "start": "bard-default-path",
+   "termination": "program_expired",
+   "trigger": 0,
+   "whistles": 30,
+   "whistles_found": 0,
+   "whistles_per_100_turns": 1.5
+  },
+  {
+   "binding": "w_capture_suppressed_at_use",
+   "fountain_drinks": 2,
+   "last_turn": 2023,
+   "levels": 3,
+   "native_effect": 0,
+   "outcome": "turn_limit",
+   "program": 2,
+   "program1_felt": false,
+   "seed": 64,
+   "start": "bard-default-path",
+   "termination": "completed",
+   "trigger": 0,
+   "whistles": 33,
+   "whistles_found": 0,
+   "whistles_per_100_turns": 1.63
+  },
+  {
+   "binding": "w_capture_suppressed_at_use",
+   "fountain_drinks": 2,
+   "last_turn": 1664,
+   "levels": 4,
+   "native_effect": 0,
+   "outcome": "depth_limit",
+   "program": 2,
+   "program1_felt": false,
+   "seed": 72,
+   "start": "bard-default-path",
+   "termination": "completed",
+   "trigger": 0,
+   "whistles": 27,
+   "whistles_found": 0,
+   "whistles_per_100_turns": 1.62
+  },
+  {
+   "binding": "w_capture_suppressed_at_use",
+   "fountain_drinks": 3,
+   "last_turn": 1017,
+   "levels": 2,
+   "native_effect": 0,
+   "outcome": "died",
+   "program": 2,
+   "program1_felt": false,
+   "seed": 74,
+   "start": "bard-default-path",
+   "termination": "completed",
+   "trigger": 0,
+   "whistles": 17,
+   "whistles_found": 0,
+   "whistles_per_100_turns": 1.67
+  },
+  {
+   "binding": "open_at_game_end",
+   "fountain_drinks": 2,
+   "last_turn": 2000,
+   "levels": 1,
+   "native_effect": 0,
+   "outcome": "turn_limit",
+   "program": 2,
+   "program1_felt": false,
+   "seed": 78,
+   "start": "bard-default-path",
+   "termination": null,
+   "trigger": 0,
+   "whistles": 23,
+   "whistles_found": 0,
+   "whistles_per_100_turns": 1.15
+  },
+  {
+   "binding": "origin_deadline_300_no_use",
+   "fountain_drinks": 0,
+   "last_turn": 2002,
+   "levels": 1,
+   "native_effect": 0,
+   "outcome": "turn_limit",
+   "program": 2,
+   "program1_felt": false,
+   "seed": 91,
+   "start": "bard-default-path",
+   "termination": "origin_expired",
+   "trigger": 0,
+   "whistles": 26,
+   "whistles_found": 0,
+   "whistles_per_100_turns": 1.3
+  },
+  {
+   "binding": "open_at_game_end",
+   "fountain_drinks": 0,
+   "last_turn": 2003,
+   "levels": 1,
+   "native_effect": 0,
+   "outcome": "turn_limit",
+   "program": 2,
+   "program1_felt": false,
+   "seed": 92,
+   "start": "bard-default-path",
+   "termination": null,
+   "trigger": 0,
+   "whistles": 30,
+   "whistles_found": 0,
+   "whistles_per_100_turns": 1.5
+  },
+  {
+   "binding": "triggered_quiet_authored",
+   "fountain_drinks": 0,
+   "last_turn": 1031,
+   "levels": 4,
+   "native_effect": 0,
+   "outcome": "died",
+   "program": 2,
+   "program1_felt": false,
+   "seed": 95,
+   "start": "bard-default-path",
+   "termination": "completed",
+   "trigger": 1,
+   "whistles": 17,
+   "whistles_found": 0,
+   "whistles_per_100_turns": 1.65
+  }
+ ],
+ "source": {
+  "report_sha256": "671a0bb978eb8dcd0476c1d6bdf7ae5a8b62fa93aec1cfeb911fb96945459d5e",
+  "revision": "703ee7e54fed730eff6131707f05c7e7f06847d9"
+ }
+}
