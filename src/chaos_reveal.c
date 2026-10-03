@@ -584,6 +584,7 @@ static const char *w_outcome(int slot)
     case CHAOS_REVEAL_W_TERMINATED_EXPIRY: return "it expired before you whistled again";
     case CHAOS_REVEAL_W_TERMINATED_LEVEL: return "it ended when you left the level";
     case CHAOS_REVEAL_W_TERMINATED_TRANSPORT: return "it ended when its record could not be written";
+    case CHAOS_REVEAL_W_CONSUMED_RANG: return "your whistle's note rang on inside your head";
     }
     return 0;
 }
@@ -672,13 +673,16 @@ static void broad_lines(const struct chaos_reveal_next_use *nu, int w,
                         chaos_reveal_emit emit, void *arg)
 {
     const char *use = w ? "whistle" : "fountain drink";
-    out(emit, arg, "    Telegraph: \"%s\"", signal_text(w ? 7 : 8));
+    /* Ring: its own line (11) and its own felt wording. */
+    out(emit, arg, "    Telegraph: \"%s\"",
+        signal_text(w ? (nu->ring ? 11 : 7) : 8));
     out(emit, arg, "    Effect: for a while, any %s could answer it, at most %d %s.",
         use, nu->broad_uses, nu->broad_uses == 1 ? "time" : "times");
     if (nu->delivered > 0)
         out(emit, arg, "    Delivered: yes, %d %s; %s.", nu->delivered,
             nu->delivered == 1 ? "time" : "times",
-            w ? "you saw your companion answer the whistle"
+            w ? (nu->ring ? "the note rang on in your head and confused you"
+                          : "you saw your companion answer the whistle")
               : "you drank the changed water");
     else
         out(emit, arg, "    Delivered: no; no manifestation reached you.");
@@ -702,7 +706,7 @@ static void next_use_entry(const struct chaos_reveal_entry *e, const struct chao
     if (w && nu->origin_w > 0) origin_line(r, nu, 0, nu->origin_w, emit, arg);
     if (f && nu->origin_f > 0) origin_line(r, nu, 1, nu->origin_f, emit, arg);
     if (w && felt_before(&r->host, e->program, 0))
-        out(emit, arg, "    Recurrence: \"%s\"", signal_text(5));
+        out(emit, arg, "    Recurrence: \"%s\"", signal_text(nu->ring ? 10 : 5));
     if (f && felt_before(&r->host, e->program, 1))
         out(emit, arg, "    Recurrence: \"%s\"", signal_text(6));
     if (nu->broad_uses > 0 && (w != 0) != (f != 0)) {

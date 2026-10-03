@@ -171,9 +171,33 @@ _BROAD_RANGES = dict(
 )
 _BROAD_SNAPSHOT = _SNAPSHOT + " broad_uses delivered armed_level_token"
 
+# Ring (snapshot v8): a broad W program whose effect is ring. It adds the
+# w_effect field, the RANG slot (10), the W_RING operation (14), the
+# whistle_ring intent (4), the ring effect rows (13 delivered, 14 guarded)
+# and guard reasons 1-8. v6 and v7 journals keep the ranges above.
+RING_GUARD_MAX = 8
+_RING_RANGES = dict(
+    _BROAD_RANGES,
+    snapshot_v=(8, 8),
+    slot_w=(0, 10),
+    operation=(1, 14),
+    op=(0, 4),
+    end_reason=(0, RING_GUARD_MAX),
+    w_effect=(1, 1),
+)
+_RING_SNAPSHOT = _BROAD_SNAPSHOT + " w_effect"
+
 
 def _broad(s):
-    return s is not None and s.get("snapshot_v") == 7
+    return s is not None and s.get("snapshot_v") in (7, 8)
+
+
+def _ring(s):
+    return s is not None and s.get("snapshot_v") == 8
+
+
+def _ranges(s):
+    return _RING_RANGES if _ring(s) else _BROAD_RANGES if _broad(s) else _RANGES
 
 
 def _scalars(value, names, nested=(), ranges=_RANGES):
@@ -189,12 +213,13 @@ def _scalars(value, names, nested=(), ranges=_RANGES):
 
 
 def _snapshot(s):
-    broad = type(s) is dict and s.get("snapshot_v") == 7
+    ring = type(s) is dict and s.get("snapshot_v") == 8
+    broad = ring or (type(s) is dict and s.get("snapshot_v") == 7)
     _scalars(
         s,
-        _BROAD_SNAPSHOT if broad else _SNAPSHOT,
+        _RING_SNAPSHOT if ring else _BROAD_SNAPSHOT if broad else _SNAPSHOT,
         ("source_hex", "journal_sha256"),
-        _BROAD_RANGES if broad else _RANGES,
+        _RING_RANGES if ring else _BROAD_RANGES if broad else _RANGES,
     )
     _require(s["journal_sha256"] == "", "initial journal anchor")
     text = s["source_hex"]
@@ -224,6 +249,9 @@ def _snapshot(s):
     )
     if broad:  # C: a broad program also binds its declared effect bound.
         binding += "|uses=%d" % s["broad_uses"]
+    if ring:  # Ring also binds its effect.
+        binding += "|w=ring"
+        _require(s["slot_f"] == 0, "ring program declares W only")
     _require(_digest(binding.encode()) == s["binding_sha256"], "snapshot binding")
     if broad:
         _require(
@@ -255,7 +283,7 @@ def _snapshot(s):
 
 
 def _private(r, s, seq):
-    ranges = _BROAD_RANGES if _broad(s) else _RANGES
+    ranges = _ranges(s)
     _scalars(
         r,
         "next_use_private_v kind seq at_move program_id source_sha256 data",
@@ -312,13 +340,17 @@ def _private(r, s, seq):
             ("intent", "intent_sha256"),
             ranges,
         )
-        _scalars(d["intent"], "op state")
+        _scalars(d["intent"], "op state", (), ranges)
         _require(d["intent_present"] == d["intent_sha256_present"], "intent presence")
         if d["intent_present"]:
             _hash(d["intent_sha256"])
-            name = ("quiet", "delay", "whistle_attention", "fountain_refresh")[
-                d["intent"]["op"]
-            ]
+            name = (
+                "quiet",
+                "delay",
+                "whistle_attention",
+                "fountain_refresh",
+                "whistle_ring",
+            )[d["intent"]["op"]]
             _require(
                 d["intent_sha256"]
                 == _canonical_digest(
@@ -354,12 +386,29 @@ def _private(r, s, seq):
             names += " suppression"
         _scalars(d, names)
         _integer(d["family"], 1, 2)
-        _integer(
-            d["outcome"], 1 if d["family"] == 1 else 7, 6 if d["family"] == 1 else 12
-        )
+        if _ring(s) and d["family"] == 1:
+            _integer(d["outcome"], 1, 14)
+        else:
+            _integer(
+                d["outcome"],
+                1 if d["family"] == 1 else 7,
+                6 if d["family"] == 1 else 12,
+            )
+        if _ring(s) and d["family"] == 1:
+            # Ring: the W runtime never arms, so only ring rows (13, 14) and
+            # the pre-callback suppression row (2) can appear.
+            _require(d["outcome"] in (2, 13, 14), "ring W effect outcome")
         if "suppression" in d:
-            _integer(d["suppression"], 1, 3)
-            _require(d["family"] == 1 and d["outcome"] == 2, "suppression reason owner")
+            if d["outcome"] == 14:
+                _integer(d["suppression"], 1, RING_GUARD_MAX)
+            else:
+                _integer(d["suppression"], 1, 3)
+                _require(
+                    d["family"] == 1 and d["outcome"] == 2, "suppression reason owner"
+                )
+        _require(
+            d["outcome"] != 14 or "suppression" in d, "ring guard row without guard"
+        )
         # Only autonomous W endings can carry the NULL-root sentinel;
         # operation/reason and pre/poststate are checked in _transition.
         _require(
@@ -390,9 +439,11 @@ def _envelope(d, s, source):
     )
     _require(_digest(raw) == d["envelope_sha256"], "envelope digest")
     e = _json(raw.decode("utf-8"))
-    broad = _broad(s)
+    broad, ring = _broad(s), _ring(s)
     names = "at cost id next_use_program_v operations origin_refs source source_sha256 telegraph ttl variant"
-    _keys(e, names + (" uses" if broad else ""))
+    _keys(e, names + (" uses" if broad else "") + (" w_effect" if ring else ""))
+    if ring:  # Ring: v4 names its effect, which pins the telegraph.
+        _require(e["w_effect"] == "ring", "envelope w_effect")
     if broad:  # C: v3 declares its effect bound; the snapshot binds it.
         _integer(e["uses"], 1, BROAD_USES_MAX)
         _require(e["uses"] == s["broad_uses"], "envelope effect bound")
@@ -400,7 +451,11 @@ def _envelope(d, s, source):
         ("at", 0, I32),
         ("cost", 1, 2),
         ("id", 1, I32),
-        ("next_use_program_v", 3 if broad else 2, 3 if broad else 2),
+        (
+            "next_use_program_v",
+            4 if ring else 3 if broad else 2,
+            4 if ring else 3 if broad else 2,
+        ),
         ("ttl", 100, 300),
         ("variant", 0, 2),
     ):
@@ -421,7 +476,11 @@ def _envelope(d, s, source):
         and e["variant"] == s["variant"]
         and e["at"] == d["at_safe"]
         and e["telegraph"]
-        == ("next-use-v3-" if broad else "next-use-v2-") + "".join(ops),
+        == (
+            "next-use-v4-Wr"
+            if ring
+            else ("next-use-v3-" if broad else "next-use-v2-") + "".join(ops)
+        ),
         "envelope admission binding",
     )
     _require(
@@ -522,8 +581,12 @@ def _transition(t, s, seq, prior):
         t,
         _TRANSITION,
         ("expected_token", "post", "private_records", "public_records"),
-        _BROAD_RANGES if broad else _RANGES,
+        _ranges(s),
     )
+    if t["operation"] == 14:
+        # Ring: one top-level W_RING per valid whistle_ring intent. Its
+        # end_reason is the guard (0 = delivered).
+        _require(_ring(s) and t["root"] > 0, "ring transition owner")
     _require(t["source_sha256"] == s["source_sha256"], "transition source")
     _scalars(t["expected_token"], "root active remap consumed")
     token = t["expected_token"]
@@ -613,6 +676,24 @@ def _transition(t, s, seq, prior):
                 )
             else:
                 _require("suppression" not in d, "nested suppression reason")
+        elif r["kind"] == 4 and d["family"] == 1 and d["outcome"] in (13, 14):
+            guard = t["end_reason"]
+            _require(
+                t["operation"] == 14
+                and d["root"] == t["root"] == prior["pending_w_root"]
+                and prior["pending_w_capture"] == 1
+                and not p["pending_w_capture"]
+                and t["expected_result"] == int(d["outcome"] == 13)
+                and (
+                    (d["outcome"] == 13 and guard == 0 and t["slot_w"] == 10)
+                    or (
+                        d["outcome"] == 14
+                        and guard == d["suppression"]
+                        and t["slot_w"] == 6
+                    )
+                ),
+                "ring effect binding",
+            )
         elif r["kind"] == 4 and d["family"] == 2:
             _require(
                 t["operation"] == 6
