@@ -1,0 +1,224 @@
+{
+ "bard": {
+  "gate_now": {
+   "part1": 13,
+   "part3": 6,
+   "targets": {
+    "part1": 10,
+    "part3": 3
+   }
+  },
+  "levers": {
+   "blocked_callbacks": {
+    "estimate_upper_bound": {
+     "games": 8,
+     "p": 1.0,
+     "part1_gain": 2.0,
+     "part3_gain": 4.0,
+     "programs": 8
+    },
+    "measured": {
+     "blocked_callbacks_all_programs": 31,
+     "later_programs_blocked_never_delivered": 8
+    }
+   },
+   "budget": {
+    "estimate_plus1": {
+     "games": 9,
+     "p": 0.232,
+     "part1_gain": 0.9,
+     "part3_gain": 0.2,
+     "programs": 9
+    },
+    "estimate_plus2": {
+     "games": 9,
+     "p": 0.232,
+     "part1_gain": 0.9,
+     "part3_gain": 0.2,
+     "programs": 9
+    },
+    "measured": {
+     "admitted_at_plus1": 9,
+     "admitted_at_plus2": 9,
+     "later_refusals_budget": 9,
+     "sanity_only_view_plus1": 7,
+     "sanity_only_view_plus2": 8
+    }
+   },
+   "origin_deadline": {
+    "estimate": {
+     "games": 5,
+     "p": 0.464,
+     "part1_gain": 0.9,
+     "part3_gain": 0.9,
+     "programs": 5
+    },
+    "measured": {
+     "later_programs_origin_expired": 43,
+     "with_companion_whistle_after_origin_deadline": 5
+    }
+   },
+   "program1_whistle_check": {
+    "estimate_upper_bound": {
+     "games": 5,
+     "p": 0.548,
+     "part1_gain": 0.0,
+     "part3_gain": 0.0,
+     "programs": 5
+    },
+    "measured": {
+     "games_later_whistle_companion_in_view": 5,
+     "refusals_no_companion": 37
+    }
+   }
+  }
+ },
+ "bard-default-path": {
+  "gate_now": {
+   "part1": 6,
+   "part3": 1,
+   "targets": {
+    "part1": 10,
+    "part3": 3
+   }
+  },
+  "levers": {
+   "blocked_callbacks": {
+    "estimate_upper_bound": {
+     "games": 5,
+     "p": 1.0,
+     "part1_gain": 1.0,
+     "part3_gain": 3.0,
+     "programs": 5
+    },
+    "measured": {
+     "blocked_callbacks_all_programs": 33,
+     "later_programs_blocked_never_delivered": 5
+    }
+   },
+   "budget": {
+    "estimate_plus1": {
+     "games": 33,
+     "p": 0.161,
+     "part1_gain": 1.5,
+     "part3_gain": 0.6,
+     "programs": 38
+    },
+    "estimate_plus2": {
+     "games": 33,
+     "p": 0.161,
+     "part1_gain": 1.5,
+     "part3_gain": 0.6,
+     "programs": 38
+    },
+    "measured": {
+     "admitted_at_plus1": 38,
+     "admitted_at_plus2": 38,
+     "later_refusals_budget": 38,
+     "sanity_only_view_plus1": 6,
+     "sanity_only_view_plus2": 24
+    }
+   },
+   "origin_deadline": {
+    "estimate": {
+     "games": 2,
+     "p": 0.25,
+     "part1_gain": 0.2,
+     "part3_gain": 0.2,
+     "programs": 2
+    },
+    "measured": {
+     "later_programs_origin_expired": 23,
+     "with_companion_whistle_after_origin_deadline": 2
+    }
+   },
+   "program1_whistle_check": {
+    "estimate_upper_bound": {
+     "games": 6,
+     "p": 0.432,
+     "part1_gain": 0.0,
+     "part3_gain": 0.4,
+     "programs": 6
+    },
+    "measured": {
+     "games_later_whistle_companion_in_view": 6,
+     "refusals_no_companion": 40
+    }
+   }
+  }
+ },
+ "bard-inherited": {
+  "gate_now": {
+   "part1": 3,
+   "part3": 0,
+   "targets": {
+    "part1": 10,
+    "part3": 3
+   }
+  },
+  "levers": {
+   "blocked_callbacks": {
+    "estimate_upper_bound": {
+     "games": 2,
+     "p": 1.0,
+     "part1_gain": 2.0,
+     "part3_gain": 1.0,
+     "programs": 2
+    },
+    "measured": {
+     "blocked_callbacks_all_programs": 21,
+     "later_programs_blocked_never_delivered": 2
+    }
+   },
+   "budget": {
+    "estimate_plus1": {
+     "games": 2,
+     "p": 0.312,
+     "part1_gain": 0.3,
+     "part3_gain": 0.0,
+     "programs": 3
+    },
+    "estimate_plus2": {
+     "games": 2,
+     "p": 0.312,
+     "part1_gain": 0.3,
+     "part3_gain": 0.0,
+     "programs": 3
+    },
+    "measured": {
+     "admitted_at_plus1": 3,
+     "admitted_at_plus2": 3,
+     "later_refusals_budget": 3,
+     "sanity_only_view_plus1": 3,
+     "sanity_only_view_plus2": 3
+    }
+   },
+   "origin_deadline": {
+    "estimate": {
+     "games": 3,
+     "p": 0.5,
+     "part1_gain": 1.0,
+     "part3_gain": 1.0,
+     "programs": 3
+    },
+    "measured": {
+     "later_programs_origin_expired": 10,
+     "with_companion_whistle_after_origin_deadline": 3
+    }
+   },
+   "program1_whistle_check": {
+    "estimate_upper_bound": {
+     "games": 11,
+     "p": 0.233,
+     "part1_gain": 0.5,
+     "part3_gain": 0.5,
+     "programs": 11
+    },
+    "measured": {
+     "games_later_whistle_companion_in_view": 11,
+     "refusals_no_companion": 31
+    }
+   }
+  }
+ }
+}

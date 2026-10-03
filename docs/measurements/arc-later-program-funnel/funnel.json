@@ -1,0 +1,3985 @@
+{
+ "starts": {
+  "bard": {
+   "games": 100,
+   "levers": {
+    "later_admitted": 56,
+    "later_blocked_never_delivered": 8,
+    "later_felt": 9
+   },
+   "q1": {
+    "program_1": {
+     "blocked_all_failing": {
+      "goal_apport": 3,
+      "goal_not_player_square": 1,
+      "not_publicly_visible_before_move": 4,
+      "ordinary_whistle_pull_active": 1
+     },
+     "blocked_first_failing": {
+      "classified_but_move_not_published": 8,
+      "goal_apport": 3,
+      "goal_not_player_square": 1,
+      "not_publicly_visible_before_move": 3,
+      "ordinary_whistle_pull_active": 1
+     },
+     "outcomes": {
+      "W:blocked": 16,
+      "W:delivered": 23,
+      "W:no_decision_in_window": 3
+     },
+     "reached_callback": 42
+    },
+    "program_2": {
+     "blocked_all_failing": {
+      "goal_not_player_square": 2,
+      "not_publicly_visible_before_move": 7,
+      "ordinary_whistle_pull_active": 6
+     },
+     "blocked_first_failing": {
+      "classified_but_move_not_published": 2,
+      "goal_not_player_square": 1,
+      "not_publicly_visible_before_move": 3,
+      "ordinary_whistle_pull_active": 6
+     },
+     "outcomes": {
+      "W:blocked": 12,
+      "W:delivered": 11
+     },
+     "reached_callback": 23
+    },
+    "program_3": {
+     "blocked_all_failing": {
+      "goal_not_player_square": 1,
+      "not_publicly_visible_before_move": 1,
+      "ordinary_whistle_pull_active": 1
+     },
+     "blocked_first_failing": {
+      "classified_but_move_not_published": 1,
+      "goal_not_player_square": 1,
+      "ordinary_whistle_pull_active": 1
+     },
+     "outcomes": {
+      "W:blocked": 3,
+      "W:delivered": 2
+     },
+     "reached_callback": 5
+    }
+   },
+   "q2": {
+    "after_expiry_programs_with_companion_whistle": 5,
+    "after_expiry_programs_with_fountain": 1,
+    "fountain_drinks": 7,
+    "moves_admission_to_origin_expiry": {
+     "max": 294,
+     "median": 219,
+     "min": 14
+    },
+    "n": 43,
+    "origin_lag_at_admission": {
+     "max": 287,
+     "median": 82,
+     "min": 7
+    },
+    "programs": [
+     {
+      "admission_move": 694,
+      "callback_outcomes": [],
+      "callbacks": 0,
+      "companion_in_view_at_whistle": [
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "fountain_drinks": 0,
+      "fountains_after_origin_expiry": 0,
+      "game": "bard-00005",
+      "game_ended_before_program_expiry": false,
+      "moves_admission_to_origin_expiry": 134,
+      "moves_program_would_have_left": 166,
+      "ordinal": 2,
+      "origin_deadline": 827,
+      "origin_move": 527,
+      "program_expiry": 994,
+      "terminal_turn": 802,
+      "whistle_uses": 6,
+      "whistles_after_origin_expiry": 1,
+      "whistles_after_origin_expiry_companion_in_view": 0
+     },
+     {
+      "admission_move": 1015,
+      "callback_outcomes": [],
+      "callbacks": 0,
+      "companion_in_view_at_whistle": [
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "fountain_drinks": 0,
+      "fountains_after_origin_expiry": 0,
+      "game": "bard-00005",
+      "game_ended_before_program_expiry": false,
+      "moves_admission_to_origin_expiry": 253,
+      "moves_program_would_have_left": 47,
+      "ordinal": 3,
+      "origin_deadline": 1267,
+      "origin_move": 967,
+      "program_expiry": 1315,
+      "terminal_turn": 1228,
+      "whistle_uses": 5,
+      "whistles_after_origin_expiry": 0,
+      "whistles_after_origin_expiry_companion_in_view": 0
+     },
+     {
+      "admission_move": 841,
+      "callback_outcomes": [],
+      "callbacks": 0,
+      "companion_in_view_at_whistle": [
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "fountain_drinks": 0,
+      "fountains_after_origin_expiry": 0,
+      "game": "bard-00008",
+      "game_ended_before_program_expiry": false,
+      "moves_admission_to_origin_expiry": 256,
+      "moves_program_would_have_left": 44,
+      "ordinal": 2,
+      "origin_deadline": 1096,
+      "origin_move": 796,
+      "program_expiry": 1141,
+      "terminal_turn": 1059,
+      "whistle_uses": 5,
+      "whistles_after_origin_expiry": 0,
+      "whistles_after_origin_expiry_companion_in_view": 0
+     },
+     {
+      "admission_move": 1069,
+      "callback_outcomes": [
+       "blocked"
+      ],
+      "callbacks": 1,
+      "companion_in_view_at_whistle": [
+       1,
+       0,
+       0
+      ],
+      "fountain_drinks": 2,
+      "fountains_after_origin_expiry": 0,
+      "game": "bard-00012",
+      "game_ended_before_program_expiry": false,
+      "moves_admission_to_origin_expiry": 221,
+      "moves_program_would_have_left": 79,
+      "ordinal": 2,
+      "origin_deadline": 1289,
+      "origin_move": 989,
+      "program_expiry": 1369,
+      "terminal_turn": 1261,
+      "whistle_uses": 3,
+      "whistles_after_origin_expiry": 1,
+      "whistles_after_origin_expiry_companion_in_view": 0
+     },
+     {
+      "admission_move": 1181,
+      "callback_outcomes": [],
+      "callbacks": 0,
+      "companion_in_view_at_whistle": [],
+      "fountain_drinks": 0,
+      "fountains_after_origin_expiry": 0,
+      "game": "bard-00016",
+      "game_ended_before_program_expiry": false,
+      "moves_admission_to_origin_expiry": 224,
+      "moves_program_would_have_left": 76,
+      "ordinal": 2,
+      "origin_deadline": 1404,
+      "origin_move": 1104,
+      "program_expiry": 1481,
+      "terminal_turn": 1373,
+      "whistle_uses": 0,
+      "whistles_after_origin_expiry": 1,
+      "whistles_after_origin_expiry_companion_in_view": 0
+     },
+     {
+      "admission_move": 1232,
+      "callback_outcomes": [
+       "delivered"
+      ],
+      "callbacks": 1,
+      "companion_in_view_at_whistle": [
+       0,
+       1
+      ],
+      "fountain_drinks": 0,
+      "fountains_after_origin_expiry": 0,
+      "game": "bard-00017",
+      "game_ended_before_program_expiry": false,
+      "moves_admission_to_origin_expiry": 148,
+      "moves_program_would_have_left": 152,
+      "ordinal": 2,
+      "origin_deadline": 1379,
+      "origin_move": 1079,
+      "program_expiry": 1532,
+      "terminal_turn": 1379,
+      "whistle_uses": 2,
+      "whistles_after_origin_expiry": 0,
+      "whistles_after_origin_expiry_companion_in_view": 0
+     },
+     {
+      "admission_move": 648,
+      "callback_outcomes": [],
+      "callbacks": 0,
+      "companion_in_view_at_whistle": [
+       0
+      ],
+      "fountain_drinks": 0,
+      "fountains_after_origin_expiry": 0,
+      "game": "bard-00020",
+      "game_ended_before_program_expiry": false,
+      "moves_admission_to_origin_expiry": 71,
+      "moves_program_would_have_left": 229,
+      "ordinal": 2,
+      "origin_deadline": 718,
+      "origin_move": 418,
+      "program_expiry": 948,
+      "terminal_turn": 706,
+      "whistle_uses": 1,
+      "whistles_after_origin_expiry": 3,
+      "whistles_after_origin_expiry_companion_in_view": 0
+     },
+     {
+      "admission_move": 895,
+      "callback_outcomes": [],
+      "callbacks": 0,
+      "companion_in_view_at_whistle": [],
+      "fountain_drinks": 0,
+      "fountains_after_origin_expiry": 0,
+      "game": "bard-00020",
+      "game_ended_before_program_expiry": false,
+      "moves_admission_to_origin_expiry": 188,
+      "moves_program_would_have_left": 112,
+      "ordinal": 3,
+      "origin_deadline": 1082,
+      "origin_move": 782,
+      "program_expiry": 1195,
+      "terminal_turn": 1064,
+      "whistle_uses": 0,
+      "whistles_after_origin_expiry": 1,
+      "whistles_after_origin_expiry_companion_in_view": 0
+     },
+     {
+      "admission_move": 1017,
+      "callback_outcomes": [],
+      "callbacks": 0,
+      "companion_in_view_at_whistle": [
+       0,
+       0,
+       0
+      ],
+      "fountain_drinks": 0,
+      "fountains_after_origin_expiry": 0,
+      "game": "bard-00021",
+      "game_ended_before_program_expiry": false,
+      "moves_admission_to_origin_expiry": 211,
+      "moves_program_would_have_left": 89,
+      "ordinal": 3,
+      "origin_deadline": 1227,
+      "origin_move": 927,
+      "program_expiry": 1317,
+      "terminal_turn": 1217,
+      "whistle_uses": 3,
+      "whistles_after_origin_expiry": 0,
+      "whistles_after_origin_expiry_companion_in_view": 0
+     },
+     {
+      "admission_move": 869,
+      "callback_outcomes": [
+       "blocked",
+       "blocked",
+       "blocked",
+       "delivered"
+      ],
+      "callbacks": 4,
+      "companion_in_view_at_whistle": [
+       1,
+       1,
+       1,
+       0,
+       1,
+       1,
+       0
+      ],
+      "fountain_drinks": 0,
+      "fountains_after_origin_expiry": 0,
+      "game": "bard-00022",
+      "game_ended_before_program_expiry": false,
+      "moves_admission_to_origin_expiry": 288,
+      "moves_program_would_have_left": 12,
+      "ordinal": 2,
+      "origin_deadline": 1156,
+      "origin_move": 856,
+      "program_expiry": 1169,
+      "terminal_turn": 1156,
+      "whistle_uses": 7,
+      "whistles_after_origin_expiry": 0,
+      "whistles_after_origin_expiry_companion_in_view": 0
+     },
+     {
+      "admission_move": 656,
+      "callback_outcomes": [
+       "blocked",
+       "blocked"
+      ],
+      "callbacks": 2,
+      "companion_in_view_at_whistle": [
+       1,
+       0,
+       1
+      ],
+      "fountain_drinks": 0,
+      "fountains_after_origin_expiry": 0,
+      "game": "bard-00025",
+      "game_ended_before_program_expiry": false,
+      "moves_admission_to_origin_expiry": 232,
+      "moves_program_would_have_left": 68,
+      "ordinal": 2,
+      "origin_deadline": 887,
+      "origin_move": 587,
+      "program_expiry": 956,
+      "terminal_turn": 885,
+      "whistle_uses": 3,
+      "whistles_after_origin_expiry": 0,
+      "whistles_after_origin_expiry_companion_in_view": 0
+     },
+     {
+      "admission_move": 636,
+      "callback_outcomes": [],
+      "callbacks": 0,
+      "companion_in_view_at_whistle": [
+       0
+      ],
+      "fountain_drinks": 0,
+      "fountains_after_origin_expiry": 0,
+      "game": "bard-00028",
+      "game_ended_before_program_expiry": false,
+      "moves_admission_to_origin_expiry": 183,
+      "moves_program_would_have_left": 117,
+      "ordinal": 2,
+      "origin_deadline": 818,
+      "origin_move": 518,
+      "program_expiry": 936,
+      "terminal_turn": 810,
+      "whistle_uses": 1,
+      "whistles_after_origin_expiry": 2,
+      "whistles_after_origin_expiry_companion_in_view": 0
+     },
+     {
+      "admission_move": 958,
+      "callback_outcomes": [],
+      "callbacks": 0,
+      "companion_in_view_at_whistle": [
+       0
+      ],
+      "fountain_drinks": 0,
+      "fountains_after_origin_expiry": 0,
+      "game": "bard-00028",
+      "game_ended_before_program_expiry": false,
+      "moves_admission_to_origin_expiry": 273,
+      "moves_program_would_have_left": 27,
+      "ordinal": 3,
+      "origin_deadline": 1230,
+      "origin_move": 930,
+      "program_expiry": 1258,
+      "terminal_turn": 1214,
+      "whistle_uses": 1,
+      "whistles_after_origin_expiry": 0,
+      "whistles_after_origin_expiry_companion_in_view": 0
+     },
+     {
+      "admission_move": 656,
+      "callback_outcomes": [],
+      "callbacks": 0,
+      "companion_in_view_at_whistle": [
+       0,
+       0
+      ],
+      "fountain_drinks": 0,
+      "fountains_after_origin_expiry": 0,
+      "game": "bard-00029",
+      "game_ended_before_program_expiry": false,
+      "moves_admission_to_origin_expiry": 196,
+      "moves_program_would_have_left": 104,
+      "ordinal": 2,
+      "origin_deadline": 851,
+      "origin_move": 551,
+      "program_expiry": 956,
+      "terminal_turn": 848,
+      "whistle_uses": 2,
+      "whistles_after_origin_expiry": 0,
+      "whistles_after_origin_expiry_companion_in_view": 0
+     },
+     {
+      "admission_move": 890,
+      "callback_outcomes": [],
+      "callbacks": 0,
+      "companion_in_view_at_whistle": [
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "fountain_drinks": 0,
+      "fountains_after_origin_expiry": 0,
+      "game": "bard-00033",
+      "game_ended_before_program_expiry": false,
+      "moves_admission_to_origin_expiry": 288,
+      "moves_program_would_have_left": 12,
+      "ordinal": 2,
+      "origin_deadline": 1177,
+      "origin_move": 877,
+      "program_expiry": 1190,
+      "terminal_turn": 1154,
+      "whistle_uses": 10,
+      "whistles_after_origin_expiry": 2,
+      "whistles_after_origin_expiry_companion_in_view": 0
+     },
+     {
+      "admission_move": 807,
+      "callback_outcomes": [],
+      "callbacks": 0,
+      "companion_in_view_at_whistle": [],
+      "fountain_drinks": 0,
+      "fountains_after_origin_expiry": 0,
+      "game": "bard-00036",
+      "game_ended_before_program_expiry": false,
+      "moves_admission_to_origin_expiry": 200,
+      "moves_program_would_have_left": 100,
+      "ordinal": 2,
+      "origin_deadline": 1006,
+      "origin_move": 706,
+      "program_expiry": 1107,
+      "terminal_turn": 999,
+      "whistle_uses": 0,
+      "whistles_after_origin_expiry": 0,
+      "whistles_after_origin_expiry_companion_in_view": 0
+     },
+     {
+      "admission_move": 1304,
+      "callback_outcomes": [],
+      "callbacks": 0,
+      "companion_in_view_at_whistle": [],
+      "fountain_drinks": 0,
+      "fountains_after_origin_expiry": 0,
+      "game": "bard-00037",
+      "game_ended_before_program_expiry": false,
+      "moves_admission_to_origin_expiry": 215,
+      "moves_program_would_have_left": 85,
+      "ordinal": 2,
+      "origin_deadline": 1518,
+      "origin_move": 1218,
+      "program_expiry": 1604,
+      "terminal_turn": 1518,
+      "whistle_uses": 0,
+      "whistles_after_origin_expiry": 3,
+      "whistles_after_origin_expiry_companion_in_view": 0
+     },
+     {
+      "admission_move": 699,
+      "callback_outcomes": [],
+      "callbacks": 0,
+      "companion_in_view_at_whistle": [
+       0,
+       0
+      ],
+      "fountain_drinks": 1,
+      "fountains_after_origin_expiry": 1,
+      "game": "bard-00038",
+      "game_ended_before_program_expiry": false,
+      "moves_admission_to_origin_expiry": 62,
+      "moves_program_would_have_left": 238,
+      "ordinal": 2,
+      "origin_deadline": 760,
+      "origin_move": 460,
+      "program_expiry": 999,
+      "terminal_turn": 761,
+      "whistle_uses": 2,
+      "whistles_after_origin_expiry": 5,
+      "whistles_after_origin_expiry_companion_in_view": 0
+     },
+     {
+      "admission_move": 1090,
+      "callback_outcomes": [],
+      "callbacks": 0,
+      "companion_in_view_at_whistle": [],
+      "fountain_drinks": 0,
+      "fountains_after_origin_expiry": 0,
+      "game": "bard-00038",
+      "game_ended_before_program_expiry": false,
+      "moves_admission_to_origin_expiry": 269,
+      "moves_program_would_have_left": 31,
+      "ordinal": 3,
+      "origin_deadline": 1358,
+      "origin_move": 1058,
+      "program_expiry": 1390,
+      "terminal_turn": 1311,
+      "whistle_uses": 0,
+      "whistles_after_origin_expiry": 0,
+      "whistles_after_origin_expiry_companion_in_view": 0
+     },
+     {
+      "admission_move": 1173,
+      "callback_outcomes": [
+       "delivered"
+      ],
+      "callbacks": 1,
+      "companion_in_view_at_whistle": [
+       1
+      ],
+      "fountain_drinks": 0,
+      "fountains_after_origin_expiry": 0,
+      "game": "bard-00040",
+      "game_ended_before_program_expiry": false,
+      "moves_admission_to_origin_expiry": 257,
+      "moves_program_would_have_left": 43,
+      "ordinal": 2,
+      "origin_deadline": 1429,
+      "origin_move": 1129,
+      "program_expiry": 1473,
+      "terminal_turn": 1342,
+      "whistle_uses": 1,
+      "whistles_after_origin_expiry": 0,
+      "whistles_after_origin_expiry_companion_in_view": 0
+     },
+     {
+      "admission_move": 1016,
+      "callback_outcomes": [
+       "blocked"
+      ],
+      "callbacks": 1,
+      "companion_in_view_at_whistle": [
+       0,
+       0,
+       1,
+       1,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "fountain_drinks": 0,
+      "fountains_after_origin_expiry": 0,
+      "game": "bard-00041",
+      "game_ended_before_program_expiry": false,
+      "moves_admission_to_origin_expiry": 282,
+      "moves_program_would_have_left": 18,
+      "ordinal": 2,
+      "origin_deadline": 1297,
+      "origin_move": 997,
+      "program_expiry": 1316,
+      "terminal_turn": 1254,
+      "whistle_uses": 9,
+      "whistles_after_origin_expiry": 0,
+      "whistles_after_origin_expiry_companion_in_view": 0
+     },
+     {
+      "admission_move": 789,
+      "callback_outcomes": [],
+      "callbacks": 0,
+      "companion_in_view_at_whistle": [
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "fountain_drinks": 0,
+      "fountains_after_origin_expiry": 0,
+      "game": "bard-00043",
+      "game_ended_before_program_expiry": false,
+      "moves_admission_to_origin_expiry": 244,
+      "moves_program_would_have_left": 56,
+      "ordinal": 2,
+      "origin_deadline": 1032,
+      "origin_move": 732,
+      "program_expiry": 1089,
+      "terminal_turn": 1025,
+      "whistle_uses": 5,
+      "whistles_after_origin_expiry": 1,
+      "whistles_after_origin_expiry_companion_in_view": 0
+     },
+     {
+      "admission_move": 1265,
+      "callback_outcomes": [],
+      "callbacks": 0,
+      "companion_in_view_at_whistle": [
+       0
+      ],
+      "fountain_drinks": 0,
+      "fountains_after_origin_expiry": 0,
+      "game": "bard-00043",
+      "game_ended_before_program_expiry": false,
+      "moves_admission_to_origin_expiry": 286,
+      "moves_program_would_have_left": 14,
+      "ordinal": 3,
+      "origin_deadline": 1550,
+      "origin_move": 1250,
+      "program_expiry": 1565,
+      "terminal_turn": 1531,
+      "whistle_uses": 1,
+      "whistles_after_origin_expiry": 1,
+      "whistles_after_origin_expiry_companion_in_view": 0
+     },
+     {
+      "admission_move": 1949,
+      "callback_outcomes": [],
+      "callbacks": 0,
+      "companion_in_view_at_whistle": [],
+      "fountain_drinks": 0,
+      "fountains_after_origin_expiry": 0,
+      "game": "bard-00044",
+      "game_ended_before_program_expiry": true,
+      "moves_admission_to_origin_expiry": 15,
+      "moves_program_would_have_left": 285,
+      "ordinal": 2,
+      "origin_deadline": 1963,
+      "origin_move": 1663,
+      "program_expiry": 2249,
+      "terminal_turn": 1949,
+      "whistle_uses": 0,
+      "whistles_after_origin_expiry": 0,
+      "whistles_after_origin_expiry_companion_in_view": 0
+     },
+     {
+      "admission_move": 1548,
+      "callback_outcomes": [
+       "delivered"
+      ],
+      "callbacks": 1,
+      "companion_in_view_at_whistle": [
+       0,
+       1,
+       0
+      ],
+      "fountain_drinks": 1,
+      "fountains_after_origin_expiry": 0,
+      "game": "bard-00055",
+      "game_ended_before_program_expiry": false,
+      "moves_admission_to_origin_expiry": 193,
+      "moves_program_would_have_left": 107,
+      "ordinal": 2,
+      "origin_deadline": 1740,
+      "origin_move": 1440,
+      "program_expiry": 1848,
+      "terminal_turn": 1732,
+      "whistle_uses": 3,
+      "whistles_after_origin_expiry": 2,
+      "whistles_after_origin_expiry_companion_in_view": 2
+     },
+     {
+      "admission_move": 1045,
+      "callback_outcomes": [
+       "blocked",
+       "blocked"
+      ],
+      "callbacks": 2,
+      "companion_in_view_at_whistle": [
+       1,
+       1,
+       0
+      ],
+      "fountain_drinks": 0,
+      "fountains_after_origin_expiry": 0,
+      "game": "bard-00056",
+      "game_ended_before_program_expiry": false,
+      "moves_admission_to_origin_expiry": 267,
+      "moves_program_would_have_left": 33,
+      "ordinal": 3,
+      "origin_deadline": 1311,
+      "origin_move": 1011,
+      "program_expiry": 1345,
+      "terminal_turn": 1311,
+      "whistle_uses": 3,
+      "whistles_after_origin_expiry": 0,
+      "whistles_after_origin_expiry_companion_in_view": 0
+     },
+     {
+      "admission_move": 768,
+      "callback_outcomes": [
+       "blocked"
+      ],
+      "callbacks": 1,
+      "companion_in_view_at_whistle": [
+       1,
+       0
+      ],
+      "fountain_drinks": 0,
+      "fountains_after_origin_expiry": 0,
+      "game": "bard-00057",
+      "game_ended_before_program_expiry": false,
+      "moves_admission_to_origin_expiry": 272,
+      "moves_program_would_have_left": 28,
+      "ordinal": 2,
+      "origin_deadline": 1039,
+      "origin_move": 739,
+      "program_expiry": 1068,
+      "terminal_turn": 1030,
+      "whistle_uses": 2,
+      "whistles_after_origin_expiry": 0,
+      "whistles_after_origin_expiry_companion_in_view": 0
+     },
+     {
+      "admission_move": 1165,
+      "callback_outcomes": [
+       "blocked"
+      ],
+      "callbacks": 1,
+      "companion_in_view_at_whistle": [
+       0,
+       1,
+       1,
+       0,
+       0,
+       0
+      ],
+      "fountain_drinks": 0,
+      "fountains_after_origin_expiry": 0,
+      "game": "bard-00058",
+      "game_ended_before_program_expiry": false,
+      "moves_admission_to_origin_expiry": 288,
+      "moves_program_would_have_left": 12,
+      "ordinal": 2,
+      "origin_deadline": 1452,
+      "origin_move": 1152,
+      "program_expiry": 1465,
+      "terminal_turn": 1442,
+      "whistle_uses": 6,
+      "whistles_after_origin_expiry": 0,
+      "whistles_after_origin_expiry_companion_in_view": 0
+     },
+     {
+      "admission_move": 856,
+      "callback_outcomes": [],
+      "callbacks": 0,
+      "companion_in_view_at_whistle": [
+       0,
+       0
+      ],
+      "fountain_drinks": 0,
+      "fountains_after_origin_expiry": 0,
+      "game": "bard-00063",
+      "game_ended_before_program_expiry": false,
+      "moves_admission_to_origin_expiry": 211,
+      "moves_program_would_have_left": 89,
+      "ordinal": 2,
+      "origin_deadline": 1066,
+      "origin_move": 766,
+      "program_expiry": 1156,
+      "terminal_turn": 1048,
+      "whistle_uses": 2,
+      "whistles_after_origin_expiry": 0,
+      "whistles_after_origin_expiry_companion_in_view": 0
+     },
+     {
+      "admission_move": 1095,
+      "callback_outcomes": [],
+      "callbacks": 0,
+      "companion_in_view_at_whistle": [],
+      "fountain_drinks": 1,
+      "fountains_after_origin_expiry": 0,
+      "game": "bard-00064",
+      "game_ended_before_program_expiry": false,
+      "moves_admission_to_origin_expiry": 201,
+      "moves_program_would_have_left": 99,
+      "ordinal": 2,
+      "origin_deadline": 1295,
+      "origin_move": 995,
+      "program_expiry": 1395,
+      "terminal_turn": 1278,
+      "whistle_uses": 0,
+      "whistles_after_origin_expiry": 0,
+      "whistles_after_origin_expiry_companion_in_view": 0
+     },
+     {
+      "admission_move": 927,
+      "callback_outcomes": [
+       "blocked"
+      ],
+      "callbacks": 1,
+      "companion_in_view_at_whistle": [
+       0,
+       1
+      ],
+      "fountain_drinks": 0,
+      "fountains_after_origin_expiry": 0,
+      "game": "bard-00070",
+      "game_ended_before_program_expiry": false,
+      "moves_admission_to_origin_expiry": 219,
+      "moves_program_would_have_left": 81,
+      "ordinal": 2,
+      "origin_deadline": 1145,
+      "origin_move": 845,
+      "program_expiry": 1227,
+      "terminal_turn": 1134,
+      "whistle_uses": 2,
+      "whistles_after_origin_expiry": 1,
+      "whistles_after_origin_expiry_companion_in_view": 1
+     },
+     {
+      "admission_move": 757,
+      "callback_outcomes": [],
+      "callbacks": 0,
+      "companion_in_view_at_whistle": [
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "fountain_drinks": 0,
+      "fountains_after_origin_expiry": 0,
+      "game": "bard-00072",
+      "game_ended_before_program_expiry": false,
+      "moves_admission_to_origin_expiry": 294,
+      "moves_program_would_have_left": 6,
+      "ordinal": 2,
+      "origin_deadline": 1050,
+      "origin_move": 750,
+      "program_expiry": 1057,
+      "terminal_turn": 1023,
+      "whistle_uses": 9,
+      "whistles_after_origin_expiry": 0,
+      "whistles_after_origin_expiry_companion_in_view": 0
+     },
+     {
+      "admission_move": 665,
+      "callback_outcomes": [],
+      "callbacks": 0,
+      "companion_in_view_at_whistle": [
+       0,
+       0
+      ],
+      "fountain_drinks": 1,
+      "fountains_after_origin_expiry": 0,
+      "game": "bard-00074",
+      "game_ended_before_program_expiry": false,
+      "moves_admission_to_origin_expiry": 257,
+      "moves_program_would_have_left": 43,
+      "ordinal": 2,
+      "origin_deadline": 921,
+      "origin_move": 621,
+      "program_expiry": 965,
+      "terminal_turn": 885,
+      "whistle_uses": 2,
+      "whistles_after_origin_expiry": 1,
+      "whistles_after_origin_expiry_companion_in_view": 0
+     },
+     {
+      "admission_move": 1035,
+      "callback_outcomes": [],
+      "callbacks": 0,
+      "companion_in_view_at_whistle": [
+       0
+      ],
+      "fountain_drinks": 0,
+      "fountains_after_origin_expiry": 0,
+      "game": "bard-00077",
+      "game_ended_before_program_expiry": false,
+      "moves_admission_to_origin_expiry": 103,
+      "moves_program_would_have_left": 197,
+      "ordinal": 2,
+      "origin_deadline": 1137,
+      "origin_move": 837,
+      "program_expiry": 1335,
+      "terminal_turn": 1064,
+      "whistle_uses": 1,
+      "whistles_after_origin_expiry": 0,
+      "whistles_after_origin_expiry_companion_in_view": 0
+     },
+     {
+      "admission_move": 1918,
+      "callback_outcomes": [
+       "delivered"
+      ],
+      "callbacks": 1,
+      "companion_in_view_at_whistle": [
+       1,
+       1
+      ],
+      "fountain_drinks": 0,
+      "fountains_after_origin_expiry": 0,
+      "game": "bard-00078",
+      "game_ended_before_program_expiry": true,
+      "moves_admission_to_origin_expiry": 14,
+      "moves_program_would_have_left": 286,
+      "ordinal": 2,
+      "origin_deadline": 1931,
+      "origin_move": 1631,
+      "program_expiry": 2218,
+      "terminal_turn": 1927,
+      "whistle_uses": 2,
+      "whistles_after_origin_expiry": 1,
+      "whistles_after_origin_expiry_companion_in_view": 0
+     },
+     {
+      "admission_move": 1033,
+      "callback_outcomes": [],
+      "callbacks": 0,
+      "companion_in_view_at_whistle": [
+       0,
+       0,
+       0,
+       0
+      ],
+      "fountain_drinks": 0,
+      "fountains_after_origin_expiry": 0,
+      "game": "bard-00085",
+      "game_ended_before_program_expiry": false,
+      "moves_admission_to_origin_expiry": 275,
+      "moves_program_would_have_left": 25,
+      "ordinal": 2,
+      "origin_deadline": 1307,
+      "origin_move": 1007,
+      "program_expiry": 1333,
+      "terminal_turn": 1292,
+      "whistle_uses": 4,
+      "whistles_after_origin_expiry": 0,
+      "whistles_after_origin_expiry_companion_in_view": 0
+     },
+     {
+      "admission_move": 788,
+      "callback_outcomes": [],
+      "callbacks": 0,
+      "companion_in_view_at_whistle": [
+       0,
+       0,
+       0
+      ],
+      "fountain_drinks": 0,
+      "fountains_after_origin_expiry": 0,
+      "game": "bard-00089",
+      "game_ended_before_program_expiry": false,
+      "moves_admission_to_origin_expiry": 285,
+      "moves_program_would_have_left": 15,
+      "ordinal": 3,
+      "origin_deadline": 1072,
+      "origin_move": 772,
+      "program_expiry": 1088,
+      "terminal_turn": 1069,
+      "whistle_uses": 3,
+      "whistles_after_origin_expiry": 0,
+      "whistles_after_origin_expiry_companion_in_view": 0
+     },
+     {
+      "admission_move": 698,
+      "callback_outcomes": [],
+      "callbacks": 0,
+      "companion_in_view_at_whistle": [
+       0,
+       0
+      ],
+      "fountain_drinks": 0,
+      "fountains_after_origin_expiry": 0,
+      "game": "bard-00090",
+      "game_ended_before_program_expiry": false,
+      "moves_admission_to_origin_expiry": 108,
+      "moves_program_would_have_left": 192,
+      "ordinal": 2,
+      "origin_deadline": 805,
+      "origin_move": 505,
+      "program_expiry": 998,
+      "terminal_turn": 784,
+      "whistle_uses": 2,
+      "whistles_after_origin_expiry": 0,
+      "whistles_after_origin_expiry_companion_in_view": 0
+     },
+     {
+      "admission_move": 1938,
+      "callback_outcomes": [],
+      "callbacks": 0,
+      "companion_in_view_at_whistle": [],
+      "fountain_drinks": 0,
+      "fountains_after_origin_expiry": 0,
+      "game": "bard-00092",
+      "game_ended_before_program_expiry": true,
+      "moves_admission_to_origin_expiry": 18,
+      "moves_program_would_have_left": 282,
+      "ordinal": 2,
+      "origin_deadline": 1955,
+      "origin_move": 1655,
+      "program_expiry": 2238,
+      "terminal_turn": 1946,
+      "whistle_uses": 0,
+      "whistles_after_origin_expiry": 1,
+      "whistles_after_origin_expiry_companion_in_view": 1
+     },
+     {
+      "admission_move": 905,
+      "callback_outcomes": [],
+      "callbacks": 0,
+      "companion_in_view_at_whistle": [
+       0
+      ],
+      "fountain_drinks": 0,
+      "fountains_after_origin_expiry": 0,
+      "game": "bard-00095",
+      "game_ended_before_program_expiry": false,
+      "moves_admission_to_origin_expiry": 211,
+      "moves_program_would_have_left": 89,
+      "ordinal": 2,
+      "origin_deadline": 1115,
+      "origin_move": 815,
+      "program_expiry": 1205,
+      "terminal_turn": 1097,
+      "whistle_uses": 1,
+      "whistles_after_origin_expiry": 1,
+      "whistles_after_origin_expiry_companion_in_view": 1
+     },
+     {
+      "admission_move": 1025,
+      "callback_outcomes": [],
+      "callbacks": 0,
+      "companion_in_view_at_whistle": [],
+      "fountain_drinks": 0,
+      "fountains_after_origin_expiry": 0,
+      "game": "bard-00096",
+      "game_ended_before_program_expiry": false,
+      "moves_admission_to_origin_expiry": 146,
+      "moves_program_would_have_left": 154,
+      "ordinal": 2,
+      "origin_deadline": 1170,
+      "origin_move": 870,
+      "program_expiry": 1325,
+      "terminal_turn": 1114,
+      "whistle_uses": 0,
+      "whistles_after_origin_expiry": 3,
+      "whistles_after_origin_expiry_companion_in_view": 1
+     },
+     {
+      "admission_move": 1116,
+      "callback_outcomes": [],
+      "callbacks": 0,
+      "companion_in_view_at_whistle": [
+       0
+      ],
+      "fountain_drinks": 1,
+      "fountains_after_origin_expiry": 0,
+      "game": "bard-00097",
+      "game_ended_before_program_expiry": false,
+      "moves_admission_to_origin_expiry": 218,
+      "moves_program_would_have_left": 82,
+      "ordinal": 2,
+      "origin_deadline": 1333,
+      "origin_move": 1033,
+      "program_expiry": 1416,
+      "terminal_turn": 1308,
+      "whistle_uses": 1,
+      "whistles_after_origin_expiry": 0,
+      "whistles_after_origin_expiry_companion_in_view": 0
+     },
+     {
+      "admission_move": 1708,
+      "callback_outcomes": [],
+      "callbacks": 0,
+      "companion_in_view_at_whistle": [
+       0,
+       0
+      ],
+      "fountain_drinks": 0,
+      "fountains_after_origin_expiry": 0,
+      "game": "bard-00097",
+      "game_ended_before_program_expiry": true,
+      "moves_admission_to_origin_expiry": 256,
+      "moves_program_would_have_left": 44,
+      "ordinal": 3,
+      "origin_deadline": 1963,
+      "origin_move": 1663,
+      "program_expiry": 2008,
+      "terminal_turn": 1863,
+      "whistle_uses": 2,
+      "whistles_after_origin_expiry": 0,
+      "whistles_after_origin_expiry_companion_in_view": 0
+     }
+    ],
+    "whistle_uses": 112,
+    "whistle_uses_companion_in_view": 21,
+    "with_any_fountain": 6,
+    "with_any_whistle": 34,
+    "with_callback": 12,
+    "with_whistle_companion_in_view": 12
+   },
+   "q3": {
+    "admitted_at_plus1": 9,
+    "admitted_at_plus2": 9,
+    "by_available": {
+     "0": 9
+    },
+    "by_lost_sanity": {
+     "0": 9
+    },
+    "by_spent": {
+     "2": 7,
+     "3": 1,
+     "4": 1
+    },
+    "games_with_hound_spend": 0,
+    "only_reason_budget": 9,
+    "refusals": 9,
+    "refused_with_available_ge_cost": 0,
+    "rows": [
+     {
+      "admit_plus1": true,
+      "admit_plus2": true,
+      "budget_available": 0,
+      "cost": 1,
+      "game": "bard-00011",
+      "lost_sanity": 0,
+      "move": 947,
+      "ordinal": 2,
+      "reasons": [
+       "budget"
+      ],
+      "sanity_budget": 2,
+      "sanity_only_shortfall": 1,
+      "spent": 2,
+      "spent_by": {
+       "next_use_program": 1,
+       "ordinary_whisper": 1
+      }
+     },
+     {
+      "admit_plus1": true,
+      "admit_plus2": true,
+      "budget_available": 0,
+      "cost": 1,
+      "game": "bard-00015",
+      "lost_sanity": 0,
+      "move": 1208,
+      "ordinal": 2,
+      "reasons": [
+       "budget"
+      ],
+      "sanity_budget": 2,
+      "sanity_only_shortfall": 1,
+      "spent": 2,
+      "spent_by": {
+       "ordinary_whisper": 2
+      }
+     },
+     {
+      "admit_plus1": true,
+      "admit_plus2": true,
+      "budget_available": 0,
+      "cost": 1,
+      "game": "bard-00030",
+      "lost_sanity": 0,
+      "move": 674,
+      "ordinal": 2,
+      "reasons": [
+       "budget"
+      ],
+      "sanity_budget": 2,
+      "sanity_only_shortfall": 1,
+      "spent": 2,
+      "spent_by": {
+       "next_use_program": 1,
+       "ordinary_whisper": 1
+      }
+     },
+     {
+      "admit_plus1": true,
+      "admit_plus2": true,
+      "budget_available": 0,
+      "cost": 1,
+      "game": "bard-00060",
+      "lost_sanity": 0,
+      "move": 1032,
+      "ordinal": 2,
+      "reasons": [
+       "budget"
+      ],
+      "sanity_budget": 2,
+      "sanity_only_shortfall": 1,
+      "spent": 2,
+      "spent_by": {
+       "next_use_program": 1,
+       "ordinary_whisper": 1
+      }
+     },
+     {
+      "admit_plus1": true,
+      "admit_plus2": true,
+      "budget_available": 0,
+      "cost": 1,
+      "game": "bard-00070",
+      "lost_sanity": 0,
+      "move": 1930,
+      "ordinal": 3,
+      "reasons": [
+       "budget"
+      ],
+      "sanity_budget": 2,
+      "sanity_only_shortfall": 1,
+      "spent": 2,
+      "spent_by": {
+       "next_use_program": 1,
+       "ordinary_whisper": 1
+      }
+     },
+     {
+      "admit_plus1": true,
+      "admit_plus2": true,
+      "budget_available": 0,
+      "cost": 1,
+      "game": "bard-00071",
+      "lost_sanity": 0,
+      "move": 1030,
+      "ordinal": 2,
+      "reasons": [
+       "budget"
+      ],
+      "sanity_budget": 2,
+      "sanity_only_shortfall": 1,
+      "spent": 2,
+      "spent_by": {
+       "next_use_program": 1,
+       "ordinary_whisper": 1
+      }
+     },
+     {
+      "admit_plus1": true,
+      "admit_plus2": true,
+      "budget_available": 0,
+      "cost": 1,
+      "game": "bard-00074",
+      "lost_sanity": 0,
+      "move": 967,
+      "ordinal": 3,
+      "reasons": [
+       "budget"
+      ],
+      "sanity_budget": 2,
+      "sanity_only_shortfall": 2,
+      "spent": 3,
+      "spent_by": {
+       "next_use_program": 2,
+       "ordinary_whisper": 1
+      }
+     },
+     {
+      "admit_plus1": true,
+      "admit_plus2": true,
+      "budget_available": 0,
+      "cost": 1,
+      "game": "bard-00082",
+      "lost_sanity": 0,
+      "move": 912,
+      "ordinal": 2,
+      "reasons": [
+       "budget"
+      ],
+      "sanity_budget": 2,
+      "sanity_only_shortfall": 1,
+      "spent": 2,
+      "spent_by": {
+       "next_use_program": 1,
+       "ordinary_whisper": 1
+      }
+     },
+     {
+      "admit_plus1": true,
+      "admit_plus2": true,
+      "budget_available": 0,
+      "cost": 1,
+      "game": "bard-00095",
+      "lost_sanity": 0,
+      "move": 1928,
+      "ordinal": 3,
+      "reasons": [
+       "budget"
+      ],
+      "sanity_budget": 2,
+      "sanity_only_shortfall": 3,
+      "spent": 4,
+      "spent_by": {
+       "next_use_program": 2,
+       "ordinary_whisper": 2
+      }
+     }
+    ],
+    "sanity_only_admitted_at_plus1": 7,
+    "sanity_only_admitted_at_plus2": 8,
+    "spent_by_source": {
+     "next_use_program": 10,
+     "ordinary_whisper": 11
+    }
+   },
+   "q4": {
+    "games": 37,
+    "games_detail": [
+     {
+      "game": "bard-00004",
+      "later_whistle_companion_in_view": false,
+      "refusals": 1
+     },
+     {
+      "game": "bard-00005",
+      "later_whistle_companion_in_view": false,
+      "refusals": 1
+     },
+     {
+      "game": "bard-00006",
+      "later_whistle_companion_in_view": false,
+      "refusals": 1
+     },
+     {
+      "game": "bard-00010",
+      "later_whistle_companion_in_view": false,
+      "refusals": 1
+     },
+     {
+      "game": "bard-00015",
+      "later_whistle_companion_in_view": false,
+      "refusals": 1
+     },
+     {
+      "game": "bard-00016",
+      "later_whistle_companion_in_view": false,
+      "refusals": 1
+     },
+     {
+      "game": "bard-00017",
+      "later_whistle_companion_in_view": false,
+      "refusals": 1
+     },
+     {
+      "game": "bard-00020",
+      "later_whistle_companion_in_view": false,
+      "refusals": 1
+     },
+     {
+      "game": "bard-00023",
+      "later_whistle_companion_in_view": true,
+      "refusals": 1
+     },
+     {
+      "game": "bard-00025",
+      "later_whistle_companion_in_view": false,
+      "refusals": 1
+     },
+     {
+      "game": "bard-00028",
+      "later_whistle_companion_in_view": false,
+      "refusals": 1
+     },
+     {
+      "game": "bard-00032",
+      "later_whistle_companion_in_view": false,
+      "refusals": 1
+     },
+     {
+      "game": "bard-00033",
+      "later_whistle_companion_in_view": false,
+      "refusals": 1
+     },
+     {
+      "game": "bard-00034",
+      "later_whistle_companion_in_view": false,
+      "refusals": 1
+     },
+     {
+      "game": "bard-00036",
+      "later_whistle_companion_in_view": false,
+      "refusals": 1
+     },
+     {
+      "game": "bard-00038",
+      "later_whistle_companion_in_view": false,
+      "refusals": 1
+     },
+     {
+      "game": "bard-00043",
+      "later_whistle_companion_in_view": false,
+      "refusals": 1
+     },
+     {
+      "game": "bard-00044",
+      "later_whistle_companion_in_view": true,
+      "refusals": 1
+     },
+     {
+      "game": "bard-00046",
+      "later_whistle_companion_in_view": false,
+      "refusals": 1
+     },
+     {
+      "game": "bard-00047",
+      "later_whistle_companion_in_view": false,
+      "refusals": 1
+     },
+     {
+      "game": "bard-00051",
+      "later_whistle_companion_in_view": false,
+      "refusals": 1
+     },
+     {
+      "game": "bard-00053",
+      "later_whistle_companion_in_view": true,
+      "refusals": 1
+     },
+     {
+      "game": "bard-00054",
+      "later_whistle_companion_in_view": false,
+      "refusals": 1
+     },
+     {
+      "game": "bard-00058",
+      "later_whistle_companion_in_view": false,
+      "refusals": 1
+     },
+     {
+      "game": "bard-00063",
+      "later_whistle_companion_in_view": false,
+      "refusals": 1
+     },
+     {
+      "game": "bard-00064",
+      "later_whistle_companion_in_view": true,
+      "refusals": 1
+     },
+     {
+      "game": "bard-00072",
+      "later_whistle_companion_in_view": false,
+      "refusals": 1
+     },
+     {
+      "game": "bard-00073",
+      "later_whistle_companion_in_view": false,
+      "refusals": 1
+     },
+     {
+      "game": "bard-00077",
+      "later_whistle_companion_in_view": false,
+      "refusals": 1
+     },
+     {
+      "game": "bard-00078",
+      "later_whistle_companion_in_view": false,
+      "refusals": 1
+     },
+     {
+      "game": "bard-00079",
+      "later_whistle_companion_in_view": false,
+      "refusals": 1
+     },
+     {
+      "game": "bard-00081",
+      "later_whistle_companion_in_view": true,
+      "refusals": 1
+     },
+     {
+      "game": "bard-00085",
+      "later_whistle_companion_in_view": false,
+      "refusals": 1
+     },
+     {
+      "game": "bard-00087",
+      "later_whistle_companion_in_view": false,
+      "refusals": 1
+     },
+     {
+      "game": "bard-00089",
+      "later_whistle_companion_in_view": false,
+      "refusals": 1
+     },
+     {
+      "game": "bard-00090",
+      "later_whistle_companion_in_view": false,
+      "refusals": 1
+     },
+     {
+      "game": "bard-00097",
+      "later_whistle_companion_in_view": false,
+      "refusals": 1
+     }
+    ],
+    "games_later_whistle_with_companion_in_view": 5,
+    "games_same_tin_whistle_only": 5,
+    "refusal_decisions": 37
+   }
+  },
+  "bard-default-path": {
+   "games": 100,
+   "levers": {
+    "later_admitted": 31,
+    "later_blocked_never_delivered": 5,
+    "later_felt": 4
+   },
+   "q1": {
+    "program_1": {
+     "blocked_all_failing": {
+      "goal_apport": 6,
+      "goal_not_player_square": 2,
+      "not_publicly_visible_before_move": 3,
+      "ordinary_whistle_pull_active": 7
+     },
+     "blocked_first_failing": {
+      "classified_but_move_not_published": 3,
+      "goal_apport": 6,
+      "goal_not_player_square": 2,
+      "not_publicly_visible_before_move": 1,
+      "ordinary_whistle_pull_active": 7
+     },
+     "outcomes": {
+      "F:fountain_native_19_30": 2,
+      "W:blocked": 19,
+      "W:delivered": 16,
+      "W:no_decision_in_window": 1
+     },
+     "reached_callback": 38
+    },
+    "program_2": {
+     "blocked_all_failing": {
+      "goal_apport": 2,
+      "goal_not_player_square": 2,
+      "not_publicly_visible_before_move": 2,
+      "ordinary_whistle_pull_active": 1
+     },
+     "blocked_first_failing": {
+      "classified_but_move_not_published": 2,
+      "goal_apport": 2,
+      "goal_not_player_square": 2,
+      "not_publicly_visible_before_move": 1,
+      "ordinary_whistle_pull_active": 1
+     },
+     "outcomes": {
+      "W:blocked": 8,
+      "W:delivered": 3
+     },
+     "reached_callback": 11
+    },
+    "program_3": {
+     "blocked_all_failing": {
+      "goal_apport": 3,
+      "goal_cadaver": 1,
+      "not_publicly_visible_before_move": 1,
+      "ordinary_whistle_pull_active": 2
+     },
+     "blocked_first_failing": {
+      "classified_but_move_not_published": 1,
+      "goal_apport": 1,
+      "goal_cadaver": 1,
+      "not_publicly_visible_before_move": 1,
+      "ordinary_whistle_pull_active": 2
+     },
+     "outcomes": {
+      "W:blocked": 6,
+      "W:delivered": 2,
+      "W:no_decision_in_window": 1
+     },
+     "reached_callback": 9
+    }
+   },
+   "q2": {
+    "after_expiry_programs_with_companion_whistle": 2,
+    "after_expiry_programs_with_fountain": 0,
+    "fountain_drinks": 4,
+    "moves_admission_to_origin_expiry": {
+     "max": 297,
+     "median": 255,
+     "min": 38
+    },
+    "n": 23,
+    "origin_lag_at_admission": {
+     "max": 263,
+     "median": 46,
+     "min": 4
+    },
+    "programs": [
+     {
+      "admission_move": 808,
+      "callback_outcomes": [],
+      "callbacks": 0,
+      "companion_in_view_at_whistle": [],
+      "fountain_drinks": 0,
+      "fountains_after_origin_expiry": 0,
+      "game": "bard-default-path-00004",
+      "game_ended_before_program_expiry": false,
+      "moves_admission_to_origin_expiry": 274,
+      "moves_program_would_have_left": 26,
+      "ordinal": 3,
+      "origin_deadline": 1081,
+      "origin_move": 781,
+      "program_expiry": 1108,
+      "terminal_turn": 894,
+      "whistle_uses": 0,
+      "whistles_after_origin_expiry": 0,
+      "whistles_after_origin_expiry_companion_in_view": 0
+     },
+     {
+      "admission_move": 1180,
+      "callback_outcomes": [
+       "blocked",
+       "delivered",
+       "blocked",
+       "no_decision_in_window"
+      ],
+      "callbacks": 4,
+      "companion_in_view_at_whistle": [
+       1,
+       0,
+       0,
+       0,
+       1,
+       1,
+       1,
+       0,
+       0
+      ],
+      "fountain_drinks": 0,
+      "fountains_after_origin_expiry": 0,
+      "game": "bard-default-path-00007",
+      "game_ended_before_program_expiry": false,
+      "moves_admission_to_origin_expiry": 273,
+      "moves_program_would_have_left": 27,
+      "ordinal": 3,
+      "origin_deadline": 1452,
+      "origin_move": 1152,
+      "program_expiry": 1480,
+      "terminal_turn": 1451,
+      "whistle_uses": 9,
+      "whistles_after_origin_expiry": 2,
+      "whistles_after_origin_expiry_companion_in_view": 1
+     },
+     {
+      "admission_move": 635,
+      "callback_outcomes": [],
+      "callbacks": 0,
+      "companion_in_view_at_whistle": [
+       0,
+       0,
+       0
+      ],
+      "fountain_drinks": 0,
+      "fountains_after_origin_expiry": 0,
+      "game": "bard-default-path-00012",
+      "game_ended_before_program_expiry": false,
+      "moves_admission_to_origin_expiry": 261,
+      "moves_program_would_have_left": 39,
+      "ordinal": 2,
+      "origin_deadline": 895,
+      "origin_move": 595,
+      "program_expiry": 935,
+      "terminal_turn": 892,
+      "whistle_uses": 3,
+      "whistles_after_origin_expiry": 0,
+      "whistles_after_origin_expiry_companion_in_view": 0
+     },
+     {
+      "admission_move": 696,
+      "callback_outcomes": [],
+      "callbacks": 0,
+      "companion_in_view_at_whistle": [
+       0
+      ],
+      "fountain_drinks": 0,
+      "fountains_after_origin_expiry": 0,
+      "game": "bard-default-path-00022",
+      "game_ended_before_program_expiry": false,
+      "moves_admission_to_origin_expiry": 255,
+      "moves_program_would_have_left": 45,
+      "ordinal": 2,
+      "origin_deadline": 950,
+      "origin_move": 650,
+      "program_expiry": 996,
+      "terminal_turn": 929,
+      "whistle_uses": 1,
+      "whistles_after_origin_expiry": 0,
+      "whistles_after_origin_expiry_companion_in_view": 0
+     },
+     {
+      "admission_move": 640,
+      "callback_outcomes": [
+       "blocked",
+       "blocked"
+      ],
+      "callbacks": 2,
+      "companion_in_view_at_whistle": [
+       0,
+       1,
+       1
+      ],
+      "fountain_drinks": 0,
+      "fountains_after_origin_expiry": 0,
+      "game": "bard-default-path-00025",
+      "game_ended_before_program_expiry": false,
+      "moves_admission_to_origin_expiry": 271,
+      "moves_program_would_have_left": 29,
+      "ordinal": 2,
+      "origin_deadline": 910,
+      "origin_move": 610,
+      "program_expiry": 940,
+      "terminal_turn": 909,
+      "whistle_uses": 3,
+      "whistles_after_origin_expiry": 0,
+      "whistles_after_origin_expiry_companion_in_view": 0
+     },
+     {
+      "admission_move": 913,
+      "callback_outcomes": [
+       "blocked",
+       "blocked"
+      ],
+      "callbacks": 2,
+      "companion_in_view_at_whistle": [
+       1,
+       0,
+       1,
+       1,
+       1
+      ],
+      "fountain_drinks": 0,
+      "fountains_after_origin_expiry": 0,
+      "game": "bard-default-path-00027",
+      "game_ended_before_program_expiry": false,
+      "moves_admission_to_origin_expiry": 263,
+      "moves_program_would_have_left": 37,
+      "ordinal": 2,
+      "origin_deadline": 1175,
+      "origin_move": 875,
+      "program_expiry": 1213,
+      "terminal_turn": 1170,
+      "whistle_uses": 5,
+      "whistles_after_origin_expiry": 0,
+      "whistles_after_origin_expiry_companion_in_view": 0
+     },
+     {
+      "admission_move": 427,
+      "callback_outcomes": [],
+      "callbacks": 0,
+      "companion_in_view_at_whistle": [
+       0
+      ],
+      "fountain_drinks": 0,
+      "fountains_after_origin_expiry": 0,
+      "game": "bard-default-path-00032",
+      "game_ended_before_program_expiry": true,
+      "moves_admission_to_origin_expiry": 135,
+      "moves_program_would_have_left": 165,
+      "ordinal": 2,
+      "origin_deadline": 561,
+      "origin_move": 261,
+      "program_expiry": 727,
+      "terminal_turn": 559,
+      "whistle_uses": 1,
+      "whistles_after_origin_expiry": 0,
+      "whistles_after_origin_expiry_companion_in_view": 0
+     },
+     {
+      "admission_move": 907,
+      "callback_outcomes": [
+       "blocked"
+      ],
+      "callbacks": 1,
+      "companion_in_view_at_whistle": [
+       1
+      ],
+      "fountain_drinks": 2,
+      "fountains_after_origin_expiry": 0,
+      "game": "bard-default-path-00056",
+      "game_ended_before_program_expiry": false,
+      "moves_admission_to_origin_expiry": 252,
+      "moves_program_would_have_left": 48,
+      "ordinal": 3,
+      "origin_deadline": 1158,
+      "origin_move": 858,
+      "program_expiry": 1207,
+      "terminal_turn": 1043,
+      "whistle_uses": 1,
+      "whistles_after_origin_expiry": 0,
+      "whistles_after_origin_expiry_companion_in_view": 0
+     },
+     {
+      "admission_move": 1107,
+      "callback_outcomes": [
+       "blocked",
+       "blocked"
+      ],
+      "callbacks": 2,
+      "companion_in_view_at_whistle": [
+       0,
+       1,
+       1
+      ],
+      "fountain_drinks": 0,
+      "fountains_after_origin_expiry": 0,
+      "game": "bard-default-path-00064",
+      "game_ended_before_program_expiry": false,
+      "moves_admission_to_origin_expiry": 274,
+      "moves_program_would_have_left": 26,
+      "ordinal": 2,
+      "origin_deadline": 1380,
+      "origin_move": 1080,
+      "program_expiry": 1407,
+      "terminal_turn": 1369,
+      "whistle_uses": 3,
+      "whistles_after_origin_expiry": 2,
+      "whistles_after_origin_expiry_companion_in_view": 1
+     },
+     {
+      "admission_move": 1362,
+      "callback_outcomes": [],
+      "callbacks": 0,
+      "companion_in_view_at_whistle": [
+       0
+      ],
+      "fountain_drinks": 0,
+      "fountains_after_origin_expiry": 0,
+      "game": "bard-default-path-00065",
+      "game_ended_before_program_expiry": false,
+      "moves_admission_to_origin_expiry": 189,
+      "moves_program_would_have_left": 111,
+      "ordinal": 2,
+      "origin_deadline": 1550,
+      "origin_move": 1250,
+      "program_expiry": 1662,
+      "terminal_turn": 1540,
+      "whistle_uses": 1,
+      "whistles_after_origin_expiry": 0,
+      "whistles_after_origin_expiry_companion_in_view": 0
+     },
+     {
+      "admission_move": 677,
+      "callback_outcomes": [],
+      "callbacks": 0,
+      "companion_in_view_at_whistle": [
+       0,
+       0
+      ],
+      "fountain_drinks": 0,
+      "fountains_after_origin_expiry": 0,
+      "game": "bard-default-path-00070",
+      "game_ended_before_program_expiry": false,
+      "moves_admission_to_origin_expiry": 297,
+      "moves_program_would_have_left": 3,
+      "ordinal": 3,
+      "origin_deadline": 973,
+      "origin_move": 673,
+      "program_expiry": 977,
+      "terminal_turn": 945,
+      "whistle_uses": 2,
+      "whistles_after_origin_expiry": 0,
+      "whistles_after_origin_expiry_companion_in_view": 0
+     },
+     {
+      "admission_move": 859,
+      "callback_outcomes": [
+       "delivered"
+      ],
+      "callbacks": 1,
+      "companion_in_view_at_whistle": [
+       0,
+       1,
+       0
+      ],
+      "fountain_drinks": 0,
+      "fountains_after_origin_expiry": 0,
+      "game": "bard-default-path-00072",
+      "game_ended_before_program_expiry": false,
+      "moves_admission_to_origin_expiry": 266,
+      "moves_program_would_have_left": 34,
+      "ordinal": 2,
+      "origin_deadline": 1124,
+      "origin_move": 824,
+      "program_expiry": 1159,
+      "terminal_turn": 1108,
+      "whistle_uses": 3,
+      "whistles_after_origin_expiry": 0,
+      "whistles_after_origin_expiry_companion_in_view": 0
+     },
+     {
+      "admission_move": 1220,
+      "callback_outcomes": [
+       "delivered",
+       "blocked",
+       "blocked",
+       "blocked"
+      ],
+      "callbacks": 4,
+      "companion_in_view_at_whistle": [
+       1,
+       1,
+       1,
+       1,
+       1,
+       1
+      ],
+      "fountain_drinks": 0,
+      "fountains_after_origin_expiry": 0,
+      "game": "bard-default-path-00072",
+      "game_ended_before_program_expiry": false,
+      "moves_admission_to_origin_expiry": 275,
+      "moves_program_would_have_left": 25,
+      "ordinal": 3,
+      "origin_deadline": 1494,
+      "origin_move": 1194,
+      "program_expiry": 1520,
+      "terminal_turn": 1493,
+      "whistle_uses": 6,
+      "whistles_after_origin_expiry": 0,
+      "whistles_after_origin_expiry_companion_in_view": 0
+     },
+     {
+      "admission_move": 970,
+      "callback_outcomes": [],
+      "callbacks": 0,
+      "companion_in_view_at_whistle": [
+       0,
+       0
+      ],
+      "fountain_drinks": 0,
+      "fountains_after_origin_expiry": 0,
+      "game": "bard-default-path-00077",
+      "game_ended_before_program_expiry": false,
+      "moves_admission_to_origin_expiry": 237,
+      "moves_program_would_have_left": 63,
+      "ordinal": 2,
+      "origin_deadline": 1206,
+      "origin_move": 906,
+      "program_expiry": 1270,
+      "terminal_turn": 1120,
+      "whistle_uses": 2,
+      "whistles_after_origin_expiry": 0,
+      "whistles_after_origin_expiry_companion_in_view": 0
+     },
+     {
+      "admission_move": 1372,
+      "callback_outcomes": [],
+      "callbacks": 0,
+      "companion_in_view_at_whistle": [],
+      "fountain_drinks": 0,
+      "fountains_after_origin_expiry": 0,
+      "game": "bard-default-path-00081",
+      "game_ended_before_program_expiry": false,
+      "moves_admission_to_origin_expiry": 124,
+      "moves_program_would_have_left": 176,
+      "ordinal": 2,
+      "origin_deadline": 1495,
+      "origin_move": 1195,
+      "program_expiry": 1672,
+      "terminal_turn": 1434,
+      "whistle_uses": 0,
+      "whistles_after_origin_expiry": 3,
+      "whistles_after_origin_expiry_companion_in_view": 0
+     },
+     {
+      "admission_move": 336,
+      "callback_outcomes": [],
+      "callbacks": 0,
+      "companion_in_view_at_whistle": [
+       0,
+       0
+      ],
+      "fountain_drinks": 0,
+      "fountains_after_origin_expiry": 0,
+      "game": "bard-default-path-00085",
+      "game_ended_before_program_expiry": false,
+      "moves_admission_to_origin_expiry": 140,
+      "moves_program_would_have_left": 160,
+      "ordinal": 2,
+      "origin_deadline": 475,
+      "origin_move": 175,
+      "program_expiry": 636,
+      "terminal_turn": 474,
+      "whistle_uses": 2,
+      "whistles_after_origin_expiry": 0,
+      "whistles_after_origin_expiry_companion_in_view": 0
+     },
+     {
+      "admission_move": 636,
+      "callback_outcomes": [],
+      "callbacks": 0,
+      "companion_in_view_at_whistle": [
+       0
+      ],
+      "fountain_drinks": 0,
+      "fountains_after_origin_expiry": 0,
+      "game": "bard-default-path-00089",
+      "game_ended_before_program_expiry": false,
+      "moves_admission_to_origin_expiry": 290,
+      "moves_program_would_have_left": 10,
+      "ordinal": 2,
+      "origin_deadline": 925,
+      "origin_move": 625,
+      "program_expiry": 936,
+      "terminal_turn": 828,
+      "whistle_uses": 1,
+      "whistles_after_origin_expiry": 0,
+      "whistles_after_origin_expiry_companion_in_view": 0
+     },
+     {
+      "admission_move": 624,
+      "callback_outcomes": [],
+      "callbacks": 0,
+      "companion_in_view_at_whistle": [
+       0
+      ],
+      "fountain_drinks": 0,
+      "fountains_after_origin_expiry": 0,
+      "game": "bard-default-path-00090",
+      "game_ended_before_program_expiry": false,
+      "moves_admission_to_origin_expiry": 250,
+      "moves_program_would_have_left": 50,
+      "ordinal": 2,
+      "origin_deadline": 873,
+      "origin_move": 573,
+      "program_expiry": 924,
+      "terminal_turn": 870,
+      "whistle_uses": 1,
+      "whistles_after_origin_expiry": 3,
+      "whistles_after_origin_expiry_companion_in_view": 0
+     },
+     {
+      "admission_move": 1021,
+      "callback_outcomes": [],
+      "callbacks": 0,
+      "companion_in_view_at_whistle": [
+       0,
+       0
+      ],
+      "fountain_drinks": 0,
+      "fountains_after_origin_expiry": 0,
+      "game": "bard-default-path-00090",
+      "game_ended_before_program_expiry": false,
+      "moves_admission_to_origin_expiry": 250,
+      "moves_program_would_have_left": 50,
+      "ordinal": 3,
+      "origin_deadline": 1270,
+      "origin_move": 970,
+      "program_expiry": 1321,
+      "terminal_turn": 1258,
+      "whistle_uses": 2,
+      "whistles_after_origin_expiry": 0,
+      "whistles_after_origin_expiry_companion_in_view": 0
+     },
+     {
+      "admission_move": 1902,
+      "callback_outcomes": [],
+      "callbacks": 0,
+      "companion_in_view_at_whistle": [],
+      "fountain_drinks": 0,
+      "fountains_after_origin_expiry": 0,
+      "game": "bard-default-path-00091",
+      "game_ended_before_program_expiry": true,
+      "moves_admission_to_origin_expiry": 38,
+      "moves_program_would_have_left": 262,
+      "ordinal": 2,
+      "origin_deadline": 1939,
+      "origin_move": 1639,
+      "program_expiry": 2202,
+      "terminal_turn": 1906,
+      "whistle_uses": 0,
+      "whistles_after_origin_expiry": 0,
+      "whistles_after_origin_expiry_companion_in_view": 0
+     },
+     {
+      "admission_move": 633,
+      "callback_outcomes": [
+       "blocked"
+      ],
+      "callbacks": 1,
+      "companion_in_view_at_whistle": [
+       1,
+       0
+      ],
+      "fountain_drinks": 0,
+      "fountains_after_origin_expiry": 0,
+      "game": "bard-default-path-00095",
+      "game_ended_before_program_expiry": false,
+      "moves_admission_to_origin_expiry": 291,
+      "moves_program_would_have_left": 9,
+      "ordinal": 2,
+      "origin_deadline": 923,
+      "origin_move": 623,
+      "program_expiry": 933,
+      "terminal_turn": 897,
+      "whistle_uses": 2,
+      "whistles_after_origin_expiry": 0,
+      "whistles_after_origin_expiry_companion_in_view": 0
+     },
+     {
+      "admission_move": 666,
+      "callback_outcomes": [],
+      "callbacks": 0,
+      "companion_in_view_at_whistle": [],
+      "fountain_drinks": 2,
+      "fountains_after_origin_expiry": 0,
+      "game": "bard-default-path-00096",
+      "game_ended_before_program_expiry": false,
+      "moves_admission_to_origin_expiry": 174,
+      "moves_program_would_have_left": 126,
+      "ordinal": 2,
+      "origin_deadline": 839,
+      "origin_move": 539,
+      "program_expiry": 966,
+      "terminal_turn": 832,
+      "whistle_uses": 0,
+      "whistles_after_origin_expiry": 1,
+      "whistles_after_origin_expiry_companion_in_view": 0
+     },
+     {
+      "admission_move": 1237,
+      "callback_outcomes": [],
+      "callbacks": 0,
+      "companion_in_view_at_whistle": [
+       0,
+       0,
+       0
+      ],
+      "fountain_drinks": 0,
+      "fountains_after_origin_expiry": 0,
+      "game": "bard-default-path-00099",
+      "game_ended_before_program_expiry": false,
+      "moves_admission_to_origin_expiry": 145,
+      "moves_program_would_have_left": 155,
+      "ordinal": 2,
+      "origin_deadline": 1381,
+      "origin_move": 1081,
+      "program_expiry": 1537,
+      "terminal_turn": 1377,
+      "whistle_uses": 3,
+      "whistles_after_origin_expiry": 0,
+      "whistles_after_origin_expiry_companion_in_view": 0
+     }
+    ],
+    "whistle_uses": 51,
+    "whistle_uses_companion_in_view": 21,
+    "with_any_fountain": 2,
+    "with_any_whistle": 19,
+    "with_callback": 8,
+    "with_whistle_companion_in_view": 8
+   },
+   "q3": {
+    "admitted_at_plus1": 38,
+    "admitted_at_plus2": 38,
+    "by_available": {
+     "0": 38
+    },
+    "by_lost_sanity": {
+     "0": 38
+    },
+    "by_spent": {
+     "2": 6,
+     "3": 18,
+     "4": 12,
+     "5": 2
+    },
+    "games_with_hound_spend": 37,
+    "only_reason_budget": 38,
+    "refusals": 38,
+    "refused_with_available_ge_cost": 0,
+    "rows": [
+     {
+      "admit_plus1": true,
+      "admit_plus2": true,
+      "budget_available": 0,
+      "cost": 1,
+      "game": "bard-default-path-00001",
+      "lost_sanity": 0,
+      "move": 1007,
+      "ordinal": 2,
+      "reasons": [
+       "budget"
+      ],
+      "sanity_budget": 2,
+      "sanity_only_shortfall": 2,
+      "spent": 3,
+      "spent_by": {
+       "hound": 2,
+       "next_use_program": 1
+      }
+     },
+     {
+      "admit_plus1": true,
+      "admit_plus2": true,
+      "budget_available": 0,
+      "cost": 1,
+      "game": "bard-default-path-00004",
+      "lost_sanity": 0,
+      "move": 490,
+      "ordinal": 2,
+      "reasons": [
+       "budget"
+      ],
+      "sanity_budget": 2,
+      "sanity_only_shortfall": 2,
+      "spent": 3,
+      "spent_by": {
+       "hound": 2,
+       "ordinary_whisper": 1
+      }
+     },
+     {
+      "admit_plus1": true,
+      "admit_plus2": true,
+      "budget_available": 0,
+      "cost": 1,
+      "game": "bard-default-path-00005",
+      "lost_sanity": 0,
+      "move": 721,
+      "ordinal": 2,
+      "reasons": [
+       "budget"
+      ],
+      "sanity_budget": 2,
+      "sanity_only_shortfall": 3,
+      "spent": 4,
+      "spent_by": {
+       "hound": 2,
+       "next_use_program": 1,
+       "ordinary_whisper": 1
+      }
+     },
+     {
+      "admit_plus1": true,
+      "admit_plus2": true,
+      "budget_available": 0,
+      "cost": 1,
+      "game": "bard-default-path-00005",
+      "lost_sanity": 0,
+      "move": 1033,
+      "ordinal": 3,
+      "reasons": [
+       "budget"
+      ],
+      "sanity_budget": 2,
+      "sanity_only_shortfall": 3,
+      "spent": 4,
+      "spent_by": {
+       "hound": 2,
+       "next_use_program": 1,
+       "ordinary_whisper": 1
+      }
+     },
+     {
+      "admit_plus1": true,
+      "admit_plus2": true,
+      "budget_available": 0,
+      "cost": 1,
+      "game": "bard-default-path-00006",
+      "lost_sanity": 0,
+      "move": 1147,
+      "ordinal": 2,
+      "reasons": [
+       "budget"
+      ],
+      "sanity_budget": 2,
+      "sanity_only_shortfall": 1,
+      "spent": 2,
+      "spent_by": {
+       "hound": 2
+      }
+     },
+     {
+      "admit_plus1": true,
+      "admit_plus2": true,
+      "budget_available": 0,
+      "cost": 1,
+      "game": "bard-default-path-00008",
+      "lost_sanity": 0,
+      "move": 839,
+      "ordinal": 2,
+      "reasons": [
+       "budget"
+      ],
+      "sanity_budget": 2,
+      "sanity_only_shortfall": 3,
+      "spent": 4,
+      "spent_by": {
+       "hound": 2,
+       "next_use_program": 1,
+       "ordinary_whisper": 1
+      }
+     },
+     {
+      "admit_plus1": true,
+      "admit_plus2": true,
+      "budget_available": 0,
+      "cost": 1,
+      "game": "bard-default-path-00008",
+      "lost_sanity": 0,
+      "move": 1851,
+      "ordinal": 3,
+      "reasons": [
+       "budget"
+      ],
+      "sanity_budget": 2,
+      "sanity_only_shortfall": 3,
+      "spent": 4,
+      "spent_by": {
+       "hound": 2,
+       "next_use_program": 1,
+       "ordinary_whisper": 1
+      }
+     },
+     {
+      "admit_plus1": true,
+      "admit_plus2": true,
+      "budget_available": 0,
+      "cost": 1,
+      "game": "bard-default-path-00009",
+      "lost_sanity": 0,
+      "move": 610,
+      "ordinal": 2,
+      "reasons": [
+       "budget"
+      ],
+      "sanity_budget": 2,
+      "sanity_only_shortfall": 2,
+      "spent": 3,
+      "spent_by": {
+       "hound": 2,
+       "ordinary_whisper": 1
+      }
+     },
+     {
+      "admit_plus1": true,
+      "admit_plus2": true,
+      "budget_available": 0,
+      "cost": 1,
+      "game": "bard-default-path-00010",
+      "lost_sanity": 0,
+      "move": 979,
+      "ordinal": 2,
+      "reasons": [
+       "budget"
+      ],
+      "sanity_budget": 2,
+      "sanity_only_shortfall": 1,
+      "spent": 2,
+      "spent_by": {
+       "hound": 2
+      }
+     },
+     {
+      "admit_plus1": true,
+      "admit_plus2": true,
+      "budget_available": 0,
+      "cost": 1,
+      "game": "bard-default-path-00015",
+      "lost_sanity": 0,
+      "move": 604,
+      "ordinal": 2,
+      "reasons": [
+       "budget"
+      ],
+      "sanity_budget": 2,
+      "sanity_only_shortfall": 2,
+      "spent": 3,
+      "spent_by": {
+       "hound": 3
+      }
+     },
+     {
+      "admit_plus1": true,
+      "admit_plus2": true,
+      "budget_available": 0,
+      "cost": 1,
+      "game": "bard-default-path-00016",
+      "lost_sanity": 0,
+      "move": 1090,
+      "ordinal": 2,
+      "reasons": [
+       "budget"
+      ],
+      "sanity_budget": 2,
+      "sanity_only_shortfall": 1,
+      "spent": 2,
+      "spent_by": {
+       "hound": 2
+      }
+     },
+     {
+      "admit_plus1": true,
+      "admit_plus2": true,
+      "budget_available": 0,
+      "cost": 1,
+      "game": "bard-default-path-00022",
+      "lost_sanity": 0,
+      "move": 1133,
+      "ordinal": 3,
+      "reasons": [
+       "budget"
+      ],
+      "sanity_budget": 2,
+      "sanity_only_shortfall": 4,
+      "spent": 5,
+      "spent_by": {
+       "hound": 2,
+       "next_use_program": 1,
+       "ordinary_whisper": 2
+      }
+     },
+     {
+      "admit_plus1": true,
+      "admit_plus2": true,
+      "budget_available": 0,
+      "cost": 1,
+      "game": "bard-default-path-00025",
+      "lost_sanity": 0,
+      "move": 1933,
+      "ordinal": 3,
+      "reasons": [
+       "budget"
+      ],
+      "sanity_budget": 2,
+      "sanity_only_shortfall": 4,
+      "spent": 5,
+      "spent_by": {
+       "hound": 2,
+       "next_use_program": 2,
+       "ordinary_whisper": 1
+      }
+     },
+     {
+      "admit_plus1": true,
+      "admit_plus2": true,
+      "budget_available": 0,
+      "cost": 1,
+      "game": "bard-default-path-00028",
+      "lost_sanity": 0,
+      "move": 484,
+      "ordinal": 2,
+      "reasons": [
+       "budget"
+      ],
+      "sanity_budget": 2,
+      "sanity_only_shortfall": 2,
+      "spent": 3,
+      "spent_by": {
+       "hound": 2,
+       "ordinary_whisper": 1
+      }
+     },
+     {
+      "admit_plus1": true,
+      "admit_plus2": true,
+      "budget_available": 0,
+      "cost": 1,
+      "game": "bard-default-path-00034",
+      "lost_sanity": 0,
+      "move": 1273,
+      "ordinal": 2,
+      "reasons": [
+       "budget"
+      ],
+      "sanity_budget": 2,
+      "sanity_only_shortfall": 2,
+      "spent": 3,
+      "spent_by": {
+       "hound": 2,
+       "ordinary_whisper": 1
+      }
+     },
+     {
+      "admit_plus1": true,
+      "admit_plus2": true,
+      "budget_available": 0,
+      "cost": 1,
+      "game": "bard-default-path-00036",
+      "lost_sanity": 0,
+      "move": 561,
+      "ordinal": 2,
+      "reasons": [
+       "budget"
+      ],
+      "sanity_budget": 2,
+      "sanity_only_shortfall": 1,
+      "spent": 2,
+      "spent_by": {
+       "hound": 2
+      }
+     },
+     {
+      "admit_plus1": true,
+      "admit_plus2": true,
+      "budget_available": 0,
+      "cost": 1,
+      "game": "bard-default-path-00037",
+      "lost_sanity": 0,
+      "move": 787,
+      "ordinal": 2,
+      "reasons": [
+       "budget"
+      ],
+      "sanity_budget": 2,
+      "sanity_only_shortfall": 2,
+      "spent": 3,
+      "spent_by": {
+       "hound": 2,
+       "next_use_program": 1
+      }
+     },
+     {
+      "admit_plus1": true,
+      "admit_plus2": true,
+      "budget_available": 0,
+      "cost": 1,
+      "game": "bard-default-path-00037",
+      "lost_sanity": 0,
+      "move": 1794,
+      "ordinal": 3,
+      "reasons": [
+       "budget"
+      ],
+      "sanity_budget": 2,
+      "sanity_only_shortfall": 2,
+      "spent": 3,
+      "spent_by": {
+       "hound": 2,
+       "next_use_program": 1
+      }
+     },
+     {
+      "admit_plus1": true,
+      "admit_plus2": true,
+      "budget_available": 0,
+      "cost": 1,
+      "game": "bard-default-path-00038",
+      "lost_sanity": 0,
+      "move": 1067,
+      "ordinal": 2,
+      "reasons": [
+       "budget"
+      ],
+      "sanity_budget": 2,
+      "sanity_only_shortfall": 2,
+      "spent": 3,
+      "spent_by": {
+       "hound": 2,
+       "ordinary_whisper": 1
+      }
+     },
+     {
+      "admit_plus1": true,
+      "admit_plus2": true,
+      "budget_available": 0,
+      "cost": 1,
+      "game": "bard-default-path-00039",
+      "lost_sanity": 0,
+      "move": 962,
+      "ordinal": 2,
+      "reasons": [
+       "budget"
+      ],
+      "sanity_budget": 2,
+      "sanity_only_shortfall": 2,
+      "spent": 3,
+      "spent_by": {
+       "hound": 2,
+       "next_use_program": 1
+      }
+     },
+     {
+      "admit_plus1": true,
+      "admit_plus2": true,
+      "budget_available": 0,
+      "cost": 1,
+      "game": "bard-default-path-00042",
+      "lost_sanity": 0,
+      "move": 583,
+      "ordinal": 2,
+      "reasons": [
+       "budget"
+      ],
+      "sanity_budget": 2,
+      "sanity_only_shortfall": 2,
+      "spent": 3,
+      "spent_by": {
+       "hound": 2,
+       "ordinary_whisper": 1
+      }
+     },
+     {
+      "admit_plus1": true,
+      "admit_plus2": true,
+      "budget_available": 0,
+      "cost": 1,
+      "game": "bard-default-path-00045",
+      "lost_sanity": 0,
+      "move": 826,
+      "ordinal": 2,
+      "reasons": [
+       "budget"
+      ],
+      "sanity_budget": 2,
+      "sanity_only_shortfall": 1,
+      "spent": 2,
+      "spent_by": {
+       "hound": 2
+      }
+     },
+     {
+      "admit_plus1": true,
+      "admit_plus2": true,
+      "budget_available": 0,
+      "cost": 1,
+      "game": "bard-default-path-00047",
+      "lost_sanity": 0,
+      "move": 1157,
+      "ordinal": 2,
+      "reasons": [
+       "budget"
+      ],
+      "sanity_budget": 2,
+      "sanity_only_shortfall": 2,
+      "spent": 3,
+      "spent_by": {
+       "hound": 2,
+       "ordinary_whisper": 1
+      }
+     },
+     {
+      "admit_plus1": true,
+      "admit_plus2": true,
+      "budget_available": 0,
+      "cost": 1,
+      "game": "bard-default-path-00052",
+      "lost_sanity": 0,
+      "move": 1332,
+      "ordinal": 2,
+      "reasons": [
+       "budget"
+      ],
+      "sanity_budget": 2,
+      "sanity_only_shortfall": 2,
+      "spent": 3,
+      "spent_by": {
+       "hound": 2,
+       "next_use_program": 1
+      }
+     },
+     {
+      "admit_plus1": true,
+      "admit_plus2": true,
+      "budget_available": 0,
+      "cost": 1,
+      "game": "bard-default-path-00056",
+      "lost_sanity": 0,
+      "move": 850,
+      "ordinal": 2,
+      "reasons": [
+       "budget"
+      ],
+      "sanity_budget": 2,
+      "sanity_only_shortfall": 3,
+      "spent": 4,
+      "spent_by": {
+       "hound": 2,
+       "next_use_program": 1,
+       "ordinary_whisper": 1
+      }
+     },
+     {
+      "admit_plus1": true,
+      "admit_plus2": true,
+      "budget_available": 0,
+      "cost": 1,
+      "game": "bard-default-path-00057",
+      "lost_sanity": 0,
+      "move": 819,
+      "ordinal": 2,
+      "reasons": [
+       "budget"
+      ],
+      "sanity_budget": 2,
+      "sanity_only_shortfall": 1,
+      "spent": 2,
+      "spent_by": {
+       "next_use_program": 1,
+       "ordinary_whisper": 1
+      }
+     },
+     {
+      "admit_plus1": true,
+      "admit_plus2": true,
+      "budget_available": 0,
+      "cost": 1,
+      "game": "bard-default-path-00058",
+      "lost_sanity": 0,
+      "move": 1001,
+      "ordinal": 2,
+      "reasons": [
+       "budget"
+      ],
+      "sanity_budget": 2,
+      "sanity_only_shortfall": 2,
+      "spent": 3,
+      "spent_by": {
+       "hound": 2,
+       "ordinary_whisper": 1
+      }
+     },
+     {
+      "admit_plus1": true,
+      "admit_plus2": true,
+      "budget_available": 0,
+      "cost": 1,
+      "game": "bard-default-path-00063",
+      "lost_sanity": 0,
+      "move": 797,
+      "ordinal": 2,
+      "reasons": [
+       "budget"
+      ],
+      "sanity_budget": 2,
+      "sanity_only_shortfall": 3,
+      "spent": 4,
+      "spent_by": {
+       "hound": 2,
+       "next_use_program": 1,
+       "ordinary_whisper": 1
+      }
+     },
+     {
+      "admit_plus1": true,
+      "admit_plus2": true,
+      "budget_available": 0,
+      "cost": 1,
+      "game": "bard-default-path-00063",
+      "lost_sanity": 0,
+      "move": 1901,
+      "ordinal": 3,
+      "reasons": [
+       "budget"
+      ],
+      "sanity_budget": 2,
+      "sanity_only_shortfall": 3,
+      "spent": 4,
+      "spent_by": {
+       "hound": 2,
+       "next_use_program": 1,
+       "ordinary_whisper": 1
+      }
+     },
+     {
+      "admit_plus1": true,
+      "admit_plus2": true,
+      "budget_available": 0,
+      "cost": 1,
+      "game": "bard-default-path-00064",
+      "lost_sanity": 0,
+      "move": 1474,
+      "ordinal": 3,
+      "reasons": [
+       "budget"
+      ],
+      "sanity_budget": 2,
+      "sanity_only_shortfall": 3,
+      "spent": 4,
+      "spent_by": {
+       "hound": 2,
+       "next_use_program": 1,
+       "ordinary_whisper": 1
+      }
+     },
+     {
+      "admit_plus1": true,
+      "admit_plus2": true,
+      "budget_available": 0,
+      "cost": 1,
+      "game": "bard-default-path-00069",
+      "lost_sanity": 0,
+      "move": 595,
+      "ordinal": 2,
+      "reasons": [
+       "budget"
+      ],
+      "sanity_budget": 2,
+      "sanity_only_shortfall": 2,
+      "spent": 3,
+      "spent_by": {
+       "hound": 2,
+       "ordinary_whisper": 1
+      }
+     },
+     {
+      "admit_plus1": true,
+      "admit_plus2": true,
+      "budget_available": 0,
+      "cost": 1,
+      "game": "bard-default-path-00070",
+      "lost_sanity": 0,
+      "move": 603,
+      "ordinal": 2,
+      "reasons": [
+       "budget"
+      ],
+      "sanity_budget": 2,
+      "sanity_only_shortfall": 2,
+      "spent": 3,
+      "spent_by": {
+       "hound": 2,
+       "ordinary_whisper": 1
+      }
+     },
+     {
+      "admit_plus1": true,
+      "admit_plus2": true,
+      "budget_available": 0,
+      "cost": 1,
+      "game": "bard-default-path-00088",
+      "lost_sanity": 0,
+      "move": 628,
+      "ordinal": 2,
+      "reasons": [
+       "budget"
+      ],
+      "sanity_budget": 2,
+      "sanity_only_shortfall": 3,
+      "spent": 4,
+      "spent_by": {
+       "hound": 2,
+       "next_use_program": 1,
+       "ordinary_whisper": 1
+      }
+     },
+     {
+      "admit_plus1": true,
+      "admit_plus2": true,
+      "budget_available": 0,
+      "cost": 1,
+      "game": "bard-default-path-00088",
+      "lost_sanity": 0,
+      "move": 798,
+      "ordinal": 3,
+      "reasons": [
+       "budget"
+      ],
+      "sanity_budget": 2,
+      "sanity_only_shortfall": 3,
+      "spent": 4,
+      "spent_by": {
+       "hound": 2,
+       "next_use_program": 1,
+       "ordinary_whisper": 1
+      }
+     },
+     {
+      "admit_plus1": true,
+      "admit_plus2": true,
+      "budget_available": 0,
+      "cost": 1,
+      "game": "bard-default-path-00089",
+      "lost_sanity": 0,
+      "move": 1736,
+      "ordinal": 3,
+      "reasons": [
+       "budget"
+      ],
+      "sanity_budget": 2,
+      "sanity_only_shortfall": 3,
+      "spent": 4,
+      "spent_by": {
+       "hound": 2,
+       "next_use_program": 1,
+       "ordinary_whisper": 1
+      }
+     },
+     {
+      "admit_plus1": true,
+      "admit_plus2": true,
+      "budget_available": 0,
+      "cost": 1,
+      "game": "bard-default-path-00094",
+      "lost_sanity": 0,
+      "move": 893,
+      "ordinal": 2,
+      "reasons": [
+       "budget"
+      ],
+      "sanity_budget": 2,
+      "sanity_only_shortfall": 2,
+      "spent": 3,
+      "spent_by": {
+       "hound": 2,
+       "next_use_program": 1
+      }
+     },
+     {
+      "admit_plus1": true,
+      "admit_plus2": true,
+      "budget_available": 0,
+      "cost": 1,
+      "game": "bard-default-path-00096",
+      "lost_sanity": 0,
+      "move": 925,
+      "ordinal": 3,
+      "reasons": [
+       "budget"
+      ],
+      "sanity_budget": 2,
+      "sanity_only_shortfall": 3,
+      "spent": 4,
+      "spent_by": {
+       "hound": 2,
+       "next_use_program": 1,
+       "ordinary_whisper": 1
+      }
+     },
+     {
+      "admit_plus1": true,
+      "admit_plus2": true,
+      "budget_available": 0,
+      "cost": 1,
+      "game": "bard-default-path-00097",
+      "lost_sanity": 0,
+      "move": 1043,
+      "ordinal": 2,
+      "reasons": [
+       "budget"
+      ],
+      "sanity_budget": 2,
+      "sanity_only_shortfall": 2,
+      "spent": 3,
+      "spent_by": {
+       "hound": 2,
+       "next_use_program": 1
+      }
+     }
+    ],
+    "sanity_only_admitted_at_plus1": 6,
+    "sanity_only_admitted_at_plus2": 24,
+    "spent_by_source": {
+     "hound": 75,
+     "next_use_program": 23,
+     "ordinary_whisper": 26
+    }
+   },
+   "q4": {
+    "games": 40,
+    "games_detail": [
+     {
+      "game": "bard-default-path-00003",
+      "later_whistle_companion_in_view": false,
+      "refusals": 1
+     },
+     {
+      "game": "bard-default-path-00004",
+      "later_whistle_companion_in_view": false,
+      "refusals": 1
+     },
+     {
+      "game": "bard-default-path-00006",
+      "later_whistle_companion_in_view": true,
+      "refusals": 1
+     },
+     {
+      "game": "bard-default-path-00009",
+      "later_whistle_companion_in_view": false,
+      "refusals": 1
+     },
+     {
+      "game": "bard-default-path-00010",
+      "later_whistle_companion_in_view": false,
+      "refusals": 1
+     },
+     {
+      "game": "bard-default-path-00011",
+      "later_whistle_companion_in_view": false,
+      "refusals": 1
+     },
+     {
+      "game": "bard-default-path-00012",
+      "later_whistle_companion_in_view": false,
+      "refusals": 1
+     },
+     {
+      "game": "bard-default-path-00018",
+      "later_whistle_companion_in_view": true,
+      "refusals": 1
+     },
+     {
+      "game": "bard-default-path-00022",
+      "later_whistle_companion_in_view": false,
+      "refusals": 1
+     },
+     {
+      "game": "bard-default-path-00028",
+      "later_whistle_companion_in_view": false,
+      "refusals": 1
+     },
+     {
+      "game": "bard-default-path-00032",
+      "later_whistle_companion_in_view": false,
+      "refusals": 1
+     },
+     {
+      "game": "bard-default-path-00033",
+      "later_whistle_companion_in_view": false,
+      "refusals": 1
+     },
+     {
+      "game": "bard-default-path-00034",
+      "later_whistle_companion_in_view": false,
+      "refusals": 1
+     },
+     {
+      "game": "bard-default-path-00036",
+      "later_whistle_companion_in_view": false,
+      "refusals": 1
+     },
+     {
+      "game": "bard-default-path-00038",
+      "later_whistle_companion_in_view": false,
+      "refusals": 1
+     },
+     {
+      "game": "bard-default-path-00042",
+      "later_whistle_companion_in_view": false,
+      "refusals": 1
+     },
+     {
+      "game": "bard-default-path-00044",
+      "later_whistle_companion_in_view": false,
+      "refusals": 1
+     },
+     {
+      "game": "bard-default-path-00045",
+      "later_whistle_companion_in_view": false,
+      "refusals": 1
+     },
+     {
+      "game": "bard-default-path-00046",
+      "later_whistle_companion_in_view": false,
+      "refusals": 1
+     },
+     {
+      "game": "bard-default-path-00047",
+      "later_whistle_companion_in_view": false,
+      "refusals": 1
+     },
+     {
+      "game": "bard-default-path-00048",
+      "later_whistle_companion_in_view": true,
+      "refusals": 1
+     },
+     {
+      "game": "bard-default-path-00053",
+      "later_whistle_companion_in_view": false,
+      "refusals": 1
+     },
+     {
+      "game": "bard-default-path-00054",
+      "later_whistle_companion_in_view": false,
+      "refusals": 1
+     },
+     {
+      "game": "bard-default-path-00055",
+      "later_whistle_companion_in_view": false,
+      "refusals": 1
+     },
+     {
+      "game": "bard-default-path-00058",
+      "later_whistle_companion_in_view": false,
+      "refusals": 1
+     },
+     {
+      "game": "bard-default-path-00065",
+      "later_whistle_companion_in_view": false,
+      "refusals": 1
+     },
+     {
+      "game": "bard-default-path-00069",
+      "later_whistle_companion_in_view": false,
+      "refusals": 1
+     },
+     {
+      "game": "bard-default-path-00070",
+      "later_whistle_companion_in_view": false,
+      "refusals": 1
+     },
+     {
+      "game": "bard-default-path-00073",
+      "later_whistle_companion_in_view": false,
+      "refusals": 1
+     },
+     {
+      "game": "bard-default-path-00074",
+      "later_whistle_companion_in_view": false,
+      "refusals": 1
+     },
+     {
+      "game": "bard-default-path-00079",
+      "later_whistle_companion_in_view": true,
+      "refusals": 1
+     },
+     {
+      "game": "bard-default-path-00081",
+      "later_whistle_companion_in_view": true,
+      "refusals": 1
+     },
+     {
+      "game": "bard-default-path-00085",
+      "later_whistle_companion_in_view": false,
+      "refusals": 1
+     },
+     {
+      "game": "bard-default-path-00087",
+      "later_whistle_companion_in_view": false,
+      "refusals": 1
+     },
+     {
+      "game": "bard-default-path-00089",
+      "later_whistle_companion_in_view": false,
+      "refusals": 1
+     },
+     {
+      "game": "bard-default-path-00090",
+      "later_whistle_companion_in_view": false,
+      "refusals": 1
+     },
+     {
+      "game": "bard-default-path-00091",
+      "later_whistle_companion_in_view": false,
+      "refusals": 1
+     },
+     {
+      "game": "bard-default-path-00092",
+      "later_whistle_companion_in_view": true,
+      "refusals": 1
+     },
+     {
+      "game": "bard-default-path-00096",
+      "later_whistle_companion_in_view": false,
+      "refusals": 1
+     },
+     {
+      "game": "bard-default-path-00099",
+      "later_whistle_companion_in_view": false,
+      "refusals": 1
+     }
+    ],
+    "games_later_whistle_with_companion_in_view": 6,
+    "games_same_tin_whistle_only": 6,
+    "refusal_decisions": 40
+   }
+  },
+  "bard-inherited": {
+   "games": 100,
+   "levers": {
+    "later_admitted": 16,
+    "later_blocked_never_delivered": 2,
+    "later_felt": 4
+   },
+   "q1": {
+    "program_1": {
+     "blocked_all_failing": {
+      "goal_apport": 3,
+      "goal_cadaver": 1,
+      "goal_not_player_square": 5,
+      "not_publicly_visible_before_move": 4,
+      "ordinary_whistle_pull_active": 2
+     },
+     "blocked_first_failing": {
+      "classified_but_move_not_published": 5,
+      "goal_apport": 2,
+      "goal_cadaver": 1,
+      "goal_not_player_square": 5,
+      "not_publicly_visible_before_move": 1,
+      "ordinary_whistle_pull_active": 2
+     },
+     "outcomes": {
+      "W:blocked": 16,
+      "W:delivered": 7,
+      "W:no_decision_in_window": 2
+     },
+     "reached_callback": 25
+    },
+    "program_2": {
+     "blocked_all_failing": {
+      "goal_apport": 1,
+      "goal_not_player_square": 1,
+      "not_publicly_visible_before_move": 2
+     },
+     "blocked_first_failing": {
+      "classified_but_move_not_published": 1,
+      "goal_apport": 1,
+      "goal_not_player_square": 1,
+      "not_publicly_visible_before_move": 2
+     },
+     "outcomes": {
+      "W:blocked": 5,
+      "W:delivered": 5
+     },
+     "reached_callback": 10
+    },
+    "program_3": {
+     "blocked_all_failing": {},
+     "blocked_first_failing": {},
+     "outcomes": {},
+     "reached_callback": 0
+    }
+   },
+   "q2": {
+    "after_expiry_programs_with_companion_whistle": 3,
+    "after_expiry_programs_with_fountain": 0,
+    "fountain_drinks": 3,
+    "moves_admission_to_origin_expiry": {
+     "max": 300,
+     "median": 268.0,
+     "min": 7
+    },
+    "n": 10,
+    "origin_lag_at_admission": {
+     "max": 294,
+     "median": 33.0,
+     "min": 1
+    },
+    "programs": [
+     {
+      "admission_move": 635,
+      "callback_outcomes": [
+       "blocked"
+      ],
+      "callbacks": 1,
+      "companion_in_view_at_whistle": [
+       1
+      ],
+      "fountain_drinks": 0,
+      "fountains_after_origin_expiry": 0,
+      "game": "bard-inherited-00026",
+      "game_ended_before_program_expiry": false,
+      "moves_admission_to_origin_expiry": 244,
+      "moves_program_would_have_left": 56,
+      "ordinal": 2,
+      "origin_deadline": 878,
+      "origin_move": 578,
+      "program_expiry": 935,
+      "terminal_turn": 864,
+      "whistle_uses": 1,
+      "whistles_after_origin_expiry": 0,
+      "whistles_after_origin_expiry_companion_in_view": 0
+     },
+     {
+      "admission_move": 553,
+      "callback_outcomes": [
+       "blocked",
+       "delivered"
+      ],
+      "callbacks": 2,
+      "companion_in_view_at_whistle": [
+       1,
+       1
+      ],
+      "fountain_drinks": 1,
+      "fountains_after_origin_expiry": 0,
+      "game": "bard-inherited-00029",
+      "game_ended_before_program_expiry": false,
+      "moves_admission_to_origin_expiry": 256,
+      "moves_program_would_have_left": 44,
+      "ordinal": 2,
+      "origin_deadline": 808,
+      "origin_move": 508,
+      "program_expiry": 853,
+      "terminal_turn": 807,
+      "whistle_uses": 2,
+      "whistles_after_origin_expiry": 1,
+      "whistles_after_origin_expiry_companion_in_view": 1
+     },
+     {
+      "admission_move": 522,
+      "callback_outcomes": [],
+      "callbacks": 0,
+      "companion_in_view_at_whistle": [],
+      "fountain_drinks": 0,
+      "fountains_after_origin_expiry": 0,
+      "game": "bard-inherited-00030",
+      "game_ended_before_program_expiry": false,
+      "moves_admission_to_origin_expiry": 293,
+      "moves_program_would_have_left": 7,
+      "ordinal": 2,
+      "origin_deadline": 814,
+      "origin_move": 514,
+      "program_expiry": 822,
+      "terminal_turn": 761,
+      "whistle_uses": 0,
+      "whistles_after_origin_expiry": 0,
+      "whistles_after_origin_expiry_companion_in_view": 0
+     },
+     {
+      "admission_move": 504,
+      "callback_outcomes": [],
+      "callbacks": 0,
+      "companion_in_view_at_whistle": [
+       0,
+       0,
+       0,
+       0
+      ],
+      "fountain_drinks": 0,
+      "fountains_after_origin_expiry": 0,
+      "game": "bard-inherited-00035",
+      "game_ended_before_program_expiry": false,
+      "moves_admission_to_origin_expiry": 297,
+      "moves_program_would_have_left": 3,
+      "ordinal": 2,
+      "origin_deadline": 800,
+      "origin_move": 500,
+      "program_expiry": 804,
+      "terminal_turn": 791,
+      "whistle_uses": 4,
+      "whistles_after_origin_expiry": 0,
+      "whistles_after_origin_expiry_companion_in_view": 0
+     },
+     {
+      "admission_move": 683,
+      "callback_outcomes": [],
+      "callbacks": 0,
+      "companion_in_view_at_whistle": [],
+      "fountain_drinks": 0,
+      "fountains_after_origin_expiry": 0,
+      "game": "bard-inherited-00051",
+      "game_ended_before_program_expiry": true,
+      "moves_admission_to_origin_expiry": 240,
+      "moves_program_would_have_left": 60,
+      "ordinal": 2,
+      "origin_deadline": 922,
+      "origin_move": 622,
+      "program_expiry": 983,
+      "terminal_turn": 910,
+      "whistle_uses": 0,
+      "whistles_after_origin_expiry": 1,
+      "whistles_after_origin_expiry_companion_in_view": 1
+     },
+     {
+      "admission_move": 229,
+      "callback_outcomes": [
+       "blocked"
+      ],
+      "callbacks": 1,
+      "companion_in_view_at_whistle": [
+       1
+      ],
+      "fountain_drinks": 0,
+      "fountains_after_origin_expiry": 0,
+      "game": "bard-inherited-00060",
+      "game_ended_before_program_expiry": false,
+      "moves_admission_to_origin_expiry": 294,
+      "moves_program_would_have_left": 6,
+      "ordinal": 2,
+      "origin_deadline": 522,
+      "origin_move": 222,
+      "program_expiry": 529,
+      "terminal_turn": 301,
+      "whistle_uses": 1,
+      "whistles_after_origin_expiry": 0,
+      "whistles_after_origin_expiry_companion_in_view": 0
+     },
+     {
+      "admission_move": 314,
+      "callback_outcomes": [],
+      "callbacks": 0,
+      "companion_in_view_at_whistle": [],
+      "fountain_drinks": 0,
+      "fountains_after_origin_expiry": 0,
+      "game": "bard-inherited-00087",
+      "game_ended_before_program_expiry": false,
+      "moves_admission_to_origin_expiry": 280,
+      "moves_program_would_have_left": 20,
+      "ordinal": 2,
+      "origin_deadline": 593,
+      "origin_move": 293,
+      "program_expiry": 614,
+      "terminal_turn": 584,
+      "whistle_uses": 0,
+      "whistles_after_origin_expiry": 0,
+      "whistles_after_origin_expiry_companion_in_view": 0
+     },
+     {
+      "admission_move": 1239,
+      "callback_outcomes": [],
+      "callbacks": 0,
+      "companion_in_view_at_whistle": [],
+      "fountain_drinks": 0,
+      "fountains_after_origin_expiry": 0,
+      "game": "bard-inherited-00097",
+      "game_ended_before_program_expiry": false,
+      "moves_admission_to_origin_expiry": 7,
+      "moves_program_would_have_left": 293,
+      "ordinal": 2,
+      "origin_deadline": 1245,
+      "origin_move": 945,
+      "program_expiry": 1539,
+      "terminal_turn": 1239,
+      "whistle_uses": 0,
+      "whistles_after_origin_expiry": 4,
+      "whistles_after_origin_expiry_companion_in_view": 3
+     },
+     {
+      "admission_move": 321,
+      "callback_outcomes": [],
+      "callbacks": 0,
+      "companion_in_view_at_whistle": [
+       0
+      ],
+      "fountain_drinks": 2,
+      "fountains_after_origin_expiry": 0,
+      "game": "bard-inherited-00099",
+      "game_ended_before_program_expiry": false,
+      "moves_admission_to_origin_expiry": 180,
+      "moves_program_would_have_left": 120,
+      "ordinal": 2,
+      "origin_deadline": 500,
+      "origin_move": 200,
+      "program_expiry": 621,
+      "terminal_turn": 438,
+      "whistle_uses": 1,
+      "whistles_after_origin_expiry": 0,
+      "whistles_after_origin_expiry_companion_in_view": 0
+     },
+     {
+      "admission_move": 449,
+      "callback_outcomes": [
+       "delivered",
+       "blocked"
+      ],
+      "callbacks": 2,
+      "companion_in_view_at_whistle": [
+       1,
+       0,
+       1
+      ],
+      "fountain_drinks": 0,
+      "fountains_after_origin_expiry": 0,
+      "game": "bard-inherited-00100",
+      "game_ended_before_program_expiry": false,
+      "moves_admission_to_origin_expiry": 300,
+      "moves_program_would_have_left": 0,
+      "ordinal": 2,
+      "origin_deadline": 748,
+      "origin_move": 448,
+      "program_expiry": 749,
+      "terminal_turn": 747,
+      "whistle_uses": 3,
+      "whistles_after_origin_expiry": 0,
+      "whistles_after_origin_expiry_companion_in_view": 0
+     }
+    ],
+    "whistle_uses": 12,
+    "whistle_uses_companion_in_view": 6,
+    "with_any_fountain": 2,
+    "with_any_whistle": 6,
+    "with_callback": 4,
+    "with_whistle_companion_in_view": 4
+   },
+   "q3": {
+    "admitted_at_plus1": 3,
+    "admitted_at_plus2": 3,
+    "by_available": {
+     "0": 3
+    },
+    "by_lost_sanity": {
+     "0": 3
+    },
+    "by_spent": {
+     "2": 3
+    },
+    "games_with_hound_spend": 0,
+    "only_reason_budget": 3,
+    "refusals": 3,
+    "refused_with_available_ge_cost": 0,
+    "rows": [
+     {
+      "admit_plus1": true,
+      "admit_plus2": true,
+      "budget_available": 0,
+      "cost": 1,
+      "game": "bard-inherited-00005",
+      "lost_sanity": 0,
+      "move": 868,
+      "ordinal": 2,
+      "reasons": [
+       "budget"
+      ],
+      "sanity_budget": 2,
+      "sanity_only_shortfall": 1,
+      "spent": 2,
+      "spent_by": {
+       "next_use_program": 1,
+       "ordinary_whisper": 1
+      }
+     },
+     {
+      "admit_plus1": true,
+      "admit_plus2": true,
+      "budget_available": 0,
+      "cost": 1,
+      "game": "bard-inherited-00039",
+      "lost_sanity": 0,
+      "move": 671,
+      "ordinal": 2,
+      "reasons": [
+       "budget"
+      ],
+      "sanity_budget": 2,
+      "sanity_only_shortfall": 1,
+      "spent": 2,
+      "spent_by": {
+       "next_use_program": 1,
+       "ordinary_whisper": 1
+      }
+     },
+     {
+      "admit_plus1": true,
+      "admit_plus2": true,
+      "budget_available": 0,
+      "cost": 1,
+      "game": "bard-inherited-00039",
+      "lost_sanity": 0,
+      "move": 778,
+      "ordinal": 3,
+      "reasons": [
+       "budget"
+      ],
+      "sanity_budget": 2,
+      "sanity_only_shortfall": 1,
+      "spent": 2,
+      "spent_by": {
+       "next_use_program": 1,
+       "ordinary_whisper": 1
+      }
+     }
+    ],
+    "sanity_only_admitted_at_plus1": 3,
+    "sanity_only_admitted_at_plus2": 3,
+    "spent_by_source": {
+     "next_use_program": 3,
+     "ordinary_whisper": 3
+    }
+   },
+   "q4": {
+    "games": 31,
+    "games_detail": [
+     {
+      "game": "bard-inherited-00002",
+      "later_whistle_companion_in_view": false,
+      "refusals": 1
+     },
+     {
+      "game": "bard-inherited-00008",
+      "later_whistle_companion_in_view": true,
+      "refusals": 1
+     },
+     {
+      "game": "bard-inherited-00017",
+      "later_whistle_companion_in_view": true,
+      "refusals": 1
+     },
+     {
+      "game": "bard-inherited-00018",
+      "later_whistle_companion_in_view": false,
+      "refusals": 1
+     },
+     {
+      "game": "bard-inherited-00020",
+      "later_whistle_companion_in_view": true,
+      "refusals": 1
+     },
+     {
+      "game": "bard-inherited-00021",
+      "later_whistle_companion_in_view": false,
+      "refusals": 1
+     },
+     {
+      "game": "bard-inherited-00023",
+      "later_whistle_companion_in_view": false,
+      "refusals": 1
+     },
+     {
+      "game": "bard-inherited-00025",
+      "later_whistle_companion_in_view": false,
+      "refusals": 1
+     },
+     {
+      "game": "bard-inherited-00029",
+      "later_whistle_companion_in_view": false,
+      "refusals": 1
+     },
+     {
+      "game": "bard-inherited-00034",
+      "later_whistle_companion_in_view": true,
+      "refusals": 1
+     },
+     {
+      "game": "bard-inherited-00035",
+      "later_whistle_companion_in_view": false,
+      "refusals": 1
+     },
+     {
+      "game": "bard-inherited-00038",
+      "later_whistle_companion_in_view": false,
+      "refusals": 1
+     },
+     {
+      "game": "bard-inherited-00045",
+      "later_whistle_companion_in_view": true,
+      "refusals": 1
+     },
+     {
+      "game": "bard-inherited-00047",
+      "later_whistle_companion_in_view": false,
+      "refusals": 1
+     },
+     {
+      "game": "bard-inherited-00049",
+      "later_whistle_companion_in_view": false,
+      "refusals": 1
+     },
+     {
+      "game": "bard-inherited-00050",
+      "later_whistle_companion_in_view": false,
+      "refusals": 1
+     },
+     {
+      "game": "bard-inherited-00053",
+      "later_whistle_companion_in_view": false,
+      "refusals": 1
+     },
+     {
+      "game": "bard-inherited-00054",
+      "later_whistle_companion_in_view": true,
+      "refusals": 1
+     },
+     {
+      "game": "bard-inherited-00055",
+      "later_whistle_companion_in_view": true,
+      "refusals": 1
+     },
+     {
+      "game": "bard-inherited-00063",
+      "later_whistle_companion_in_view": false,
+      "refusals": 1
+     },
+     {
+      "game": "bard-inherited-00067",
+      "later_whistle_companion_in_view": false,
+      "refusals": 1
+     },
+     {
+      "game": "bard-inherited-00079",
+      "later_whistle_companion_in_view": false,
+      "refusals": 1
+     },
+     {
+      "game": "bard-inherited-00082",
+      "later_whistle_companion_in_view": false,
+      "refusals": 1
+     },
+     {
+      "game": "bard-inherited-00084",
+      "later_whistle_companion_in_view": false,
+      "refusals": 1
+     },
+     {
+      "game": "bard-inherited-00087",
+      "later_whistle_companion_in_view": false,
+      "refusals": 1
+     },
+     {
+      "game": "bard-inherited-00088",
+      "later_whistle_companion_in_view": true,
+      "refusals": 1
+     },
+     {
+      "game": "bard-inherited-00089",
+      "later_whistle_companion_in_view": true,
+      "refusals": 1
+     },
+     {
+      "game": "bard-inherited-00093",
+      "later_whistle_companion_in_view": false,
+      "refusals": 1
+     },
+     {
+      "game": "bard-inherited-00096",
+      "later_whistle_companion_in_view": true,
+      "refusals": 1
+     },
+     {
+      "game": "bard-inherited-00099",
+      "later_whistle_companion_in_view": true,
+      "refusals": 1
+     },
+     {
+      "game": "bard-inherited-00100",
+      "later_whistle_companion_in_view": false,
+      "refusals": 1
+     }
+    ],
+    "games_later_whistle_with_companion_in_view": 11,
+    "games_same_tin_whistle_only": 11,
+    "refusal_decisions": 31
+   }
+  },
+  "madman": {
+   "games": 100,
+   "levers": {
+    "later_admitted": 0,
+    "later_blocked_never_delivered": 0,
+    "later_felt": 0
+   },
+   "q1": {
+    "program_1": {
+     "blocked_all_failing": {},
+     "blocked_first_failing": {},
+     "outcomes": {
+      "F:fountain_native_19_30": 1
+     },
+     "reached_callback": 1
+    },
+    "program_2": {
+     "blocked_all_failing": {},
+     "blocked_first_failing": {},
+     "outcomes": {},
+     "reached_callback": 0
+    },
+    "program_3": {
+     "blocked_all_failing": {},
+     "blocked_first_failing": {},
+     "outcomes": {},
+     "reached_callback": 0
+    }
+   },
+   "q2": {
+    "n": 0,
+    "programs": []
+   },
+   "q3": {
+    "admitted_at_plus1": 0,
+    "admitted_at_plus2": 0,
+    "by_available": {},
+    "by_lost_sanity": {},
+    "by_spent": {},
+    "games_with_hound_spend": 0,
+    "only_reason_budget": 0,
+    "refusals": 0,
+    "refused_with_available_ge_cost": 0,
+    "rows": [],
+    "sanity_only_admitted_at_plus1": 0,
+    "sanity_only_admitted_at_plus2": 0,
+    "spent_by_source": {}
+   },
+   "q4": {
+    "games": 1,
+    "games_detail": [
+     {
+      "game": "madman-00002",
+      "later_whistle_companion_in_view": false,
+      "refusals": 1
+     }
+    ],
+    "games_later_whistle_with_companion_in_view": 0,
+    "games_same_tin_whistle_only": 0,
+    "refusal_decisions": 1
+   }
+  },
+  "wizard-default-path": {
+   "games": 100,
+   "levers": {
+    "later_admitted": 2,
+    "later_blocked_never_delivered": 0,
+    "later_felt": 0
+   },
+   "q1": {
+    "program_1": {
+     "blocked_all_failing": {},
+     "blocked_first_failing": {},
+     "outcomes": {},
+     "reached_callback": 0
+    },
+    "program_2": {
+     "blocked_all_failing": {},
+     "blocked_first_failing": {},
+     "outcomes": {},
+     "reached_callback": 0
+    },
+    "program_3": {
+     "blocked_all_failing": {},
+     "blocked_first_failing": {},
+     "outcomes": {},
+     "reached_callback": 0
+    }
+   },
+   "q2": {
+    "after_expiry_programs_with_companion_whistle": 0,
+    "after_expiry_programs_with_fountain": 0,
+    "fountain_drinks": 2,
+    "moves_admission_to_origin_expiry": {
+     "max": 280,
+     "median": 262.0,
+     "min": 244
+    },
+    "n": 2,
+    "origin_lag_at_admission": {
+     "max": 57,
+     "median": 39.0,
+     "min": 21
+    },
+    "programs": [
+     {
+      "admission_move": 647,
+      "callback_outcomes": [],
+      "callbacks": 0,
+      "companion_in_view_at_whistle": [
+       0,
+       0,
+       0
+      ],
+      "fountain_drinks": 0,
+      "fountains_after_origin_expiry": 0,
+      "game": "wizard-default-path-00041",
+      "game_ended_before_program_expiry": false,
+      "moves_admission_to_origin_expiry": 244,
+      "moves_program_would_have_left": 56,
+      "ordinal": 2,
+      "origin_deadline": 890,
+      "origin_move": 590,
+      "program_expiry": 947,
+      "terminal_turn": 883,
+      "whistle_uses": 3,
+      "whistles_after_origin_expiry": 1,
+      "whistles_after_origin_expiry_companion_in_view": 0
+     },
+     {
+      "admission_move": 962,
+      "callback_outcomes": [],
+      "callbacks": 0,
+      "companion_in_view_at_whistle": [
+       0,
+       0,
+       0
+      ],
+      "fountain_drinks": 2,
+      "fountains_after_origin_expiry": 0,
+      "game": "wizard-default-path-00041",
+      "game_ended_before_program_expiry": false,
+      "moves_admission_to_origin_expiry": 280,
+      "moves_program_would_have_left": 20,
+      "ordinal": 3,
+      "origin_deadline": 1241,
+      "origin_move": 941,
+      "program_expiry": 1262,
+      "terminal_turn": 1241,
+      "whistle_uses": 3,
+      "whistles_after_origin_expiry": 0,
+      "whistles_after_origin_expiry_companion_in_view": 0
+     }
+    ],
+    "whistle_uses": 6,
+    "whistle_uses_companion_in_view": 0,
+    "with_any_fountain": 1,
+    "with_any_whistle": 2,
+    "with_callback": 0,
+    "with_whistle_companion_in_view": 0
+   },
+   "q3": {
+    "admitted_at_plus1": 1,
+    "admitted_at_plus2": 1,
+    "by_available": {
+     "0": 1
+    },
+    "by_lost_sanity": {
+     "0": 1
+    },
+    "by_spent": {
+     "2": 1
+    },
+    "games_with_hound_spend": 0,
+    "only_reason_budget": 1,
+    "refusals": 1,
+    "refused_with_available_ge_cost": 0,
+    "rows": [
+     {
+      "admit_plus1": true,
+      "admit_plus2": true,
+      "budget_available": 0,
+      "cost": 1,
+      "game": "wizard-default-path-00079",
+      "lost_sanity": 0,
+      "move": 1647,
+      "ordinal": 2,
+      "reasons": [
+       "budget"
+      ],
+      "sanity_budget": 2,
+      "sanity_only_shortfall": 1,
+      "spent": 2,
+      "spent_by": {
+       "next_use_program": 1,
+       "ordinary_whisper": 1
+      }
+     }
+    ],
+    "sanity_only_admitted_at_plus1": 1,
+    "sanity_only_admitted_at_plus2": 1,
+    "spent_by_source": {
+     "next_use_program": 1,
+     "ordinary_whisper": 1
+    }
+   },
+   "q4": {
+    "games": 0,
+    "games_detail": [],
+    "games_later_whistle_with_companion_in_view": 0,
+    "games_same_tin_whistle_only": 0,
+    "refusal_decisions": 0
+   }
+  }
+ },
+ "twin": {
+  "games_differing": {
+   "bard-00024": [
+    "next_use-lifecycle.jsonl",
+    "whispers.jsonl",
+    "events.jsonl"
+   ],
+   "bard-00069": [
+    "next_use-schedule.jsonl",
+    "whispers.jsonl",
+    "events.jsonl"
+   ],
+   "bard-default-path-00001": [
+    "events.jsonl"
+   ],
+   "bard-default-path-00021": [
+    "whispers.jsonl",
+    "events.jsonl"
+   ],
+   "bard-inherited-00078": [
+    "next_use-lifecycle.jsonl",
+    "next_use-schedule.jsonl",
+    "whispers.jsonl",
+    "events.jsonl"
+   ]
+  },
+  "games_identical": 495,
+  "games_identical_incl_events_and_journals": 320
+ }
+}
