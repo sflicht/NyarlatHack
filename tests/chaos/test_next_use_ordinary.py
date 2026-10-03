@@ -126,6 +126,39 @@ def checkpoint(game, destination):
         shutil.copy2(game.root / name, destination / name)
 
 
+def _ring_evidence(game, observations, transitions, private, capture):
+    """Ring (v8): the second whistle in the prefix rang; this suffix sees the
+    native confusion end. One RING_DELIVERED row, no guarded row, no
+    companion manifestation, and the program still open with one delivery."""
+    effects = [r["data"] for r in private if r["kind"] == 4]
+    assert [(d["family"], d["outcome"]) for d in effects] == [(1, 13)], effects
+    assert not any(
+        r.get("observation", {}).get("operation") == "whistle_attention"
+        for r in game.events()
+    ), "ring program produced an attention manifestation"
+    assert b"You feel less confused now." in bytes(game.raw)
+    felt = rows(game.run / "next_use-felt.jsonl")
+    assert [(f["program_ordinal"], f["family"]) for f in felt] == [(1, 1)]
+    starts = [i for i, o in enumerate(observations) if o["hook"] == "start"]
+    assert len(starts) == 2
+    progress = ("replay_cursor", "journal_bytes", "journal_sha256")
+    before, after = (
+        {k: v for k, v in observations[i]["snapshot"].items() if k not in progress}
+        for i in (starts[1] - 1, starts[1])
+    )
+    assert before == after
+    last = observations[-1]["snapshot"]
+    assert last["phase"] == 3 and last["delivered"] == 1 and last["w_effect"] == 1
+    return {
+        "transitions": len(transitions),
+        "capture": capture,
+        "admissions": 1,
+        "ring_delivered": 1,
+        "save_restore_preserved": True,
+        "felt": len(felt),
+    }
+
+
 def effect_evidence(game):
     """Posthoc only: native result, public delivery and independent binding hashes."""
     observations = rows(game.game / "ordinary-observer.jsonl")
@@ -188,6 +221,9 @@ def effect_evidence(game):
         base64.b64decode(admitted[0]["data"]["envelope_b64"])
         == (game.run / "next_use-envelope.json").read_bytes()
     )
+    ring = decoded["records"][0]["data"]["snapshot"]["snapshot_v"] == 8
+    if ring:
+        return _ring_evidence(game, observations, transitions, private, capture)
     public = [
         r
         for r in game.events()
@@ -539,10 +575,17 @@ class OrdinaryNextUseTests(unittest.TestCase):
         self.assertEqual(spends, [(0, 1)])
         evidence = effect_evidence(record)
         self.assertEqual(effect_evidence(replay), evidence)
-        with self.assertRaisesRegex(
-            AssertionError, "ordinary completed W manifestation"
-        ):
-            effect_evidence(negative)
+        # Ring (ordinary-choice v6): the note rang at the prefix's second
+        # whistle, before the save, and needs no companion, so the suffix's
+        # look/pickup no longer decides the outcome: the negative case keeps
+        # the same evidence. C's attention control (pickup makes the companion
+        # visible) is covered by v5-record restores and native playback.
+        outcome = ("admissions", "ring_delivered", "save_restore_preserved", "felt")
+        negative_evidence = effect_evidence(negative)
+        self.assertEqual(
+            {k: negative_evidence[k] for k in outcome},
+            {k: evidence[k] for k in outcome},
+        )
         exact = (
             "inputs.json",
             "run/events.jsonl",
@@ -579,9 +622,14 @@ class OrdinaryNextUseTests(unittest.TestCase):
         self.assertEqual(a.count(first), 2)
         self.assertEqual(b.count(second), 2)
         self.assertEqual(a.split(first), b.split(second))
-        # C: a fresh ordinary run's program is broad (ordinary-choice v5).
+        # Ring: a fresh ordinary run's W program is a ring program
+        # (ordinary-choice v6); the second whistle rang.
         self.assertIn(
-            b"For a while, your whistles may carry farther than they should.",
+            b"For a while, your whistles may ring on after you stop.",
+            bytes(prefix.raw),
+        )
+        self.assertIn(
+            b"Your whistle's note goes on ringing inside your head.",
             bytes(prefix.raw),
         )
         self.assertEqual(
@@ -635,7 +683,7 @@ class OrdinaryNextUseTests(unittest.TestCase):
             tail = full[len(log_prefix) :].splitlines()
             self.assertTrue(tail)
             self.assertEqual(set(tail), {b"chaos: next-use: already_published"})
-            self.assertEqual(rows(game.run / "ordinary-choice.json")[0]["v"], 5)
+            self.assertEqual(rows(game.run / "ordinary-choice.json")[0]["v"], 6)
             self.assertFalse((game.run / "next_use-lifecycle.jsonl").exists())
             self.assertFalse((game.run / "next_use-envelope.2.json").exists())
         evidence.update(
