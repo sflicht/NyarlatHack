@@ -1,0 +1,564 @@
+chaos: run directory "<retained-run-directory>" (preserved on exit)
+dNethack, Copyright 2012-2025
+    Based on NetHack, Copyright 1985-2003 by Stichting Mathematisch
+         Centrum and M. Stephenson.  See license for details.
+Choosing inheritance Pick the inheritance of your neutral male human Troubadour
+  y - Inherit from a past adventurer (start with an heirloom artifact but low st
+ n - No past inheritance
+ * - Random
+ q - Quit
+(end)
++┌─────┐··dd··││@·····│·····│└─────┘ChaosRevie the Rhymer     St:9 Dx:18 Co:10 In:8 Wi:12 Ch:18   Neutral
+Dlvl:1  $:0  HP:
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:1 AC:7  DR:2  Exp:1 T:1Hello ChaosReview, welcome to dNetHack!  You are a neutral male human
+Troubadour.--More--
+Press Ctrl^W or type #ward to engrave a warding sign.--More--A distant whisper brushes against your thoughts.--More--The shadows lean closer.
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:1 AC:7  DR:2  Exp:1 T:1 Inventory: 155/525 weight (7/52 slots) Armor b - an uncursed +1 leather cloak (being worn) {15} c - an uncursed +0 pair of high boots (being worn) {20} Comestibles d - 3 uncursed apples {6} e - 3 uncursed oranges {6} Potions f - 5 uncursed potions of booze {100} Tools a - an uncursed wooden flute {5} g - an uncursed tin whistle {3}(end) ┌─────┐··dd··││@·····│·····│└─────┘
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:1 AC:7  DR:2  Exp:1 T:1What do you want to use or apply? [ag or ?*] You produce a high whistling sound.
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:1 AC:7  DR:2  Exp:1 T:1# prayayyAre you sure you want to pray? [yn] (n) yYou begin praying to Pan.--More--For a while, your whistles may carry farther than they should.
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:2 AC:15 DR:2  Exp:1 T:2
+
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:15 DR:2  Exp:1 T:3d·d·
+13(13)
+ Pw:
+10(10)
+
+13(13)
+ Pw:
+10(10)
+ Br:3 AC:15 DR:2  Exp:1 T:3--More--The jackal bites!·d
+11(13)
+ Pw:
+10(10)
+
+11(13)
+ Pw:
+10(10)
+ Br:3 AC:15 DR:2  Exp:1 T:4You finish your prayer.--More--You feel that Pan is displeased.
+11(13)
+ Pw:
+10(10)
+
+11(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:4What do you want to use or apply? [ag or ?*] You produce a high whistling sound.
+11(13)
+ Pw:
+10(10)
+
+11(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:4d·
+11(13)
+ Pw:
+10(10)
+
+11(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:4The jackal misses.
+11(13)
+ Pw:
+10(10)
+
+11(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:5·d
+11(13)
+ Pw:
+10(10)
+
+11(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:5The jackal misses.
+11(13)
+ Pw:
+10(10)
+
+11(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:6·dd·
+11(13)
+ Pw:
+10(10)
+
+11(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:6The jackal bites the little dog!
+11(13)
+ Pw:
+10(10)
+
+11(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:7d·
+11(13)
+ Pw:
+10(10)
+
+11(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:7The jackal bites the little dog!
+11(13)
+ Pw:
+10(10)
+
+11(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:8·d·+d
+11(13)
+ Pw:
+10(10)
+
+11(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:8The jackal bites!
+10(13)
+ Pw:
+10(10)
+
+10(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:9
+10(13)
+ Pw:
+10(10)
+
+10(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:9The little dog bites the jackal!The jackal is killed!
+10(13)
+ Pw:
+10(10)
+
+10(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:10·d·
+10(13)
+ Pw:
+10(10)
+
+10(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:11d·
+10(13)
+ Pw:
+10(10)
+
+10(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:12··dWhat do you want to use or apply? [ag or ?*] You produce a high whistling sound.
+10(13)
+ Pw:
+10(10)
+
+10(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:12
+10(13)
+ Pw:
+10(10)
+
+10(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:13d·
+10(13)
+ Pw:
+10(10)
+
+10(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:14·d·
+10(13)
+ Pw:
+10(10)
+
+10(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:15·d
+10(13)
+ Pw:
+10(10)
+
+10(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:16d·
+10(13)
+ Pw:
+10(10)
+
+10(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:17·d
+10(13)
+ Pw:
+10(10)
+
+10(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:18··d
+10(13)
+ Pw:
+10(10)
+
+10(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:19d·
+10(13)
+ Pw:
+10(10)
+
+10(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:20·d·What do you want to use or apply? [ag or ?*] You produce a high whistling sound.
+10(13)
+ Pw:
+10(10)
+
+10(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:20
+10(13)
+ Pw:
+10(10)
+
+10(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:21d·
+10(13)
+ Pw:
+10(10)
+
+10(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:22·d
+10(13)
+ Pw:
+10(10)
+
+10(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:23d·
+10(13)
+ Pw:
+10(10)
+
+10(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:24d··
+10(13)
+ Pw:
+10(10)
+
+10(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:25·d
+10(13)
+ Pw:
+10(10)
+
+10(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:25The whistle's echo sharpens your visible companion's attention.d
+10(13)
+ Pw:
+10(10)
+
+10(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:26··d
+10(13)
+ Pw:
+10(10)
+
+10(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:27d·
+10(13)
+ Pw:
+10(10)
+
+10(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:28·d·What do you want to use or apply? [ag or ?*] You produce a high whistling sound.
+10(13)
+ Pw:
+10(10)
+
+10(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:28
+10(13)
+ Pw:
+10(10)
+
+10(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:29·d
+10(13)
+ Pw:
+10(10)
+
+10(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:30d··
+10(13)
+ Pw:
+10(10)
+
+10(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:31·d
+10(13)
+ Pw:
+10(10)
+
+10(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:32d·
+10(13)
+ Pw:
+10(10)
+
+10(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:33·d
+10(13)
+ Pw:
+10(10)
+
+10(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:34d··
+10(13)
+ Pw:
+10(10)
+
+10(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:35·d
+10(13)
+ Pw:
+10(10)
+
+10(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:36··dWhat do you want to use or apply? [ag or ?*] You produce a high whistling sound.
+10(13)
+ Pw:
+10(10)
+
+10(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:36
+10(13)
+ Pw:
+10(10)
+
+10(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:37d·
+10(13)
+ Pw:
+10(10)
+
+10(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:38d·
+10(13)
+ Pw:
+10(10)
+
+10(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:39d·
+10(13)
+ Pw:
+10(10)
+
+10(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:40··d
+10(13)
+ Pw:
+10(10)
+
+10(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:41d·
+10(13)
+ Pw:
+10(10)
+
+10(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:41The whistle's echo sharpens your visible companion's attention.d
+10(13)
+ Pw:
+10(10)
+
+10(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:42··d
+10(13)
+ Pw:
+10(10)
+
+10(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:43d·
+10(13)
+ Pw:
+10(10)
+
+10(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:44·d·What do you want to use or apply? [ag or ?*] You produce a high whistling sound.
+10(13)
+ Pw:
+10(10)
+
+10(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:44# saveReally save? [yn] (n) ySaving...Be seeing you...
+chaos: director stopped; run data retained
+chaos: run directory "<retained-run-directory>" (preserved on exit)
+dNethack, Copyright 2012-2025
+    Based on NetHack, Copyright 1985-2003 by Stichting Mathematisch
+         Centrum and M. Stephenson.  See license for details.
+Restoring save file...--More--┌─────┐······││@·····+d····│└─────┘ChaosRevie the Rhymer     St:9 Dx:18 Co:10 In:8 Wi:12 Ch:18   Neutral
+Dlvl:1  $:0  HP:
+10(13)
+ Pw:
+10(10)
+
+10(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:44Hello ChaosReview, the human Troubadour, welcome back to dNetHack!--More--Press Ctrl^W or type #ward to engrave a warding sign.
+10(13)
+ Pw:
+10(10)
+
+10(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:44
+10(13)
+ Pw:
+10(10)
+
+10(13)
+ Pw:
+10(10)
+ Br:3 AC:7  DR:2  Exp:1 T:45d·# quituitittReally quit? [yn] (n) y
+10(13)
+ Pw:
+10(10)Do you want your possessions identified? [ynq] (n) nDo you want to see your attributes? [ynq] (n) nDo you want an account of creatures vanquished? [ynq] (n) nDo you want to see your conduct? [ynq] (n) nDo you want to know what watched you? [ynq] (n) nGoodbye ChaosReview the Troubadour...
+You quit in The Dungeons of Doom on dungeon level 1 with 4 points,
+and 0 pieces of gold, after 45 moves.
+You were level 1 with a maximum of 13 hit points when you quit.
+--More--
+
+You made the top ten list!
+
+ No  Points     Name                                                   Hp [max]
+  1          4  ChaosRevie-Brd-Hum-Mal-Neu quit in The Dungeons of
+                Doom on level 1.                                       10  [13]
+chaos: director stopped; run data retained

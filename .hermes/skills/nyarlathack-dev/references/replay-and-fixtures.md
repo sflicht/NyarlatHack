@@ -43,6 +43,12 @@ controlled replay and ordinary (nonwizard) experiments. Deeper topic notes:
 - Drive routes from rendered screen output only (a terminal emulator such as
   pyte can reconstruct it); hidden map/object coordinates can't back an
   ordinary-discovery claim.
+- Read dNetHack's current `mapglyph.c` and tty renderer before interpreting pet
+  highlights: `hilite_pet` uses a blue background, not vanilla-style inverse
+  video. Preserve SGR backgrounds across split reads and clear them on erase or
+  repaint; never infer tameness from a dog/kitten letter alone. Put pet-aware
+  decisions in a separately named sensitivity policy, explicitly configure and
+  record its public display options, and leave the gate policy unchanged.
 
 ## Ordinary replay procedure
 

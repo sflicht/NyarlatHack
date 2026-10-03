@@ -80,6 +80,10 @@ struct chaos_reveal_next_use {
     long origin_w, origin_f;     /* bound origin roots: event sequence numbers */
     int depth;                   /* dungeon depth of the program's level, or 0 */
     int ordinal;                 /* M2 program ordinal 1..3; 0 means 1 (legacy) */
+    /* C (broad next-use): declared effect bound (0 = single-use) and effects
+     * delivered. A broad program's slots and witness keep only its last use,
+     * so delivery is read from this count. */
+    int broad_uses, delivered;
 };
 #define CHAOS_REVEAL_PROGRAMS 3
 

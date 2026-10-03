@@ -13,6 +13,10 @@ _ENVELOPE_NAME = "next_use-envelope.json"
 _SEQ_MAX = 2147483647
 _ENGINE_FACTS = {"W": "ordinary_whistle", "F": "water_refreshed"}
 _TELEGRAPH = {"W": "next-use-v2-W", "F": "next-use-v2-F"}
+# C (broad next-use): next_use_program_v 3 answers every use of its family
+# until it delivers BROAD_USES effects; its telegraph says so ("For a while").
+_TELEGRAPH_BROAD = {"W": "next-use-v3-W", "F": "next-use-v3-F"}
+BROAD_USES = 2
 
 
 def engine_run_hex(directory):
@@ -47,8 +51,14 @@ def program_lifetime(ordinal, repair=True):
     return 300 if repair and ordinal > 1 else 100
 
 
-def envelope_from_selection(selected, host, ordinal=1, repair=True):
-    """Map one trusted row plus host scheduling into the C envelope schema."""
+def envelope_from_selection(selected, host, ordinal=1, repair=True, broad=False):
+    """Map one trusted row plus host scheduling into the C envelope schema.
+
+    broad (C, new runs only) writes next_use_program_v 3 with "uses"; it needs
+    the recurrence repair rules, which it builds on.
+    """
+    if type(broad) is not bool or (broad and not repair):
+        raise ValueError("broad next-use needs the recurrence repair rules")
     ttl = program_lifetime(ordinal, repair)
     if type(host) is not dict:
         raise ValueError("host scheduling fields required")
@@ -91,15 +101,17 @@ def envelope_from_selection(selected, host, ordinal=1, repair=True):
         "at": host["at"],
         "cost": 1,
         "id": host["id"],
-        "next_use_program_v": 2,
+        "next_use_program_v": 3 if broad else 2,
         "operations": [family],
         "origin_refs": [origin],
         "source": composed["source"],
         "source_sha256": composed["source_sha256"],
-        "telegraph": _TELEGRAPH[family],
+        "telegraph": (_TELEGRAPH_BROAD if broad else _TELEGRAPH)[family],
         "ttl": ttl,
         "variant": host["variant"],
     }
+    if broad:
+        envelope["uses"] = BROAD_USES
     encoded = json.dumps(
         envelope,
         allow_nan=False,
@@ -123,10 +135,12 @@ def envelope_name(ordinal=1):
     return _ENVELOPE_NAME if ordinal == 1 else f"next_use-envelope.{ordinal}.json"
 
 
-def publish_envelope(directory, selected, host, box=None, ordinal=1, repair=True):
+def publish_envelope(
+    directory, selected, host, box=None, ordinal=1, repair=True, broad=False
+):
     """Write one complete envelope artifact. Never admits."""
     name = envelope_name(ordinal)
-    envelope, encoded = envelope_from_selection(selected, host, ordinal, repair)
+    envelope, encoded = envelope_from_selection(selected, host, ordinal, repair, broad)
 
     def write(held):
         target = held.path / name

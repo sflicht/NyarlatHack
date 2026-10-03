@@ -1,5 +1,5 @@
 Next-use mechanics guide v1 (trusted instructions, not public history)
-SOURCE revision: d6fe470fb944abf7f5c50feaae937fa9573a3ecb.
+SOURCE revision: 97771199f4db0bab320c3c2ac3b15f30b24a8782.
 Exact referenced file hashes: next-use-mechanics-sources.json. The builder checks
 these before transport; source drift requires review, not a silently newer guide.
 LEGAL means representation bounds; SOURCE means native semantics; MEASURED and
@@ -51,7 +51,7 @@ SOURCE: chaos_next_use_on_action consumes the triggering slot on quiet or delay;
 quiet does not arm an effect. One delay is allowed globally and consumes that
 family's slot; it suppresses callbacks until max(admission_move+10,now+10).
 A second delay or wrong-family intent terminates invalidly. Delay is not a retry
-of the same family. Each admitted family supplies only one slot.
+of the same family. One slot/family; host v3 recalls per use.
 
 W whistle_attention: SOURCE src/chaos_next_use_runtime.c:
 chaos_next_use_capture_whistle, chaos_next_use_whistle_attention and

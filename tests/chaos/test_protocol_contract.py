@@ -435,8 +435,8 @@ class GenerationTests(unittest.TestCase):
                 # door_reluctance may use the additive cap, and not beyond it.
                 (("mutations", 2, "duration"), [1, 51]),
                 (("mutations", 3, "duration"), [1, 301]),
-                # One past the last telegraph id (6 since Arc 1 added 5 and 6).
-                (("mutations", 3, "telegraph"), 7),
+                # One past the last telegraph id (8 since C added 7 and 8).
+                (("mutations", 3, "telegraph"), 9),
                 (("telegraph_extensions", 0, "id"), 5),
                 (("telegraph_extensions", 0, "text"), ""),
                 (("telegraph_extensions", 0, "text"), "caf\u00e9"),

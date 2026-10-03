@@ -1,0 +1,137 @@
+{
+ "bard": {
+  "director_already_published_polls": 279,
+  "expired_after_first": 12,
+  "first_delivery_attribution": {
+   "earlier_use_no_callback": 2,
+   "earlier_use_reached_callback": 6,
+   "fountain": 0,
+   "magic_whistle": 0,
+   "other_level": 0,
+   "single_use_path": 19
+  },
+  "games": 100,
+  "games_felt_program_held_slot_to_end": 0,
+  "games_with_origins_during_felt_hold": 13,
+  "journal_errors": 0,
+  "moves_open_after_first": {
+   "max": 237,
+   "median": 51,
+   "n": 27
+  },
+  "open_after_first": 27,
+  "open_at_game_end_after_first": 0,
+  "origins_during_felt_hold": 31,
+  "other_end_after_first": 6,
+  "programs_first_delivery": 27,
+  "reached_second_delivery": 9
+ },
+ "bard-default-path": {
+  "director_already_published_polls": 287,
+  "expired_after_first": 9,
+  "first_delivery_attribution": {
+   "earlier_use_no_callback": 2,
+   "earlier_use_reached_callback": 4,
+   "fountain": 0,
+   "magic_whistle": 0,
+   "other_level": 0,
+   "single_use_path": 11
+  },
+  "games": 100,
+  "games_felt_program_held_slot_to_end": 0,
+  "games_with_origins_during_felt_hold": 8,
+  "journal_errors": 0,
+  "moves_open_after_first": {
+   "max": 258,
+   "median": 40,
+   "n": 17
+  },
+  "open_after_first": 17,
+  "open_at_game_end_after_first": 0,
+  "origins_during_felt_hold": 18,
+  "other_end_after_first": 4,
+  "programs_first_delivery": 17,
+  "reached_second_delivery": 4
+ },
+ "bard-inherited": {
+  "director_already_published_polls": 158,
+  "expired_after_first": 6,
+  "first_delivery_attribution": {
+   "earlier_use_no_callback": 1,
+   "earlier_use_reached_callback": 4,
+   "fountain": 0,
+   "magic_whistle": 0,
+   "other_level": 0,
+   "single_use_path": 6
+  },
+  "games": 100,
+  "games_felt_program_held_slot_to_end": 2,
+  "games_with_origins_during_felt_hold": 8,
+  "journal_errors": 0,
+  "moves_open_after_first": {
+   "max": 261,
+   "median": 37,
+   "n": 11
+  },
+  "open_after_first": 11,
+  "open_at_game_end_after_first": 2,
+  "origins_during_felt_hold": 11,
+  "other_end_after_first": 2,
+  "programs_first_delivery": 11,
+  "reached_second_delivery": 1
+ },
+ "madman": {
+  "director_already_published_polls": 25,
+  "expired_after_first": 0,
+  "first_delivery_attribution": {
+   "earlier_use_no_callback": 0,
+   "earlier_use_reached_callback": 0,
+   "fountain": 0,
+   "magic_whistle": 0,
+   "other_level": 0,
+   "single_use_path": 0
+  },
+  "games": 100,
+  "games_felt_program_held_slot_to_end": 0,
+  "games_with_origins_during_felt_hold": 0,
+  "journal_errors": 0,
+  "moves_open_after_first": {
+   "max": null,
+   "median": null,
+   "n": 0
+  },
+  "open_after_first": 0,
+  "open_at_game_end_after_first": 0,
+  "origins_during_felt_hold": 0,
+  "other_end_after_first": 0,
+  "programs_first_delivery": 0,
+  "reached_second_delivery": 0
+ },
+ "wizard-default-path": {
+  "director_already_published_polls": 31,
+  "expired_after_first": 0,
+  "first_delivery_attribution": {
+   "earlier_use_no_callback": 0,
+   "earlier_use_reached_callback": 0,
+   "fountain": 0,
+   "magic_whistle": 0,
+   "other_level": 0,
+   "single_use_path": 0
+  },
+  "games": 100,
+  "games_felt_program_held_slot_to_end": 0,
+  "games_with_origins_during_felt_hold": 0,
+  "journal_errors": 0,
+  "moves_open_after_first": {
+   "max": null,
+   "median": null,
+   "n": 0
+  },
+  "open_after_first": 0,
+  "open_at_game_end_after_first": 0,
+  "origins_during_felt_hold": 0,
+  "other_end_after_first": 0,
+  "programs_first_delivery": 0,
+  "reached_second_delivery": 0
+ }
+}

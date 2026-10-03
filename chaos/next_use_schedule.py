@@ -233,11 +233,15 @@ class NextUseScheduler:
     retimed to a later safe point. No retry or substitution after a decision.
     """
 
-    def __init__(self, directory, *, seed, programs=1, repair=False):
+    def __init__(self, directory, *, seed, programs=1, repair=False, broad=False):
         if type(programs) is not int or programs not in (1, 3):
             raise ValueError("program cap")
         if type(repair) is not bool or (repair and programs == 1):
             raise ValueError("recurrence repair needs the M2 program cap")
+        if type(broad) is not bool or (broad and not repair):
+            raise ValueError("broad next-use needs the recurrence repair")
+        # C (broad next-use): every program answers every use of its family.
+        self.broad = broad
         self.programs = programs
         # Recurrence repair: programs 2-3 author the effect and live 300 moves.
         self.repair = repair
@@ -418,6 +422,7 @@ class NextUseScheduler:
                     box,
                     ordinal=self.ordinal,
                     repair=self.repair,
+                    broad=self.broad,
                 )
                 self.published[self.ordinal] = result["id"]
                 self.terminal = "already_published" if self.programs == 1 else None

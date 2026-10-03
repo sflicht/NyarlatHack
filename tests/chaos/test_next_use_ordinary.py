@@ -144,6 +144,8 @@ def effect_evidence(game):
         )
         keys = "program_id source_sha256 admission_move program_expiry variant run_token level_token origin_w origin_w_deadline origin_f origin_f_deadline".split()
         binding = "next-use-bind-v1|" + "|".join(str(s[k]) for k in keys)
+        if s["snapshot_v"] == 7:  # C: a broad program binds its effect bound
+            binding += "|uses=%d" % s["broad_uses"]
         assert hashlib.sha256(binding.encode()).hexdigest() == s["binding_sha256"]
     capture = {
         k: observations[-1][k]
@@ -155,8 +157,26 @@ def effect_evidence(game):
         )
     }
     decoded = read_journal(game.run / "next_use-journal.jsonl", capture_status=capture)
-    assert decoded["status"] == "acknowledged_complete"
     transitions = [r for r in decoded["records"] if r["kind"] == "transition"]
+    if decoded["records"][0]["data"]["snapshot"]["snapshot_v"] == 7:
+        # C: a broad program keeps answering whistles after one delivery, so
+        # this short game ends with it still open. No capture failed, and the
+        # observer's last sample (taken at a hook, possibly a transition
+        # before the last) already acknowledges the published witness.
+        assert decoded["status"] == "incomplete"
+        assert not capture["incomplete"] and not capture["transaction_open"]
+        # No witness at all is left to the manifestation check below.
+        witness_cursor = max(
+            (
+                r["cursor"]
+                for r in transitions
+                if r["data"]["operation"] == 5 and r["data"]["post"]["witnessed"] == 1
+            ),
+            default=-1,
+        )
+        assert witness_cursor <= capture["acknowledged_cursor"] <= len(transitions)
+    else:
+        assert decoded["status"] == "acknowledged_complete"
     private = [
         v for r in decoded["records"] for v in r["data"].get("private_records", [])
     ]
@@ -195,13 +215,23 @@ def effect_evidence(game):
     )
     starts = [i for i, o in enumerate(observations) if o["hook"] == "start"]
     assert len(starts) == 2
-    assert (
-        observations[starts[1] - 1]["snapshot"] == observations[starts[1]]["snapshot"]
+    before, after = (
+        observations[starts[1] - 1]["snapshot"],
+        observations[starts[1]]["snapshot"],
     )
-    assert (
-        observations[-1]["snapshot"]["phase"] == 4
-        and observations[-1]["snapshot"]["witnessed"] == 1
-    )
+    broad = after["snapshot_v"] == 7
+    if broad:
+        # C: the open journal keeps growing between the last sample and the
+        # restore; every program value is preserved.
+        progress = ("replay_cursor", "journal_bytes", "journal_sha256")
+        before = {k: v for k, v in before.items() if k not in progress}
+        after = {k: v for k, v in after.items() if k not in progress}
+    assert before == after
+    last = observations[-1]["snapshot"]
+    if broad:  # one of its two effects delivered; still listening at the end
+        assert last["phase"] == 3 and last["delivered"] == 1
+    else:
+        assert last["phase"] == 4 and last["witnessed"] == 1
     return {
         "transitions": len(transitions),
         "capture": capture,
@@ -524,6 +554,12 @@ class OrdinaryNextUseTests(unittest.TestCase):
             "game/ordinary-observer.jsonl",
             "game/xlogfile",
         )
+        lifecycle_name = "run/next_use-lifecycle.jsonl"
+        if not (record.root / lifecycle_name).exists():
+            # C: the broad program is still open at game end, so it has no
+            # terminal lifecycle row in either run.
+            self.assertFalse((replay.root / lifecycle_name).exists())
+            exact = tuple(n for n in exact if n != lifecycle_name)
         for name in exact:
             self.assertEqual(
                 (record.root / name).read_bytes(),
@@ -541,8 +577,10 @@ class OrdinaryNextUseTests(unittest.TestCase):
         self.assertEqual(a.count(first), 2)
         self.assertEqual(b.count(second), 2)
         self.assertEqual(a.split(first), b.split(second))
+        # C: a fresh ordinary run's program is broad (ordinary-choice v5).
         self.assertIn(
-            b"The next whistle may call unusual attention.", bytes(prefix.raw)
+            b"For a while, your whistles may carry farther than they should.",
+            bytes(prefix.raw),
         )
         self.assertEqual(
             len((record.run / "next_use-receipt.jsonl").read_text().splitlines()), 1
@@ -589,21 +627,14 @@ class OrdinaryNextUseTests(unittest.TestCase):
         for game in (record, replay):
             full = (game.run / "director.log").read_bytes()
             self.assertTrue(full.startswith(log_prefix))
-            self.assertEqual(
-                full[len(log_prefix) :].splitlines(),
-                [
-                    b"chaos: next-use: already_published",
-                    b"chaos: next-use: no_eligible_origin",
-                    b"chaos: next-use: no_eligible_origin",
-                ],
-            )
-            # The restored v4 scheduler finishes program 1, then waits at
-            # program 2 for a new completed origin. This continuation never
-            # supplies one: neither restore nor a terminal program is a retry.
-            self.assertEqual(rows(game.run / "ordinary-choice.json")[0]["v"], 4)
-            lifecycle = rows(game.run / "next_use-lifecycle.jsonl")
-            self.assertEqual(len(lifecycle), 1)
-            self.assertEqual(lifecycle[0]["program_ordinal"], 1)
+            # C: the restored v5 scheduler keeps program 1 (broad, still open
+            # after one delivery), so every later poll sees it published and
+            # never looks for a new origin; no second envelope, no lifecycle row.
+            tail = full[len(log_prefix) :].splitlines()
+            self.assertTrue(tail)
+            self.assertEqual(set(tail), {b"chaos: next-use: already_published"})
+            self.assertEqual(rows(game.run / "ordinary-choice.json")[0]["v"], 5)
+            self.assertFalse((game.run / "next_use-lifecycle.jsonl").exists())
             self.assertFalse((game.run / "next_use-envelope.2.json").exists())
         evidence.update(
             pacing=self.pacing,

@@ -1043,6 +1043,14 @@
     {
       "id": 6,
       "text": "Again, the fountain's water may not run true."
+    },
+    {
+      "id": 7,
+      "text": "For a while, your whistles may carry farther than they should."
+    },
+    {
+      "id": 8,
+      "text": "For a while, fountain water you drink may not run true."
     }
   ],
   "mutation_limits": {

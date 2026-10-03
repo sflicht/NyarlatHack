@@ -398,6 +398,10 @@ CHOICE_KEYS_V3 = CHOICE_KEYS_V2 | {"m2"}
 # v4 (recurrence repair): m2 also records "repair", whether programs 2-3
 # author their effect, skip the admission companion check and live 300 moves.
 CHOICE_KEYS_V4 = CHOICE_KEYS_V3
+# v5 (C, broad next-use): m2 also records "broad", whether every program
+# answers every use of its family until it delivers its declared effects.
+# A v4 record keeps B's rules exactly (broad off).
+CHOICE_KEYS_V5 = CHOICE_KEYS_V3
 
 
 def _explicit(args):
@@ -429,22 +433,29 @@ def _read_choice(directory):
     if (
         not isinstance(record, dict)
         or type(record.get("v")) is not int
-        or record["v"] not in (1, 2, 3, 4)
+        or record["v"] not in (1, 2, 3, 4, 5)
         or set(record)
-        != {1: CHOICE_KEYS, 2: CHOICE_KEYS_V2, 3: CHOICE_KEYS_V3, 4: CHOICE_KEYS_V4}[
-            record["v"]
-        ]
+        != {
+            1: CHOICE_KEYS,
+            2: CHOICE_KEYS_V2,
+            3: CHOICE_KEYS_V3,
+            4: CHOICE_KEYS_V4,
+            5: CHOICE_KEYS_V5,
+        }[record["v"]]
         or not isinstance(record["haunt"], bool)
         or not isinstance(record["next_use"], bool)
     ):
         raise ValueError("invalid ordinary choice record")
     if record["v"] >= 3:
         m2 = record["m2"]
-        keys = {"enabled", "cap"} | ({"repair"} if record["v"] == 4 else set())
+        keys = {"enabled", "cap"}
+        keys |= {"repair"} if record["v"] >= 4 else set()
+        keys |= {"broad"} if record["v"] == 5 else set()
         if (
             type(m2) is not dict
             or set(m2) != keys
-            or (record["v"] == 4 and m2["repair"] is not m2["enabled"])
+            or (record["v"] >= 4 and m2["repair"] is not m2["enabled"])
+            or (record["v"] == 5 and m2["broad"] is not m2["enabled"])
             or type(m2["enabled"]) is not bool
             or type(m2["cap"]) is not int
             or m2["cap"] != 3
@@ -486,6 +497,7 @@ def _resolve_choice(args, restore_dir):
     haunt, next_use = _explicit(args)
     args.next_use_programs = 1
     args.next_use_repair = False
+    args.next_use_broad = False
     if restore_dir is not None:
         record = _read_choice(restore_dir)
         args.m1_seed = None
@@ -515,6 +527,8 @@ def _resolve_choice(args, restore_dir):
             args.next_use_programs = record["m2"]["cap"]
             # A v3 record keeps its recorded rules: no recurrence repair.
             args.next_use_repair = record["m2"].get("repair", False)
+            # A v4 record keeps B's rules: no broad next-use.
+            args.next_use_broad = record["m2"].get("broad", False)
         return None
     args.m1_seed = None
     if not args.ordinary:
@@ -528,8 +542,14 @@ def _resolve_choice(args, restore_dir):
     )
     args.next_use_programs = 3 if args.next_use else 1
     args.next_use_repair = args.next_use
-    record = {"v": 4, "haunt": args.haunt is not None, "next_use": args.next_use}
-    record["m2"] = {"enabled": args.next_use, "cap": 3, "repair": args.next_use}
+    args.next_use_broad = args.next_use
+    record = {"v": 5, "haunt": args.haunt is not None, "next_use": args.next_use}
+    record["m2"] = {
+        "enabled": args.next_use,
+        "cap": 3,
+        "repair": args.next_use,
+        "broad": args.next_use,
+    }
     record["whispers"] = (
         None if args.m1_seed is None else {"backend": "m1", "seed": args.m1_seed}
     )
@@ -604,6 +624,7 @@ def _offline_loop(box, backend, reader, state, args, ready):
             seed=0 if args.seed is None else args.seed,
             programs=getattr(args, "next_use_programs", 1),
             repair=getattr(args, "next_use_repair", False),
+            broad=getattr(args, "next_use_broad", False),
         )
     while time.monotonic() < deadline or first:
         for event in reader.read(allow_observations=getattr(args, "next_use", False)):

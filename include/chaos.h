@@ -47,6 +47,7 @@ boolean chaos_next_use_fountain_contact(long completed_root,
 void chaos_next_use_fountain_clear(struct chaos_fountain_token *token);
 /* Implemented by the later runtime slice; host bridge passes copied/public identity only. */
 boolean chaos_next_use_action_preflight(int family, long completed_root);
+int chaos_next_use_broad_active(void);
 boolean chaos_next_use_on_action(int family, long completed_root,
                                  struct chaos_fountain_token *token_out);
 void chaos_next_use_whistle_unavailable(long completed_root);
@@ -113,6 +114,7 @@ void chaos_reveal_xlog(FILE *rfile);
 #define chaos_next_use_fountain_contact(completed_root,token_out) (FALSE)
 #define chaos_next_use_fountain_clear(token) ((void)0)
 #define chaos_next_use_action_preflight(family,completed_root) (FALSE)
+#define chaos_next_use_broad_active() (0)
 #define chaos_next_use_on_action(family,completed_root,token_out) (FALSE)
 #define chaos_next_use_whistle_unavailable(completed_root) ((void)0)
 #define chaos_next_use_capture_whistle(completed_root,m_id,at_move) ((void)0)

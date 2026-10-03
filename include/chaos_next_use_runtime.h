@@ -274,7 +274,11 @@ long chaos_next_use_fountain_completed_root(void);
 void chaos_next_use_fountain_result(const struct chaos_fountain_token *token,
                                     int outcome);
 
+/* v6: every single-use program, byte-identical to before C. v7 (C, broad
+ * next-use only) appends broad_uses, delivered and armed_level_token. */
 #define CHAOS_NEXT_USE_SNAPSHOT_V 6
+#define CHAOS_NEXT_USE_SNAPSHOT_V_BROAD 7
+int chaos_next_use_broad_active(void);
 #define CHAOS_NEXT_USE_JOURNAL_BYTES_MAX 8388608UL
 #define CHAOS_NEXT_USE_JOURNAL_RECORDS_MAX 4096UL
 enum chaos_next_use_journal_state {
@@ -319,6 +323,8 @@ struct chaos_next_use_snapshot {
     char source_sha256[65];
     char binding_sha256[65];
     char source[CHAOS_NEXT_USE_SOURCE_MAX + 1];
+    int broad_uses, delivered;
+    long armed_level_token;
 };
 
 int chaos_next_use_snapshot_export(struct chaos_next_use_snapshot *);

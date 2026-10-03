@@ -1,0 +1,432 @@
+{
+ "label": "ESTIMATE, not a measurement",
+ "method": "Under cap 1 a broad program closes at its first delivery. A game can gain only where a felt program held the slot while at least one fresh completed origin occurred (the director's next publish chance). Upper bound: every such game gains one distinct felt program. Expected: each candidate converts at this start's observed later-program felt/published rate under C. A second delivery never adds to the distinct metric, so cap 1 loses nothing on parts 1 and 3. Program 3 holds are excluded: the cap is 3, so nothing follows them.",
+ "starts": {
+  "bard-default-path": {
+   "holds_with_fresh_origins": 7,
+   "games": 7,
+   "never_published_later_because_held": [],
+   "part1": {
+    "measured": 6,
+    "candidate_seeds": [
+     21,
+     52
+    ],
+    "upper_bound": 8,
+    "expected": 6.1
+   },
+   "part3": {
+    "measured": 1,
+    "candidate_seeds": [
+     18,
+     21,
+     25,
+     43,
+     52,
+     56
+    ],
+    "upper_bound": 7,
+    "expected": 1.2
+   },
+   "later_program_felt_per_published": {
+    "felt": 5,
+    "published": 126,
+    "rate": 0.04
+   }
+  },
+  "bard": {
+   "holds_with_fresh_origins": 16,
+   "games": 13,
+   "never_published_later_because_held": [
+    55
+   ],
+   "part1": {
+    "measured": 13,
+    "candidate_seeds": [
+     27,
+     31,
+     69,
+     95,
+     100
+    ],
+    "upper_bound": 18,
+    "expected": 13.5
+   },
+   "part3": {
+    "measured": 6,
+    "candidate_seeds": [
+     27,
+     31,
+     41,
+     67,
+     69,
+     95,
+     96,
+     100
+    ],
+    "upper_bound": 14,
+    "expected": 6.9
+   },
+   "later_program_felt_per_published": {
+    "felt": 13,
+    "published": 122,
+    "rate": 0.107
+   }
+  },
+  "bard-inherited": {
+   "holds_with_fresh_origins": 8,
+   "games": 8,
+   "never_published_later_because_held": [
+    8,
+    78,
+    100
+   ],
+   "part1": {
+    "measured": 3,
+    "candidate_seeds": [
+     8,
+     48,
+     60,
+     78,
+     89
+    ],
+    "upper_bound": 8,
+    "expected": 3.4
+   },
+   "part3": {
+    "measured": 0,
+    "candidate_seeds": [
+     8,
+     12,
+     30,
+     48,
+     60,
+     78,
+     89,
+     100
+    ],
+    "upper_bound": 8,
+    "expected": 0.6
+   },
+   "later_program_felt_per_published": {
+    "felt": 5,
+    "published": 64,
+    "rate": 0.078
+   }
+  }
+ },
+ "held_rows": {
+  "bard-default-path": [
+   {
+    "seed": 7,
+    "ordinal": 3,
+    "held": 93,
+    "origins": 4,
+    "distinct_excl_hound": 1,
+    "programs_felt": 1,
+    "later_published": false
+   },
+   {
+    "seed": 18,
+    "ordinal": 2,
+    "held": 187,
+    "origins": 3,
+    "distinct_excl_hound": 2,
+    "programs_felt": 1,
+    "later_published": true
+   },
+   {
+    "seed": 21,
+    "ordinal": 1,
+    "held": 10,
+    "origins": 1,
+    "distinct_excl_hound": 1,
+    "programs_felt": 1,
+    "later_published": true
+   },
+   {
+    "seed": 25,
+    "ordinal": 1,
+    "held": 40,
+    "origins": 1,
+    "distinct_excl_hound": 2,
+    "programs_felt": 1,
+    "later_published": true
+   },
+   {
+    "seed": 43,
+    "ordinal": 1,
+    "held": 42,
+    "origins": 1,
+    "distinct_excl_hound": 2,
+    "programs_felt": 1,
+    "later_published": true
+   },
+   {
+    "seed": 52,
+    "ordinal": 1,
+    "held": 23,
+    "origins": 1,
+    "distinct_excl_hound": 1,
+    "programs_felt": 1,
+    "later_published": true
+   },
+   {
+    "seed": 56,
+    "ordinal": 1,
+    "held": 31,
+    "origins": 1,
+    "distinct_excl_hound": 3,
+    "programs_felt": 1,
+    "later_published": true
+   },
+   {
+    "seed": 72,
+    "ordinal": 2,
+    "held": 216,
+    "origins": 1,
+    "distinct_excl_hound": 3,
+    "programs_felt": 2,
+    "later_published": true
+   },
+   {
+    "seed": 72,
+    "ordinal": 3,
+    "held": 258,
+    "origins": 5,
+    "distinct_excl_hound": 3,
+    "programs_felt": 2,
+    "later_published": false
+   }
+  ],
+  "bard": [
+   {
+    "seed": 22,
+    "ordinal": 1,
+    "held": 82,
+    "origins": 1,
+    "distinct_excl_hound": 4,
+    "programs_felt": 2,
+    "later_published": true
+   },
+   {
+    "seed": 22,
+    "ordinal": 2,
+    "held": 62,
+    "origins": 1,
+    "distinct_excl_hound": 4,
+    "programs_felt": 2,
+    "later_published": true
+   },
+   {
+    "seed": 27,
+    "ordinal": 1,
+    "held": 60,
+    "origins": 1,
+    "distinct_excl_hound": 1,
+    "programs_felt": 1,
+    "later_published": true
+   },
+   {
+    "seed": 31,
+    "ordinal": 1,
+    "held": 31,
+    "origins": 1,
+    "distinct_excl_hound": 1,
+    "programs_felt": 1,
+    "later_published": true
+   },
+   {
+    "seed": 41,
+    "ordinal": 1,
+    "held": 43,
+    "origins": 1,
+    "distinct_excl_hound": 2,
+    "programs_felt": 1,
+    "later_published": true
+   },
+   {
+    "seed": 42,
+    "ordinal": 1,
+    "held": 72,
+    "origins": 3,
+    "distinct_excl_hound": 4,
+    "programs_felt": 2,
+    "later_published": true
+   },
+   {
+    "seed": 42,
+    "ordinal": 2,
+    "held": 237,
+    "origins": 3,
+    "distinct_excl_hound": 4,
+    "programs_felt": 2,
+    "later_published": true
+   },
+   {
+    "seed": 55,
+    "ordinal": 2,
+    "held": 55,
+    "origins": 1,
+    "distinct_excl_hound": 2,
+    "programs_felt": 2,
+    "later_published": false
+   },
+   {
+    "seed": 57,
+    "ordinal": 1,
+    "held": 73,
+    "origins": 2,
+    "distinct_excl_hound": 3,
+    "programs_felt": 2,
+    "later_published": true
+   },
+   {
+    "seed": 57,
+    "ordinal": 3,
+    "held": 51,
+    "origins": 1,
+    "distinct_excl_hound": 3,
+    "programs_felt": 2,
+    "later_published": false
+   },
+   {
+    "seed": 67,
+    "ordinal": 1,
+    "held": 59,
+    "origins": 3,
+    "distinct_excl_hound": 2,
+    "programs_felt": 1,
+    "later_published": true
+   },
+   {
+    "seed": 69,
+    "ordinal": 2,
+    "held": 24,
+    "origins": 2,
+    "distinct_excl_hound": 1,
+    "programs_felt": 1,
+    "later_published": true
+   },
+   {
+    "seed": 95,
+    "ordinal": 1,
+    "held": 67,
+    "origins": 1,
+    "distinct_excl_hound": 1,
+    "programs_felt": 1,
+    "later_published": true
+   },
+   {
+    "seed": 96,
+    "ordinal": 1,
+    "held": 53,
+    "origins": 3,
+    "distinct_excl_hound": 2,
+    "programs_felt": 1,
+    "later_published": true
+   },
+   {
+    "seed": 99,
+    "ordinal": 1,
+    "held": 88,
+    "origins": 1,
+    "distinct_excl_hound": 2,
+    "programs_felt": 2,
+    "later_published": true
+   },
+   {
+    "seed": 99,
+    "ordinal": 2,
+    "held": 48,
+    "origins": 4,
+    "distinct_excl_hound": 2,
+    "programs_felt": 2,
+    "later_published": true
+   },
+   {
+    "seed": 100,
+    "ordinal": 1,
+    "held": 42,
+    "origins": 1,
+    "distinct_excl_hound": 1,
+    "programs_felt": 1,
+    "later_published": true
+   }
+  ],
+  "bard-inherited": [
+   {
+    "seed": 8,
+    "ordinal": 2,
+    "held": 10,
+    "origins": 1,
+    "distinct_excl_hound": 1,
+    "programs_felt": 1,
+    "later_published": false
+   },
+   {
+    "seed": 12,
+    "ordinal": 1,
+    "held": 37,
+    "origins": 1,
+    "distinct_excl_hound": 2,
+    "programs_felt": 1,
+    "later_published": true
+   },
+   {
+    "seed": 30,
+    "ordinal": 1,
+    "held": 29,
+    "origins": 1,
+    "distinct_excl_hound": 2,
+    "programs_felt": 1,
+    "later_published": true
+   },
+   {
+    "seed": 48,
+    "ordinal": 1,
+    "held": 57,
+    "origins": 1,
+    "distinct_excl_hound": 1,
+    "programs_felt": 1,
+    "later_published": true
+   },
+   {
+    "seed": 60,
+    "ordinal": 1,
+    "held": 90,
+    "origins": 1,
+    "distinct_excl_hound": 1,
+    "programs_felt": 1,
+    "later_published": true
+   },
+   {
+    "seed": 78,
+    "ordinal": 1,
+    "held": 71,
+    "origins": 2,
+    "distinct_excl_hound": 1,
+    "programs_felt": 1,
+    "later_published": false
+   },
+   {
+    "seed": 89,
+    "ordinal": 2,
+    "held": 114,
+    "origins": 2,
+    "distinct_excl_hound": 1,
+    "programs_felt": 1,
+    "later_published": true
+   },
+   {
+    "seed": 100,
+    "ordinal": 2,
+    "held": 261,
+    "origins": 2,
+    "distinct_excl_hound": 2,
+    "programs_felt": 1,
+    "later_published": false
+   }
+  ]
+ }
+}

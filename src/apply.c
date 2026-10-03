@@ -12261,6 +12261,7 @@ doapply()
 		long root = chaos_observation_begin(CHAOS_OBS_OP_WHISTLING);
 		use_magic_whistle(obj);
 		chaos_observation_end(root);
+		chaos_next_use_whistle_completed(obj, root);
 		(void)root; /* CHAOS-off end does not evaluate its argument. */
 		break;
 	}

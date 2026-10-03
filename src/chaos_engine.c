@@ -652,8 +652,12 @@ void chaos_next_use_whistle_completed(struct obj *obj, long completed_root) {
     tool_member = FALSE;
     for (otmp = invent; otmp; otmp = otmp->nobj)
         if (otmp == obj) { tool_member = TRUE; break; }
+    /* C (broad next-use): a broad program also answers a magic whistle.
+     * A single-use program keeps the tin whistle only. */
     valid_whistle = tool_member && invent
-        && obj->where == OBJ_INVENT && obj->otyp == WHISTLE
+        && obj->where == OBJ_INVENT
+        && (obj->otyp == WHISTLE
+            || (obj->otyp == MAGIC_WHISTLE && chaos_next_use_broad_active()))
         && obj->known && !obj->oartifact && obj->quan == 1L;
     if (valid_whistle
         && chaos_next_use_action_preflight(CHAOS_NEXT_USE_FAMILY_W,

@@ -524,6 +524,18 @@ def write_report(args, lo, hi, starts, games):
         "command": f"python3 scripts/seed_sweep.py --seeds {lo}-{hi} --policy {args.policy} "
         f"--starts {','.join(starts)} --out <stem>",
     }
+    if sweep_player.POLICIES[args.policy].get("whistle_only_visible_pet"):
+        identity["sensitivity"] = {
+            "purpose": "policy sensitivity, not the gate",
+            "pet_marker": "blue-background monster glyph on the public map",
+            "screen_source_sha256": sha256(ROOT / "tests/chaos/sweep_screen.py"),
+            "start_options": {
+                s: sweep_player._with_options(
+                    sweep_player.START_OPTIONS[s], args.policy
+                )[1]
+                for s in starts
+            },
+        }
     report = {"identity": identity, "aggregate": aggregate(games), "games": games}
     canonical = json.dumps(report, sort_keys=True, separators=(",", ":")).encode()
     report["report_sha256"] = hashlib.sha256(canonical).hexdigest()

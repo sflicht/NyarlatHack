@@ -92,6 +92,10 @@ static void snapshot(const struct chaos_next_use_snapshot *p)
     N(p, run_token); N(p, level_token); N(p, activation_monstermoves); N(p, armed_root);
     N(p, journal_state); N(p, journal_bytes); T(p, journal_sha256);
     N(p, capture_incomplete);
+    /* C: only a broad (v7) header carries these; v6 headers are unchanged. */
+    if (p->snapshot_v == CHAOS_NEXT_USE_SNAPSHOT_V_BROAD) {
+        N(p, broad_uses); N(p, delivered); N(p, armed_level_token);
+    }
     N(p, source_length); T(p, source_sha256); T(p, binding_sha256);
     if (p->source_length > CHAOS_NEXT_USE_SOURCE_MAX) journal.bad = 1;
     put("\"source_hex\":\"");
@@ -374,13 +378,22 @@ static int header_binding(const char *p, const struct chaos_next_use_snapshot *s
     if (!take(&p, tail)) return 0;
     for (i = 0; i < sizeof fields / sizeof fields[0]; ++i) {
         if (!number(&p, fields[i], &v)) return 0;
-        if ((!i && v != CHAOS_NEXT_USE_SNAPSHOT_V)
+        if ((!i && v != s->snapshot_v)
             || ((!strcmp(fields[i], "replay_cursor")
                  || !strcmp(fields[i], "journal_state")
                  || !strcmp(fields[i], "journal_bytes")) && v)) return 0;
     }
+    if (!take(&p, "\"journal_sha256\":\"\",\"capture_incomplete\":0,"))
+        return 0;
+    /* C: a broad header is written at admission, before any use. */
+    if (s->snapshot_v == CHAOS_NEXT_USE_SNAPSHOT_V_BROAD) {
+        snprintf(tail, sizeof tail,
+            "\"broad_uses\":%d,\"delivered\":0,\"armed_level_token\":0,",
+            s->broad_uses);
+        if (!take(&p, tail)) return 0;
+    } else if (s->snapshot_v != CHAOS_NEXT_USE_SNAPSHOT_V) return 0;
     snprintf(tail, sizeof tail,
-        "\"journal_sha256\":\"\",\"capture_incomplete\":0,\"source_length\":%lu,"
+        "\"source_length\":%lu,"
         "\"source_sha256\":\"%s\",\"binding_sha256\":\"%s\",\"source_hex\":\"",
         (unsigned long)s->source_length, s->source_sha256, s->binding_sha256);
     if (!take(&p, tail)) return 0;

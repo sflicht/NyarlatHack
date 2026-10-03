@@ -1,0 +1,157 @@
+{
+  "attempt": "c1",
+  "ordinary": true,
+  "wizard": false,
+  "seed_control": false,
+  "clock_control": false,
+  "model_calls": 0,
+  "hand_placed_envelopes": false,
+  "max_rounds": 12,
+  "recipe": "search-8",
+  "outcome": "program_1_felt_twice",
+  "revision": "dcd916621fceab71ea55cf6cbee901cb0ba8baf7",
+  "apply_command": "ag",
+  "published": true,
+  "envelope": {
+    "at": 2,
+    "cost": 1,
+    "id": 2,
+    "next_use_program_v": 3,
+    "operations": [
+      "W"
+    ],
+    "origin_refs": [
+      {
+        "end_seq": 10,
+        "fact": "ordinary_whistle",
+        "family": "W",
+        "level_dlevel": 1,
+        "level_dnum": 0,
+        "move": 1,
+        "notice_seq": 9,
+        "root": 8,
+        "run": "0000000000000801000000000018f3bf0000000000000801000000000018f3bf"
+      }
+    ],
+    "source": "return {\n  on_action = function(context)\n    return {next_use_intent_v=2, op=\"whistle_attention\", state=0}\n  end\n}\n",
+    "source_sha256": "9d256d10074b7a67073f9c87990f0375724b5e1212fdff45566479437ea0de1c",
+    "telegraph": "next-use-v3-W",
+    "ttl": 100,
+    "uses": 2,
+    "variant": 0
+  },
+  "rounds": 6,
+  "telegraph_on_screen": true,
+  "witness_lines": 2,
+  "admitted": [
+    1
+  ],
+  "felt_program_1": [
+    {
+      "next_use_felt_v": 1,
+      "program_ordinal": 1,
+      "program_id": 2,
+      "family": 1,
+      "root_seq": 28
+    },
+    {
+      "next_use_felt_v": 1,
+      "program_ordinal": 1,
+      "program_id": 2,
+      "family": 1,
+      "root_seq": 39
+    }
+  ],
+  "save_exit": 0,
+  "quit_exit": 0,
+  "restore_record": {
+    "haunt": true,
+    "haunt_pack": "/home/hermes/worktrees/NyarlatHack/hermes-session-nyarlathack-queue-2/chaos/packs/footsteps.lua",
+    "haunt_sha256": "4e4f0154dc8830c753f13af25b592ef255ba97e1be6cf81e019d4568f6cfa9e9",
+    "m2": {
+      "broad": true,
+      "cap": 3,
+      "enabled": true,
+      "repair": true
+    },
+    "next_use": true,
+    "v": 5,
+    "whispers": {
+      "backend": "m1",
+      "seed": 0
+    }
+  },
+  "sessions": [
+    {
+      "wizard": false,
+      "ordinary": true,
+      "observe": true,
+      "echoes": true,
+      "haunting_source_sha256": null,
+      "terminal": [
+        24,
+        80
+      ],
+      "inputs_begin": 0,
+      "sha256": {
+        "dnethack": "3ca3128977eb24446b9d53bd03a9f4ce898cd6c6e1bad43b2c9aa63d0f2da5bd",
+        "nhdat": "b7fc1a3aff42f759d4ee3d4db40e1d553ce753bc72c7dc75995a349c24719a96"
+      },
+      "clock_sha256": "6a5fbb4cd9bf794fe4385cb6902c2c2ae376f5285484d7b0f610b0517fa2ac0b",
+      "options": "Bard,human,male,neutral,dog,tty,!news,!legacy,time",
+      "timezone": "UTC"
+    },
+    {
+      "wizard": false,
+      "ordinary": true,
+      "observe": true,
+      "echoes": true,
+      "haunting_source_sha256": "4e4f0154dc8830c753f13af25b592ef255ba97e1be6cf81e019d4568f6cfa9e9",
+      "terminal": [
+        24,
+        80
+      ],
+      "inputs_begin": 59,
+      "sha256": {
+        "dnethack": "3ca3128977eb24446b9d53bd03a9f4ce898cd6c6e1bad43b2c9aa63d0f2da5bd",
+        "nhdat": "b7fc1a3aff42f759d4ee3d4db40e1d553ce753bc72c7dc75995a349c24719a96"
+      },
+      "clock_sha256": "6a5fbb4cd9bf794fe4385cb6902c2c2ae376f5285484d7b0f610b0517fa2ac0b",
+      "options": "Bard,human,male,neutral,dog,tty,!news,!legacy,time",
+      "timezone": "UTC"
+    }
+  ],
+  "receipts": [
+    {
+      "next_use_private_v": 2,
+      "kind": 2,
+      "seq": 2,
+      "program_ordinal": 1,
+      "program_id": 2,
+      "origins": [
+        {
+          "family": "W",
+          "published": 8,
+          "bound": 8
+        }
+      ]
+    }
+  ],
+  "lifecycle": [],
+  "felt": [
+    {
+      "next_use_felt_v": 1,
+      "program_ordinal": 1,
+      "program_id": 2,
+      "family": 1,
+      "root_seq": 28
+    },
+    {
+      "next_use_felt_v": 1,
+      "program_ordinal": 1,
+      "program_id": 2,
+      "family": 1,
+      "root_seq": 39
+    }
+  ]
+}

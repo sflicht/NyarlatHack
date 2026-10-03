@@ -66,6 +66,8 @@ static void copy_program(struct chaos_reveal_next_use *nu,
     nu->origin_f = s->origin_f;
     nu->depth = level_depth(s->level_token);
     nu->ordinal = ordinal;
+    nu->broad_uses = s->broad_uses;
+    nu->delivered = s->delivered;
 }
 
 static void next_use_facts(struct chaos_reveal_host *h)

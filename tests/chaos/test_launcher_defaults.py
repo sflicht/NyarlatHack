@@ -84,9 +84,11 @@ class OrdinaryDefaultTests(unittest.TestCase):
         choice = self.choice(run)
         self.assertEqual(
             {k: choice[k] for k in ("v", "haunt", "next_use", "whispers")},
-            dict(v=4, haunt=True, next_use=True, whispers=dict(backend="m1", seed=0)),
+            dict(v=5, haunt=True, next_use=True, whispers=dict(backend="m1", seed=0)),
         )
-        self.assertEqual(choice["m2"], {"enabled": True, "cap": 3, "repair": True})
+        self.assertEqual(
+            choice["m2"], {"enabled": True, "cap": 3, "repair": True, "broad": True}
+        )
         self.assertEqual(choice["haunt_pack"], str(HAUNT_DEFAULT))
         self.assertEqual(os.stat(run / "ordinary-choice.json").st_mode & 0o777, 0o600)
 
@@ -98,8 +100,8 @@ class OrdinaryDefaultTests(unittest.TestCase):
         self.assertEqual(
             self.choice(run),
             dict(
-                v=4,
-                m2=dict(enabled=False, cap=3, repair=False),
+                v=5,
+                m2=dict(enabled=False, cap=3, repair=False, broad=False),
                 haunt=False,
                 haunt_pack=None,
                 haunt_sha256=None,
@@ -264,6 +266,25 @@ class OrdinaryDefaultTests(unittest.TestCase):
             self.assertIsNone(launcher._resolve_choice(args, run))
             self.assertEqual(args.next_use_programs, cap)
             self.assertEqual(args.next_use_repair, enabled)
+            # C: a v4 record keeps B's rules exactly, never broad next-use.
+            self.assertFalse(args.next_use_broad)
+        for enabled, cap in ((True, 3), (False, 1)):
+            target.write_text(
+                json.dumps(
+                    dict(
+                        record,
+                        v=5,
+                        next_use=True,
+                        whispers=None,
+                        m2=dict(enabled=enabled, cap=3, repair=enabled, broad=enabled),
+                    )
+                )
+            )
+            args.next_use = False
+            self.assertIsNone(launcher._resolve_choice(args, run))
+            self.assertEqual(args.next_use_programs, cap)
+            self.assertEqual(args.next_use_repair, enabled)
+            self.assertEqual(args.next_use_broad, enabled)
 
     def test_invalid_choice_record_fails_closed(self):
         base = dict(
@@ -284,7 +305,31 @@ class OrdinaryDefaultTests(unittest.TestCase):
             dict(base, v=4, whispers=None, m2=dict(enabled=False, cap=3)),
             dict(base, v=4, whispers=None, m2=dict(enabled=False, cap=3, repair=True)),
             dict(base, v=4, whispers=None, m2=dict(enabled=False, cap=3, repair=0)),
+            dict(
+                base,
+                v=4,
+                whispers=None,
+                m2=dict(enabled=False, cap=3, repair=False, broad=False),
+            ),
             dict(base, v=5, whispers=None, m2=dict(enabled=False, cap=3, repair=False)),
+            dict(
+                base,
+                v=5,
+                whispers=None,
+                m2=dict(enabled=False, cap=3, repair=False, broad=True),
+            ),
+            dict(
+                base,
+                v=5,
+                whispers=None,
+                m2=dict(enabled=False, cap=3, repair=False, broad=0),
+            ),
+            dict(
+                base,
+                v=6,
+                whispers=None,
+                m2=dict(enabled=False, cap=3, repair=False, broad=False),
+            ),
         ]
         for raw in (b"{}", b"[]", b'{"v":2}', b"not json") + tuple(
             json.dumps(r).encode() for r in bad_v2
