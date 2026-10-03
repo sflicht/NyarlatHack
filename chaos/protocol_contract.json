@@ -661,6 +661,30 @@
             "role": "message_take_deliver"
           }
         ]
+      },
+      {
+        "symbol": "CHAOS_OBS_OP_WHISTLE_RING",
+        "id": 5,
+        "name": "whistle_ring",
+        "allow_blocked": false,
+        "projection": "completed_notice_by_operation",
+        "hook_refs": [
+          {
+            "file": "src/apply.c",
+            "symbol": "doapply",
+            "role": "scope"
+          },
+          {
+            "file": "src/chaos_engine.c",
+            "symbol": "chaos_next_use_whistle_completed",
+            "role": "arm"
+          },
+          {
+            "file": "src/pline.c",
+            "symbol": "vpline",
+            "role": "message_take_deliver"
+          }
+        ]
       }
     ],
     "facts": [
@@ -757,6 +781,14 @@
         "id": 12,
         "name": "resisted",
         "operation": 4,
+        "channel": "message",
+        "implies_blocked": false
+      },
+      {
+        "symbol": "CHAOS_OBS_FACT_RINGING",
+        "id": 13,
+        "name": "ringing",
+        "operation": 5,
         "channel": "message",
         "implies_blocked": false
       }
@@ -1051,6 +1083,18 @@
     {
       "id": 8,
       "text": "For a while, fountain water you drink may not run true."
+    },
+    {
+      "id": 9,
+      "text": "The next whistle may ring on after you stop."
+    },
+    {
+      "id": 10,
+      "text": "Again, a whistle may ring on after you stop."
+    },
+    {
+      "id": 11,
+      "text": "For a while, your whistles may ring on after you stop."
     }
   ],
   "mutation_limits": {
