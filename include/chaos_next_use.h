@@ -73,6 +73,10 @@ struct chaos_next_use_envelope {
     char telegraph[15];
     int ttl;
     int variant;
+    /* C (broad next-use): next_use_program_v 3 adds "uses", the most
+     * effects the program may deliver. 0 for a v2 envelope. */
+    int version;
+    int uses;
 };
 
 struct chaos_next_use_context {
@@ -130,5 +134,16 @@ const char *chaos_next_use_player_warning(const char *identifier);
      || ((ordinal) >= 2 && (ttl) == CHAOS_NEXT_USE_LIFETIME_LATER))
 #define CHAOS_NEXT_USE_REPAIRED(ordinal, ttl) \
     ((ordinal) >= 2 && (ttl) == CHAOS_NEXT_USE_LIFETIME_LATER)
+/* C (broad next-use). A next_use_program_v 3 envelope names one family and
+ * declares "uses", the most effects (witnessed W, remapped F) the program may
+ * deliver, 1..CHAOS_NEXT_USE_BROAD_USES_MAX, validated at load. The program
+ * answers every use of that family (any whistle, tin or magic; any fountain
+ * drink) on any level until it delivers "uses" effects, reaches
+ * CHAOS_NEXT_USE_BROAD_CALLBACKS callbacks, or expires. The callback bound
+ * keeps quiet and undelivered uses finite, and the runtime records bounded. */
+#define CHAOS_NEXT_USE_BROAD_USES_MAX 2
+#define CHAOS_NEXT_USE_BROAD_CALLBACKS 8
+#define CHAOS_NEXT_USE_BROAD_W "next-use-v3-W"
+#define CHAOS_NEXT_USE_BROAD_F "next-use-v3-F"
 
 #endif

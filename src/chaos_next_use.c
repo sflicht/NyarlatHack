@@ -625,13 +625,21 @@ static int schema_envelope(const struct json_value *root,
                            struct chaos_next_use_envelope *out)
 {
     static const char *const names[] = {"at","cost","id","next_use_program_v",
-        "operations","origin_refs","source","source_sha256","telegraph","ttl","variant"};
+        "operations","origin_refs","source","source_sha256","telegraph","ttl","variant",
+        "uses"};
     const struct json_value *operations, *origins, *source, *sha, *telegraph;
     unsigned char digest[32]; char calculated[65];
-    size_t i; int v, family;
-    if (!root || root->type != J_OBJECT || root->member_count != 11) return 0;
-    for (i = 0; i < 11; ++i) if (!json_member(root,names[i])) return 0;
-    if (!json_integer(json_member(root,"next_use_program_v"),2,2,&v) ||
+    size_t i, keys; int v, family;
+    if (!root || root->type != J_OBJECT
+        || !json_integer(json_member(root,"next_use_program_v"),2,3,&v)) return 0;
+    /* v2: 11 keys. v3 (broad next-use): the same plus "uses". */
+    keys = v == 3 ? 12 : 11;
+    if (root->member_count != keys) return 0;
+    for (i = 0; i < keys; ++i) if (!json_member(root,names[i])) return 0;
+    out->version = v;
+    if (v == 3 && !json_integer(json_member(root,"uses"),1,
+                                CHAOS_NEXT_USE_BROAD_USES_MAX,&out->uses)) return 0;
+    if (
         !json_integer(json_member(root,"at"),0,2147483647,&out->at) ||
         !json_integer(json_member(root,"id"),1,2147483647,&out->id) ||
         !json_integer(json_member(root,"ttl"),CHAOS_NEXT_USE_LIFETIME_FIRST,
@@ -644,6 +652,7 @@ static int schema_envelope(const struct json_value *root,
         operations->item_count > 2 || !origins || origins->type != J_ARRAY ||
         origins->item_count != operations->item_count) return 0;
     out->operation_count=(int)operations->item_count;
+    if (v == 3 && out->operation_count != 1) return 0; /* one family */
     for (i=0;i<operations->item_count;++i) {
         if (json_text(operations->items[i],"W")) family=CHAOS_NEXT_USE_FAMILY_W;
         else if (json_text(operations->items[i],"F")) family=CHAOS_NEXT_USE_FAMILY_F;
@@ -666,7 +675,10 @@ static int schema_envelope(const struct json_value *root,
     out->source[source->string_length]='\0'; out->source_length=source->string_length;
     memcpy(out->source_sha256,sha->string,64); out->source_sha256[64]='\0';
     telegraph=json_member(root,"telegraph");
-    if (out->operation_count==2) { if (!json_text(telegraph,"next-use-v2-WF")) return 0; }
+    if (v == 3) {
+        if (!json_text(telegraph, out->operations[0]==CHAOS_NEXT_USE_FAMILY_W
+                ? CHAOS_NEXT_USE_BROAD_W : CHAOS_NEXT_USE_BROAD_F)) return 0;
+    } else if (out->operation_count==2) { if (!json_text(telegraph,"next-use-v2-WF")) return 0; }
     else if (out->operations[0]==CHAOS_NEXT_USE_FAMILY_W) {
         if (!json_text(telegraph,"next-use-v2-W")) return 0;
     } else if (!json_text(telegraph,"next-use-v2-F")) return 0;
@@ -943,10 +955,13 @@ const char *chaos_next_use_player_warning(const char *identifier)
         return "The next fountain drink may take a different course.";
     if (!strcmp(identifier, "next-use-v2-WF"))
         return "The next whistle or fountain drink may not behave as usual.";
-    /* Arc 1 recurrence lines: contract telegraph_extensions ids 5 and 6. */
+    /* Arc 1 recurrence lines: contract telegraph_extensions ids 5 and 6.
+     * C (broad next-use) program lines: ids 7 (W) and 8 (F). */
 #define CHAOS_NU_AGAIN(id, text) \
     if ((id == 5 && !strcmp(identifier, CHAOS_NEXT_USE_AGAIN_W)) \
-        || (id == 6 && !strcmp(identifier, CHAOS_NEXT_USE_AGAIN_F))) return text;
+        || (id == 6 && !strcmp(identifier, CHAOS_NEXT_USE_AGAIN_F)) \
+        || (id == 7 && !strcmp(identifier, CHAOS_NEXT_USE_BROAD_W)) \
+        || (id == 8 && !strcmp(identifier, CHAOS_NEXT_USE_BROAD_F))) return text;
     CHAOS_SIGNAL_ROWS(CHAOS_NU_AGAIN)
 #undef CHAOS_NU_AGAIN
     return 0;

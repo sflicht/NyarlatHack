@@ -16,8 +16,11 @@ void chaos_next_use_safe_terminal(int) __attribute__((weak));
  * (chaos_engine.c); weak so runtime-only fixtures still link. */
 void chaos_pacing_delivered(int) __attribute__((weak));
 
-#define CHAOS_RUNTIME_PRIVATE_MAX 16
-#define CHAOS_RUNTIME_PUBLIC_MAX 1
+/* C (broad next-use): 2 header carriers + at most
+ * CHAOS_NEXT_USE_BROAD_CALLBACKS uses x 4 rows (intent, armed, witnessed,
+ * ended) + 1 termination = 35. A single-use program still writes at most 7. */
+#define CHAOS_RUNTIME_PRIVATE_MAX 40
+#define CHAOS_RUNTIME_PUBLIC_MAX CHAOS_NEXT_USE_BROAD_USES_MAX
 #define CHAOS_NEXT_USE_ORDINARY_CONTINUE 0
 #define CHAOS_NEXT_USE_EFFECT_READY 1
 
@@ -47,6 +50,10 @@ struct runtime_state {
     int admission_move, variant, whistle_count, fountain_count;
     int delay_until;
     int origin_w_live, origin_f_live;
+    /* C (broad next-use): declared effect bound (0 = single-use program),
+     * effects delivered so far, and the level the open W window armed on. */
+    int broad_uses, delivered;
+    long armed_level_token;
     int next_seq, termination_emitted, defer_termination, identity_unsafe;
     int pending_w_capture, f_inflight, witnessed, attention_claimed;
     int manifest_success;
@@ -493,6 +500,27 @@ static void maybe_append_termination(int reason, int failure_code)
         append_termination(reason, failure_code);
 }
 
+/* C: a broad program ends COMPLETED once it delivered its declared effects
+ * or used its callback bound, and only between uses (no window open, no
+ * capture or fountain result outstanding). Otherwise its last use outcome
+ * stays in the slot and the next use of the family reopens it. */
+static int broad_finished(void)
+{
+    return runtime.delivered >= runtime.broad_uses
+        || runtime.callback_ordinal >= CHAOS_NEXT_USE_BROAD_CALLBACKS;
+}
+
+static void finish_use(void)
+{
+    if (!runtime.broad_uses) {
+        maybe_append_termination(RUNTIME_TERMINATION_COMPLETED, 0);
+        return;
+    }
+    if (runtime.w_runtime != CHAOS_W_RUNTIME_ARMED && !runtime.pending_w_capture
+        && !runtime.f_inflight && broad_finished())
+        maybe_append_termination(RUNTIME_TERMINATION_COMPLETED, 0);
+}
+
 static void terminalize_pending(int slot_w, int slot_f)
 {
     if (runtime.slot_w == CHAOS_SLOT_W_PENDING) runtime.slot_w = slot_w;
@@ -666,7 +694,7 @@ static int runtime_decode_base64(const char *input, size_t length,
 
 static int validate_admission_envelope(
         const struct chaos_next_use_admission *admission,
-        const char source_sha256[65], int variant)
+        const char source_sha256[65], int variant, int *broad_uses)
 {
     unsigned char decoded[8192];
     char canonical[8193], digest[65];
@@ -705,8 +733,10 @@ static int validate_admission_envelope(
         || record->at_move > INT_MAX - envelope.ttl
         || record->at_move + envelope.ttl
            != admission->program.program_expiry
-        || envelope.operation_count != record->data.admission.operation_count)
+        || envelope.operation_count != record->data.admission.operation_count
+        || (envelope.version == 3) != (envelope.uses > 0))
         return 0;
+    *broad_uses = envelope.version == 3 ? envelope.uses : 0;
     for (index = 0; index < envelope.operation_count; ++index)
         if (envelope.operations[index]
                 != record->data.admission.operations[index]
@@ -737,7 +767,7 @@ int chaos_next_use_runtime_install(
         int variant, int whistle_count, int fountain_count)
 {
     char actual_source_sha256[65];
-    int pending_count, operation_index;
+    int pending_count, operation_index, broad_uses = 0;
     if (!admission || !source || !source_sha256
         || source_length < 1 || source_length > 4096
         || !valid_hash_field(source_sha256)
@@ -800,7 +830,8 @@ int chaos_next_use_runtime_install(
                 operation_index] != origin_f)
             return 0;
     }
-    if (!validate_admission_envelope(admission, source_sha256, variant))
+    if (!validate_admission_envelope(admission, source_sha256, variant,
+                                     &broad_uses))
         return 0;
     chaos_next_use_sha256_hex((const unsigned char *) source,
                               source_length, actual_source_sha256);
@@ -841,6 +872,7 @@ int chaos_next_use_runtime_install(
     runtime.origin_f_deadline = origin_f_deadline;
     runtime.origin_w_live = admission->program.slot_w == CHAOS_SLOT_PENDING;
     runtime.origin_f_live = admission->program.slot_f == CHAOS_SLOT_PENDING;
+    runtime.broad_uses = broad_uses;
     runtime.source_length = source_length;
     memcpy(runtime.source, source, source_length);
     runtime.source[source_length] = '\0';
@@ -873,7 +905,15 @@ static void runtime_runtime_boundary_impl(long run_token, long level_token,
     runtime.whistle_count = whistle_count;
     runtime.fountain_count = fountain_count;
     if (runtime.phase != CHAOS_ATTEMPT_COMMITTED) return;
-    if (runtime.current_level_token != runtime.level_token) {
+    if (runtime.broad_uses) {
+        /* C: a broad program survives level changes. Only its open W window
+         * ends, because it binds a companion on the level it armed on. */
+        if (runtime.w_runtime == CHAOS_W_RUNTIME_ARMED
+            && runtime.current_level_token != runtime.armed_level_token) {
+            chaos_next_use_end_w(CHAOS_END_LEVEL_DEPARTURE, NULL);
+            if (runtime.phase != CHAOS_ATTEMPT_COMMITTED) return;
+        }
+    } else if (runtime.current_level_token != runtime.level_token) {
         chaos_next_use_expire(CHAOS_END_LEVEL_DEPARTURE);
         return;
     }
@@ -986,7 +1026,13 @@ static void runtime_end_w_impl(enum chaos_next_use_end_reason reason,
         return;
     }
     append_effect(CHAOS_NEXT_USE_FAMILY_W, outcome, effect_root);
-    maybe_append_termination(reason, 0);
+    /* C: a broad window that ends on its own (A+10, or leaving its level)
+     * ends one use, not the program. */
+    if (runtime.broad_uses && (reason == CHAOS_END_WINDOW_A_PLUS_10
+                               || reason == CHAOS_END_LEVEL_DEPARTURE))
+        finish_use();
+    else
+        maybe_append_termination(reason, 0);
 }
 
 static void runtime_expire_impl(enum chaos_next_use_end_reason reason)
@@ -1007,6 +1053,34 @@ static void runtime_expire_impl(enum chaos_next_use_end_reason reason)
         append_termination(reason, 0);
 }
 
+/* Single-use programs answer one use per declared family. C: a broad
+ * program answers every use of its family between uses (no window open, no
+ * capture or fountain result outstanding) until it is finished. */
+static boolean family_open(int family)
+{
+    if (runtime.phase != CHAOS_ATTEMPT_COMMITTED) return FALSE;
+    if (!runtime.broad_uses) {
+        if (family == CHAOS_NEXT_USE_FAMILY_W)
+            return runtime.slot_w == CHAOS_SLOT_W_PENDING;
+        if (family == CHAOS_NEXT_USE_FAMILY_F)
+            return runtime.slot_f == CHAOS_SLOT_F_PENDING;
+        return FALSE;
+    }
+    if (runtime.w_runtime == CHAOS_W_RUNTIME_ARMED || runtime.pending_w_capture
+        || runtime.f_inflight || broad_finished())
+        return FALSE;
+    if (family == CHAOS_NEXT_USE_FAMILY_W)
+        return runtime.slot_w != CHAOS_SLOT_W_UNDECLARED;
+    if (family == CHAOS_NEXT_USE_FAMILY_F)
+        return runtime.slot_f != CHAOS_SLOT_F_UNDECLARED;
+    return FALSE;
+}
+
+int chaos_next_use_broad_active(void)
+{
+    return runtime.phase == CHAOS_ATTEMPT_COMMITTED && runtime.broad_uses > 0;
+}
+
 boolean chaos_next_use_action_preflight(int family, long completed_root)
 {
     if (runtime.current_run_token <= 0 || runtime.current_level_token <= 0)
@@ -1018,11 +1092,7 @@ boolean chaos_next_use_action_preflight(int family, long completed_root)
         return FALSE;
     if (runtime.delay_until > 0 && monstermoves < runtime.delay_until)
         return FALSE;
-    if (family == CHAOS_NEXT_USE_FAMILY_W)
-        return runtime.slot_w == CHAOS_SLOT_W_PENDING;
-    if (family == CHAOS_NEXT_USE_FAMILY_F)
-        return runtime.slot_f == CHAOS_SLOT_F_PENDING;
-    return FALSE;
+    return family_open(family);
 }
 
 static boolean runtime_on_action_impl(int family, long completed_root,
@@ -1054,6 +1124,17 @@ static boolean runtime_on_action_impl(int family, long completed_root,
     copy_hash(context.source_sha256, runtime.source_sha256);
     if (!hash_context(&context, context_sha256))
         panic("next-use context canonicalization");
+    if (runtime.broad_uses && family == CHAOS_NEXT_USE_FAMILY_W) {
+        /* C: a new use closes the record of the previous, ended window. */
+        runtime.w_runtime = CHAOS_W_RUNTIME_INACTIVE;
+        runtime.armed_m_id = 0;
+        runtime.armed_root = 0;
+        runtime.activation_monstermoves = 0;
+        runtime.armed_level_token = 0;
+        runtime.witnessed = 0;
+        runtime.attention_claimed = 0;
+        runtime.expected_manifest_m_id = 0;
+    }
     intent_binding.root = completed_root;
     effect_binding.root = intent_binding.root;
     runtime.last_root = effect_binding.root;
@@ -1108,9 +1189,11 @@ static boolean runtime_on_action_impl(int family, long completed_root,
     if (validation != RUNTIME_VALID) {
         append_private_intent(&intent_record);
         clear_action_token(token_out);
-        if (runtime.slot_w == CHAOS_SLOT_W_PENDING)
+        if (runtime.slot_w == CHAOS_SLOT_W_PENDING
+            || (runtime.broad_uses && family == CHAOS_NEXT_USE_FAMILY_W))
             runtime.slot_w = CHAOS_SLOT_W_CONSUMED_INVALID;
-        if (runtime.slot_f == CHAOS_SLOT_F_PENDING)
+        if (runtime.slot_f == CHAOS_SLOT_F_PENDING
+            || (runtime.broad_uses && family == CHAOS_NEXT_USE_FAMILY_F))
             runtime.slot_f = CHAOS_SLOT_F_CONSUMED_INVALID;
         runtime.defer_termination = 1;
         chaos_next_use_end_w(CHAOS_END_INVALID_CALLBACK, &completed_root);
@@ -1136,14 +1219,14 @@ static boolean runtime_on_action_impl(int family, long completed_root,
         if (family == CHAOS_NEXT_USE_FAMILY_W)
             runtime.slot_w = CHAOS_SLOT_W_CONSUMED_QUIET;
         else runtime.slot_f = CHAOS_SLOT_F_CONSUMED_QUIET;
-        maybe_append_termination(RUNTIME_TERMINATION_COMPLETED, 0);
+        finish_use();
         return FALSE;
     }
     if (intent.op == CHAOS_NEXT_USE_INTENT_DELAY) {
         if (family == CHAOS_NEXT_USE_FAMILY_W)
             runtime.slot_w = CHAOS_SLOT_W_CONSUMED_DELAY;
         else runtime.slot_f = CHAOS_SLOT_F_CONSUMED_DELAY;
-        maybe_append_termination(RUNTIME_TERMINATION_COMPLETED, 0);
+        finish_use();
         return FALSE;
     }
     if (family == CHAOS_NEXT_USE_FAMILY_W
@@ -1168,22 +1251,26 @@ static boolean runtime_on_action_impl(int family, long completed_root,
 
 static void runtime_whistle_unavailable_impl(long completed_root, int reason)
 {
-    if (runtime.phase != CHAOS_ATTEMPT_COMMITTED
-        || runtime.slot_w != CHAOS_SLOT_W_PENDING || completed_root <= 0)
+    /* C: a broad program is not consumed by a whistle suppressed before its
+     * callback (no qualifying companion): only a use that reached the
+     * callback can end suppressed. */
+    if (runtime.phase != CHAOS_ATTEMPT_COMMITTED || completed_root <= 0
+        || (runtime.broad_uses ? !runtime.pending_w_capture
+                               : runtime.slot_w != CHAOS_SLOT_W_PENDING))
         return;
     runtime.pending_w_capture = 0;
     runtime.slot_w = CHAOS_SLOT_W_CONSUMED_SUPPRESSED;
     append_effect_reason(CHAOS_NEXT_USE_FAMILY_W,
                          CHAOS_EFFECT_W_CAPTURE_SUPPRESSED, completed_root,
                          reason);
-    maybe_append_termination(RUNTIME_TERMINATION_COMPLETED, 0);
+    finish_use();
 }
 
 static void runtime_capture_whistle_impl(long completed_root, unsigned m_id,
                                     long at_move)
 {
     if (!runtime.pending_w_capture
-        || runtime.slot_w != CHAOS_SLOT_W_PENDING
+        || !(runtime.slot_w == CHAOS_SLOT_W_PENDING || runtime.broad_uses)
         || completed_root != runtime.pending_w_root
         || completed_root <= 0 || m_id == 0 || at_move < 0) {
         chaos_next_use_whistle_unavailable(completed_root);
@@ -1195,6 +1282,8 @@ static void runtime_capture_whistle_impl(long completed_root, unsigned m_id,
     runtime.armed_m_id = m_id;
     runtime.armed_root = completed_root;
     runtime.activation_monstermoves = at_move;
+    if (runtime.broad_uses)
+        runtime.armed_level_token = runtime.current_level_token;
     runtime.witnessed = 0;
     runtime.attention_claimed = 0;
     runtime.expected_manifest_m_id = 0;
@@ -1206,7 +1295,9 @@ static boolean runtime_whistle_decision_ready_impl(unsigned m_id)
 {
     if (runtime.current_run_token <= 0 || runtime.current_level_token <= 0
         || runtime.current_run_token != runtime.run_token
-        || runtime.current_level_token != runtime.level_token)
+        || runtime.current_level_token
+           != (runtime.broad_uses ? runtime.armed_level_token
+                                  : runtime.level_token))
         return FALSE;
     if (runtime.w_runtime != CHAOS_W_RUNTIME_ARMED
         || runtime.armed_m_id == 0 || m_id != runtime.armed_m_id)
@@ -1300,8 +1391,7 @@ unsigned chaos_next_use_armed_reserved_identity(void)
 
 long chaos_next_use_fountain_completed_root(void)
 {
-    return runtime.phase == CHAOS_ATTEMPT_COMMITTED
-        && runtime.slot_f == CHAOS_SLOT_F_PENDING ? runtime.origin_f : 0;
+    return family_open(CHAOS_NEXT_USE_FAMILY_F) ? runtime.origin_f : 0;
 }
 
 static void runtime_fountain_result_impl(const struct chaos_fountain_token *token,
@@ -1309,7 +1399,7 @@ static void runtime_fountain_result_impl(const struct chaos_fountain_token *toke
 {
     int effect = 0;
     if (!token || !token->active || !runtime.f_inflight
-        || runtime.slot_f != CHAOS_SLOT_F_PENDING
+        || !(runtime.slot_f == CHAOS_SLOT_F_PENDING || runtime.broad_uses)
         || token->root != runtime.f_root)
         return;
     switch (outcome) {
@@ -1337,6 +1427,7 @@ static void runtime_fountain_result_impl(const struct chaos_fountain_token *toke
         if (!token->consumed) return;
         runtime.slot_f = CHAOS_SLOT_F_CONSUMED_APPLIED;
         effect = CHAOS_EFFECT_F_REMAPPED;
+        if (runtime.broad_uses) runtime.delivered++;
         /* #164: a delivered effect; idempotent, and never during replay. */
         if (!runtime_staging && chaos_pacing_delivered)
             chaos_pacing_delivered(CHAOS_PACING_SRC_NEXT_USE);
@@ -1346,7 +1437,7 @@ static void runtime_fountain_result_impl(const struct chaos_fountain_token *toke
     }
     runtime.f_inflight = 0;
     append_effect(CHAOS_NEXT_USE_FAMILY_F, effect, token->root);
-    maybe_append_termination(RUNTIME_TERMINATION_COMPLETED, 0);
+    finish_use();
 }
 
 void chaos_next_use_on_manifestation(
@@ -1382,6 +1473,7 @@ void chaos_next_use_on_manifestation(
                   witness->root);
     runtime.public_records[runtime.public_count++] = public_record;
     runtime.witnessed = 1;
+    if (runtime.broad_uses) runtime.delivered++;
     if (!runtime_staging && chaos_pacing_delivered)  /* #164: witnessed */
         chaos_pacing_delivered(CHAOS_PACING_SRC_NEXT_USE);
     runtime.manifest_success = 0;
@@ -1953,7 +2045,11 @@ int chaos_next_use_replay_legacy_fixture(
 static void snapshot_values(struct chaos_next_use_snapshot *out)
 {
     memset(out, 0, sizeof *out);
-    out->snapshot_v = CHAOS_NEXT_USE_SNAPSHOT_V;
+    out->snapshot_v = runtime.broad_uses ? CHAOS_NEXT_USE_SNAPSHOT_V_BROAD
+                                         : CHAOS_NEXT_USE_SNAPSHOT_V;
+    out->broad_uses = runtime.broad_uses;
+    out->delivered = runtime.delivered;
+    out->armed_level_token = runtime.armed_level_token;
     out->program_id = runtime.program_id;
     out->phase = runtime.phase;
     out->slot_w = runtime.slot_w;
@@ -2009,6 +2105,11 @@ static int snapshot_binding_hash(const struct chaos_next_use_snapshot *in, char 
         in->program_id, in->source_sha256, in->admission_move,
         in->program_expiry, in->variant, in->run_token, in->level_token,
         in->origin_w, in->origin_w_deadline, in->origin_f, in->origin_f_deadline);
+    /* C: a broad program also binds its declared effect bound. */
+    if (n > 0 && in->snapshot_v == CHAOS_NEXT_USE_SNAPSHOT_V_BROAD
+        && (size_t)n < sizeof canonical)
+        n += snprintf(canonical + n, sizeof canonical - (size_t)n,
+                      "|uses=%d", in->broad_uses);
     if (n < 1 || (size_t)n >= sizeof canonical) return 0;
     chaos_next_use_sha256_hex((const unsigned char *)canonical, (size_t)n, out);
     return 1;
@@ -2027,8 +2128,22 @@ int chaos_next_use_snapshot_validate(const struct chaos_next_use_snapshot *in)
 {
     char actual[65];
 
-    if (!in || in->snapshot_v != CHAOS_NEXT_USE_SNAPSHOT_V)
-        return 0;
+    int broad;
+
+    if (!in) return 0;
+    /* v6 carries no broad state; v7 exists only for a broad program. */
+    if (in->snapshot_v == CHAOS_NEXT_USE_SNAPSHOT_V) {
+        if (in->broad_uses || in->delivered || in->armed_level_token)
+            return 0;
+    } else if (in->snapshot_v == CHAOS_NEXT_USE_SNAPSHOT_V_BROAD) {
+        if (in->broad_uses < 1 || in->broad_uses > CHAOS_NEXT_USE_BROAD_USES_MAX
+            || in->delivered < 0 || in->delivered > in->broad_uses
+            || in->armed_level_token < 0 || in->armed_level_token > INT32_MAX
+            || (in->armed_level_token != 0)
+               != (in->w_runtime != CHAOS_W_RUNTIME_INACTIVE))
+            return 0;
+    } else return 0;
+    broad = in->snapshot_v == CHAOS_NEXT_USE_SNAPSHOT_V_BROAD;
     if (in->journal_state < CHAOS_JOURNAL_NONE
         || in->journal_state > CHAOS_JOURNAL_FAILED
         || (in->capture_incomplete != 0 && in->capture_incomplete != 1)
@@ -2101,11 +2216,17 @@ int chaos_next_use_snapshot_validate(const struct chaos_next_use_snapshot *in)
         return 0;
     if ((in->phase != CHAOS_ATTEMPT_COMMITTED
          && in->phase != CHAOS_ATTEMPT_TERMINATED)
-        || in->termination_emitted != (in->phase == CHAOS_ATTEMPT_TERMINATED)
-        || (in->phase == CHAOS_ATTEMPT_TERMINATED)
-           != (in->slot_w != CHAOS_SLOT_W_PENDING
-               && in->slot_f != CHAOS_SLOT_F_PENDING
-               && in->w_runtime != CHAOS_W_RUNTIME_ARMED))
+        || in->termination_emitted != (in->phase == CHAOS_ATTEMPT_TERMINATED))
+        return 0;
+    /* A single-use program terminates exactly when nothing is left pending.
+     * C: a broad program's slots keep its last use outcome, so it is only
+     * required that a terminated program has no open window. */
+    if (broad ? (in->phase == CHAOS_ATTEMPT_TERMINATED
+                 && in->w_runtime == CHAOS_W_RUNTIME_ARMED)
+              : (in->phase == CHAOS_ATTEMPT_TERMINATED)
+                != (in->slot_w != CHAOS_SLOT_W_PENDING
+                    && in->slot_f != CHAOS_SLOT_F_PENDING
+                    && in->w_runtime != CHAOS_W_RUNTIME_ARMED))
         return 0;
     if ((in->slot_w == CHAOS_SLOT_W_UNDECLARED
          && (in->origin_w || in->origin_w_deadline || in->origin_w_live))
@@ -2130,7 +2251,9 @@ int chaos_next_use_snapshot_validate(const struct chaos_next_use_snapshot *in)
      * pending slot on failure is not a callback for that family. */
     if ((in->callback_w != 0 && in->callback_w != 1)
         || (in->callback_f != 0 && in->callback_f != 1)
-        || in->callback_ordinal != in->callback_w + in->callback_f
+        || (broad ? in->callback_ordinal < in->callback_w + in->callback_f
+                    || in->callback_ordinal > CHAOS_NEXT_USE_BROAD_CALLBACKS
+                  : in->callback_ordinal != in->callback_w + in->callback_f)
         || ((in->slot_w == CHAOS_SLOT_W_PENDING
              || in->slot_w == CHAOS_SLOT_W_UNDECLARED) && in->callback_w)
         || ((in->slot_f == CHAOS_SLOT_F_PENDING
@@ -2209,6 +2332,9 @@ int chaos_next_use_snapshot_import(const struct chaos_next_use_snapshot *in)
     live_runtime.level_token = in->level_token;
     live_runtime.current_run_token = 0;
     live_runtime.current_level_token = 0;
+    live_runtime.broad_uses = in->broad_uses;
+    live_runtime.delivered = in->delivered;
+    live_runtime.armed_level_token = in->armed_level_token;
     live_runtime.source_length = in->source_length;
     copy_hash(live_runtime.source_sha256, in->source_sha256);
     copy_hash(live_runtime.binding_sha256, in->binding_sha256);
@@ -2287,6 +2413,14 @@ int chaos_next_use_snapshot_write(int fd, const struct chaos_next_use_snapshot *
         return 0;
     if (!snapshot_io_all(fd, (void *)in->source, in->source_length, 1))
         return 0;
+    /* C: v7 (broad programs only) appends three values; v6 bytes unchanged. */
+    if (in->snapshot_v == CHAOS_NEXT_USE_SNAPSHOT_V_BROAD) {
+        int32_t broad[3];
+        broad[0] = in->broad_uses;
+        broad[1] = in->delivered;
+        broad[2] = (int32_t)in->armed_level_token;
+        if (!snapshot_io_all(fd, broad, sizeof broad, 1)) return 0;
+    }
     return 1;
 }
 
@@ -2299,7 +2433,8 @@ int chaos_next_use_snapshot_read(int fd, struct chaos_next_use_snapshot *out)
         return 0;
     memset(&snap, 0, sizeof snap);
     if (!snapshot_io_all(fd, header, sizeof header[0], 0)
-        || header[0] != CHAOS_NEXT_USE_SNAPSHOT_V)
+        || (header[0] != CHAOS_NEXT_USE_SNAPSHOT_V
+            && header[0] != CHAOS_NEXT_USE_SNAPSHOT_V_BROAD))
         return 0;
     if (!snapshot_io_all(fd, header + 1, sizeof header - sizeof header[0], 0))
         return 0;
@@ -2363,6 +2498,13 @@ int chaos_next_use_snapshot_read(int fd, struct chaos_next_use_snapshot *out)
     if (!snapshot_io_all(fd, snap.source, snap.source_length, 0))
         return 0;
     snap.source[snap.source_length] = '\0';
+    if (snap.snapshot_v == CHAOS_NEXT_USE_SNAPSHOT_V_BROAD) {
+        int32_t broad[3];
+        if (!snapshot_io_all(fd, broad, sizeof broad, 0)) return 0;
+        snap.broad_uses = broad[0];
+        snap.delivered = broad[1];
+        snap.armed_level_token = broad[2];
+    }
     if (!chaos_next_use_snapshot_validate(&snap))
         return 0;
     *out = snap;
