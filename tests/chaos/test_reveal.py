@@ -453,6 +453,32 @@ class RevealTests(unittest.TestCase):
         self.assertIn("Delivered: no;", section)
         self.assertEqual(xlog, ":chaos_admitted=1:chaos_delivered=0:chaos_spent=3")
 
+    def test_broad_whistle_program_counts_its_deliveries(self):
+        # C: a broad program's slot keeps only its last use; delivery is the
+        # engine's delivered count, not the last witness.
+        self.append(observation_row(12, 30, "whistling"))
+        section, xlog = self.reveal_of(nu(W_ARMED, 0, 0, 1, 41, 12, 0, 3), "broad=2,2")
+        self.assertIn(
+            '"For a while, your whistles may carry farther than they should."',
+            section,
+        )
+        self.assertIn("any whistle could answer it, at most 2 times.", section)
+        self.assertIn("Delivered: yes, 2 times; you saw your companion", section)
+        self.assertIn("its uses ran out or it expired", section)
+        self.assertNotIn("The next whistle", section)
+        self.assertTrue(all(len(x) <= 79 for x in section.splitlines()), section)
+        self.assertEqual(xlog, ":chaos_admitted=1:chaos_delivered=1:chaos_spent=3")
+
+    def test_broad_fountain_program_undelivered_is_still_listening(self):
+        self.append(observation_row(7, 18, "fountain_drink"))
+        section, xlog = self.reveal_of(nu(0, F_NATIVE, 0, 0, 25, 0, 7, 1), "broad=2,0")
+        self.assertIn('"For a while, the fountains\' water may not run true."', section)
+        self.assertIn("any fountain drink could answer it", section)
+        self.assertIn("Delivered: no; no manifestation reached you.", section)
+        self.assertIn("Ended: still listening when the game ended.", section)
+        self.assertTrue(all(len(x) <= 79 for x in section.splitlines()), section)
+        self.assertEqual(xlog, ":chaos_admitted=1:chaos_delivered=0:chaos_spent=3")
+
     def test_next_use_wf_pending_program(self):
         self.append(
             observation_row(7, 18, "fountain_drink")

@@ -402,9 +402,15 @@ static int nu_f(const struct chaos_reveal_next_use *nu)
 {
     return nu->slot_f != CHAOS_REVEAL_F_UNDECLARED;
 }
-static int nu_felt_w(const struct chaos_reveal_next_use *nu) { return nu->witnessed != 0; }
+/* C: a broad program declares one family and counts its deliveries. */
+static int nu_felt_w(const struct chaos_reveal_next_use *nu)
+{
+    if (nu->broad_uses) return nu_w(nu) && nu->delivered > 0;
+    return nu->witnessed != 0;
+}
 static int nu_felt_f(const struct chaos_reveal_next_use *nu)
 {
+    if (nu->broad_uses) return nu_f(nu) && nu->delivered > 0;
     return nu->slot_f == CHAOS_REVEAL_F_CONSUMED_APPLIED;
 }
 
@@ -661,6 +667,23 @@ static int felt_before(const struct chaos_reveal_host *h, int program, int fount
     return 0;
 }
 
+/* C: a broad program answers every use of its one family. */
+static void broad_lines(const struct chaos_reveal_next_use *nu, int w,
+                        chaos_reveal_emit emit, void *arg)
+{
+    const char *use = w ? "whistle" : "fountain drink";
+    out(emit, arg, "    Telegraph: \"%s\"", signal_text(w ? 7 : 8));
+    out(emit, arg, "    Effect: for a while, any %s could answer it, at most %d %s.",
+        use, nu->broad_uses, nu->broad_uses == 1 ? "time" : "times");
+    if (nu->delivered > 0)
+        out(emit, arg, "    Delivered: yes, %d %s; %s.", nu->delivered,
+            nu->delivered == 1 ? "time" : "times",
+            w ? "you saw your companion answer the whistle"
+              : "you drank the changed water");
+    else
+        out(emit, arg, "    Delivered: no; no manifestation reached you.");
+}
+
 static void next_use_entry(const struct chaos_reveal_entry *e, const struct chaos_reveal *r,
                            chaos_reveal_emit emit, void *arg)
 {
@@ -682,6 +705,13 @@ static void next_use_entry(const struct chaos_reveal_entry *e, const struct chao
         out(emit, arg, "    Recurrence: \"%s\"", signal_text(5));
     if (f && felt_before(&r->host, e->program, 1))
         out(emit, arg, "    Recurrence: \"%s\"", signal_text(6));
+    if (nu->broad_uses > 0 && (w != 0) != (f != 0)) {
+        broad_lines(nu, w != 0, emit, arg);
+        out(emit, arg, "    Ended: %s", nu->terminated
+            ? "its uses ran out or it expired before the game ended."
+            : "still listening when the game ended.");
+        return;
+    }
     out(emit, arg, "    Telegraph: \"%s\"", telegraph ? telegraph : "(unknown)");
     out(emit, arg, "    Effect: %s%s%s.", w ? w : "", w && f ? "; " : "",
         f ? f : (w ? "" : "(unknown)"));
