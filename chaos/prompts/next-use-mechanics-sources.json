@@ -1,16 +1,16 @@
 {
   "files": {
     "chaos/history.py": "fe52fb08eb1ba235d5d19e472579abd295624bc7c868b373a467e25c1d3f5b1b",
-    "chaos/next_use_envelope.py": "2888cd0a147cf5ba44b1fcd945c45636d4de8c76eb23fbe174386358837d4bab",
+    "chaos/next_use_envelope.py": "4757ac7f7860e4ce0c00395ee6400045d64ca69e030eb5ec8830671c0f6d4860",
     "chaos/next_use_history.py": "f29742c761501071761dc0e3d4432203fc0bb74c18ae097fc28b4fbec56e1670",
-    "chaos/next_use_schedule.py": "0c1fb80fd588d4947d5d76a093c33380326f8b422fd2a1a29380df88ed6d2f70",
-    "include/chaos_next_use.h": "5a2222ab35885392d1ddab121b935fcace6ee3494551b433738fd529b2a793ad",
+    "chaos/next_use_schedule.py": "d4faf01b0d50613b5aa2dd148d919b8c79ba6bb729c5f423af3991ca529b9726",
+    "include/chaos_next_use.h": "2c333680058b7c9bc994e146482ca6c06a3e88acfc3de296a98f276e5d584dfd",
     "include/chaos_presentation.h": "62065aef9506a12b7ee71c5f6d413e5193fb78776534cfb702c8af5517d6499c",
     "src/attrib.c": "cef325e4e78bb1ccafa5004b8241418194c44fe3ab9c7ccb9d00032f70205acd",
-    "src/chaos_engine.c": "44c8a7f7b102fa371d778f1d2cbf9e48e7de6ecabc9687e4edd988fc9c119e11",
+    "src/chaos_engine.c": "038efb1e0adb50a0f2691e48e35820738425b9bc9faac5d61646898a24714bd6",
     "src/chaos_lua.c": "6805289f9b24fa13baabbaf0d2d207e1ede1b3297696b7ab0e52b3bfc7e38b5e",
-    "src/chaos_next_use.c": "5b3806736cdda5f05e0397989844989c24462784d88648810ccbbd34bb50e178",
-    "src/chaos_next_use_runtime.c": "fe743bce5a733425950a94fa020a171f1484a1a5274711a7c453a344e40cb5d1",
+    "src/chaos_next_use.c": "d01167041f93db36ddab1169f66d12e454c67f2308f74e551545834f904c4c3e",
+    "src/chaos_next_use_runtime.c": "225267549563d61cd27e74acede0f3e86b21a48e697535e5e2449194882ed703",
     "src/chaos_next_use_safe.c": "be1da8c7054e1e9cbadb2f19699e833addbcb706fb53f6ff2d0cee2be5106f80",
     "src/chaos_presentation.c": "fa405cf41bb8852193b63e8f5c56d58dd7383129348f756bb16fb91ca2fda309",
     "src/dogmove.c": "0616a245bbfcb37a76443064619d1832334d6867be13b5fa99a930c4b165f7cf",
@@ -18,5 +18,5 @@
     "src/u_init.c": "9c9a4788d2c3ceffc91d18ed9c7168556571781d99ea3fe44ed95fbd01e5db68",
     "win/tty/wintty.c": "814b162e0923c1d880f1c6ab1655c0d1df8796aa431a4dc660e2fbd0f50bab41"
   },
-  "revision": "d6fe470fb944abf7f5c50feaae937fa9573a3ecb"
+  "revision": "97771199f4db0bab320c3c2ac3b15f30b24a8782"
 }
