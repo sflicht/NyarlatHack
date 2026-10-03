@@ -7,7 +7,11 @@ import json
 from .next_use_history import next_use_menu
 
 _EFFECTS = ("whistle_attention", "fountain_refresh")
+# Ring: the source op a ring program's W effect row compiles to. It is never a
+# menu op, so the menu and the public context are unchanged.
+RING_OP = "whistle_ring"
 _ALLOWED_OPS = frozenset(("quiet",) + _EFFECTS)
+_SOURCE_OPS = _ALLOWED_OPS | {RING_OP}
 _ROW_KEYS = frozenset(("family", "op", "origin"))
 _ORIGIN_KEYS = frozenset(("root_seq", "notice_seq", "end_seq", "fact"))
 _W_FACTS = frozenset(
@@ -93,7 +97,7 @@ def composition_candidates(state):
 
 def lua_source(op):
     """One bounded on_action. The engine still owns legality."""
-    if op not in _ALLOWED_OPS:
+    if op not in _SOURCE_OPS:
         raise ValueError("next-use op is outside the frozen composition menu")
     return (
         "return {\n"
@@ -104,11 +108,20 @@ def lua_source(op):
     )
 
 
-def compose(selected):
-    """Exact selected menu row to opaque source bytes and digest."""
+def compose(selected, ring=False):
+    """Exact selected menu row to opaque source bytes and digest.
+
+    ring (new runs only): the W effect row compiles to the ring intent; every
+    other row compiles exactly as before.
+    """
     if type(selected) is not dict or selected.get("op") not in _ALLOWED_OPS:
         raise ValueError("composition requires an exact frozen next-use row")
-    source = lua_source(selected["op"]).encode("ascii")
+    if type(ring) is not bool:
+        raise ValueError("ring flag")
+    op = selected["op"]
+    if ring and op == "whistle_attention":
+        op = RING_OP
+    source = lua_source(op).encode("ascii")
     if not 0 < len(source) <= 4096 or b"\0" in source:
         raise ValueError("source bounds violated")
     return dict(

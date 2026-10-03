@@ -677,15 +677,11 @@ static int ring_guard(void) {
     return CHAOS_RING_GUARD_NONE;
 }
 
-/* Ring: deliver after the runtime recorded it. The line goes through the
- * whistle_ring observation (published as a notice when observations are
- * on), then the native confusion path; its end is the native message. */
+/* Ring: deliver after the runtime recorded it: the line, then the native
+ * confusion path; its end is the native "You feel less confused now." The
+ * felt record is the runtime's RING_DELIVERED row (journal felt receipt). */
 static void ring_deliver(void) {
-    long root = chaos_observation_begin(CHAOS_OBS_OP_WHISTLE_RING);
-    chaos_observation_arm(CHAOS_OBS_OP_WHISTLE_RING, CHAOS_OBS_FACT_RINGING);
     pline("Your whistle's note goes on ringing inside your head.");
-    chaos_observation_disarm();
-    chaos_observation_end(root);
     make_confused(HConfusion + CHAOS_NEXT_USE_RING_MOVES, FALSE);
 }
 

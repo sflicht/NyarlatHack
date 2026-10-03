@@ -17,6 +17,11 @@ _TELEGRAPH = {"W": "next-use-v2-W", "F": "next-use-v2-F"}
 # until it delivers BROAD_USES effects; its telegraph says so ("For a while").
 _TELEGRAPH_BROAD = {"W": "next-use-v3-W", "F": "next-use-v3-F"}
 BROAD_USES = 2
+# Ring (new runs only): a W program is next_use_program_v 4, a broad program
+# whose "w_effect" is "ring"; the effect pins its telegraph. F programs are
+# written exactly as under C.
+_TELEGRAPH_RING = "next-use-v4-Wr"
+W_EFFECT_RING = "ring"
 
 
 def engine_run_hex(directory):
@@ -51,14 +56,19 @@ def program_lifetime(ordinal, repair=True):
     return 300 if repair and ordinal > 1 else 100
 
 
-def envelope_from_selection(selected, host, ordinal=1, repair=True, broad=False):
+def envelope_from_selection(
+    selected, host, ordinal=1, repair=True, broad=False, ring=False
+):
     """Map one trusted row plus host scheduling into the C envelope schema.
 
     broad (C, new runs only) writes next_use_program_v 3 with "uses"; it needs
-    the recurrence repair rules, which it builds on.
+    the recurrence repair rules, which it builds on. ring (new runs only)
+    builds on broad: a W effect row becomes a v4 ring program.
     """
     if type(broad) is not bool or (broad and not repair):
         raise ValueError("broad next-use needs the recurrence repair rules")
+    if type(ring) is not bool or (ring and not broad):
+        raise ValueError("ring needs the broad next-use rules")
     ttl = program_lifetime(ordinal, repair)
     if type(host) is not dict:
         raise ValueError("host scheduling fields required")
@@ -84,8 +94,11 @@ def envelope_from_selection(selected, host, ordinal=1, repair=True, broad=False)
     ):
         raise ValueError("host scheduling provenance")
     row = validate_next_use_row(selected)
-    composed = compose(row)
     family = row["family"]
+    # Q1: in a ring run every W program is a ring program (a quiet row stays
+    # quiet in its source; its telegraph and rules are ring's).
+    ring_program = ring and family == "W"
+    composed = compose(row, ring=ring_program)
     origin = {
         "end_seq": row["origin"]["end_seq"],
         "fact": _ENGINE_FACTS[family],
@@ -101,17 +114,21 @@ def envelope_from_selection(selected, host, ordinal=1, repair=True, broad=False)
         "at": host["at"],
         "cost": 1,
         "id": host["id"],
-        "next_use_program_v": 3 if broad else 2,
+        "next_use_program_v": 4 if ring_program else 3 if broad else 2,
         "operations": [family],
         "origin_refs": [origin],
         "source": composed["source"],
         "source_sha256": composed["source_sha256"],
-        "telegraph": (_TELEGRAPH_BROAD if broad else _TELEGRAPH)[family],
+        "telegraph": _TELEGRAPH_RING
+        if ring_program
+        else (_TELEGRAPH_BROAD if broad else _TELEGRAPH)[family],
         "ttl": ttl,
         "variant": host["variant"],
     }
     if broad:
         envelope["uses"] = BROAD_USES
+    if ring_program:
+        envelope["w_effect"] = W_EFFECT_RING
     encoded = json.dumps(
         envelope,
         allow_nan=False,
@@ -136,11 +153,20 @@ def envelope_name(ordinal=1):
 
 
 def publish_envelope(
-    directory, selected, host, box=None, ordinal=1, repair=True, broad=False
+    directory,
+    selected,
+    host,
+    box=None,
+    ordinal=1,
+    repair=True,
+    broad=False,
+    ring=False,
 ):
     """Write one complete envelope artifact. Never admits."""
     name = envelope_name(ordinal)
-    envelope, encoded = envelope_from_selection(selected, host, ordinal, repair, broad)
+    envelope, encoded = envelope_from_selection(
+        selected, host, ordinal, repair, broad, ring
+    )
 
     def write(held):
         target = held.path / name
