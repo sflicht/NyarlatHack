@@ -155,7 +155,28 @@ _RANGES = {
 }
 
 
-def _scalars(value, names, nested=()):
+# C (broad next-use, snapshot v7): a broad program answers up to
+# BROAD_CALLBACKS uses, so its callback, sequence and terminal bounds are
+# wider. Single-use (v6) journals keep the tighter bounds above.
+BROAD_CALLBACKS = 8
+BROAD_USES_MAX = 2
+_BROAD_RANGES = dict(
+    _RANGES,
+    snapshot_v=(7, 7),
+    callback_ordinal=(0, BROAD_CALLBACKS),
+    seq=(1, 39),
+    next_seq=(3, 40),
+    broad_uses=(1, BROAD_USES_MAX),
+    delivered=(0, BROAD_USES_MAX),
+)
+_BROAD_SNAPSHOT = _SNAPSHOT + " broad_uses delivered armed_level_token"
+
+
+def _broad(s):
+    return s is not None and s.get("snapshot_v") == 7
+
+
+def _scalars(value, names, nested=(), ranges=_RANGES):
     _keys(value, names)
     for key, item in value.items():
         if key in nested:
@@ -163,12 +184,18 @@ def _scalars(value, names, nested=()):
         if key.endswith("sha256"):
             _hash(item)
         else:
-            lo, hi = (0, 1) if key in _BOOL else _RANGES.get(key, (0, I32))
+            lo, hi = (0, 1) if key in _BOOL else ranges.get(key, (0, I32))
             _integer(item, lo, hi)
 
 
 def _snapshot(s):
-    _scalars(s, _SNAPSHOT, ("source_hex", "journal_sha256"))
+    broad = type(s) is dict and s.get("snapshot_v") == 7
+    _scalars(
+        s,
+        _BROAD_SNAPSHOT if broad else _SNAPSHOT,
+        ("source_hex", "journal_sha256"),
+        _BROAD_RANGES if broad else _RANGES,
+    )
     _require(s["journal_sha256"] == "", "initial journal anchor")
     text = s["source_hex"]
     _require(
@@ -195,7 +222,13 @@ def _snapshot(s):
             "origin_f_deadline",
         )
     )
+    if broad:  # C: a broad program also binds its declared effect bound.
+        binding += "|uses=%d" % s["broad_uses"]
     _require(_digest(binding.encode()) == s["binding_sha256"], "snapshot binding")
+    if broad:
+        _require(
+            s["delivered"] == 0 and s["armed_level_token"] == 0, "initial broad state"
+        )
     _require(
         s["phase"] == 3
         and s["next_seq"] == 3
@@ -222,10 +255,12 @@ def _snapshot(s):
 
 
 def _private(r, s, seq):
+    ranges = _BROAD_RANGES if _broad(s) else _RANGES
     _scalars(
         r,
         "next_use_private_v kind seq at_move program_id source_sha256 data",
         ("data",),
+        ranges,
     )
     _require(
         r["seq"] == seq
@@ -275,6 +310,7 @@ def _private(r, s, seq):
             d,
             "callback_ordinal trigger validation failure_code root state_before state_after delay_used_after context_sha256 intent_present intent_sha256 intent_sha256_present failure_code_present intent",
             ("intent", "intent_sha256"),
+            ranges,
         )
         _scalars(d["intent"], "op state")
         _require(d["intent_present"] == d["intent_sha256_present"], "intent presence")
@@ -354,15 +390,17 @@ def _envelope(d, s, source):
     )
     _require(_digest(raw) == d["envelope_sha256"], "envelope digest")
     e = _json(raw.decode("utf-8"))
-    _keys(
-        e,
-        "at cost id next_use_program_v operations origin_refs source source_sha256 telegraph ttl variant",
-    )
+    broad = _broad(s)
+    names = "at cost id next_use_program_v operations origin_refs source source_sha256 telegraph ttl variant"
+    _keys(e, names + (" uses" if broad else ""))
+    if broad:  # C: v3 declares its effect bound; the snapshot binds it.
+        _integer(e["uses"], 1, BROAD_USES_MAX)
+        _require(e["uses"] == s["broad_uses"], "envelope effect bound")
     for key, lo, hi in (
         ("at", 0, I32),
         ("cost", 1, 2),
         ("id", 1, I32),
-        ("next_use_program_v", 2, 2),
+        ("next_use_program_v", 3 if broad else 2, 3 if broad else 2),
         ("ttl", 100, 300),
         ("variant", 0, 2),
     ):
@@ -382,7 +420,8 @@ def _envelope(d, s, source):
         and e["id"] == s["program_id"]
         and e["variant"] == s["variant"]
         and e["at"] == d["at_safe"]
-        and e["telegraph"] == "next-use-v2-" + "".join(ops),
+        and e["telegraph"]
+        == ("next-use-v3-" if broad else "next-use-v2-") + "".join(ops),
         "envelope admission binding",
     )
     _require(
@@ -443,7 +482,9 @@ def _autonomous_w_end(t, s, prior, effect):
         reason = t["end_reason"] if 2 <= t["end_reason"] <= 5 else 0
     elif operation in (1, 7):
         # runtime_runtime_boundary_impl's precedence, also nested in ACTION.
-        if p["current_level_token"] != s["level_token"]:
+        # C: a broad window binds the level it armed on, not the program's.
+        level = prior.get("armed_level_token") if _broad(s) else s["level_token"]
+        if p["current_level_token"] != level:
             reason = 2
         elif (
             p["current_run_token"] != s["run_token"]
@@ -476,8 +517,12 @@ def _autonomous_w_end(t, s, prior, effect):
 
 
 def _transition(t, s, seq, prior):
+    broad = _broad(s)
     _scalars(
-        t, _TRANSITION, ("expected_token", "post", "private_records", "public_records")
+        t,
+        _TRANSITION,
+        ("expected_token", "post", "private_records", "public_records"),
+        _BROAD_RANGES if broad else _RANGES,
     )
     _require(t["source_sha256"] == s["source_sha256"], "transition source")
     _scalars(t["expected_token"], "root active remap consumed")
@@ -500,8 +545,13 @@ def _transition(t, s, seq, prior):
     p = t["post"]
     _scalars(p, _POST)
     _require(p["termination_emitted"] == int(p["phase"] == 4), "terminal phase")
+    # callback_w/callback_f are per-family flags; only a broad program may
+    # make more than one callback per family.
     _require(
-        t["callback_ordinal"] == p["callback_w"] + p["callback_f"], "callback count"
+        t["callback_ordinal"] >= p["callback_w"] + p["callback_f"]
+        if broad
+        else t["callback_ordinal"] == p["callback_w"] + p["callback_f"],
+        "callback count",
     )
     _require(not p["witnessed"] or p["attention_claimed"], "witness without attention")
     _require(p["delay_used"] or p["delay_until"] == 0, "delay state")
@@ -658,7 +708,16 @@ def _transition(t, s, seq, prior):
             ),
             "public W manifestation binding",
         )
-    return seq, dict(p, state=t["state"], w_runtime=t["w_runtime"]), terminal
+    post = dict(p, state=t["state"], w_runtime=t["w_runtime"])
+    if broad:
+        # C: the level a broad W window armed on (runtime capture_whistle).
+        armed = prior.get("armed_level_token", 0)
+        if t["w_runtime"] == 1 and prior["w_runtime"] != 1:
+            armed = p["current_level_token"]
+        elif t["w_runtime"] != 1:
+            armed = 0
+        post["armed_level_token"] = armed
+    return seq, post, terminal
 
 
 def read_journals(paths, *, allow_open_last=False):
@@ -767,7 +826,7 @@ def read_journal(path, *, capture_status=None):
                 seq, prior, terminal = _transition(d, s, seq, prior)
             elif kind == "end":
                 _keys(d, "status terminal_seq")
-                _integer(d["terminal_seq"], 1, 16)
+                _integer(d["terminal_seq"], 1, 39 if _broad(s) else 16)
                 _require(
                     index > 1
                     and payload["cursor"] == index - 1

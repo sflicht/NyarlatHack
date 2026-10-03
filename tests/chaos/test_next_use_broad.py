@@ -89,17 +89,22 @@ class NextUseBroadTests(unittest.TestCase):
         if result.returncode:
             raise RuntimeError(result.stderr.decode())
 
-    def run_case(self, family, scenario, broad=True):
+    def run_case(self, family, scenario, broad=True, journal=False):
         folder = tempfile.mkdtemp(prefix="nyarl-next-use-broad-run-")
         self.addCleanup(lambda: subprocess.run(["rm", "-rf", folder], check=False))
         os.chmod(folder, 0o700)
         publish_envelope(folder, ROWS[family], HOST, repair=True, broad=broad)
+        env = dict(os.environ)
+        if journal:
+            env["NYARL_BROAD_JOURNAL"] = "1"
         p = subprocess.run(
             [str(self.binary), folder, "40", "7", HOST["run"], family, scenario],
             capture_output=True,
             text=True,
             timeout=10,
+            env=env,
         )
+        self.folder = Path(folder)
         self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
         rows = [json.loads(line) for line in p.stdout.splitlines() if line]
         admit = rows[0]
@@ -193,6 +198,108 @@ class NextUseBroadTests(unittest.TestCase):
             with self.subTest(family=family):
                 _, steps, _ = self.run_case(family, "expiry")
                 self.assertEqual(steps["expired"]["phase"], TERMINATED)
+
+    def journal(self):
+        from chaos.next_use_journal import read_journal
+
+        (path,) = self.folder.glob("next_use-journal*.jsonl")
+        return path, read_journal(path)
+
+    def test_reader_accepts_broad_journals_and_their_controls(self):
+        cases = {
+            "W": ("repeat", "level", "quiet-uses", "suppressed", "level-window"),
+            "F": ("repeat", "level", "quiet-uses"),
+        }
+        for family, scenarios in cases.items():
+            for scenario in scenarios + ("expiry",):
+                for broad in (True, False):
+                    with self.subTest(family=family, scenario=scenario, broad=broad):
+                        self.run_case(family, scenario, broad=broad, journal=True)
+                        _, trace = self.journal()
+                        header = trace["records"][0]["data"]["snapshot"]
+                        self.assertEqual(header["snapshot_v"], 7 if broad else 6)
+                        self.assertEqual("broad_uses" in header, broad)
+
+    def test_broad_quiet_uses_reach_the_callback_bound_in_the_journal(self):
+        self.run_case("F", "quiet-uses", journal=True)
+        _, trace = self.journal()
+        self.assertTrue(trace["structurally_complete"])
+        ordinals = [
+            r["data"]["callback_ordinal"]
+            for r in trace["records"][1:]
+            if r["kind"] == "transition"
+        ]
+        self.assertEqual(max(ordinals), CALLBACKS)
+
+    def test_save_restore_resumes_the_broad_journal(self):
+        for family in "WF":
+            with self.subTest(family=family):
+                _, steps, _ = self.run_case(family, "restore", journal=True)
+                self.assertEqual(steps["use1"]["delivered"], 1)
+                self.assertEqual(steps["restored"]["result"], 1)
+                self.assertEqual(steps["restored"]["snapshot_v"], 7)
+                self.assertEqual(steps["restored"]["delivered"], 1)
+                self.assertEqual(steps["resumed"]["result"], 1)  # C mirror
+                self.assertEqual(steps["use2"]["delivered"], 2)
+                self.assertEqual(steps["use2"]["phase"], TERMINATED)
+                _, trace = self.journal()
+                self.assertTrue(trace["structurally_complete"])
+
+    def test_tampered_broad_snapshot_is_refused(self):
+        _, steps, _ = self.run_case("W", "tamper")
+        self.assertEqual(steps["untampered"]["result"], 1)
+        for step in ("tamper-uses", "tamper-version", "tamper-delivered"):
+            with self.subTest(step=step):
+                self.assertEqual(steps[step]["result"], 0)
+
+    def edit_header(self, path, edit):
+        """Rewrite the header payload and re-chain every digest."""
+        import hashlib
+
+        lines = path.read_bytes().splitlines(keepends=True)
+        out, prev = [], "0" * 64
+        for index, line in enumerate(lines):
+            payload = json.loads(line)["payload"]
+            payload["prev"] = prev
+            if index == 0:
+                edit(payload["data"])
+            raw = json.dumps(payload, separators=(",", ":")).encode()
+            prev = hashlib.sha256(raw).hexdigest()
+            out.append(b'{"payload":' + raw + b',"sha256":"' + prev.encode() + b'"}\n')
+        path.write_bytes(b"".join(out))
+
+    def test_reader_rejects_broad_header_tampering(self):
+        from chaos.next_use_journal import JournalError, read_journal
+
+        def bump_uses(d):
+            d["snapshot"]["broad_uses"] = 1
+
+        def old_version(d):
+            d["snapshot"]["snapshot_v"] = 6
+
+        def drop_broad(d):
+            for key in ("broad_uses", "delivered", "armed_level_token"):
+                del d["snapshot"][key]
+
+        for name, edit in (
+            ("uses", bump_uses),
+            ("version", old_version),
+            ("fields", drop_broad),
+        ):
+            with self.subTest(edit=name):
+                self.run_case("W", "repeat", journal=True)
+                path, _ = self.journal()
+                self.edit_header(path, edit)
+                with self.assertRaises(JournalError):
+                    read_journal(path)
+
+    def test_reader_rechain_helper_preserves_a_valid_journal(self):
+        from chaos.next_use_journal import read_journal
+
+        self.run_case("W", "repeat", journal=True)
+        path, _ = self.journal()
+        self.edit_header(path, lambda d: None)
+        self.assertTrue(read_journal(path)["structurally_complete"])
 
 
 if __name__ == "__main__":

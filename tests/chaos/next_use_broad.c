@@ -3,6 +3,7 @@
  * argv: run-dir at_move at_safe run_hex family(W|F) scenario */
 #include "hack.h"
 #include "chaos.h"
+#include "chaos_next_use_journal.h"
 #include "chaos_next_use_runtime.h"
 #include "chaos_next_use_safe.h"
 
@@ -31,6 +32,15 @@ void panic(const char *str, ...)
 #define RUN_TOKEN 1750000001L
 #define LEVEL_ONE 100001L /* chaos_next_use_pack_level(0, 1) */
 #define LEVEL_TWO 100002L
+
+void bwrite(int fd, genericptr_t loc, unsigned int num)
+{
+    if (write(fd, loc, num) != (ssize_t)num) abort();
+}
+int chaos_next_use_mread(int fd, void *loc, unsigned int num)
+{
+    return read(fd, loc, num) == (ssize_t)num;
+}
 
 static int telegraphs;
 static char telegraph_ids[4][32];
@@ -95,16 +105,18 @@ static int whistle(long root, int deliver)
         return 0;
     chaos_next_use_capture_whistle(root, m_id, start);
     monstermoves = start + 5;
+    /* As chaos_whistle_attention_message / chaos_whistle_witness_finalize:
+     * begin, notice, then one manifestation_complete closes the capture. */
     if (deliver && chaos_next_use_whistle_attention(m_id, root + 1)
         && chaos_next_use_manifestation_begin(m_id, root + 2)) {
-        chaos_next_use_manifestation_notice(root + 2, root + 3);
-        chaos_next_use_manifestation_end(root + 2, root + 3, root + 4, 1);
         memset(&witness, 0, sizeof witness);
         witness.root = root + 2;
         witness.notice_seq = root + 3;
+        witness.active = witness.pre_public = 1;
+        chaos_next_use_manifestation_notice(witness.root, witness.notice_seq);
         witness.manifestation_delivered = 1;
         witness.displaced = 1;
-        chaos_next_use_on_manifestation(&witness, root + 4);
+        chaos_next_use_manifestation_complete(&witness, root + 4, 1);
     }
     monstermoves = start + 10;
     boundary(LEVEL_ONE);
@@ -177,6 +189,9 @@ int main(int argc, char **argv)
     bind_origin(argv[4], family);
     chaos_next_use_safe_bind_logical(RUN_TOKEN);
     chaos_next_use_safe_try(&req, &admitted);
+    /* Optional: write the production journal for the reader tests. */
+    if (admitted.active && getenv("NYARL_BROAD_JOURNAL"))
+        (void)chaos_next_use_journal_begin(dir);
     close(dir);
     printf("{\"step\":\"admit\",\"result\":%d,\"telegraphs\":%d,"
            "\"telegraph\":\"%s\"}\n",
@@ -217,6 +232,34 @@ int main(int argc, char **argv)
         row("window-left-level", r);
         monstermoves += 3;
         row("next-level-use", use(family, root + 10, 1));
+    } else if (!strcmp(scenario, "restore")) {
+        /* Save after one delivered use, restore into a fresh runtime, resume
+         * the journal (C mirror of the reader), then finish the program. */
+        FILE *save = tmpfile();
+        int ok, resumed;
+        row("use1", use(family, root, 1));
+        ok = save && chaos_next_use_save(fileno(save));
+        rewind(save);
+        chaos_next_use_safe_reset_for_test();
+        ok = ok && chaos_next_use_restore_bound(fileno(save), RUN_TOKEN, LEVEL_ONE);
+        dir = open(argv[1], O_RDONLY | O_DIRECTORY);
+        resumed = ok && chaos_next_use_journal_resume(dir);
+        row("restored", ok);
+        row("resumed", resumed);
+        row("use2", use(family, root + 10, 1));
+        if (save) fclose(save);
+        close(dir);
+    } else if (!strcmp(scenario, "tamper")) {
+        /* The saved effect bound is bound into the snapshot hash, and a v6
+         * (single-use) snapshot may not carry broad state. */
+        struct chaos_next_use_snapshot s = snap(), t;
+        t = s; t.broad_uses = 1;
+        row("tamper-uses", chaos_next_use_snapshot_validate(&t));
+        t = s; t.snapshot_v = CHAOS_NEXT_USE_SNAPSHOT_V;
+        row("tamper-version", chaos_next_use_snapshot_validate(&t));
+        t = s; t.delivered = t.broad_uses + 1;
+        row("tamper-delivered", chaos_next_use_snapshot_validate(&t));
+        row("untampered", chaos_next_use_snapshot_validate(&s));
     } else if (!strcmp(scenario, "expiry")) {
         monstermoves = req.at_move + 100;
         boundary(LEVEL_TWO);
