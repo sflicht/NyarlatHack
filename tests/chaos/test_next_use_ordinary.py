@@ -144,8 +144,10 @@ def effect_evidence(game):
         )
         keys = "program_id source_sha256 admission_move program_expiry variant run_token level_token origin_w origin_w_deadline origin_f origin_f_deadline".split()
         binding = "next-use-bind-v1|" + "|".join(str(s[k]) for k in keys)
-        if s["snapshot_v"] == 7:  # C: a broad program binds its effect bound
+        if s["snapshot_v"] in (7, 8):  # C: a broad program binds its effect bound
             binding += "|uses=%d" % s["broad_uses"]
+        if s["snapshot_v"] == 8:  # ring also binds its W effect
+            binding += "|w=ring"
         assert hashlib.sha256(binding.encode()).hexdigest() == s["binding_sha256"]
     capture = {
         k: observations[-1][k]
@@ -158,7 +160,7 @@ def effect_evidence(game):
     }
     decoded = read_journal(game.run / "next_use-journal.jsonl", capture_status=capture)
     transitions = [r for r in decoded["records"] if r["kind"] == "transition"]
-    if decoded["records"][0]["data"]["snapshot"]["snapshot_v"] == 7:
+    if decoded["records"][0]["data"]["snapshot"]["snapshot_v"] in (7, 8):
         # C: a broad program keeps answering whistles after one delivery, so
         # this short game ends with it still open. No capture failed, and the
         # observer's last sample (taken at a hook, possibly a transition
@@ -219,7 +221,7 @@ def effect_evidence(game):
         observations[starts[1] - 1]["snapshot"],
         observations[starts[1]]["snapshot"],
     )
-    broad = after["snapshot_v"] == 7
+    broad = after["snapshot_v"] in (7, 8)
     if broad:
         # C: the open journal keeps growing between the last sample and the
         # restore; every program value is preserved.

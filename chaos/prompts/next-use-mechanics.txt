@@ -52,8 +52,6 @@ quiet does not arm an effect. One delay is allowed globally and consumes that
 family's slot; it suppresses callbacks until max(admission_move+10,now+10).
 A second delay or wrong-family intent terminates invalidly. Delay is not a retry
 of the same family. One slot/family; host v3 recalls per use.
-Ring: host v4 W programs (next-use-v4-Wr) make W effect rows whistle_ring:
-confusion for 5 moves when public guards pass; no companion. Host-chosen.
 
 W whistle_attention: SOURCE src/chaos_next_use_runtime.c:
 chaos_next_use_capture_whistle, chaos_next_use_whistle_attention and
