@@ -416,7 +416,8 @@ def _private(r, s, seq):
             "effect root",
         )
     elif kind == 5:
-        _scalars(d, "failure_code reason slot_f slot_w w_runtime")
+        # Ring: a program that ends on a ring ends in the RANG slot (10).
+        _scalars(d, "failure_code reason slot_f slot_w w_runtime", ranges=_ranges(s))
         _integer(d["reason"], 1, 7)
         _require(
             d["slot_w"] != 1 and d["slot_f"] != 1 and d["w_runtime"] != 1,
