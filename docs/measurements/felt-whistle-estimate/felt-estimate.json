@@ -1,0 +1,582 @@
+{
+ "starts": {
+  "bard": {
+   "games": 100,
+   "games_excluded_twin": 2,
+   "gate_estimate": {
+    "A_call": {
+     "part1": 14,
+     "part3": 8
+    },
+    "B_ring": {
+     "part1": 31,
+     "part3": 19
+    },
+    "C_carry": {
+     "part1": 13,
+     "part3": 6
+    }
+   },
+   "gate_estimate_without_companion_admission_check": {
+    "A_call": {
+     "part1": 14,
+     "part3": 8
+    },
+    "B_ring": {
+     "part1": 37,
+     "part3": 26
+    },
+    "C_carry": {
+     "part1": 13,
+     "part3": 6
+    }
+   },
+   "gate_now": {
+    "part1": 13,
+    "part3": 6
+   },
+   "gate_now_matches_report": true,
+   "gate_reported": {
+    "part1": 13
+   },
+   "per_program": {
+    "1": {
+     "A_call_deliverable": 15,
+     "A_call_programs": 11,
+     "A_call_uses": 15,
+     "B_ring_deliverable": 47,
+     "B_ring_programs": 28,
+     "B_ring_uses": 61,
+     "C_carry_deliverable": 0,
+     "C_carry_programs": 0,
+     "C_carry_uses": 0,
+     "admitted_programs": 42,
+     "admitted_programs_probed": 40,
+     "delivered_today": 23,
+     "reached_callback_today": 42,
+     "today_companion_in_view_deliverable": 37,
+     "today_companion_in_view_programs": 23,
+     "today_companion_in_view_uses": 48,
+     "valid_whistles_in_window": 62,
+     "whistles_in_window": 62
+    },
+    "2": {
+     "A_call_deliverable": 5,
+     "A_call_programs": 3,
+     "A_call_uses": 9,
+     "B_ring_deliverable": 58,
+     "B_ring_programs": 32,
+     "B_ring_uses": 114,
+     "C_carry_deliverable": 0,
+     "C_carry_programs": 0,
+     "C_carry_uses": 0,
+     "admitted_programs": 42,
+     "admitted_programs_probed": 41,
+     "delivered_today": 11,
+     "reached_callback_today": 23,
+     "today_companion_in_view_deliverable": 20,
+     "today_companion_in_view_programs": 13,
+     "today_companion_in_view_uses": 29,
+     "valid_whistles_in_window": 122,
+     "whistles_in_window": 122
+    },
+    "3": {
+     "A_call_deliverable": 3,
+     "A_call_programs": 3,
+     "A_call_uses": 3,
+     "B_ring_deliverable": 18,
+     "B_ring_programs": 11,
+     "B_ring_uses": 29,
+     "C_carry_deliverable": 0,
+     "C_carry_programs": 0,
+     "C_carry_uses": 0,
+     "admitted_programs": 14,
+     "admitted_programs_probed": 14,
+     "delivered_today": 2,
+     "reached_callback_today": 5,
+     "today_companion_in_view_deliverable": 6,
+     "today_companion_in_view_programs": 3,
+     "today_companion_in_view_uses": 10,
+     "valid_whistles_in_window": 30,
+     "whistles_in_window": 30
+    }
+   },
+   "program1_refused_no_companion": {
+    "A_call_programs": 1,
+    "B_ring_programs": 24,
+    "C_carry_programs": 0,
+    "probed": 35,
+    "program1_refused_no_companion_only": 35
+   }
+  },
+  "bard-default-path": {
+   "games": 100,
+   "games_excluded_twin": 2,
+   "gate_estimate": {
+    "A_call": {
+     "part1": 6,
+     "part3": 1
+    },
+    "B_ring": {
+     "part1": 12,
+     "part3": 4
+    },
+    "C_carry": {
+     "part1": 6,
+     "part3": 1
+    }
+   },
+   "gate_estimate_without_companion_admission_check": {
+    "A_call": {
+     "part1": 6,
+     "part3": 1
+    },
+    "B_ring": {
+     "part1": 23,
+     "part3": 13
+    },
+    "C_carry": {
+     "part1": 6,
+     "part3": 1
+    }
+   },
+   "gate_now": {
+    "part1": 6,
+    "part3": 1
+   },
+   "gate_now_matches_report": true,
+   "gate_reported": {
+    "part1": 6
+   },
+   "per_program": {
+    "1": {
+     "A_call_deliverable": 5,
+     "A_call_programs": 5,
+     "A_call_uses": 5,
+     "B_ring_deliverable": 34,
+     "B_ring_programs": 23,
+     "B_ring_uses": 57,
+     "C_carry_deliverable": 0,
+     "C_carry_programs": 0,
+     "C_carry_uses": 0,
+     "admitted_programs": 37,
+     "admitted_programs_probed": 36,
+     "delivered_today": 16,
+     "reached_callback_today": 38,
+     "today_companion_in_view_deliverable": 31,
+     "today_companion_in_view_programs": 21,
+     "today_companion_in_view_uses": 52,
+     "valid_whistles_in_window": 57,
+     "whistles_in_window": 57
+    },
+    "2": {
+     "A_call_deliverable": 2,
+     "A_call_programs": 2,
+     "A_call_uses": 2,
+     "B_ring_deliverable": 25,
+     "B_ring_programs": 15,
+     "B_ring_uses": 35,
+     "C_carry_deliverable": 0,
+     "C_carry_programs": 0,
+     "C_carry_uses": 0,
+     "admitted_programs": 25,
+     "admitted_programs_probed": 23,
+     "delivered_today": 3,
+     "reached_callback_today": 11,
+     "today_companion_in_view_deliverable": 9,
+     "today_companion_in_view_programs": 5,
+     "today_companion_in_view_uses": 13,
+     "valid_whistles_in_window": 38,
+     "whistles_in_window": 38
+    },
+    "3": {
+     "A_call_deliverable": 1,
+     "A_call_programs": 1,
+     "A_call_uses": 1,
+     "B_ring_deliverable": 6,
+     "B_ring_programs": 3,
+     "B_ring_uses": 10,
+     "C_carry_deliverable": 0,
+     "C_carry_programs": 0,
+     "C_carry_uses": 0,
+     "admitted_programs": 6,
+     "admitted_programs_probed": 5,
+     "delivered_today": 2,
+     "reached_callback_today": 9,
+     "today_companion_in_view_deliverable": 3,
+     "today_companion_in_view_programs": 2,
+     "today_companion_in_view_uses": 5,
+     "valid_whistles_in_window": 14,
+     "whistles_in_window": 14
+    }
+   },
+   "program1_refused_no_companion": {
+    "A_call_programs": 2,
+    "B_ring_programs": 29,
+    "C_carry_programs": 0,
+    "probed": 38,
+    "program1_refused_no_companion_only": 38
+   }
+  },
+  "bard-inherited": {
+   "games": 100,
+   "games_excluded_twin": 1,
+   "gate_estimate": {
+    "A_call": {
+     "part1": 5,
+     "part3": 1
+    },
+    "B_ring": {
+     "part1": 6,
+     "part3": 2
+    },
+    "C_carry": {
+     "part1": 3,
+     "part3": 0
+    }
+   },
+   "gate_estimate_without_companion_admission_check": {
+    "A_call": {
+     "part1": 6,
+     "part3": 2
+    },
+    "B_ring": {
+     "part1": 11,
+     "part3": 7
+    },
+    "C_carry": {
+     "part1": 3,
+     "part3": 0
+    }
+   },
+   "gate_now": {
+    "part1": 3,
+    "part3": 0
+   },
+   "gate_now_matches_report": true,
+   "gate_reported": {
+    "part1": 3
+   },
+   "per_program": {
+    "1": {
+     "A_call_deliverable": 5,
+     "A_call_programs": 5,
+     "A_call_uses": 5,
+     "B_ring_deliverable": 28,
+     "B_ring_programs": 18,
+     "B_ring_uses": 37,
+     "C_carry_deliverable": 0,
+     "C_carry_programs": 0,
+     "C_carry_uses": 0,
+     "admitted_programs": 30,
+     "admitted_programs_probed": 29,
+     "delivered_today": 7,
+     "reached_callback_today": 25,
+     "today_companion_in_view_deliverable": 25,
+     "today_companion_in_view_programs": 17,
+     "today_companion_in_view_uses": 28,
+     "valid_whistles_in_window": 45,
+     "whistles_in_window": 45
+    },
+    "2": {
+     "A_call_deliverable": 2,
+     "A_call_programs": 2,
+     "A_call_uses": 2,
+     "B_ring_deliverable": 14,
+     "B_ring_programs": 9,
+     "B_ring_uses": 25,
+     "C_carry_deliverable": 0,
+     "C_carry_programs": 0,
+     "C_carry_uses": 0,
+     "admitted_programs": 16,
+     "admitted_programs_probed": 16,
+     "delivered_today": 5,
+     "reached_callback_today": 10,
+     "today_companion_in_view_deliverable": 10,
+     "today_companion_in_view_programs": 6,
+     "today_companion_in_view_uses": 13,
+     "valid_whistles_in_window": 26,
+     "whistles_in_window": 26
+    },
+    "3": {
+     "A_call_deliverable": 0,
+     "A_call_programs": 0,
+     "A_call_uses": 0,
+     "B_ring_deliverable": 0,
+     "B_ring_programs": 0,
+     "B_ring_uses": 0,
+     "C_carry_deliverable": 0,
+     "C_carry_programs": 0,
+     "C_carry_uses": 0,
+     "admitted_programs": 0,
+     "admitted_programs_probed": 0,
+     "delivered_today": 0,
+     "reached_callback_today": 0,
+     "today_companion_in_view_deliverable": 0,
+     "today_companion_in_view_programs": 0,
+     "today_companion_in_view_uses": 0,
+     "valid_whistles_in_window": 0,
+     "whistles_in_window": 0
+    }
+   },
+   "program1_refused_no_companion": {
+    "A_call_programs": 2,
+    "B_ring_programs": 16,
+    "C_carry_programs": 0,
+    "probed": 30,
+    "program1_refused_no_companion_only": 30
+   }
+  },
+  "madman": {
+   "games": 100,
+   "games_excluded_twin": 0,
+   "gate_estimate": {
+    "A_call": {
+     "part1": 0,
+     "part3": 0
+    },
+    "B_ring": {
+     "part1": 0,
+     "part3": 0
+    },
+    "C_carry": {
+     "part1": 0,
+     "part3": 0
+    }
+   },
+   "gate_estimate_without_companion_admission_check": {
+    "A_call": {
+     "part1": 0,
+     "part3": 0
+    },
+    "B_ring": {
+     "part1": 0,
+     "part3": 0
+    },
+    "C_carry": {
+     "part1": 0,
+     "part3": 0
+    }
+   },
+   "gate_now": {
+    "part1": 0,
+    "part3": 0
+   },
+   "gate_now_matches_report": true,
+   "gate_reported": {
+    "part1": 0
+   },
+   "per_program": {
+    "1": {
+     "A_call_deliverable": 0,
+     "A_call_programs": 0,
+     "A_call_uses": 0,
+     "B_ring_deliverable": 0,
+     "B_ring_programs": 0,
+     "B_ring_uses": 0,
+     "C_carry_deliverable": 0,
+     "C_carry_programs": 0,
+     "C_carry_uses": 0,
+     "admitted_programs": 8,
+     "admitted_programs_probed": 8,
+     "delivered_today": 0,
+     "reached_callback_today": 1,
+     "today_companion_in_view_deliverable": 0,
+     "today_companion_in_view_programs": 0,
+     "today_companion_in_view_uses": 0,
+     "valid_whistles_in_window": 0,
+     "whistles_in_window": 0
+    },
+    "2": {
+     "A_call_deliverable": 0,
+     "A_call_programs": 0,
+     "A_call_uses": 0,
+     "B_ring_deliverable": 0,
+     "B_ring_programs": 0,
+     "B_ring_uses": 0,
+     "C_carry_deliverable": 0,
+     "C_carry_programs": 0,
+     "C_carry_uses": 0,
+     "admitted_programs": 0,
+     "admitted_programs_probed": 0,
+     "delivered_today": 0,
+     "reached_callback_today": 0,
+     "today_companion_in_view_deliverable": 0,
+     "today_companion_in_view_programs": 0,
+     "today_companion_in_view_uses": 0,
+     "valid_whistles_in_window": 0,
+     "whistles_in_window": 0
+    },
+    "3": {
+     "A_call_deliverable": 0,
+     "A_call_programs": 0,
+     "A_call_uses": 0,
+     "B_ring_deliverable": 0,
+     "B_ring_programs": 0,
+     "B_ring_uses": 0,
+     "C_carry_deliverable": 0,
+     "C_carry_programs": 0,
+     "C_carry_uses": 0,
+     "admitted_programs": 0,
+     "admitted_programs_probed": 0,
+     "delivered_today": 0,
+     "reached_callback_today": 0,
+     "today_companion_in_view_deliverable": 0,
+     "today_companion_in_view_programs": 0,
+     "today_companion_in_view_uses": 0,
+     "valid_whistles_in_window": 0,
+     "whistles_in_window": 0
+    }
+   },
+   "program1_refused_no_companion": {
+    "A_call_programs": 0,
+    "B_ring_programs": 0,
+    "C_carry_programs": 0,
+    "probed": 0,
+    "program1_refused_no_companion_only": 0
+   }
+  },
+  "wizard-default-path": {
+   "games": 100,
+   "games_excluded_twin": 0,
+   "gate_estimate": {
+    "A_call": {
+     "part1": 0,
+     "part3": 0
+    },
+    "B_ring": {
+     "part1": 1,
+     "part3": 1
+    },
+    "C_carry": {
+     "part1": 0,
+     "part3": 0
+    }
+   },
+   "gate_estimate_without_companion_admission_check": {
+    "A_call": {
+     "part1": 0,
+     "part3": 0
+    },
+    "B_ring": {
+     "part1": 1,
+     "part3": 1
+    },
+    "C_carry": {
+     "part1": 0,
+     "part3": 0
+    }
+   },
+   "gate_now": {
+    "part1": 0,
+    "part3": 0
+   },
+   "gate_now_matches_report": true,
+   "gate_reported": {
+    "part1": 0
+   },
+   "per_program": {
+    "1": {
+     "A_call_deliverable": 0,
+     "A_call_programs": 0,
+     "A_call_uses": 0,
+     "B_ring_deliverable": 0,
+     "B_ring_programs": 0,
+     "B_ring_uses": 0,
+     "C_carry_deliverable": 0,
+     "C_carry_programs": 0,
+     "C_carry_uses": 0,
+     "admitted_programs": 3,
+     "admitted_programs_probed": 3,
+     "delivered_today": 0,
+     "reached_callback_today": 0,
+     "today_companion_in_view_deliverable": 0,
+     "today_companion_in_view_programs": 0,
+     "today_companion_in_view_uses": 0,
+     "valid_whistles_in_window": 0,
+     "whistles_in_window": 0
+    },
+    "2": {
+     "A_call_deliverable": 0,
+     "A_call_programs": 0,
+     "A_call_uses": 0,
+     "B_ring_deliverable": 2,
+     "B_ring_programs": 1,
+     "B_ring_uses": 3,
+     "C_carry_deliverable": 0,
+     "C_carry_programs": 0,
+     "C_carry_uses": 0,
+     "admitted_programs": 1,
+     "admitted_programs_probed": 1,
+     "delivered_today": 0,
+     "reached_callback_today": 0,
+     "today_companion_in_view_deliverable": 0,
+     "today_companion_in_view_programs": 0,
+     "today_companion_in_view_uses": 0,
+     "valid_whistles_in_window": 3,
+     "whistles_in_window": 3
+    },
+    "3": {
+     "A_call_deliverable": 0,
+     "A_call_programs": 0,
+     "A_call_uses": 0,
+     "B_ring_deliverable": 2,
+     "B_ring_programs": 1,
+     "B_ring_uses": 3,
+     "C_carry_deliverable": 0,
+     "C_carry_programs": 0,
+     "C_carry_uses": 0,
+     "admitted_programs": 1,
+     "admitted_programs_probed": 1,
+     "delivered_today": 0,
+     "reached_callback_today": 0,
+     "today_companion_in_view_deliverable": 0,
+     "today_companion_in_view_programs": 0,
+     "today_companion_in_view_uses": 0,
+     "valid_whistles_in_window": 3,
+     "whistles_in_window": 3
+    }
+   },
+   "program1_refused_no_companion": {
+    "A_call_programs": 0,
+    "B_ring_programs": 0,
+    "C_carry_programs": 0,
+    "probed": 0,
+    "program1_refused_no_companion_only": 0
+   }
+  }
+ },
+ "twin": {
+  "games_differing": {
+   "bard-00024": [
+    "next_use-lifecycle.jsonl",
+    "whispers.jsonl",
+    "events.jsonl"
+   ],
+   "bard-00069": [
+    "next_use-schedule.jsonl",
+    "whispers.jsonl",
+    "events.jsonl"
+   ],
+   "bard-default-path-00021": [
+    "whispers.jsonl",
+    "events.jsonl"
+   ],
+   "bard-default-path-00072": [
+    "next_use-receipt.jsonl",
+    "next_use-lifecycle.jsonl",
+    "next_use-schedule.jsonl",
+    "whispers.jsonl",
+    "events.jsonl"
+   ],
+   "bard-inherited-00078": [
+    "next_use-lifecycle.jsonl",
+    "next_use-schedule.jsonl",
+    "whispers.jsonl",
+    "events.jsonl"
+   ]
+  },
+  "games_identical": 495,
+  "games_identical_incl_events_and_journals": 320
+ }
+}

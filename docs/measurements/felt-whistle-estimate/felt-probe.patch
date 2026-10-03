@@ -1,0 +1,20 @@
+--- a/src/chaos_engine.c
++++ b/src/chaos_engine.c
+@@ -648,6 +648,17 @@
+     unsigned captured_id;
+     int reason, id_count;
+ 
++    { const char *rd = getenv("NYARLATHACK_RUN_DIR"); char dp[1024]; FILE *fp = 0; int pr = 0, lvl_q = 0, adj_hostile = 0, inv = 0, sl_vis = 0, sl_hid = 0, d2, r0 = u.ulevel * 20; struct monst *pk, *mm;
++      if (rd) { snprintf(dp, sizeof dp, "%s/felt-probe.log", rd); fp = fopen(dp, "a"); }
++      if (fp) { pk = chaos_next_use_companion_pick(&pr);
++        for (mm = fmon; mm; mm = mm->nmon) { if (DEADMONSTER(mm)) continue; if (companion_qualifies(mm)) ++lvl_q;
++          if (!mm->mtame && !mm->mpeaceful && canspotmon(mm) && distmin(mm->mx, mm->my, u.ux, u.uy) <= 1) ++adj_hostile;
++          d2 = dist2(mm->mx, mm->my, u.ux, u.uy);
++          if (!mm->mtame && mm->msleeping && d2 >= r0 && d2 < 4 * r0) { if (canspotmon(mm)) ++sl_vis; else ++sl_hid; } }
++        if (obj) for (otmp = invent; otmp; otmp = otmp->nobj) if (otmp == obj) inv = 1;
++        fprintf(fp, "mm=%ld root=%ld otyp=%d known=%d quan=%ld art=%d inv=%d broad=%d pick=%d reason=%d lvl_q=%d conf=%d hconf=%ld stun=%d halluc=%d blind=%d swallow=%d adj_hostile=%d hp=%d hpmax=%d sl_vis=%d sl_hid=%d ulevel=%d pick_d2=%d\n",
++          (long)monstermoves, completed_root, obj ? (int)obj->otyp : -1, obj ? (int)obj->known : -1, obj ? (long)obj->quan : -1L, obj ? (int)obj->oartifact : -1, inv,
++          chaos_next_use_broad_active(), pk != 0, pr, lvl_q, Confusion ? 1 : 0, (long)HConfusion, Stunned ? 1 : 0, Hallucination ? 1 : 0, Blind ? 1 : 0, u.uswallow ? 1 : 0, adj_hostile, Upolyd ? u.mh : u.uhp, Upolyd ? u.mhmax : u.uhpmax, sl_vis, sl_hid, u.ulevel, pk ? dist2(pk->mx, pk->my, u.ux, u.uy) : -1); fclose(fp); } }
+     if (!obj || completed_root <= 0) return;
+     tool_member = FALSE;
+     for (otmp = invent; otmp; otmp = otmp->nobj)
