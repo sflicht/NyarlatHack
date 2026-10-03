@@ -69,7 +69,9 @@ class LegacyView(unittest.TestCase):
                     id=7,
                     text="For a while, your whistles may carry farther than they should.",
                 ),
-                dict(id=8, text="For a while, the fountains' water may not run true."),
+                dict(
+                    id=8, text="For a while, fountain water you drink may not run true."
+                ),
             ],
         )
         self.assertEqual(data["mutation_limits"], dict(duration_cap=300))

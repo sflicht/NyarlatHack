@@ -144,6 +144,8 @@ def effect_evidence(game):
         )
         keys = "program_id source_sha256 admission_move program_expiry variant run_token level_token origin_w origin_w_deadline origin_f origin_f_deadline".split()
         binding = "next-use-bind-v1|" + "|".join(str(s[k]) for k in keys)
+        if s["snapshot_v"] == 7:  # C: a broad program binds its effect bound
+            binding += "|uses=%d" % s["broad_uses"]
         assert hashlib.sha256(binding.encode()).hexdigest() == s["binding_sha256"]
     capture = {
         k: observations[-1][k]

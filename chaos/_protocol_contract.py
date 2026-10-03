@@ -284,7 +284,7 @@ TELEGRAPHS = {1: 'A distant whisper brushes against your thoughts.',
  5: 'Again, the whistle carries farther than it should.',
  6: "Again, the fountain's water may not run true.",
  7: 'For a while, your whistles may carry farther than they should.',
- 8: "For a while, the fountains' water may not run true."}
+ 8: 'For a while, fountain water you drink may not run true.'}
 DURATION_CAP = 300
 NEXT_USE_PROGRAM_CAP = 3
 FIELDS = ('v', 'id', 'mutation', 'value', 'duration', 'telegraph', 'at')

@@ -472,7 +472,9 @@ class RevealTests(unittest.TestCase):
     def test_broad_fountain_program_undelivered_is_still_listening(self):
         self.append(observation_row(7, 18, "fountain_drink"))
         section, xlog = self.reveal_of(nu(0, F_NATIVE, 0, 0, 25, 0, 7, 1), "broad=2,0")
-        self.assertIn('"For a while, the fountains\' water may not run true."', section)
+        self.assertIn(
+            '"For a while, fountain water you drink may not run true."', section
+        )
         self.assertIn("any fountain drink could answer it", section)
         self.assertIn("Delivered: no; no manifestation reached you.", section)
         self.assertIn("Ended: still listening when the game ended.", section)

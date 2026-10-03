@@ -43,6 +43,10 @@ static void export_observation(const char *hook)
             N(capture_incomplete); N(journal_bytes); N(origin_w); N(origin_f);
             N(origin_w_deadline); N(origin_f_deadline); N(run_token); N(level_token);
             N(activation_monstermoves); N(armed_root); N(source_length);
+            /* C: a broad (v7) snapshot also binds its effect bound. */
+            if (s.snapshot_v == CHAOS_NEXT_USE_SNAPSHOT_V_BROAD) {
+                N(broad_uses); N(delivered); N(armed_level_token);
+            }
 #undef N
             fprintf(f, ",\"journal_sha256\":\"%s\",\"source_sha256\":\"%s\","
                 "\"binding_sha256\":\"%s\",\"source_hex\":\"",
