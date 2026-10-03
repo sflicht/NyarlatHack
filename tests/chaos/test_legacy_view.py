@@ -87,7 +87,7 @@ class LegacyView(unittest.TestCase):
         self.assertEqual(data["next_use_programs"], dict(per_game_cap=3))
         self.assertEqual(NEXT_USE_PROGRAM_CAP, 3)
         self.assertNotIn("next_use_programs", base)
-        self.assertEqual(sorted(TELEGRAPHS), [1, 2, 3, 4, 5, 6, 7, 8])
+        self.assertEqual(sorted(TELEGRAPHS), list(range(1, 12)))
         for row in base["telegraphs"]:
             self.assertEqual(TELEGRAPHS[row["id"]], row["text"])
 
