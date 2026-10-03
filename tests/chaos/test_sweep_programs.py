@@ -166,6 +166,80 @@ class ProgramFunnelTests(unittest.TestCase):
                     [dict(turn=50, dlvl=None, kind="next_use_F", program=1)],
                 )
 
+    def test_ring_felt_is_the_whistle_notice_of_a_delivered_ring_root(self):
+        from unittest.mock import patch
+
+        def trace(outcome):
+            effect = dict(
+                kind=4, at_move=7, data=dict(family=1, outcome=outcome, root=15)
+            )
+            return dict(
+                status="incomplete",
+                records=[
+                    dict(
+                        kind="header",
+                        data=dict(
+                            program_ordinal=1,
+                            private_records=[dict(kind=2, at_move=1), effect],
+                        ),
+                    )
+                ],
+            )
+
+        events = [
+            SESSION,
+            _obs(15, "whistling", "started", 0, turn=4),
+            _obs(16, "whistling", "notice", 15, "sound_high", turn=4),
+            _obs(17, "whistling", "completed", 15, turn=4),
+        ]
+        receipt = dict(
+            next_use_felt_v=1, program_ordinal=1, program_id=2, family=1, root_seq=15
+        )
+        cases = {
+            sweep_funnel.W_RING_DELIVERED: [
+                dict(turn=4, dlvl=None, kind="next_use_W", program=1)
+            ],
+            sweep_funnel.W_RING_GUARDED: [],
+            # An attention program's plain whistle notice is never felt.
+            sweep_funnel.W_WITNESSED: [],
+        }
+        for outcome, expected in cases.items():
+            with self.subTest(outcome=outcome), tempfile.TemporaryDirectory() as tmp:
+                root = _run(tmp, events=events, journal="fixture")
+                (root / "run/next_use-felt.jsonl").write_text(
+                    json.dumps(receipt) + "\n"
+                )
+                with patch.object(
+                    sweep_funnel, "read_journal", return_value=trace(outcome)
+                ):
+                    result = sweep_funnel.analyse(root, felt=True)
+                self.assertEqual(result["felt_events"], expected)
+                delivered = outcome != sweep_funnel.W_RING_GUARDED
+                self.assertEqual(result["programs"][0]["delivered"], int(delivered))
+                self.assertEqual(
+                    result["programs"][0]["native_effect"],
+                    int(outcome == sweep_funnel.W_RING_DELIVERED),
+                )
+
+    def test_ring_effect_codes_match_the_engine(self):
+        header = (ROOT / "include/chaos_next_use_runtime.h").read_text()
+        body = header.split("enum chaos_next_use_effect_outcome {")[1].split("};")[0]
+        names = [
+            line.strip().split(",")[0].split("=")[0].strip()
+            for line in body.splitlines()
+            if line.strip().startswith("CHAOS_EFFECT_")
+        ]
+        # The enum starts at CHAOS_EFFECT_W_ARMED = 1 and counts up.
+        self.assertEqual(names[0], "CHAOS_EFFECT_W_ARMED")
+        self.assertEqual(
+            names.index("CHAOS_EFFECT_W_RING_DELIVERED") + 1,
+            sweep_funnel.W_RING_DELIVERED,
+        )
+        self.assertEqual(
+            names.index("CHAOS_EFFECT_W_RING_GUARDED") + 1,
+            sweep_funnel.W_RING_GUARDED,
+        )
+
     def test_real_game_three_program_fixture_is_not_collapsed_to_program_one(self):
         root = ROOT / "docs/evidence/next-use-program-journals/native/terminal"
         result = sweep_funnel.analyse(root, felt=True)

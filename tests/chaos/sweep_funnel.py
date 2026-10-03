@@ -40,6 +40,9 @@ TERMINATION = {
     7: "identity_unsafe",
 }
 W_ARMED, W_CAPTURE_SUPPRESSED, W_WITNESSED, F_REMAPPED = 1, 2, 3, 12
+# Ring (#238): CHAOS_EFFECT_W_RING_DELIVERED / _GUARDED. A delivered ring is
+# its own native effect and its own public consequence (the line + Conf).
+W_RING_DELIVERED, W_RING_GUARDED = 13, 14
 # #196: chaos_next_use_w_suppression, recorded on the W_CAPTURE_SUPPRESSED row.
 W_SUPPRESSION = {
     0: "unrecorded",
@@ -153,6 +156,8 @@ def first_felt(events, effects):
     for e in effects:
         if e["data"]["outcome"] == F_REMAPPED:
             found.append((e["at_move"], "next_use_F"))
+        elif e["data"]["outcome"] == W_RING_DELIVERED:
+            found.append((e["at_move"], "next_use_W"))
     if not found:
         return None
     turn, kind = min(found)
@@ -235,9 +240,15 @@ def analyse(game_root, felt=False, *, timeline=(), statuses=()):
         and o["operation"] == "whistle_attention"
         and o["stage"] == "completed"
     ]
-    native = [e for e in effects if e["data"]["outcome"] in (W_ARMED, F_REMAPPED)]
+    native = [
+        e
+        for e in effects
+        if e["data"]["outcome"] in (W_ARMED, F_REMAPPED, W_RING_DELIVERED)
+    ]
     delivered = [
-        e for e in effects if e["data"]["outcome"] in (W_WITNESSED, F_REMAPPED)
+        e
+        for e in effects
+        if e["data"]["outcome"] in (W_WITNESSED, F_REMAPPED, W_RING_DELIVERED)
     ]
 
     counts = {
