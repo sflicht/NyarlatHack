@@ -7,6 +7,7 @@
 #include "chaos_curio.h"
 #include "chaos_next_use.h"
 #include "chaos_next_use_io.h"
+#include "chaos_next_use_runtime.h"
 #include <sys/stat.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -641,6 +642,53 @@ int chaos_next_use_companion_in_view(void *opaque) {
     return chaos_next_use_companion_pick((int *) 0) != (struct monst *) 0;
 }
 
+/* Ring guards: public state only, read at the whistle. The first that holds
+ * is recorded; any holding guard leaves the program waiting (no effect).
+ * Adjacent monsters count only when the player can spot them; water and lava
+ * count only as the player's remembered map glyph, never hidden terrain. */
+static int ring_guard(void) {
+    struct monst *mtmp;
+    int x, y, glyph, cmap;
+    if (Confusion) return CHAOS_RING_GUARD_CONFUSED;
+    if (Stunned) return CHAOS_RING_GUARD_STUNNED;
+    if (Hallucination) return CHAOS_RING_GUARD_HALLUCINATING;
+    if (u.uswallow) return CHAOS_RING_GUARD_ENGULFED;
+    if (Upolyd ? u.mh * 3 <= u.mhmax : u.uhp * 3 <= u.uhpmax)
+        return CHAOS_RING_GUARD_LOW_HP;
+    for (mtmp = fmon; mtmp; mtmp = mtmp->nmon) {
+        if (DEADMONSTER(mtmp) || mtmp->mtame || distmin(u.ux, u.uy,
+                mtmp->mx, mtmp->my) > 1 || !canspotmon(mtmp)) continue;
+        if (!mtmp->mpeaceful) return CHAOS_RING_GUARD_HOSTILE_ADJACENT;
+    }
+    for (mtmp = fmon; mtmp; mtmp = mtmp->nmon) {
+        if (DEADMONSTER(mtmp) || mtmp->mtame || distmin(u.ux, u.uy,
+                mtmp->mx, mtmp->my) > 1 || !canspotmon(mtmp)) continue;
+        if (mtmp->mpeaceful) return CHAOS_RING_GUARD_PEACEFUL_ADJACENT;
+    }
+    for (y = u.uy - 1; y <= u.uy + 1; ++y)
+        for (x = u.ux - 1; x <= u.ux + 1; ++x) {
+            if (!isok(x, y) || (x == u.ux && y == u.uy)) continue;
+            glyph = glyph_at(x, y);
+            if (!glyph_is_cmap(glyph)) continue;
+            cmap = glyph_to_cmap(glyph);
+            if (cmap == S_pool || cmap == S_lava || cmap == S_water)
+                return CHAOS_RING_GUARD_WATER_ADJACENT;
+        }
+    return CHAOS_RING_GUARD_NONE;
+}
+
+/* Ring: deliver after the runtime recorded it. The line goes through the
+ * whistle_ring observation (published as a notice when observations are
+ * on), then the native confusion path; its end is the native message. */
+static void ring_deliver(void) {
+    long root = chaos_observation_begin(CHAOS_OBS_OP_WHISTLE_RING);
+    chaos_observation_arm(CHAOS_OBS_OP_WHISTLE_RING, CHAOS_OBS_FACT_RINGING);
+    pline("Your whistle's note goes on ringing inside your head.");
+    chaos_observation_disarm();
+    chaos_observation_end(root);
+    make_confused(HConfusion + CHAOS_NEXT_USE_RING_MOVES, FALSE);
+}
+
 void chaos_next_use_whistle_completed(struct obj *obj, long completed_root) {
     struct obj *otmp;
     struct monst *candidate, *resident, *id_owner;
@@ -659,7 +707,16 @@ void chaos_next_use_whistle_completed(struct obj *obj, long completed_root) {
         && (obj->otyp == WHISTLE
             || (obj->otyp == MAGIC_WHISTLE && chaos_next_use_broad_active()))
         && obj->known && !obj->oartifact && obj->quan == 1L;
-    if (valid_whistle
+    if (valid_whistle && chaos_next_use_ring_active()
+        && chaos_next_use_action_preflight(CHAOS_NEXT_USE_FAMILY_W,
+                                            completed_root)) {
+        /* Ring (Q3): no companion pick. The guards run after the callback
+         * so a quiet or delay intent never reads them. */
+        if (chaos_next_use_on_action(CHAOS_NEXT_USE_FAMILY_W,
+                                     completed_root, 0)
+            && chaos_next_use_whistle_ring(completed_root, ring_guard()))
+            ring_deliver();
+    } else if (valid_whistle
         && chaos_next_use_action_preflight(CHAOS_NEXT_USE_FAMILY_W,
                                             completed_root)) {
         candidate = chaos_next_use_companion_pick(&reason);

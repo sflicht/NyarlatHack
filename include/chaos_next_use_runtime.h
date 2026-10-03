@@ -20,7 +20,9 @@ enum chaos_next_use_slot_w {
     CHAOS_SLOT_W_TERMINATED_EXPIRY,
     CHAOS_SLOT_W_TERMINATED_LEVEL,
     /* Admission receipt failure only; no live-runtime transport setter. */
-    CHAOS_SLOT_W_TERMINATED_TRANSPORT
+    CHAOS_SLOT_W_TERMINATED_TRANSPORT,
+    /* Ring (snapshot v8 only): the last use of a ring program rang. */
+    CHAOS_SLOT_W_CONSUMED_RANG
 };
 
 enum chaos_next_use_slot_f {
@@ -83,8 +85,26 @@ enum chaos_next_use_effect_outcome {
     CHAOS_EFFECT_F_NATIVE_19_30,
     CHAOS_EFFECT_F_DEFAULT_WITHOUT_INTENT,
     CHAOS_EFFECT_F_GUARD_SUPPRESSED,
-    CHAOS_EFFECT_F_REMAPPED
+    CHAOS_EFFECT_F_REMAPPED,
+    /* Ring: the note rang (confusion applied), or a public guard held it.
+     * A guarded row carries its chaos_next_use_ring_guard in suppression. */
+    CHAOS_EFFECT_W_RING_DELIVERED,
+    CHAOS_EFFECT_W_RING_GUARDED
 };
+
+/* Ring guards, all read from public state at the whistle. 0 = none held. */
+enum chaos_next_use_ring_guard {
+    CHAOS_RING_GUARD_NONE = 0,
+    CHAOS_RING_GUARD_CONFUSED,
+    CHAOS_RING_GUARD_STUNNED,
+    CHAOS_RING_GUARD_HALLUCINATING,
+    CHAOS_RING_GUARD_ENGULFED,
+    CHAOS_RING_GUARD_LOW_HP,
+    CHAOS_RING_GUARD_HOSTILE_ADJACENT,
+    CHAOS_RING_GUARD_PEACEFUL_ADJACENT,
+    CHAOS_RING_GUARD_WATER_ADJACENT
+};
+#define CHAOS_RING_GUARD_MAX CHAOS_RING_GUARD_WATER_ADJACENT
 
 enum chaos_next_use_public_phase {
     CHAOS_PUBLIC_WITNESSED = 1
@@ -103,7 +123,9 @@ enum chaos_next_use_replay_operation {
     CHAOS_REPLAY_W_NO_ROOT = 10,
     CHAOS_REPLAY_IDENTITY_MARK = 11,
     CHAOS_REPLAY_IDENTITY_TAKE = 12,
-    CHAOS_REPLAY_END_W = 13
+    CHAOS_REPLAY_END_W = 13,
+    /* Ring: root, and the guard (0 = delivered) in end_reason. */
+    CHAOS_REPLAY_W_RING = 14
 };
 
 enum chaos_next_use_replay_status {
@@ -278,7 +300,15 @@ void chaos_next_use_fountain_result(const struct chaos_fountain_token *token,
  * next-use only) appends broad_uses, delivered and armed_level_token. */
 #define CHAOS_NEXT_USE_SNAPSHOT_V 6
 #define CHAOS_NEXT_USE_SNAPSHOT_V_BROAD 7
+/* v8 (ring programs only) is v7 plus w_effect; v6 and v7 bytes unchanged. */
+#define CHAOS_NEXT_USE_SNAPSHOT_V_RING 8
 int chaos_next_use_broad_active(void);
+/* Ring: the committed program's W effect is ring. */
+int chaos_next_use_ring_active(void);
+/* Ring: after a valid whistle_ring intent, report the public guard result
+ * (CHAOS_RING_GUARD_NONE = deliver). TRUE only when the runtime recorded a
+ * delivery; the caller then prints the line and applies the confusion. */
+boolean chaos_next_use_whistle_ring(long completed_root, int guard);
 #define CHAOS_NEXT_USE_JOURNAL_BYTES_MAX 8388608UL
 #define CHAOS_NEXT_USE_JOURNAL_RECORDS_MAX 4096UL
 enum chaos_next_use_journal_state {
@@ -325,6 +355,7 @@ struct chaos_next_use_snapshot {
     char source[CHAOS_NEXT_USE_SOURCE_MAX + 1];
     int broad_uses, delivered;
     long armed_level_token;
+    int w_effect;                /* v8 only: CHAOS_NEXT_USE_W_EFFECT_RING */
 };
 
 int chaos_next_use_snapshot_export(struct chaos_next_use_snapshot *);

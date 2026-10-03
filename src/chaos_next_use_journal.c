@@ -93,9 +93,12 @@ static void snapshot(const struct chaos_next_use_snapshot *p)
     N(p, journal_state); N(p, journal_bytes); T(p, journal_sha256);
     N(p, capture_incomplete);
     /* C: only a broad (v7) header carries these; v6 headers are unchanged. */
-    if (p->snapshot_v == CHAOS_NEXT_USE_SNAPSHOT_V_BROAD) {
+    if (p->snapshot_v == CHAOS_NEXT_USE_SNAPSHOT_V_BROAD
+        || p->snapshot_v == CHAOS_NEXT_USE_SNAPSHOT_V_RING) {
         N(p, broad_uses); N(p, delivered); N(p, armed_level_token);
     }
+    /* Ring: only a v8 header names its W effect. */
+    if (p->snapshot_v == CHAOS_NEXT_USE_SNAPSHOT_V_RING) N(p, w_effect);
     N(p, source_length); T(p, source_sha256); T(p, binding_sha256);
     if (p->source_length > CHAOS_NEXT_USE_SOURCE_MAX) journal.bad = 1;
     put("\"source_hex\":\"");
@@ -314,6 +317,7 @@ static int sink(void *opaque, const struct chaos_next_use_replay_input *p)
             const struct chaos_next_use_runtime_private_record *r = &p->private_records[i];
             if (r->kind == CHAOS_RUNTIME_PRIVATE_EFFECT
                 && (r->data.effect.outcome == CHAOS_EFFECT_W_WITNESSED
+                    || r->data.effect.outcome == CHAOS_EFFECT_W_RING_DELIVERED
                     || r->data.effect.outcome == CHAOS_EFFECT_F_REMAPPED))
                 chaos_next_use_felt_receipt(journal.dir, r->program_id,
                     r->data.effect.family, r->data.effect.root);
@@ -390,6 +394,11 @@ static int header_binding(const char *p, const struct chaos_next_use_snapshot *s
         snprintf(tail, sizeof tail,
             "\"broad_uses\":%d,\"delivered\":0,\"armed_level_token\":0,",
             s->broad_uses);
+        if (!take(&p, tail)) return 0;
+    } else if (s->snapshot_v == CHAOS_NEXT_USE_SNAPSHOT_V_RING) {
+        snprintf(tail, sizeof tail,
+            "\"broad_uses\":%d,\"delivered\":0,\"armed_level_token\":0,"
+            "\"w_effect\":%d,", s->broad_uses, CHAOS_NEXT_USE_W_EFFECT_RING);
         if (!take(&p, tail)) return 0;
     } else if (s->snapshot_v != CHAOS_NEXT_USE_SNAPSHOT_V) return 0;
     snprintf(tail, sizeof tail,

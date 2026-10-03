@@ -54,6 +54,8 @@ struct runtime_state {
      * effects delivered so far, and the level the open W window armed on. */
     int broad_uses, delivered;
     long armed_level_token;
+    /* Ring: the program's W effect (CHAOS_NEXT_USE_W_EFFECT_*). */
+    int w_effect;
     int next_seq, termination_emitted, defer_termination, identity_unsafe;
     int pending_w_capture, f_inflight, witnessed, attention_claimed;
     int manifest_success;
@@ -368,6 +370,7 @@ static const char *runtime_intent_name(int op)
     case CHAOS_NEXT_USE_INTENT_DELAY: return "delay";
     case CHAOS_NEXT_USE_INTENT_WHISTLE_ATTENTION: return "whistle_attention";
     case CHAOS_NEXT_USE_INTENT_FOUNTAIN_REFRESH: return "fountain_refresh";
+    case CHAOS_NEXT_USE_INTENT_WHISTLE_RING: return "whistle_ring";
     default: return NULL;
     }
 }
@@ -452,8 +455,10 @@ static void append_effect_reason(int family, int outcome, long root,
     record.data.effect.family = family;
     record.data.effect.outcome = outcome;
     record.data.effect.root = root;
+    /* Ring: a guarded row carries its guard in the same field. */
     if (family == CHAOS_NEXT_USE_FAMILY_W
-        && outcome == CHAOS_EFFECT_W_CAPTURE_SUPPRESSED)
+        && (outcome == CHAOS_EFFECT_W_CAPTURE_SUPPRESSED
+            || outcome == CHAOS_EFFECT_W_RING_GUARDED))
         record.data.effect.suppression = suppression;
     if (family == CHAOS_NEXT_USE_FAMILY_W
         && outcome != CHAOS_EFFECT_W_CAPTURE_SUPPRESSED) {
@@ -694,7 +699,8 @@ static int runtime_decode_base64(const char *input, size_t length,
 
 static int validate_admission_envelope(
         const struct chaos_next_use_admission *admission,
-        const char source_sha256[65], int variant, int *broad_uses)
+        const char source_sha256[65], int variant, int *broad_uses,
+        int *w_effect)
 {
     unsigned char decoded[8192];
     char canonical[8193], digest[65];
@@ -734,9 +740,11 @@ static int validate_admission_envelope(
         || record->at_move + envelope.ttl
            != admission->program.program_expiry
         || envelope.operation_count != record->data.admission.operation_count
-        || (envelope.version == 3) != (envelope.uses > 0))
+        || (envelope.version >= 3) != (envelope.uses > 0))
         return 0;
-    *broad_uses = envelope.version == 3 ? envelope.uses : 0;
+    /* v3 (C) and v4 (ring) are both broad programs. */
+    *broad_uses = envelope.version >= 3 ? envelope.uses : 0;
+    *w_effect = envelope.w_effect;
     for (index = 0; index < envelope.operation_count; ++index)
         if (envelope.operations[index]
                 != record->data.admission.operations[index]
@@ -767,7 +775,7 @@ int chaos_next_use_runtime_install(
         int variant, int whistle_count, int fountain_count)
 {
     char actual_source_sha256[65];
-    int pending_count, operation_index, broad_uses = 0;
+    int pending_count, operation_index, broad_uses = 0, w_effect = 0;
     if (!admission || !source || !source_sha256
         || source_length < 1 || source_length > 4096
         || !valid_hash_field(source_sha256)
@@ -831,7 +839,7 @@ int chaos_next_use_runtime_install(
             return 0;
     }
     if (!validate_admission_envelope(admission, source_sha256, variant,
-                                     &broad_uses))
+                                     &broad_uses, &w_effect))
         return 0;
     chaos_next_use_sha256_hex((const unsigned char *) source,
                               source_length, actual_source_sha256);
@@ -873,6 +881,7 @@ int chaos_next_use_runtime_install(
     runtime.origin_w_live = admission->program.slot_w == CHAOS_SLOT_PENDING;
     runtime.origin_f_live = admission->program.slot_f == CHAOS_SLOT_PENDING;
     runtime.broad_uses = broad_uses;
+    runtime.w_effect = w_effect;
     runtime.source_length = source_length;
     memcpy(runtime.source, source, source_length);
     runtime.source[source_length] = '\0';
@@ -1081,6 +1090,12 @@ int chaos_next_use_broad_active(void)
     return runtime.phase == CHAOS_ATTEMPT_COMMITTED && runtime.broad_uses > 0;
 }
 
+int chaos_next_use_ring_active(void)
+{
+    return runtime.phase == CHAOS_ATTEMPT_COMMITTED
+        && runtime.w_effect == CHAOS_NEXT_USE_W_EFFECT_RING;
+}
+
 boolean chaos_next_use_action_preflight(int family, long completed_root)
 {
     if (runtime.current_run_token <= 0 || runtime.current_level_token <= 0)
@@ -1161,10 +1176,19 @@ static boolean runtime_on_action_impl(int family, long completed_root,
                || intent.op < 0
                || intent.state < 0 || intent.state > 3)
         validation = RUNTIME_INVALID_SCHEMA;
+    /* Ring: the intent must match the program's loaded W effect, so no
+     * program can switch effect mid-run (the wrong-family path). */
     else if ((family == CHAOS_NEXT_USE_FAMILY_W
              && intent.op == CHAOS_NEXT_USE_INTENT_FOUNTAIN_REFRESH)
         || (family == CHAOS_NEXT_USE_FAMILY_F
-            && intent.op == CHAOS_NEXT_USE_INTENT_WHISTLE_ATTENTION)) {
+            && (intent.op == CHAOS_NEXT_USE_INTENT_WHISTLE_ATTENTION
+                || intent.op == CHAOS_NEXT_USE_INTENT_WHISTLE_RING))
+        || (family == CHAOS_NEXT_USE_FAMILY_W
+            && intent.op == CHAOS_NEXT_USE_INTENT_WHISTLE_ATTENTION
+            && runtime.w_effect == CHAOS_NEXT_USE_W_EFFECT_RING)
+        || (family == CHAOS_NEXT_USE_FAMILY_W
+            && intent.op == CHAOS_NEXT_USE_INTENT_WHISTLE_RING
+            && runtime.w_effect != CHAOS_NEXT_USE_W_EFFECT_RING)) {
         validation = RUNTIME_WRONG_FAMILY;
         intent_record.data.intent.failure_code =
             CHAOS_INTENT_FAILURE_WRONG_FAMILY;
@@ -1176,7 +1200,7 @@ static boolean runtime_on_action_impl(int family, long completed_root,
         intent_record.data.intent.failure_code_present = 1;
     }
     else if (intent.op < CHAOS_NEXT_USE_INTENT_QUIET
-             || intent.op > CHAOS_NEXT_USE_INTENT_FOUNTAIN_REFRESH)
+             || intent.op > CHAOS_NEXT_USE_INTENT_WHISTLE_RING)
         validation = RUNTIME_INVALID_SCHEMA;
     if (status == CHAOS_NEXT_USE_OK && hash_intent(&intent, intent_sha256)) {
         intent_record.data.intent.intent_present = 1;
@@ -1230,7 +1254,10 @@ static boolean runtime_on_action_impl(int family, long completed_root,
         return FALSE;
     }
     if (family == CHAOS_NEXT_USE_FAMILY_W
-        && intent.op == CHAOS_NEXT_USE_INTENT_WHISTLE_ATTENTION) {
+        && (intent.op == CHAOS_NEXT_USE_INTENT_WHISTLE_ATTENTION
+            || intent.op == CHAOS_NEXT_USE_INTENT_WHISTLE_RING)) {
+        /* Ring reuses the pending marker: the engine answers at once with
+         * chaos_next_use_whistle_ring, within the same whistle. */
         runtime.pending_w_capture = 1;
         runtime.pending_w_root = effect_binding.root;
         return TRUE;
@@ -1264,6 +1291,37 @@ static void runtime_whistle_unavailable_impl(long completed_root, int reason)
                          CHAOS_EFFECT_W_CAPTURE_SUPPRESSED, completed_root,
                          reason);
     finish_use();
+}
+
+/* Ring (Q4): a guarded use leaves the program waiting. Nothing is delivered
+ * and the effect cap is not spent; its callback already counted toward the
+ * 8-callback bound, so the program stays finite. A delivered use counts
+ * toward the cap and credits pacing, as a witnessed attention use does. */
+static boolean runtime_whistle_ring_impl(long completed_root, int guard)
+{
+    if (runtime.phase != CHAOS_ATTEMPT_COMMITTED
+        || runtime.w_effect != CHAOS_NEXT_USE_W_EFFECT_RING
+        || !runtime.broad_uses || !runtime.pending_w_capture
+        || completed_root <= 0 || completed_root != runtime.pending_w_root
+        || guard < CHAOS_RING_GUARD_NONE || guard > CHAOS_RING_GUARD_MAX)
+        return FALSE;
+    runtime.pending_w_capture = 0;
+    if (guard != CHAOS_RING_GUARD_NONE) {
+        runtime.slot_w = CHAOS_SLOT_W_CONSUMED_SUPPRESSED;
+        append_effect_reason(CHAOS_NEXT_USE_FAMILY_W,
+                             CHAOS_EFFECT_W_RING_GUARDED, completed_root,
+                             guard);
+        finish_use();
+        return FALSE;
+    }
+    runtime.slot_w = CHAOS_SLOT_W_CONSUMED_RANG;
+    runtime.delivered++;
+    append_effect(CHAOS_NEXT_USE_FAMILY_W, CHAOS_EFFECT_W_RING_DELIVERED,
+                  completed_root);
+    if (!runtime_staging && chaos_pacing_delivered)
+        chaos_pacing_delivered(CHAOS_PACING_SRC_NEXT_USE);
+    finish_use();
+    return TRUE;
 }
 
 static void runtime_capture_whistle_impl(long completed_root, unsigned m_id,
@@ -1580,6 +1638,21 @@ void chaos_next_use_whistle_suppressed(long completed_root, int reason)
     capture_leave(entered);
 }
 
+boolean chaos_next_use_whistle_ring(long completed_root, int guard)
+{
+    int entered = capture_enter(CHAOS_REPLAY_W_RING);
+    boolean result;
+    if (entered && capture_depth == 1) {
+        capture_record.root = completed_root;
+        capture_record.end_reason = guard;
+    }
+    result = runtime_whistle_ring_impl(completed_root, guard);
+    if (entered && capture_depth == 1)
+        capture_record.expected_result = result;
+    capture_leave(entered);
+    return result;
+}
+
 void chaos_next_use_whistle_unavailable(long completed_root)
 {
     chaos_next_use_whistle_suppressed(completed_root,
@@ -1709,7 +1782,7 @@ static int valid_hash_field(const char value[65])
 static int replay_slot_w_valid(int value)
 {
     return value >= CHAOS_SLOT_W_UNDECLARED
-        && value <= CHAOS_SLOT_W_TERMINATED_TRANSPORT;
+        && value <= CHAOS_SLOT_W_CONSUMED_RANG;
 }
 
 static int replay_slot_f_valid(int value)
@@ -1982,6 +2055,14 @@ static int replay_record_impl(
         chaos_next_use_end_w((enum chaos_next_use_end_reason) record->end_reason,
                              record->root_present ? &record->root : NULL);
         break;
+    case CHAOS_REPLAY_W_RING:
+        if (legacy_fixture || record->end_reason < CHAOS_RING_GUARD_NONE
+            || record->end_reason > CHAOS_RING_GUARD_MAX) {
+            applied = 0;
+            break;
+        }
+        result = chaos_next_use_whistle_ring(record->root, record->end_reason);
+        break;
     default:
         applied = 0;
         break;
@@ -2045,8 +2126,11 @@ int chaos_next_use_replay_legacy_fixture(
 static void snapshot_values(struct chaos_next_use_snapshot *out)
 {
     memset(out, 0, sizeof *out);
-    out->snapshot_v = runtime.broad_uses ? CHAOS_NEXT_USE_SNAPSHOT_V_BROAD
-                                         : CHAOS_NEXT_USE_SNAPSHOT_V;
+    out->snapshot_v = runtime.w_effect == CHAOS_NEXT_USE_W_EFFECT_RING
+        ? CHAOS_NEXT_USE_SNAPSHOT_V_RING
+        : runtime.broad_uses ? CHAOS_NEXT_USE_SNAPSHOT_V_BROAD
+                             : CHAOS_NEXT_USE_SNAPSHOT_V;
+    out->w_effect = runtime.w_effect;
     out->broad_uses = runtime.broad_uses;
     out->delivered = runtime.delivered;
     out->armed_level_token = runtime.armed_level_token;
@@ -2105,11 +2189,14 @@ static int snapshot_binding_hash(const struct chaos_next_use_snapshot *in, char 
         in->program_id, in->source_sha256, in->admission_move,
         in->program_expiry, in->variant, in->run_token, in->level_token,
         in->origin_w, in->origin_w_deadline, in->origin_f, in->origin_f_deadline);
-    /* C: a broad program also binds its declared effect bound. */
-    if (n > 0 && in->snapshot_v == CHAOS_NEXT_USE_SNAPSHOT_V_BROAD
+    /* C: a broad program also binds its declared effect bound; ring (v8)
+     * also binds its effect. v6 and v7 canonical bytes are unchanged. */
+    if (n > 0 && (in->snapshot_v == CHAOS_NEXT_USE_SNAPSHOT_V_BROAD
+                  || in->snapshot_v == CHAOS_NEXT_USE_SNAPSHOT_V_RING)
         && (size_t)n < sizeof canonical)
         n += snprintf(canonical + n, sizeof canonical - (size_t)n,
-                      "|uses=%d", in->broad_uses);
+                      in->snapshot_v == CHAOS_NEXT_USE_SNAPSHOT_V_RING
+                          ? "|uses=%d|w=ring" : "|uses=%d", in->broad_uses);
     if (n < 1 || (size_t)n >= sizeof canonical) return 0;
     chaos_next_use_sha256_hex((const unsigned char *)canonical, (size_t)n, out);
     return 1;
@@ -2131,11 +2218,23 @@ int chaos_next_use_snapshot_validate(const struct chaos_next_use_snapshot *in)
     int broad;
 
     if (!in) return 0;
-    /* v6 carries no broad state; v7 exists only for a broad program. */
+    /* v6 carries no broad state; v7 exists only for a broad program; v8
+     * only for a ring program, whose W runtime never arms. */
+    if (in->snapshot_v == CHAOS_NEXT_USE_SNAPSHOT_V_RING) {
+        if (in->w_effect != CHAOS_NEXT_USE_W_EFFECT_RING
+            || in->slot_f != CHAOS_SLOT_F_UNDECLARED
+            || in->w_runtime != CHAOS_W_RUNTIME_INACTIVE
+            || in->witnessed || in->attention_claimed
+            || (in->slot_w == CHAOS_SLOT_W_CONSUMED_RANG && !in->callback_w)
+            || (in->slot_w == CHAOS_SLOT_W_CONSUMED_RANG && !in->delivered))
+            return 0;
+    } else if (in->w_effect || in->slot_w == CHAOS_SLOT_W_CONSUMED_RANG)
+        return 0;
     if (in->snapshot_v == CHAOS_NEXT_USE_SNAPSHOT_V) {
         if (in->broad_uses || in->delivered || in->armed_level_token)
             return 0;
-    } else if (in->snapshot_v == CHAOS_NEXT_USE_SNAPSHOT_V_BROAD) {
+    } else if (in->snapshot_v == CHAOS_NEXT_USE_SNAPSHOT_V_BROAD
+               || in->snapshot_v == CHAOS_NEXT_USE_SNAPSHOT_V_RING) {
         if (in->broad_uses < 1 || in->broad_uses > CHAOS_NEXT_USE_BROAD_USES_MAX
             || in->delivered < 0 || in->delivered > in->broad_uses
             || in->armed_level_token < 0 || in->armed_level_token > INT32_MAX
@@ -2143,7 +2242,8 @@ int chaos_next_use_snapshot_validate(const struct chaos_next_use_snapshot *in)
                != (in->w_runtime != CHAOS_W_RUNTIME_INACTIVE))
             return 0;
     } else return 0;
-    broad = in->snapshot_v == CHAOS_NEXT_USE_SNAPSHOT_V_BROAD;
+    broad = in->snapshot_v == CHAOS_NEXT_USE_SNAPSHOT_V_BROAD
+        || in->snapshot_v == CHAOS_NEXT_USE_SNAPSHOT_V_RING;
     if (in->journal_state < CHAOS_JOURNAL_NONE
         || in->journal_state > CHAOS_JOURNAL_FAILED
         || (in->capture_incomplete != 0 && in->capture_incomplete != 1)
@@ -2333,6 +2433,7 @@ int chaos_next_use_snapshot_import(const struct chaos_next_use_snapshot *in)
     live_runtime.current_run_token = 0;
     live_runtime.current_level_token = 0;
     live_runtime.broad_uses = in->broad_uses;
+    live_runtime.w_effect = in->w_effect;
     live_runtime.delivered = in->delivered;
     live_runtime.armed_level_token = in->armed_level_token;
     live_runtime.source_length = in->source_length;
@@ -2413,8 +2514,10 @@ int chaos_next_use_snapshot_write(int fd, const struct chaos_next_use_snapshot *
         return 0;
     if (!snapshot_io_all(fd, (void *)in->source, in->source_length, 1))
         return 0;
-    /* C: v7 (broad programs only) appends three values; v6 bytes unchanged. */
-    if (in->snapshot_v == CHAOS_NEXT_USE_SNAPSHOT_V_BROAD) {
+    /* C: v7 (broad programs only) appends three values; v6 bytes unchanged.
+     * v8 (ring) writes the same three; its version is its w_effect. */
+    if (in->snapshot_v == CHAOS_NEXT_USE_SNAPSHOT_V_BROAD
+        || in->snapshot_v == CHAOS_NEXT_USE_SNAPSHOT_V_RING) {
         int32_t broad[3];
         broad[0] = in->broad_uses;
         broad[1] = in->delivered;
@@ -2434,7 +2537,8 @@ int chaos_next_use_snapshot_read(int fd, struct chaos_next_use_snapshot *out)
     memset(&snap, 0, sizeof snap);
     if (!snapshot_io_all(fd, header, sizeof header[0], 0)
         || (header[0] != CHAOS_NEXT_USE_SNAPSHOT_V
-            && header[0] != CHAOS_NEXT_USE_SNAPSHOT_V_BROAD))
+            && header[0] != CHAOS_NEXT_USE_SNAPSHOT_V_BROAD
+            && header[0] != CHAOS_NEXT_USE_SNAPSHOT_V_RING))
         return 0;
     if (!snapshot_io_all(fd, header + 1, sizeof header - sizeof header[0], 0))
         return 0;
@@ -2498,7 +2602,10 @@ int chaos_next_use_snapshot_read(int fd, struct chaos_next_use_snapshot *out)
     if (!snapshot_io_all(fd, snap.source, snap.source_length, 0))
         return 0;
     snap.source[snap.source_length] = '\0';
-    if (snap.snapshot_v == CHAOS_NEXT_USE_SNAPSHOT_V_BROAD) {
+    if (snap.snapshot_v == CHAOS_NEXT_USE_SNAPSHOT_V_RING)
+        snap.w_effect = CHAOS_NEXT_USE_W_EFFECT_RING;
+    if (snap.snapshot_v == CHAOS_NEXT_USE_SNAPSHOT_V_BROAD
+        || snap.snapshot_v == CHAOS_NEXT_USE_SNAPSHOT_V_RING) {
         int32_t broad[3];
         if (!snapshot_io_all(fd, broad, sizeof broad, 0)) return 0;
         snap.broad_uses = broad[0];
