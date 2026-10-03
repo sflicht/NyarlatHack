@@ -29,7 +29,6 @@ Usage: broad_hold.py WORK_DIR [START ...] > hold.json
 """
 
 import json
-import os
 from pathlib import Path
 import statistics
 import sys
@@ -162,11 +161,15 @@ def game(gdir):
     events = rows(run / "events.jsonl")
     by_seq = {e.get("seq"): e for e in events}
     last_turn = events[-1].get("turn") if events else None
-    lifecycle = {r["program_ordinal"]: r for r in rows(run / "next_use-lifecycle.jsonl")}
+    lifecycle = {
+        r["program_ordinal"]: r for r in rows(run / "next_use-lifecycle.jsonl")
+    }
     schedule = rows(run / "next_use-schedule.jsonl")
-    log = (run / "director.log").read_text(errors="replace").splitlines() if (
-        run / "director.log"
-    ).exists() else []
+    log = (
+        (run / "director.log").read_text(errors="replace").splitlines()
+        if (run / "director.log").exists()
+        else []
+    )
     progs = [program(run, k, by_seq, last_turn, lifecycle) for k in (1, 2, 3)]
     progs = [p for p in progs if p]
     published = [k for k in (1, 2, 3) if (run / envelope_name(k)).exists()]
@@ -184,8 +187,14 @@ def summarise(games):
     felt, open_after, hold_moves = 0, 0, []
     second, expired, other_end, open_at_end = 0, 0, 0, 0
     deferred_origins, games_deferred, games_blocked_to_end = 0, 0, 0
-    attrib = dict(earlier_use_reached_callback=0, earlier_use_no_callback=0,
-                  other_level=0, magic_whistle=0, fountain=0, single_use_path=0)
+    attrib = dict(
+        earlier_use_reached_callback=0,
+        earlier_use_no_callback=0,
+        other_level=0,
+        magic_whistle=0,
+        fountain=0,
+        single_use_path=0,
+    )
     polls = 0
     for g in games:
         polls += g["already_published_polls"]
@@ -268,6 +277,11 @@ def main(work, starts):
 
 
 if __name__ == "__main__":
-    starts = sys.argv[2:] or ["bard-default-path", "bard", "bard-inherited",
-                              "madman", "wizard-default-path"]
+    starts = sys.argv[2:] or [
+        "bard-default-path",
+        "bard",
+        "bard-inherited",
+        "madman",
+        "wizard-default-path",
+    ]
     print(json.dumps(main(sys.argv[1], starts), indent=1, sort_keys=True))
