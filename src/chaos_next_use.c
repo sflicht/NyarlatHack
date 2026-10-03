@@ -626,19 +626,25 @@ static int schema_envelope(const struct json_value *root,
 {
     static const char *const names[] = {"at","cost","id","next_use_program_v",
         "operations","origin_refs","source","source_sha256","telegraph","ttl","variant",
-        "uses"};
+        "uses","w_effect"};
     const struct json_value *operations, *origins, *source, *sha, *telegraph;
     unsigned char digest[32]; char calculated[65];
     size_t i, keys; int v, family;
     if (!root || root->type != J_OBJECT
-        || !json_integer(json_member(root,"next_use_program_v"),2,3,&v)) return 0;
-    /* v2: 11 keys. v3 (broad next-use): the same plus "uses". */
-    keys = v == 3 ? 12 : 11;
+        || !json_integer(json_member(root,"next_use_program_v"),2,4,&v)) return 0;
+    /* v2: 11 keys. v3 (broad next-use): the same plus "uses". v4 (ring):
+     * v3 plus "w_effect", which must be "ring" (a v4 program is W only). */
+    keys = v == 4 ? 13 : v == 3 ? 12 : 11;
     if (root->member_count != keys) return 0;
     for (i = 0; i < keys; ++i) if (!json_member(root,names[i])) return 0;
     out->version = v;
-    if (v == 3 && !json_integer(json_member(root,"uses"),1,
+    out->w_effect = CHAOS_NEXT_USE_W_EFFECT_ATTENTION;
+    if (v >= 3 && !json_integer(json_member(root,"uses"),1,
                                 CHAOS_NEXT_USE_BROAD_USES_MAX,&out->uses)) return 0;
+    if (v == 4) {
+        if (!json_text(json_member(root,"w_effect"),"ring")) return 0;
+        out->w_effect = CHAOS_NEXT_USE_W_EFFECT_RING;
+    }
     if (
         !json_integer(json_member(root,"at"),0,2147483647,&out->at) ||
         !json_integer(json_member(root,"id"),1,2147483647,&out->id) ||
@@ -652,7 +658,7 @@ static int schema_envelope(const struct json_value *root,
         operations->item_count > 2 || !origins || origins->type != J_ARRAY ||
         origins->item_count != operations->item_count) return 0;
     out->operation_count=(int)operations->item_count;
-    if (v == 3 && out->operation_count != 1) return 0; /* one family */
+    if (v >= 3 && out->operation_count != 1) return 0; /* one family */
     for (i=0;i<operations->item_count;++i) {
         if (json_text(operations->items[i],"W")) family=CHAOS_NEXT_USE_FAMILY_W;
         else if (json_text(operations->items[i],"F")) family=CHAOS_NEXT_USE_FAMILY_F;
@@ -675,7 +681,11 @@ static int schema_envelope(const struct json_value *root,
     out->source[source->string_length]='\0'; out->source_length=source->string_length;
     memcpy(out->source_sha256,sha->string,64); out->source_sha256[64]='\0';
     telegraph=json_member(root,"telegraph");
-    if (v == 3) {
+    if (v == 4) {
+        /* Ring pins its own telegraph: no attention line, and W only. */
+        if (out->operations[0] != CHAOS_NEXT_USE_FAMILY_W
+            || !json_text(telegraph, CHAOS_NEXT_USE_RING_W)) return 0;
+    } else if (v == 3) {
         if (!json_text(telegraph, out->operations[0]==CHAOS_NEXT_USE_FAMILY_W
                 ? CHAOS_NEXT_USE_BROAD_W : CHAOS_NEXT_USE_BROAD_F)) return 0;
     } else if (out->operation_count==2) { if (!json_text(telegraph,"next-use-v2-WF")) return 0; }
@@ -721,6 +731,7 @@ static int schema_intent(const struct json_value *root,
     else if(json_text(op,"delay")) out->op=CHAOS_NEXT_USE_INTENT_DELAY;
     else if(json_text(op,"whistle_attention")) out->op=CHAOS_NEXT_USE_INTENT_WHISTLE_ATTENTION;
     else if(json_text(op,"fountain_refresh")) out->op=CHAOS_NEXT_USE_INTENT_FOUNTAIN_REFRESH;
+    else if(json_text(op,"whistle_ring")) out->op=CHAOS_NEXT_USE_INTENT_WHISTLE_RING;
     else return 0;
     return 1;
 }
@@ -956,12 +967,16 @@ const char *chaos_next_use_player_warning(const char *identifier)
     if (!strcmp(identifier, "next-use-v2-WF"))
         return "The next whistle or fountain drink may not behave as usual.";
     /* Arc 1 recurrence lines: contract telegraph_extensions ids 5 and 6.
-     * C (broad next-use) program lines: ids 7 (W) and 8 (F). */
+     * C (broad next-use) program lines: ids 7 (W) and 8 (F).
+     * Ring lines: ids 9 (next whistle), 10 (recurrence), 11 (broad). */
 #define CHAOS_NU_AGAIN(id, text) \
     if ((id == 5 && !strcmp(identifier, CHAOS_NEXT_USE_AGAIN_W)) \
         || (id == 6 && !strcmp(identifier, CHAOS_NEXT_USE_AGAIN_F)) \
         || (id == 7 && !strcmp(identifier, CHAOS_NEXT_USE_BROAD_W)) \
-        || (id == 8 && !strcmp(identifier, CHAOS_NEXT_USE_BROAD_F))) return text;
+        || (id == 8 && !strcmp(identifier, CHAOS_NEXT_USE_BROAD_F)) \
+        || (id == 9 && !strcmp(identifier, CHAOS_NEXT_USE_RING_NEXT_W)) \
+        || (id == 10 && !strcmp(identifier, CHAOS_NEXT_USE_AGAIN_RING_W)) \
+        || (id == 11 && !strcmp(identifier, CHAOS_NEXT_USE_RING_W))) return text;
     CHAOS_SIGNAL_ROWS(CHAOS_NU_AGAIN)
 #undef CHAOS_NU_AGAIN
     return 0;

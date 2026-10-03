@@ -667,7 +667,7 @@
         "id": 5,
         "name": "whistle_ring",
         "allow_blocked": false,
-        "projection": "completed_notice_by_operation",
+        "projection": "excluded",
         "hook_refs": [
           {
             "file": "src/apply.c",

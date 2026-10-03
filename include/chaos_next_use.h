@@ -39,7 +39,16 @@ enum chaos_next_use_intent_op {
     CHAOS_NEXT_USE_INTENT_QUIET = 0,
     CHAOS_NEXT_USE_INTENT_DELAY,
     CHAOS_NEXT_USE_INTENT_WHISTLE_ATTENTION,
-    CHAOS_NEXT_USE_INTENT_FOUNTAIN_REFRESH
+    CHAOS_NEXT_USE_INTENT_FOUNTAIN_REFRESH,
+    /* Ring (W effect v4): the whistle's note rings on in the player's head. */
+    CHAOS_NEXT_USE_INTENT_WHISTLE_RING
+};
+
+/* Envelope W effect (next_use_program_v 4 key "w_effect"). Older envelopes
+ * have no key and load as ATTENTION; a v4 envelope must name "ring". */
+enum chaos_next_use_w_effect {
+    CHAOS_NEXT_USE_W_EFFECT_ATTENTION = 0,
+    CHAOS_NEXT_USE_W_EFFECT_RING = 1
 };
 
 struct chaos_next_use_author {
@@ -77,6 +86,8 @@ struct chaos_next_use_envelope {
      * effects the program may deliver. 0 for a v2 envelope. */
     int version;
     int uses;
+    /* Ring: next_use_program_v 4 is v3 plus "w_effect":"ring"; 0 otherwise. */
+    int w_effect;
 };
 
 struct chaos_next_use_context {
@@ -145,5 +156,16 @@ const char *chaos_next_use_player_warning(const char *identifier);
 #define CHAOS_NEXT_USE_BROAD_CALLBACKS 8
 #define CHAOS_NEXT_USE_BROAD_W "next-use-v3-W"
 #define CHAOS_NEXT_USE_BROAD_F "next-use-v3-F"
+/* Ring (W effect). A next_use_program_v 4 envelope is a broad W program
+ * (v3 rules) whose effect is "ring": at a valid whistle, if every public
+ * guard passes, the engine prints the ring line and confuses the player for
+ * CHAOS_NEXT_USE_RING_MOVES native moves, ended by the native message. Its
+ * telegraph identifier is pinned to the effect at load. Telegraph contract
+ * ids: 9 (single next whistle, registered, shown by no current program),
+ * 10 (recurrence) and 11 (broad program line). */
+#define CHAOS_NEXT_USE_RING_MOVES 5
+#define CHAOS_NEXT_USE_RING_W "next-use-v4-Wr"
+#define CHAOS_NEXT_USE_RING_NEXT_W "next-use-v2-Wr"
+#define CHAOS_NEXT_USE_AGAIN_RING_W "next-use-again-Wr"
 
 #endif
