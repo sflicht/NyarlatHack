@@ -4016,7 +4016,7 @@
         "root",
         ")",
         ";",
-        "("
+        "chaos_next_use_whistle_completed"
       ],
       "guards": [
         "ifdef OVLB"
@@ -10657,7 +10657,7 @@
       "file": "src/apply.c",
       "symbol": "doapply",
       "kind": "call-or-declaration",
-      "purpose": "doapply: call-or-declaration",
+      "purpose": "doapply: report a completed tin or magic whistle to next-use",
       "signature": [
         "chaos_observation_end",
         "(",
@@ -10674,7 +10674,7 @@
       "guards": [
         "ifdef OVLB"
       ],
-      "count": 1,
+      "count": 2,
       "chaos0": "Present in CHAOS-off; no-op or type-only."
     },
     {

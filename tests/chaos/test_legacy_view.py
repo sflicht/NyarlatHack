@@ -64,6 +64,12 @@ class LegacyView(unittest.TestCase):
                 # Arc 1 recurrence lines (next-use W and F), additive only.
                 dict(id=5, text="Again, the whistle carries farther than it should."),
                 dict(id=6, text="Again, the fountain's water may not run true."),
+                # C (broad next-use) program lines, additive only.
+                dict(
+                    id=7,
+                    text="For a while, your whistles may carry farther than they should.",
+                ),
+                dict(id=8, text="For a while, the fountains' water may not run true."),
             ],
         )
         self.assertEqual(data["mutation_limits"], dict(duration_cap=300))
@@ -72,7 +78,7 @@ class LegacyView(unittest.TestCase):
         self.assertEqual(data["next_use_programs"], dict(per_game_cap=3))
         self.assertEqual(NEXT_USE_PROGRAM_CAP, 3)
         self.assertNotIn("next_use_programs", base)
-        self.assertEqual(sorted(TELEGRAPHS), [1, 2, 3, 4, 5, 6])
+        self.assertEqual(sorted(TELEGRAPHS), [1, 2, 3, 4, 5, 6, 7, 8])
         for row in base["telegraphs"]:
             self.assertEqual(TELEGRAPHS[row["id"]], row["text"])
 
