@@ -95,6 +95,13 @@ POLICIES = {
     },
 }
 
+# Policy sensitivity only: retain baseline-v2 as the gate policy. Copy rather
+# than mutate its parameter dictionary; use this policy's own seeded RNG.
+POLICIES["pet-visible-v1"] = {
+    **POLICIES["baseline-v2"],
+    "whistle_only_visible_pet": True,
+}
+
 # #198: --ordinary now defaults the hound on; the baseline sweep keeps it off.
 LAUNCHER = ["--ordinary", "--next-use", "--no-haunt", "--max-runtime", "86400"]
 # #179: starts played on another launcher path. "bard-default-path" is the
@@ -155,11 +162,14 @@ class HarnessError(Exception):
 NO_HOST_MAIL = ",!mail"
 
 
-def _with_options(options):
+def _with_options(options, policy="baseline-v2"):
     """Game reads chaos.ordinary_start.OPTIONS in its forked child."""
     import chaos.ordinary_start as start
 
-    return start, (start.OPTIONS if options is None else options) + NO_HOST_MAIL
+    configured = (start.OPTIONS if options is None else options) + NO_HOST_MAIL
+    if POLICIES[policy].get("whistle_only_visible_pet"):
+        configured += ",color,hilite_pet,!hilite_obj_piles"
+    return start, configured
 
 
 class Player:
@@ -403,6 +413,19 @@ class Player:
             for x, ch in enumerate(self.screen.rows[y])
             if ch in chars
         ]
+
+    def pet_in_view(self):
+        """Public map highlight (mapglyph.c MG_PET), not engine eligibility.
+
+        A blue monster background denotes a pet with hilite_pet enabled.
+        Never infer tameness from a dog/kitten letter alone. The engine still
+        independently checks whether that companion qualifies for the effect.
+        """
+        hero = self.hero()
+        return any(
+            (x, y) != hero and self.screen.backgrounds[y][x] == 4
+            for x, y in self.find(MONSTER)
+        )
 
     # ---- actions -----------------------------------------------------------
     def travel(self, target):
@@ -702,7 +725,11 @@ class Player:
             self.rests += 1
             return self.act(p["rest_command"])
         roll = self.rng.random()
-        if self.whistle and roll < p["p_whistle"]:
+        if (
+            self.whistle
+            and roll < p["p_whistle"]
+            and (not p.get("whistle_only_visible_pet") or self.pet_in_view())
+        ):
             return self.act("a" + self.whistle)
         if hero and not self.whistle and not near:
             handled, dead = self.seek_whistle(level, hero)
@@ -840,7 +867,7 @@ class Player:
         self.event_offset = (self.game.run / "events.jsonl").stat().st_size
 
     def _start(self):
-        module, options = _with_options(START_OPTIONS[self.start_name])
+        module, options = _with_options(START_OPTIONS[self.start_name], self.policy)
         saved = module.OPTIONS
         setattr(module, "OPTIONS", options)
         try:
