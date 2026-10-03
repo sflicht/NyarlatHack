@@ -1,0 +1,569 @@
+{
+ "gate": {
+  "hound_admission_unchanged": {
+   "main": 88,
+   "met": true,
+   "pr": 88,
+   "seeds_differing": []
+  },
+  "two_plus_excl_hound": {
+   "main": 2,
+   "met": false,
+   "pr": 6,
+   "target": 10
+  },
+  "two_programs_felt": {
+   "main": 0,
+   "met": false,
+   "pr": 1,
+   "target": 3
+  }
+ },
+ "gate_start": "bard-default-path",
+ "paired": {
+  "bard": {
+   "excl_hound_down": [
+    24
+   ],
+   "excl_hound_up": [
+    8,
+    12,
+    17,
+    30,
+    39,
+    42,
+    55,
+    57,
+    67,
+    96,
+    99
+   ],
+   "hound_accepted_differs": [],
+   "seeds_compared": 100
+  },
+  "bard-default-path": {
+   "excl_hound_down": [],
+   "excl_hound_up": [
+    7,
+    18,
+    25,
+    27,
+    43,
+    52,
+    56,
+    72
+   ],
+   "hound_accepted_differs": [],
+   "seeds_compared": 100
+  },
+  "bard-inherited": {
+   "excl_hound_down": [],
+   "excl_hound_up": [
+    8,
+    12,
+    26,
+    29,
+    30,
+    39,
+    41,
+    89,
+    100
+   ],
+   "hound_accepted_differs": [],
+   "seeds_compared": 100
+  },
+  "madman": {
+   "excl_hound_down": [],
+   "excl_hound_up": [],
+   "hound_accepted_differs": [],
+   "seeds_compared": 100
+  },
+  "wizard-default-path": {
+   "excl_hound_down": [],
+   "excl_hound_up": [],
+   "hound_accepted_differs": [],
+   "seeds_compared": 100
+  }
+ },
+ "sides": {
+  "main": {
+   "games": 500,
+   "report_sha256": "ebce9dd4796f52abf430b7f8f4609a80ffac1acfa5a223d42d97bff783772e30",
+   "revision": "53acae762d3345f519ef6230ec1875714c01126f"
+  },
+  "pr": {
+   "games": 500,
+   "report_sha256": "265c3927d86b90ec3dad4f8bb0d22957e1471dc84a9bb6a0cce1fe6c608212d1",
+   "revision": "dcd916621fceab71ea55cf6cbee901cb0ba8baf7"
+  }
+ },
+ "starts": {
+  "bard": {
+   "main": {
+    "games": 100,
+    "games_2plus_distinct": 6,
+    "games_2plus_excl_hound": 6,
+    "games_two_programs_felt": 3,
+    "harness_errors": 2,
+    "hound_games_accepted": 0,
+    "hound_steps": 0,
+    "per_program": {
+     "1": {
+      "admitted": 42,
+      "felt": 14,
+      "published": 88,
+      "terminations": {
+       "completed": 26,
+       "level_departure": 3,
+       "origin_expired": 3,
+       "program_expired": 9,
+       "rejected:no_companion_in_view": 35,
+       "rejected:origin_expired": 2,
+       "rejected:origin_expired+origin_superseded": 1,
+       "rejected:origin_expired+origin_unbound": 3,
+       "rejected:origin_expired+origin_unbound+no_companion_in_view": 2
+      }
+     },
+     "2": {
+      "admitted": 40,
+      "felt": 4,
+      "published": 81,
+      "terminations": {
+       "completed": 31,
+       "origin_expired": 8,
+       "rejected:budget": 8,
+       "rejected:missed_index": 4,
+       "rejected:origin_expired": 1,
+       "rejected:origin_expired+origin_superseded": 2
+      }
+     },
+     "3": {
+      "admitted": 20,
+      "felt": 2,
+      "published": 50,
+      "terminations": {
+       "completed": 13,
+       "level_departure": 3,
+       "origin_expired": 2,
+       "rejected:budget": 4,
+       "rejected:origin_expired": 1,
+       "rejected:origin_expired+origin_superseded": 2
+      }
+     }
+    },
+    "scored": 100
+   },
+   "pr": {
+    "games": 100,
+    "games_2plus_distinct": 13,
+    "games_2plus_excl_hound": 13,
+    "games_two_programs_felt": 6,
+    "harness_errors": 4,
+    "hound_games_accepted": 0,
+    "hound_steps": 0,
+    "per_program": {
+     "1": {
+      "admitted": 42,
+      "felt": 23,
+      "published": 88,
+      "terminations": {
+       "completed": 3,
+       "origin_expired": 4,
+       "program_expired": 34,
+       "rejected:no_companion_in_view": 35,
+       "rejected:origin_expired": 2,
+       "rejected:origin_expired+origin_superseded": 1,
+       "rejected:origin_expired+origin_unbound": 3,
+       "rejected:origin_expired+origin_unbound+no_companion_in_view": 2
+      }
+     },
+     "2": {
+      "admitted": 42,
+      "felt": 11,
+      "published": 80,
+      "terminations": {
+       "completed": 3,
+       "origin_expired": 34,
+       "rejected:budget": 6,
+       "rejected:missed_index": 4,
+       "rejected:origin_expired": 1,
+       "rejected:origin_expired+origin_superseded": 2
+      }
+     },
+     "3": {
+      "admitted": 14,
+      "felt": 2,
+      "published": 42,
+      "terminations": {
+       "completed": 1,
+       "origin_expired": 9,
+       "rejected:budget": 3,
+       "rejected:origin_expired+origin_superseded": 2
+      }
+     }
+    },
+    "scored": 100
+   }
+  },
+  "bard-default-path": {
+   "main": {
+    "games": 100,
+    "games_2plus_distinct": 23,
+    "games_2plus_excl_hound": 2,
+    "games_two_programs_felt": 0,
+    "harness_errors": 0,
+    "hound_games_accepted": 88,
+    "hound_steps": 196,
+    "per_program": {
+     "1": {
+      "admitted": 37,
+      "felt": 10,
+      "published": 87,
+      "terminations": {
+       "completed": 23,
+       "level_departure": 1,
+       "origin_expired": 3,
+       "program_expired": 10,
+       "rejected:budget": 5,
+       "rejected:no_companion_in_view": 38,
+       "rejected:origin_expired": 1,
+       "rejected:origin_expired+origin_unbound": 4,
+       "rejected:origin_expired+origin_unbound+no_companion_in_view": 2
+      }
+     },
+     "2": {
+      "admitted": 25,
+      "felt": 0,
+      "published": 82,
+      "terminations": {
+       "completed": 17,
+       "origin_expired": 3,
+       "rejected:budget": 28,
+       "rejected:missed_index": 2,
+       "rejected:origin_expired+origin_superseded": 2
+      }
+     },
+     "3": {
+      "admitted": 5,
+      "felt": 0,
+      "published": 48,
+      "terminations": {
+       "completed": 4,
+       "origin_expired": 1,
+       "rejected:budget": 13,
+       "rejected:missed_index": 1,
+       "rejected:origin_expired+origin_superseded": 1
+      }
+     }
+    },
+    "scored": 100
+   },
+   "pr": {
+    "games": 100,
+    "games_2plus_distinct": 28,
+    "games_2plus_excl_hound": 6,
+    "games_two_programs_felt": 1,
+    "harness_errors": 0,
+    "hound_games_accepted": 88,
+    "hound_steps": 196,
+    "per_program": {
+     "1": {
+      "admitted": 37,
+      "felt": 16,
+      "published": 87,
+      "terminations": {
+       "completed": 3,
+       "origin_expired": 3,
+       "program_expired": 31,
+       "rejected:budget": 5,
+       "rejected:no_companion_in_view": 38,
+       "rejected:origin_expired": 1,
+       "rejected:origin_expired+origin_unbound": 4,
+       "rejected:origin_expired+origin_unbound+no_companion_in_view": 2
+      }
+     },
+     "2": {
+      "admitted": 25,
+      "felt": 3,
+      "published": 82,
+      "terminations": {
+       "completed": 1,
+       "origin_expired": 17,
+       "rejected:budget": 28,
+       "rejected:missed_index": 2,
+       "rejected:origin_expired+origin_superseded": 2
+      }
+     },
+     "3": {
+      "admitted": 6,
+      "felt": 2,
+      "published": 44,
+      "terminations": {
+       "origin_expired": 6,
+       "rejected:budget": 10,
+       "rejected:missed_index": 1
+      }
+     }
+    },
+    "scored": 100
+   }
+  },
+  "bard-inherited": {
+   "main": {
+    "games": 100,
+    "games_2plus_distinct": 0,
+    "games_2plus_excl_hound": 0,
+    "games_two_programs_felt": 0,
+    "harness_errors": 0,
+    "hound_games_accepted": 0,
+    "hound_steps": 0,
+    "per_program": {
+     "1": {
+      "admitted": 30,
+      "felt": 5,
+      "published": 75,
+      "terminations": {
+       "completed": 19,
+       "level_departure": 3,
+       "program_expired": 8,
+       "rejected:no_companion_in_view": 30,
+       "rejected:origin_expired": 1,
+       "rejected:origin_expired+no_companion_in_view": 1,
+       "rejected:origin_expired+origin_superseded": 1
+      }
+     },
+     "2": {
+      "admitted": 16,
+      "felt": 1,
+      "published": 52,
+      "terminations": {
+       "completed": 10,
+       "origin_expired": 3,
+       "rejected:budget": 3,
+       "rejected:origin_expired": 1,
+       "rejected:origin_expired+origin_superseded": 3
+      }
+     },
+     "3": {
+      "admitted": 0,
+      "felt": 0,
+      "published": 16,
+      "terminations": {
+       "rejected:budget": 1,
+       "rejected:origin_expired+origin_superseded": 2
+      }
+     }
+    },
+    "scored": 100
+   },
+   "pr": {
+    "games": 100,
+    "games_2plus_distinct": 3,
+    "games_2plus_excl_hound": 3,
+    "games_two_programs_felt": 0,
+    "harness_errors": 0,
+    "hound_games_accepted": 0,
+    "hound_steps": 0,
+    "per_program": {
+     "1": {
+      "admitted": 30,
+      "felt": 7,
+      "published": 75,
+      "terminations": {
+       "program_expired": 26,
+       "rejected:no_companion_in_view": 30,
+       "rejected:origin_expired": 1,
+       "rejected:origin_expired+no_companion_in_view": 1,
+       "rejected:origin_expired+origin_superseded": 1
+      }
+     },
+     "2": {
+      "admitted": 16,
+      "felt": 5,
+      "published": 50,
+      "terminations": {
+       "completed": 1,
+       "origin_expired": 10,
+       "rejected:budget": 2,
+       "rejected:origin_expired": 1,
+       "rejected:origin_expired+origin_superseded": 3
+      }
+     },
+     "3": {
+      "admitted": 0,
+      "felt": 0,
+      "published": 14,
+      "terminations": {
+       "rejected:budget": 1,
+       "rejected:origin_expired+origin_superseded": 2
+      }
+     }
+    },
+    "scored": 100
+   }
+  },
+  "madman": {
+   "main": {
+    "games": 100,
+    "games_2plus_distinct": 0,
+    "games_2plus_excl_hound": 0,
+    "games_two_programs_felt": 0,
+    "harness_errors": 0,
+    "hound_games_accepted": 0,
+    "hound_steps": 0,
+    "per_program": {
+     "1": {
+      "admitted": 8,
+      "felt": 0,
+      "published": 18,
+      "terminations": {
+       "completed": 1,
+       "origin_expired": 1,
+       "program_expired": 4,
+       "rejected:budget": 1,
+       "rejected:origin_expired": 3,
+       "rejected:origin_expired+origin_unbound": 4,
+       "rejected:origin_expired+origin_unbound+no_companion_in_view": 1
+      }
+     },
+     "2": {
+      "admitted": 0,
+      "felt": 0,
+      "published": 3,
+      "terminations": {}
+     },
+     "3": {
+      "admitted": 0,
+      "felt": 0,
+      "published": 0,
+      "terminations": {}
+     }
+    },
+    "scored": 100
+   },
+   "pr": {
+    "games": 100,
+    "games_2plus_distinct": 0,
+    "games_2plus_excl_hound": 0,
+    "games_two_programs_felt": 0,
+    "harness_errors": 0,
+    "hound_games_accepted": 0,
+    "hound_steps": 0,
+    "per_program": {
+     "1": {
+      "admitted": 8,
+      "felt": 0,
+      "published": 18,
+      "terminations": {
+       "origin_expired": 1,
+       "program_expired": 5,
+       "rejected:budget": 1,
+       "rejected:origin_expired": 3,
+       "rejected:origin_expired+origin_unbound": 4,
+       "rejected:origin_expired+origin_unbound+no_companion_in_view": 1
+      }
+     },
+     "2": {
+      "admitted": 0,
+      "felt": 0,
+      "published": 3,
+      "terminations": {}
+     },
+     "3": {
+      "admitted": 0,
+      "felt": 0,
+      "published": 0,
+      "terminations": {}
+     }
+    },
+    "scored": 100
+   }
+  },
+  "wizard-default-path": {
+   "main": {
+    "games": 100,
+    "games_2plus_distinct": 11,
+    "games_2plus_excl_hound": 0,
+    "games_two_programs_felt": 0,
+    "harness_errors": 0,
+    "hound_games_accepted": 88,
+    "hound_steps": 210,
+    "per_program": {
+     "1": {
+      "admitted": 3,
+      "felt": 0,
+      "published": 21,
+      "terminations": {
+       "level_departure": 1,
+       "program_expired": 2,
+       "rejected:budget": 2,
+       "rejected:origin_expired": 11,
+       "rejected:origin_expired+origin_unbound": 1,
+       "rejected:origin_unbound": 1
+      }
+     },
+     "2": {
+      "admitted": 1,
+      "felt": 0,
+      "published": 4,
+      "terminations": {
+       "origin_expired": 1,
+       "rejected:budget": 1
+      }
+     },
+     "3": {
+      "admitted": 1,
+      "felt": 0,
+      "published": 1,
+      "terminations": {
+       "origin_expired": 1
+      }
+     }
+    },
+    "scored": 100
+   },
+   "pr": {
+    "games": 100,
+    "games_2plus_distinct": 11,
+    "games_2plus_excl_hound": 0,
+    "games_two_programs_felt": 0,
+    "harness_errors": 0,
+    "hound_games_accepted": 88,
+    "hound_steps": 210,
+    "per_program": {
+     "1": {
+      "admitted": 3,
+      "felt": 0,
+      "published": 21,
+      "terminations": {
+       "origin_expired": 1,
+       "program_expired": 2,
+       "rejected:budget": 2,
+       "rejected:origin_expired": 11,
+       "rejected:origin_expired+origin_unbound": 1,
+       "rejected:origin_unbound": 1
+      }
+     },
+     "2": {
+      "admitted": 1,
+      "felt": 0,
+      "published": 4,
+      "terminations": {
+       "origin_expired": 1,
+       "rejected:budget": 1
+      }
+     },
+     "3": {
+      "admitted": 1,
+      "felt": 0,
+      "published": 1,
+      "terminations": {
+       "origin_expired": 1
+      }
+     }
+    },
+    "scored": 100
+   }
+  }
+ }
+}
