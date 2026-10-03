@@ -1,0 +1,26 @@
+--- a/src/dogmove.c
++++ b/src/dogmove.c
+@@ -1259,6 +1259,10 @@
+ 	    && appr != -2 && gtyp == UNDEF && gx == u.ux && gy == u.uy
+ 	    && pre_public;
+ 	if (witness && witness->active) {
++	    { const char *df = getenv("FUNNEL_DIAG"); const char *rd = getenv("NYARLATHACK_RUN_DIR"); char dp[1024]; FILE *fp = 0; if (df) fp = fopen(df, "a"); else if (rd) { snprintf(dp, sizeof dp, "%s/classifier.log", rd); fp = fopen(dp, "a"); }
++	      if (fp) { fprintf(fp, "mm=%ld moves=%ld wt=%ld whappr=%d extra=%d appr=%d gtyp=%d gx=%d gy=%d ux=%d uy=%d pre_public=%d udist=%d after=%d hungry=%ld lit_dog=%d lit_u=%d minvent=%d typ=%d\n",
++	        (long)monstermoves, (long)moves, has_edog ? (long)EDOG(mtmp)->whistletime : -1L, whappr, extra_attention, appr, (int)gtyp, (int)gx, (int)gy, (int)u.ux, (int)u.uy, (int)pre_public, udist, after,
++	        has_edog ? (long)EDOG(mtmp)->hungrytime : -1L, (int)levl[omx][omy].lit, (int)levl[u.ux][u.uy].lit, DROPPABLES(mtmp) != 0, (int)mtmp->mtyp); fclose(fp); } }
+ 	    if (manifestation_classifier) {
+ 		witness->classifier_ok = TRUE;
+ 		witness->pre_public = pre_public;
+--- a/src/chaos_engine.c
++++ b/src/chaos_engine.c
+@@ -648,6 +648,10 @@
+     unsigned captured_id;
+     int reason, id_count;
+ 
++    { const char *rd = getenv("NYARLATHACK_RUN_DIR"); char dp[1024]; FILE *fp = 0; int pr = 0; struct monst *pk;
++      if (rd) { snprintf(dp, sizeof dp, "%s/whistle-probe.log", rd); fp = fopen(dp, "a"); }
++      if (fp) { pk = chaos_next_use_companion_pick(&pr);
++        fprintf(fp, "mm=%ld root=%ld otyp=%d pick=%d reason=%d broad=%d\n", (long)monstermoves, completed_root, obj ? (int)obj->otyp : -1, pk != 0, pr, chaos_next_use_broad_active()); fclose(fp); } }
+     if (!obj || completed_root <= 0) return;
+     tool_member = FALSE;
+     for (otmp = invent; otmp; otmp = otmp->nobj)
