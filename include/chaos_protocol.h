@@ -67,9 +67,12 @@ enum chaos_contract_rule { CHAOS_RULE_NONE, CHAOS_RULE_HALVE, CHAOS_RULE_DOUBLE 
     X(5, "Again, the whistle carries farther than it should.") \
     X(6, "Again, the fountain's water may not run true.") \
     X(7, "For a while, your whistles may carry farther than they should.") \
-    X(8, "For a while, fountain water you drink may not run true.")
+    X(8, "For a while, fountain water you drink may not run true.") \
+    X(9, "The next whistle may ring on after you stop.") \
+    X(10, "Again, a whistle may ring on after you stop.") \
+    X(11, "For a while, your whistles may ring on after you stop.")
 
-#define CHAOS_SIGNAL_COUNT 8
+#define CHAOS_SIGNAL_COUNT 11
 #define CHAOS_AMBIENT_MESSAGE_ROWS(X) \
     X(1, "The shadows lean closer.") \
     X(2, "Something beyond the walls listens.") \

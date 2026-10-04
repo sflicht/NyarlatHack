@@ -207,6 +207,10 @@ int chaos_next_use_felt_in(const struct chaos_next_use_snapshot *const *closed,
         const struct chaos_next_use_snapshot *s = closed[k];
         if (!s) continue;
         if (family == CHAOS_NEXT_USE_FAMILY_W && s->witnessed) return 1;
+        /* Ring: a W program whose note rang at least once was felt. */
+        if (family == CHAOS_NEXT_USE_FAMILY_W
+            && s->w_effect == CHAOS_NEXT_USE_W_EFFECT_RING && s->delivered > 0)
+            return 1;
         if (family == CHAOS_NEXT_USE_FAMILY_F
             && s->slot_f == CHAOS_SLOT_F_CONSUMED_APPLIED) return 1;
     }
@@ -234,10 +238,14 @@ static void recurrence_telegraph(const struct chaos_next_use_safe_request *reque
     for (family = CHAOS_NEXT_USE_FAMILY_W; family <= CHAOS_NEXT_USE_FAMILY_F; ++family)
         for (i = 0; i < envelope->operation_count && i < 2; ++i)
             if (envelope->operations[i] == family) {
+                /* Ring programs say "ring" again; every W program of a run
+                 * that writes ring programs is a ring program (Q1). */
                 if (family_felt_before(family))
                     (void)request->telegraph(request->telegraph_opaque,
-                        family == CHAOS_NEXT_USE_FAMILY_W ? CHAOS_NEXT_USE_AGAIN_W
-                                                          : CHAOS_NEXT_USE_AGAIN_F);
+                        family == CHAOS_NEXT_USE_FAMILY_F ? CHAOS_NEXT_USE_AGAIN_F
+                        : envelope->w_effect == CHAOS_NEXT_USE_W_EFFECT_RING
+                            ? CHAOS_NEXT_USE_AGAIN_RING_W
+                            : CHAOS_NEXT_USE_AGAIN_W);
                 break;
             }
 }
@@ -735,8 +743,11 @@ int chaos_next_use_safe_try(const struct chaos_next_use_safe_request *request,
     /* #196 (C3): a W program needs a qualifying companion on screen now.
      * Checked with the other cheap checks, before telegraph and charge.
      * A repaired program 2-3 is checked only at the whistle instead
-     * (chaos_next_use_whistle_completed suppresses when none qualifies). */
+     * (chaos_next_use_whistle_completed suppresses when none qualifies).
+     * Ring (Q3): a ring program needs no companion, so it skips this check;
+     * every other W program keeps it exactly. */
     if (request->companion
+        && envelope.w_effect != CHAOS_NEXT_USE_W_EFFECT_RING
         && !CHAOS_NEXT_USE_REPAIRED(chaos_next_use_program_ordinal(), envelope.ttl)) {
         int i, has_w = 0;
         for (i = 0; i < envelope.operation_count && i < 2; ++i)

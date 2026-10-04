@@ -28,6 +28,7 @@ typedef char chaos_reveal_slot_mirror[
      && (int)CHAOS_REVEAL_W_TERMINATED_EXPIRY == (int)CHAOS_SLOT_W_TERMINATED_EXPIRY
      && (int)CHAOS_REVEAL_W_TERMINATED_LEVEL == (int)CHAOS_SLOT_W_TERMINATED_LEVEL
      && (int)CHAOS_REVEAL_W_TERMINATED_TRANSPORT == (int)CHAOS_SLOT_W_TERMINATED_TRANSPORT
+     && (int)CHAOS_REVEAL_W_CONSUMED_RANG == (int)CHAOS_SLOT_W_CONSUMED_RANG
      && (int)CHAOS_REVEAL_F_PENDING == (int)CHAOS_SLOT_F_PENDING
      && (int)CHAOS_REVEAL_F_CONSUMED_APPLIED == (int)CHAOS_SLOT_F_CONSUMED_APPLIED
      && (int)CHAOS_REVEAL_F_CONSUMED_NONREMAPPABLE == (int)CHAOS_SLOT_F_CONSUMED_NONREMAPPABLE
@@ -68,6 +69,7 @@ static void copy_program(struct chaos_reveal_next_use *nu,
     nu->ordinal = ordinal;
     nu->broad_uses = s->broad_uses;
     nu->delivered = s->delivered;
+    nu->ring = s->w_effect == CHAOS_NEXT_USE_W_EFFECT_RING;
 }
 
 static void next_use_facts(struct chaos_reveal_host *h)

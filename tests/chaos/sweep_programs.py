@@ -13,9 +13,11 @@ def program_metrics(run, events, receipts, timeline=(), statuses=()):
         W_ARMED,
         W_WITNESSED,
         F_REMAPPED,
+        W_RING_DELIVERED,
     )
 
     programs, felt, effects_by_root, effect_keys = [], [], {}, {}
+    ring_roots = set()  # whistle roots whose ring program delivered (private)
     # New runs project witnessed/remapped outcomes into a bounded public file.
     # Historical W journals carry the same public witness; historical F has no
     # such public attribution and is not guessed from private effect timing.
@@ -55,8 +57,15 @@ def program_metrics(run, events, receipts, timeline=(), statuses=()):
         admitted = int(any(r.get("kind") == 2 for r in own + private))
         effects = [r for r in private if r["kind"] == 4]
         delivered = [
-            r for r in effects if r["data"]["outcome"] in (W_WITNESSED, F_REMAPPED)
+            r
+            for r in effects
+            if r["data"]["outcome"] in (W_WITNESSED, F_REMAPPED, W_RING_DELIVERED)
         ]
+        ring_roots.update(
+            r["data"]["root"]
+            for r in effects
+            if r["data"]["outcome"] == W_RING_DELIVERED
+        )
         terminated = [r for r in private if r["kind"] == 5]
         rejected = [r for r in own if r.get("decision") == "rejected"]
         termination = (
@@ -74,7 +83,8 @@ def program_metrics(run, events, receipts, timeline=(), statuses=()):
                 admitted=admitted,
                 trigger=sum(r["kind"] == 3 for r in private),
                 native_effect=sum(
-                    r["data"]["outcome"] in (W_ARMED, F_REMAPPED) for r in effects
+                    r["data"]["outcome"] in (W_ARMED, F_REMAPPED, W_RING_DELIVERED)
+                    for r in effects
                 ),
                 delivered=len(delivered),
                 felt=0,
@@ -127,6 +137,15 @@ def program_metrics(run, events, receipts, timeline=(), statuses=()):
             op, fact, root = o["operation"], o.get("fact"), o["root_seq"]
             if op == "whistle_attention" and fact == "attention":
                 add(e["turn"], "next_use_W", effects_by_root.get((1, root)))
+            elif (
+                op == "whistling"
+                and root in ring_roots
+                and (1, root) in effects_by_root
+            ):
+                # Ring: the whistle's own notice is the public moment; the
+                # private RING_DELIVERED root keeps attention programs out.
+                ring_roots.discard(root)
+                add(e["turn"], "next_use_W", effects_by_root.pop((1, root)))
             elif (
                 op == "door_open"
                 and fact == "resisted"

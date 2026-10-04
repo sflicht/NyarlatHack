@@ -41,6 +41,7 @@ enum chaos_reveal_slot_w {
     CHAOS_REVEAL_W_TERMINATED_EXPIRY,
     CHAOS_REVEAL_W_TERMINATED_LEVEL,
     CHAOS_REVEAL_W_TERMINATED_TRANSPORT,
+    CHAOS_REVEAL_W_CONSUMED_RANG,      /* ring: the last use rang */
     CHAOS_REVEAL_W_COUNT
 };
 enum chaos_reveal_slot_f {
@@ -84,6 +85,7 @@ struct chaos_reveal_next_use {
      * delivered. A broad program's slots and witness keep only its last use,
      * so delivery is read from this count. */
     int broad_uses, delivered;
+    int ring;                    /* ring W effect (snapshot v8) */
 };
 #define CHAOS_REVEAL_PROGRAMS 3
 

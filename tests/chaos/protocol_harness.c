@@ -231,10 +231,10 @@ static void door_tests(void)
     struct chaos_state s, restored, before;
     struct chaos_request r = {1, 1, CHAOS_DOOR, 50, 300, 4, 1};
     FILE *f;
-    /* 4 = door extension (#1); 5, 6 = Arc 1 recurrence lines and 7, 8 =
-     * broad next-use lines (C), which no mutation references, so no
-     * director request can select them. */
-    assert(CHAOS_SIGNAL_COUNT == 8 && CHAOS_DURATION_CAP == 300);
+    /* 4 = door extension (#1); 5, 6 = Arc 1 recurrence lines, 7, 8 =
+     * broad next-use lines (C) and 9-11 = ring lines, which no mutation
+     * references, so no director request can select them. */
+    assert(CHAOS_SIGNAL_COUNT == 11 && CHAOS_DURATION_CAP == 300);
     assert(CHAOS_TURN_HEADROOM == 50 && CHAOS_DURATION_HEADROOM == 300);
     chaos_state_init(&s); s.safe = 1;
     /* Full Sanity qualifies: no gate. Budget base 2 at Sanity 100. */

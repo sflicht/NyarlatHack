@@ -1051,6 +1051,18 @@
     {
       "id": 8,
       "text": "For a while, fountain water you drink may not run true."
+    },
+    {
+      "id": 9,
+      "text": "The next whistle may ring on after you stop."
+    },
+    {
+      "id": 10,
+      "text": "Again, a whistle may ring on after you stop."
+    },
+    {
+      "id": 11,
+      "text": "For a while, your whistles may ring on after you stop."
     }
   ],
   "mutation_limits": {

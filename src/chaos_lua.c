@@ -455,6 +455,8 @@ static int next_intent_extract(lua_State *L, int index,
         intent->op = CHAOS_NEXT_USE_INTENT_WHISTLE_ATTENTION;
     else if (length == 16 && !memcmp(op_text, "fountain_refresh", 16))
         intent->op = CHAOS_NEXT_USE_INTENT_FOUNTAIN_REFRESH;
+    else if (length == 12 && !memcmp(op_text, "whistle_ring", 12))
+        intent->op = CHAOS_NEXT_USE_INTENT_WHISTLE_RING;
     else { lua_settop(L, -2); return 0; }
     lua_settop(L, -2); return 1;
 }

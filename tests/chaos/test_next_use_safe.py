@@ -81,6 +81,66 @@ class NextUseSafeAdmitTests(RetainOnFailure):
         if result.returncode:
             raise RuntimeError(result.stderr.decode())
 
+    def ring_series(self, ring_mask):
+        """Three ring envelopes (ring run), then the engine's telegraph ids."""
+        from chaos.next_use_envelope import envelope_from_selection
+
+        folder = Path(tempfile.mkdtemp(prefix="nyarl-ring-series-"))
+        self.addCleanup(lambda: subprocess.run(["rm", "-rf", str(folder)]))
+        folder.chmod(0o700)
+        for ordinal in (1, 2, 3):
+            delta = (ordinal - 1) * 30
+            row = dict(
+                ROW,
+                origin=dict(
+                    ROW["origin"],
+                    root_seq=10 + delta,
+                    notice_seq=11 + delta,
+                    end_seq=12 + delta,
+                ),
+            )
+            _, encoded = envelope_from_selection(
+                row,
+                dict(HOST, at=6 + ordinal, move=40 + (ordinal - 1) * 1000),
+                ordinal,
+                repair=True,
+                broad=True,
+                ring=True,
+            )
+            name = (
+                "next_use-envelope.json"
+                if ordinal == 1
+                else (f"next_use-envelope.{ordinal}.json")
+            )
+            (folder / name).write_bytes(encoded)
+            (folder / name).chmod(0o600)
+        result = subprocess.run(
+            [str(self.binary), "ringseries", str(folder), str(ring_mask)],
+            capture_output=True,
+            text=True,
+            timeout=20,
+            stdin=subprocess.DEVNULL,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        return json.loads(result.stdout)["programs"]
+
+    def test_ring_telegraph_mapping_option_a(self):
+        # Sam (q_af7157b1, option A): every ring program is broad and can
+        # ring twice, so each shows row 11; programs 2-3 add row 10 (shown
+        # first) once an earlier program rang; row 9 is never shown.
+        ring, again = "next-use-v4-Wr", "next-use-again-Wr"
+        cases = {
+            0b000: [[ring], [ring], [ring]],
+            0b001: [[ring], [again, ring], [again, ring]],
+            0b010: [[ring], [ring], [again, ring]],
+            0b111: [[ring], [again, ring], [again, ring]],
+        }
+        for mask, expected in cases.items():
+            with self.subTest(ring_mask=mask):
+                shown = self.ring_series(mask)
+                self.assertEqual(shown, expected)
+                self.assertNotIn("next-use-v2-Wr", sum(shown, []))
+
     def test_three_programs_restore_active_between_and_at_cap(self):
         self.test_three_natural_programs_require_terminal_and_fresh_origin(restore=True)
 

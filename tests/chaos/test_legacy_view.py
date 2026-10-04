@@ -72,6 +72,13 @@ class LegacyView(unittest.TestCase):
                 dict(
                     id=8, text="For a while, fountain water you drink may not run true."
                 ),
+                # Ring W effect lines, additive only.
+                dict(id=9, text="The next whistle may ring on after you stop."),
+                dict(id=10, text="Again, a whistle may ring on after you stop."),
+                dict(
+                    id=11,
+                    text="For a while, your whistles may ring on after you stop.",
+                ),
             ],
         )
         self.assertEqual(data["mutation_limits"], dict(duration_cap=300))
@@ -80,7 +87,7 @@ class LegacyView(unittest.TestCase):
         self.assertEqual(data["next_use_programs"], dict(per_game_cap=3))
         self.assertEqual(NEXT_USE_PROGRAM_CAP, 3)
         self.assertNotIn("next_use_programs", base)
-        self.assertEqual(sorted(TELEGRAPHS), [1, 2, 3, 4, 5, 6, 7, 8])
+        self.assertEqual(sorted(TELEGRAPHS), list(range(1, 12)))
         for row in base["telegraphs"]:
             self.assertEqual(TELEGRAPHS[row["id"]], row["text"])
 

@@ -51,6 +51,9 @@ int main(int argc, char **argv)
             /* C: the live program is broad: broad=uses,delivered */
             if (sscanf(argv[i] + 6, "%d,%d", &nu->broad_uses, &nu->delivered) != 2)
                 return 2;
+        } else if (!strcmp(argv[i], "ring")) {
+            /* Ring: the live program's W effect is ring. */
+            nu->ring = 1;
         } else if (!strcmp(argv[i], "next_use_rejected")) {
             r.host.next_use_last_rejected = 1;
         } else if (!strcmp(argv[i], "haunt_active")) {

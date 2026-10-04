@@ -31,10 +31,14 @@ static struct chaos_state *budget_watch;
 static int spent_at_telegraph = -1;
 
 static int recurrence_lines;  /* Arc 1: "again" telegraphs shown */
+/* Ring mapping: every telegraph identifier shown, in order. */
+static char shown[16][32];
+static int shown_count;
 static int telegraph_ok(void *opaque, const char *text)
 {
     int *count = opaque;
     if (!text || !text[0]) return 0;
+    if (shown_count < 16) snprintf(shown[shown_count++], 32, "%s", text);
     if (!strncmp(text, "next-use-again-", 15)) {
         ++recurrence_lines;  /* not a program telegraph; never counted as one */
         return 1;
@@ -192,6 +196,56 @@ static int series_checks(const char *path)
     return 0;
 }
 
+/* Ring telegraph mapping (Sam, q_af7157b1 option A): three ring programs.
+ * argv mode "ringseries" with ring_mask: bit k-1 set = program k rings once
+ * before it closes. Prints every telegraph identifier shown, in order. */
+static int ring_series_checks(const char *path, int ring_mask)
+{
+    struct chaos_state budget;
+    struct chaos_next_use_safe_result result;
+    const char *run = "abababababababababababababababababababababababababababababababab";
+    int dir = open(path, O_RDONLY | O_DIRECTORY), k, i, telegraphs = 0;
+    assert(dir >= 0);
+    chaos_next_use_safe_reset_for_test();
+    chaos_state_init(&budget);
+    chaos_next_use_safe_bind_logical(1750000001L);
+    chaos_next_use_safe_bind_run(run);
+    chaos_next_use_safe_bind_telegraph(telegraph_ok, &telegraphs);
+    shown_count = 0;
+    printf("{\"programs\":[");
+    for (k = 1; k <= 3; ++k) {
+        int root = 10 + (k - 1) * 30, first = shown_count, rc;
+        monstermoves = 40 + (k - 1) * 1000;
+        budget.seq = root + 2;
+        bind_origin(run, 1, "ordinary_whistle", root, 1, monstermoves,
+                    CHAOS_NEXT_USE_FAMILY_W, root + 1, root + 2);
+        rc = chaos_next_use_on_safe(dir, 6 + k, 0, &budget, 0, 1);
+        chaos_next_use_safe_last(&result);
+        assert(rc == CHAOS_NEXT_USE_ADMISSION_OK);
+        assert(chaos_next_use_ring_active());
+        chaos_next_use_identity_boundary(1750000001L,
+                                         chaos_next_use_pack_level(0, 1));
+        if (ring_mask & (1 << (k - 1))) {
+            long use = root + 5;
+            assert(chaos_next_use_action_preflight(CHAOS_NEXT_USE_FAMILY_W, use));
+            assert(chaos_next_use_on_action(CHAOS_NEXT_USE_FAMILY_W, use, 0));
+            assert(chaos_next_use_whistle_ring(use, CHAOS_RING_GUARD_NONE));
+        }
+        /* Close by expiry, then retire before the next program. */
+        monstermoves += 900;
+        budget.seq = root + 20;
+        chaos_next_use_identity_boundary(1750000001L,
+                                         chaos_next_use_pack_level(0, 1));
+        printf("%s[", k > 1 ? "," : "");
+        for (i = first; i < shown_count; ++i)
+            printf("%s\"%s\"", i > first ? "," : "", shown[i]);
+        printf("]");
+    }
+    printf("]}\n");
+    close(dir);
+    return 0;
+}
+
 /* Recurrence repair: program 1 (companion in view) closes, then program 2
  * meets the safe point with NO companion in view. A repaired envelope (ttl
  * 300) is admitted without asking about a companion; a pre-repair envelope
@@ -274,6 +328,14 @@ static int felt_checks(void)
                    "Again, the whistle carries farther than it should."));
     assert(!strcmp(chaos_next_use_player_warning(CHAOS_NEXT_USE_AGAIN_F),
                    "Again, the fountain's water may not run true."));
+    /* Ring rows 9-11 (option A): 11 on every ring program, 10 as the
+     * recurrence line, 9 registered for a future single-use ring program. */
+    assert(!strcmp(chaos_next_use_player_warning(CHAOS_NEXT_USE_RING_W),
+                   "For a while, your whistles may ring on after you stop."));
+    assert(!strcmp(chaos_next_use_player_warning(CHAOS_NEXT_USE_AGAIN_RING_W),
+                   "Again, a whistle may ring on after you stop."));
+    assert(!strcmp(chaos_next_use_player_warning(CHAOS_NEXT_USE_RING_NEXT_W),
+                   "The next whistle may ring on after you stop."));
     puts("{\"felt_checks\":1}");
     return 0;
 }
@@ -343,6 +405,8 @@ int main(int argc, char **argv)
     int at_safe, at_move, dnum, dlevel, on_safe, origin_move;
 
     if (argc == 3 && !strcmp(argv[1], "series")) return series_checks(argv[2]);
+    if (argc == 4 && !strcmp(argv[1], "ringseries"))
+        return ring_series_checks(argv[2], atoi(argv[3]));
     if (argc == 3 && !strcmp(argv[1], "repair")) return repair_checks(argv[2]);
     if (argc == 2 && !strcmp(argv[1], "policy")) return policy_checks();
     if (argc == 2 && !strcmp(argv[1], "felt")) return felt_checks();
