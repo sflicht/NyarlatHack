@@ -99,7 +99,9 @@ abort.
   - `install.json`: the logged safe point.
 - `record/`, `replay/`: `events.jsonl`, `curio.lua`, `curio-used.lua`,
   `curio-install.json`, `inputs.json`, `manifest.json`, `xlogfile`.
-- `rng-probe/`: `probe.c`, a probe linked like `curio_placement.c` with
+- `rng-probe/`: `probe.c.txt` (C source, kept as text so the upstream hook
+  inventory does not scan it as a native path), a probe linked like
+  `curio_placement.c` with
   `controlled_rng_objects`, and its output `probe.out`.
 
 ## Limits
