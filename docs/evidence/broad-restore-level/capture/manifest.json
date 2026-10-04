@@ -1,0 +1,43 @@
+{
+  "sessions": [
+    {
+      "wizard": false,
+      "ordinary": true,
+      "observe": true,
+      "echoes": true,
+      "haunting_source_sha256": null,
+      "terminal": [
+        24,
+        80
+      ],
+      "inputs_begin": 0,
+      "sha256": {
+        "dnethack": "444125f51eed1cfd5c9127c17e7af7be4548e1a070f64c16f23a79612cdd962e",
+        "nhdat": "b7fc1a3aff42f759d4ee3d4db40e1d553ce753bc72c7dc75995a349c24719a96"
+      },
+      "clock_sha256": "3d7f661df703b0b2271ada88a20302c21285ee36058bb2419e27857bc1e0834a",
+      "options": "Bard,human,male,neutral,dog,tty,!news,!legacy,time",
+      "timezone": "UTC"
+    },
+    {
+      "wizard": false,
+      "ordinary": true,
+      "observe": true,
+      "echoes": true,
+      "haunting_source_sha256": "4e4f0154dc8830c753f13af25b592ef255ba97e1be6cf81e019d4568f6cfa9e9",
+      "terminal": [
+        24,
+        80
+      ],
+      "inputs_begin": 1002,
+      "sha256": {
+        "dnethack": "444125f51eed1cfd5c9127c17e7af7be4548e1a070f64c16f23a79612cdd962e",
+        "nhdat": "b7fc1a3aff42f759d4ee3d4db40e1d553ce753bc72c7dc75995a349c24719a96"
+      },
+      "clock_sha256": "3d7f661df703b0b2271ada88a20302c21285ee36058bb2419e27857bc1e0834a",
+      "options": "Bard,human,male,neutral,dog,tty,!news,!legacy,time",
+      "timezone": "UTC"
+    }
+  ],
+  "exit": 0
+}

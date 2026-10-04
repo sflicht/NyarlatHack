@@ -1,0 +1,75 @@
+{
+ "attempt": 11,
+ "outcome": "turn_limit",
+ "error": null,
+ "saved": true,
+ "cross_level_save": {
+  "journal": "next_use-journal.2.jsonl",
+  "admitted_dlvl": 2,
+  "saved_dlvl": 3,
+  "saved_turn": 1033,
+  "snapshot": {
+   "snapshot_v": 7,
+   "program_id": 2,
+   "phase": 3,
+   "slot_w": 1,
+   "slot_f": 0,
+   "w_runtime": 0,
+   "state": 0,
+   "delay_used": 0,
+   "callback_ordinal": 0,
+   "witnessed": 0,
+   "attention_claimed": 0,
+   "whistle_count": 0,
+   "fountain_count": 0,
+   "next_seq": 3,
+   "termination_emitted": 0,
+   "identity_unsafe": 0,
+   "callback_w": 0,
+   "callback_f": 0,
+   "last_root": 0,
+   "admission_move": 925,
+   "program_expiry": 1225,
+   "delay_until": 0,
+   "variant": 0,
+   "origin_w_live": 1,
+   "origin_f_live": 0,
+   "armed_m_id": 0,
+   "replay_cursor": 0,
+   "origin_w": 188,
+   "origin_f": 0,
+   "origin_w_deadline": 1150,
+   "origin_f_deadline": 0,
+   "run_token": 7709805116423598232,
+   "level_token": 100002,
+   "activation_monstermoves": 0,
+   "armed_root": 0,
+   "journal_state": 0,
+   "journal_bytes": 0,
+   "journal_sha256": "",
+   "capture_incomplete": 0,
+   "broad_uses": 2,
+   "delivered": 0,
+   "armed_level_token": 0,
+   "source_length": 115,
+   "source_sha256": "9d256d10074b7a67073f9c87990f0375724b5e1212fdff45566479437ea0de1c",
+   "binding_sha256": "b976b2a5d6074fa47ee00824e0ffa9d00b7ae8d5b7fe8d3a0e0aa6a82d338a51",
+   "source_hex": "72657475726e207b0a20206f6e5f616374696f6e203d2066756e6374696f6e28636f6e74657874290a2020202072657475726e207b6e6578745f7573655f696e74656e745f763d322c206f703d2277686973746c655f617474656e74696f6e222c2073746174653d307d0a2020656e640a7d0a"
+  }
+ },
+ "restore_detail": "restore",
+ "sessions": [
+  [
+   1,
+   "new"
+  ],
+  [
+   1033,
+   "restore"
+  ]
+ ],
+ "final_status": {
+  "turn": 2003,
+  "dlvl": 3
+ }
+}

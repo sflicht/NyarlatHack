@@ -180,8 +180,13 @@ The engine's level coordinates are mapped to a separate bounded level token.
 
 `restgamestate` passes the independently restored player token and level to
 `chaos_next_use_restore_bound`. A nonpositive identity or mismatching game
-token rejects before importing the runtime. Active programs additionally
-require the admission level to match. Already-terminal history can accompany
+token rejects before importing the runtime. An active single-use program
+additionally requires its admission level to match: it ends on level
+departure, so a live one from another level is foreign state. An active broad
+(v7) program survives level changes, so its admission level binds nothing on
+restore; only an open W window is level-bound, and it must match
+`armed_level_token` (the boundary ends that window on departure, so an open
+window from another level stays a refusal). Already-terminal history can accompany
 that same game onto another current level; it cannot execute a callback or
 reopen an ended whistle window. The data-only import/restore helper leaves
 current identity unbound and cannot

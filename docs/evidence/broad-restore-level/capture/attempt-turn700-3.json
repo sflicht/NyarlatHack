@@ -1,0 +1,1 @@
+{"attempt": 3, "outcome": "turn_limit", "error": null, "saved": true, "sessions": ["new", "restore"], "journal_snapshots": {"next_use-journal.jsonl": [{"snapshot_v": 7, "phase": 3, "broad_uses": 2, "delivered": 0, "level_token": 100002, "w_runtime": 0}]}}
