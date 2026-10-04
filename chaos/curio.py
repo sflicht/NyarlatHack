@@ -6,8 +6,13 @@ name/text, native admission, or placement. No repair or whisper normalization.
 Source may contain Unicode and controls except NUL; only native Lua validation
 can decide whether the exact source satisfies the hook contract.
 
-compose_prompt(public_context, *, prior_notes=(), literary_layer="poe") returns
-separate trusted instructions and a JSON user payload for a later caller.
+compose_prompt(public_context, *, prior_notes=(), literary_layer="poe",
+history=None) returns separate trusted instructions and a JSON user payload for
+a later caller. history, when given, is exactly chaos.history.public_context(
+state): it is quoted as data under "public_history" and the trusted history
+addendum (prompts/curio/history.txt) is appended to the instructions. Nothing
+else reaches the prompt (rule 6). seeded_layer(game_seed) picks the literary
+layer from a SHA-256 of the seed, so a replay picks the same one.
 Public context is an exact dict: required sanity (int 0..100), insight (int
 0..1000000); optional role/race (nonblank printable ASCII, 1..32 bytes). Only
 player-observable values supplied by the host belong here; no discovery occurs.
@@ -21,9 +26,9 @@ persistence/status authenticity. Task 7b owns evidence and rollback handling.
 Notes allow empty strings and Unicode whitespace except control characters.
 "No controls" means Unicode General Category Cc: U+0000..001F, U+007F..009F.
 Other valid Unicode is preserved without normalization. Each note is <=512
-UTF-8 bytes. Raw JSON and combined instructions+user payload each have an
-8192-byte UTF-8 cap, matching OAuthBackend.generate; decoded source is 1..4096
-bytes. Escaping can exceed transport caps even when decoded fields fit. Reject
+UTF-8 bytes. Raw JSON has an 8192-byte UTF-8 cap; the combined
+instructions+user payload has a 12288-byte cap (history-grounded prompts, as
+for the next-use author); decoded source is 1..4096 bytes. Escaping can exceed transport caps even when decoded fields fit. Reject
 rather than truncate, select notes, or rewrite text. Prompt files are trusted
 package resources chosen through a closed literary whitelist, never model paths.
 
@@ -31,6 +36,7 @@ No inference, credentials, ledger, installation or native-validation side effect
 """
 
 from dataclasses import dataclass
+import hashlib
 import json
 from pathlib import Path
 import re
@@ -40,7 +46,8 @@ MAX_SOURCE_BYTES = 4096
 MAX_NOTE_BYTES = 512
 MAX_PRIOR_NOTES = 6
 MAX_RESPONSE_BYTES = 8192
-MAX_PROMPT_BYTES = 8192
+MAX_PROMPT_BYTES = 12288
+MAX_HISTORY_BYTES = 6144  # chaos.history.PUBLIC_CONTEXT_BYTES
 
 _PROMPTS = Path(__file__).resolve().parent / "prompts" / "curio"
 _LITERARY_FILES = {
@@ -53,6 +60,27 @@ _LITERARY_FILES = {
     "gilman": "gilman.txt",
     "hodgson": "hodgson.txt",
 }
+# Fixed order: seeded_layer indexes it, so reordering would change replays.
+LAYERS = (
+    "abbott",
+    "carroll",
+    "chambers",
+    "gilman",
+    "hodgson",
+    "mackay",
+    "poe",
+    "wilde",
+)
+_HISTORY_KEYS = frozenset(
+    {
+        "history_context_v",
+        "summary",
+        "episodes",
+        "prior_whispers",
+        "prior_coverage",
+        "next_use",
+    }
+)
 _STATUSES = frozenset(
     {"authored", "installed", "admitted", "rejected", "placed", "expired"}
 )
@@ -191,7 +219,32 @@ def _prior_notes(notes):
     return result
 
 
-def compose_prompt(public_context, *, prior_notes=(), literary_layer="poe"):
+def seeded_layer(game_seed):
+    """The literary layer for a game: LAYERS[sha256(seed) % 8], never hash().
+
+    Python's hash() of a str is salted per process, so it would not replay.
+    """
+    if type(game_seed) is not int or not 0 <= game_seed < 2**63:
+        raise ValueError("game seed must be an integer in 0..2**63-1")
+    digest = hashlib.sha256(b"nyarlathack-curio-layer-v1:%d" % game_seed).digest()
+    return LAYERS[int.from_bytes(digest[:8], "big") % len(LAYERS)]
+
+
+def _history(history):
+    """Exactly the chaos.history.public_context projection, re-encoded."""
+    if type(history) is not dict or history.keys() != _HISTORY_KEYS:
+        raise ValueError("history must be exactly chaos.history.public_context(state)")
+    if history["history_context_v"] != 1:
+        raise ValueError("unsupported history context version")
+    encoded = json.dumps(history, ensure_ascii=True, separators=(",", ":"))
+    if len(encoded) > MAX_HISTORY_BYTES:
+        raise ValueError("history context byte cap exceeded")
+    return json.loads(encoded)
+
+
+def compose_prompt(
+    public_context, *, prior_notes=(), literary_layer="poe", history=None
+):
     """Compose bounded trusted files + quoted public data; never call a model.
 
     Supply the latest host-verified notes in caller-selected order. Every supplied
@@ -202,17 +255,21 @@ def compose_prompt(public_context, *, prior_notes=(), literary_layer="poe"):
         raise ValueError("unknown literary layer; choose an exact supported name")
     public = _public_context(public_context)
     notes = _prior_notes(prior_notes)
+    names = [
+        "contract.txt",
+        "mechanics-sanity-insight.txt",
+        "gothic.txt",
+        _LITERARY_FILES[literary_layer],
+    ]
+    payload = {"public_context": public, "prior_notes": notes}
+    if history is not None:
+        payload["public_history"] = _history(history)
+        names.append("history.txt")
     instructions = "\n\n".join(
-        (_PROMPTS / name).read_text(encoding="utf-8")
-        for name in (
-            "contract.txt",
-            "mechanics-sanity-insight.txt",
-            "gothic.txt",
-            _LITERARY_FILES[literary_layer],
-        )
+        (_PROMPTS / name).read_text(encoding="utf-8") for name in names
     )
     prompt = json.dumps(
-        {"public_context": public, "prior_notes": notes},
+        payload,
         ensure_ascii=False,
         sort_keys=True,
         separators=(",", ":"),

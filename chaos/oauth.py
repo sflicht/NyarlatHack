@@ -42,6 +42,7 @@ def _model_id(model):
 
 CURIO_PURPOSE = "curio-generation"
 CURIO_LIMIT = 2
+CURIO_PROMPT_BYTES = 12288
 _LEDGER_CAP = 32768
 _BILLING = "subscription OAuth; cash charge not reported"
 _USAGE = (
@@ -299,9 +300,12 @@ class OAuthBackend:
     def generate(self, instructions, prompt, *, return_receipt=False):
         if type(instructions) is not str or type(prompt) is not str:
             raise ValueError("text prompts required")
+        # Curio prompts carry the public history (chaos/curio.py, 12288 bytes);
+        # director prompts keep 8192.
+        cap = CURIO_PROMPT_BYTES if self.purpose == CURIO_PURPOSE else 8192
         if (
-            len(instructions) + len(prompt) > 8192
-            or len((instructions + prompt).encode()) > 8192
+            len(instructions) + len(prompt) > cap
+            or len((instructions + prompt).encode()) > cap
         ):
             raise ValueError("OAuth prompt exceeds byte cap")
         if type(return_receipt) is not bool:

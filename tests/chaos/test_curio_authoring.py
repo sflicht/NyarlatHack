@@ -3,7 +3,7 @@
 import json
 import unittest
 
-from chaos.curio import compose_prompt, parse_envelope
+from chaos.curio import MAX_PROMPT_BYTES as CAP, compose_prompt, parse_envelope
 
 
 SOURCE = (
@@ -165,7 +165,7 @@ class PromptTests(unittest.TestCase):
                 self.assertIn("Literary influence: " + layer, result.instructions)
                 self.assertEqual(result.instructions.count("Literary influence:"), 1)
                 self.assertLessEqual(
-                    len((result.instructions + result.prompt).encode()), 8192
+                    len((result.instructions + result.prompt).encode()), CAP
                 )
                 self.assertEqual(
                     json.loads(result.prompt),
@@ -346,7 +346,7 @@ class PromptTests(unittest.TestCase):
         # notes, not a byte slice, to reach the real combined transport boundary.
         notes = [prior("") for _ in range(6)]
         empty = compose_prompt(PUBLIC, prior_notes=notes)
-        remaining = 8192 - len((empty.instructions + empty.prompt).encode())
+        remaining = CAP - len((empty.instructions + empty.prompt).encode())
         self.assertGreater(remaining, 0)
         self.assertLess(remaining, 6 * 512 * 2)
         for note in notes:
@@ -359,12 +359,12 @@ class PromptTests(unittest.TestCase):
             remaining -= 1
         self.assertEqual(remaining, 0)
         exact = compose_prompt(PUBLIC, prior_notes=notes)
-        self.assertEqual(len((exact.instructions + exact.prompt).encode()), 8192)
+        self.assertEqual(len((exact.instructions + exact.prompt).encode()), CAP)
         target = next(n for n in notes if len(n["continuity_note"]) < 512)
         target["continuity_note"] += "x"
-        with self.assertRaisesRegex(ValueError, "combined prompt.*8192"):
+        with self.assertRaisesRegex(ValueError, "combined prompt.*" + str(CAP)):
             compose_prompt(PUBLIC, prior_notes=notes)
-        with self.assertRaisesRegex(ValueError, "combined prompt.*8192"):
+        with self.assertRaisesRegex(ValueError, "combined prompt.*" + str(CAP)):
             compose_prompt(PUBLIC, prior_notes=[prior('"' * 512) for _ in range(6)])
         # Keep the serialized character count at the accepted boundary while
         # increasing its UTF-8 byte count. Replacing an escaped quote (two
@@ -382,9 +382,9 @@ class PromptTests(unittest.TestCase):
             sort_keys=True,
             separators=(",", ":"),
         )
-        self.assertEqual(len(exact.instructions + payload), 8192)
-        self.assertEqual(len((exact.instructions + payload).encode()), 8193)
-        with self.assertRaisesRegex(ValueError, "combined prompt.*8192"):
+        self.assertEqual(len(exact.instructions + payload), CAP)
+        self.assertEqual(len((exact.instructions + payload).encode()), CAP + 1)
+        with self.assertRaisesRegex(ValueError, "combined prompt.*" + str(CAP)):
             compose_prompt(PUBLIC, prior_notes=notes)
 
 
