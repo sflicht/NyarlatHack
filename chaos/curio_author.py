@@ -180,13 +180,18 @@ def author_curio(
                 latency_s=round(time.monotonic() - started, 3),
                 transport=getattr(backend, "last_receipt", None),
             )
+        arrived = time.monotonic()
         raw_bytes = raw.encode("utf-8")
         store._publish(d, "raw-response.txt", raw_bytes)
         receipt.update(
-            latency_s=round(time.monotonic() - started, 3),
+            latency_s=round(arrived - started, 3),
             transport=transport,
             raw_response_sha256=_sha(raw_bytes),
         )
+        # The transport's timeout bounds each socket wait, not the whole
+        # response, so a slow stream can finish late. Late is never installed.
+        if arrived > started + deadline_s:
+            return finish("deadline", error_type="LateResponse")
         try:
             envelope = curio.parse_envelope(raw)
         except ValueError:

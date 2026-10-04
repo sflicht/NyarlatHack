@@ -1,0 +1,1 @@
+{"lua_source": "return {name='Replay counter',inspect=function(c) return 'A plain counter with three stages.' end,apply=function(c) return {text='First stage.',state=1,sanity_delta=0} end}", "continuity_note": "fixture"}

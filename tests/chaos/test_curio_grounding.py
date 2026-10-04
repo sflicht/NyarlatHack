@@ -348,6 +348,35 @@ class AuthoringTests(Base):
         with self.assertRaises(ValueError):
             self.author(deadline_s=361)
 
+    def test_response_after_the_deadline_is_never_ready(self):
+        backend = self.backend()
+        slow = self.client.create
+
+        def late(**kwargs):
+            import time
+
+            time.sleep(0.3)
+            return slow(**kwargs)
+
+        self.client.chat.completions.create = late
+        evidence = self.root / "e-late"
+        receipt = curio_author.author_curio(
+            backend,
+            events_dir=private_events(self.root),
+            evidence_dir=evidence,
+            game_seed=1,
+            validator=FakeValidator(),
+            deadline_s=0.2,
+        )
+        self.assertEqual(receipt["outcome"], "deadline")
+        self.assertEqual(receipt["error_type"], "LateResponse")
+        self.assertGreater(receipt["latency_s"], 0.2)
+        # The late bytes are kept as evidence, but never validated or installed.
+        self.assertTrue((evidence / "raw-response.txt").exists())
+        self.assertFalse((evidence / "source.lua").exists())
+        with self.assertRaisesRegex(ValueError, "only a ready curio"):
+            curio_author.read_evidence(evidence)
+
     def test_rejections_are_recorded_and_never_ready(self):
         cases = (
             ("not json", FakeValidator(), "envelope_rejected"),

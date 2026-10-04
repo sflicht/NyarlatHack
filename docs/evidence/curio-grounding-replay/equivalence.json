@@ -1,0 +1,22 @@
+{
+  "curio_rows": [
+    "pre_admitted",
+    "admitted",
+    "placed"
+  ],
+  "events_sha256": "84101a66ecedcbc49b86e5bd01242cdf4e14bdb4e727f184f64821e14e83db97",
+  "record_save_sha256": "b8aa974754011ca249d852a64835960bb6658c41098d1d6ea3f4f93b8dc12753",
+  "replay_save_sha256": "8eeee6587674c49c082188ac7aab037db17cbc2296eb28c50e326e0ca235a751",
+  "save_bytes": 355072,
+  "save_state_differences": 0,
+  "hackpids": [
+    2811231,
+    2811232
+  ],
+  "install": {
+    "safe": 1,
+    "source_sha256": "1be903af37df87c0c48595cecb8bcb0a8f422b5ec03cc2d036472c0777b733a2",
+    "v": 1
+  },
+  "inputs": 23
+}
