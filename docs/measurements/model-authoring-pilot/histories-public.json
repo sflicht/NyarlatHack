@@ -1,0 +1,4699 @@
+{
+ "bard-00007": {
+  "events_sha256": "e6ce4ee076d2549c42f4c42ec4a22055c6442b6eb7cb02808613035a2e2b9874",
+  "public_context": {
+   "episodes": {
+    "coverage": {
+     "blocked": {
+      "count": 0,
+      "saturated": false
+     },
+     "completed_without_notice": {
+      "count": 0,
+      "saturated": false
+     },
+     "incomplete": {
+      "count": 0,
+      "saturated": false
+     },
+     "omitted_roots": {
+      "count": 0,
+      "saturated": false
+     }
+    },
+    "episode_context_v": 1,
+    "episodes": [
+     {
+      "count": 3,
+      "evidence": [
+       {
+        "end_seq": 197,
+        "fact": "sound_high",
+        "notice_seq": 196,
+        "root_seq": 195
+       },
+       {
+        "end_seq": 207,
+        "fact": "sound_high",
+        "notice_seq": 206,
+        "root_seq": 205
+       },
+       {
+        "end_seq": 273,
+        "fact": "sound_high",
+        "notice_seq": 272,
+        "root_seq": 271
+       }
+      ],
+      "operation": "whistling",
+      "saturated": true
+     }
+    ],
+    "lookback_roots": 32,
+    "scope": "selected_whistle_fountain"
+   },
+   "history_context_v": 1,
+   "next_use": {
+    "families": [
+     "W"
+    ],
+    "menu": [
+     {
+      "family": "W",
+      "op": "quiet",
+      "origin": {
+       "end_seq": 273,
+       "fact": "sound_high",
+       "notice_seq": 272,
+       "root_seq": 271
+      }
+     },
+     {
+      "family": "W",
+      "op": "whistle_attention",
+      "origin": {
+       "end_seq": 273,
+       "fact": "sound_high",
+       "notice_seq": 272,
+       "root_seq": 271
+      }
+     }
+    ]
+   },
+   "prior_coverage": {
+    "omitted": 0,
+    "shown": 2
+   },
+   "prior_whispers": [
+    {
+     "accepted_seq": 6,
+     "accepted_turn": 1,
+     "active_at_snapshot": false,
+     "duration": 0,
+     "expires_turn": 0,
+     "expiry_observed": false,
+     "id": 1,
+     "mutation": "ambient"
+    },
+    {
+     "accepted_seq": 114,
+     "accepted_turn": 408,
+     "active_at_snapshot": false,
+     "duration": 192,
+     "expires_turn": 600,
+     "expiry_observed": true,
+     "id": 2,
+     "mutation": "door_reluctance"
+    }
+   ],
+   "summary": {
+    "observed": {
+     "budget": 0,
+     "insight": 0,
+     "reserved": 0,
+     "safe": 3,
+     "sanity": 100,
+     "spent": 2,
+     "turn": 1325,
+     "vitals": {
+      "hp": 0,
+      "hp_max": 21,
+      "power": 22,
+      "power_max": 22
+     }
+    },
+    "recent": [
+     {
+      "event": "backtrack",
+      "phase": "result",
+      "safe": 3,
+      "turn": 910,
+      "vitals": {
+       "hp": 15,
+       "hp_max": 21,
+       "power": 21,
+       "power_max": 22
+      }
+     },
+     {
+      "event": "backtrack",
+      "phase": "result",
+      "safe": 3,
+      "turn": 911,
+      "vitals": {
+       "hp": 15,
+       "hp_max": 21,
+       "power": 21,
+       "power_max": 22
+      }
+     },
+     {
+      "event": "backtrack",
+      "phase": "result",
+      "safe": 3,
+      "turn": 912,
+      "vitals": {
+       "hp": 15,
+       "hp_max": 21,
+       "power": 21,
+       "power_max": 22
+      }
+     },
+     {
+      "event": "backtrack",
+      "phase": "result",
+      "safe": 3,
+      "turn": 914,
+      "vitals": {
+       "hp": 15,
+       "hp_max": 21,
+       "power": 21,
+       "power_max": 22
+      }
+     },
+     {
+      "event": "apply",
+      "phase": "attempt",
+      "safe": 3,
+      "turn": 970,
+      "vitals": {
+       "hp": 18,
+       "hp_max": 21,
+       "power": 21,
+       "power_max": 22
+      }
+     },
+     {
+      "event": "backtrack",
+      "phase": "result",
+      "safe": 3,
+      "turn": 971,
+      "vitals": {
+       "hp": 18,
+       "hp_max": 21,
+       "power": 21,
+       "power_max": 22
+      }
+     },
+     {
+      "event": "apply",
+      "phase": "attempt",
+      "safe": 3,
+      "turn": 973,
+      "vitals": {
+       "hp": 18,
+       "hp_max": 21,
+       "power": 21,
+       "power_max": 22
+      }
+     },
+     {
+      "event": "backtrack",
+      "phase": "result",
+      "safe": 3,
+      "turn": 978,
+      "vitals": {
+       "hp": 18,
+       "hp_max": 21,
+       "power": 21,
+       "power_max": 22
+      }
+     },
+     {
+      "event": "eat",
+      "phase": "attempt",
+      "safe": 3,
+      "turn": 1038,
+      "vitals": {
+       "hp": 21,
+       "hp_max": 21,
+       "power": 22,
+       "power_max": 22
+      }
+     },
+     {
+      "event": "backtrack",
+      "phase": "result",
+      "safe": 3,
+      "turn": 1090,
+      "vitals": {
+       "hp": 21,
+       "hp_max": 21,
+       "power": 22,
+       "power_max": 22
+      }
+     },
+     {
+      "event": "eat",
+      "phase": "attempt",
+      "safe": 3,
+      "turn": 1307,
+      "vitals": {
+       "hp": 18,
+       "hp_max": 21,
+       "power": 22,
+       "power_max": 22
+      }
+     },
+     {
+      "event": "death",
+      "phase": "result",
+      "safe": 3,
+      "turn": 1325,
+      "vitals": {
+       "hp": 0,
+       "hp_max": 21,
+       "power": 22,
+       "power_max": 22
+      }
+     }
+    ]
+   }
+  },
+  "reveal": [
+   "The Crawling Chaos remembers.",
+   "  Turn 1, as you arrived on a level: whisper 1 (ambient) was admitted.",
+   "    Telegraph: \"A distant whisper brushes against your thoughts.\"",
+   "    Effect: an omen only; no rule changed.",
+   "    Delivered: yes, \"The shadows lean closer.\" was shown with the telegraph.",
+   "    Spent at once.",
+   "  Turn 326: a next-use program was admitted.",
+   "    Origin: you whistled on DL2 on turn 215.",
+   "    Rebound: first written about an earlier one (turn 119).",
+   "    Telegraph: \"For a while, your whistles may carry farther than they should.\"",
+   "    Effect: for a while, any whistle could answer it, at most 2 times.",
+   "    Delivered: no; no manifestation reached you.",
+   "    Ended: its uses ran out or it expired before the game ended.",
+   "  Turn 408, as you prayed: whisper 2 (door_reluctance) was admitted.",
+   "    Telegraph: \"The doors of this place seem to lean against you.\"",
+   "    Effect: closed doors resisted you more often, for 192 turns.",
+   "    Delivered: no; a rule change has no separate manifestation.",
+   "    Ended: expired on turn 600.",
+   "  Admitted 3, delivered 1; cruelty spent 2.",
+   ""
+  ],
+  "role": "Bard",
+  "source": "sweep:bard-00007/events.jsonl"
+ },
+ "bard-00023": {
+  "events_sha256": "5bea8825236195326664bfc2cbc6b9b5153c01b1486a3ae816328d937bb43242",
+  "public_context": {
+   "episodes": {
+    "coverage": {
+     "blocked": {
+      "count": 0,
+      "saturated": false
+     },
+     "completed_without_notice": {
+      "count": 0,
+      "saturated": false
+     },
+     "incomplete": {
+      "count": 0,
+      "saturated": false
+     },
+     "omitted_roots": {
+      "count": 0,
+      "saturated": false
+     }
+    },
+    "episode_context_v": 1,
+    "episodes": [
+     {
+      "count": 3,
+      "evidence": [
+       {
+        "end_seq": 148,
+        "fact": "sound_high",
+        "notice_seq": 147,
+        "root_seq": 146
+       },
+       {
+        "end_seq": 156,
+        "fact": "sound_high",
+        "notice_seq": 155,
+        "root_seq": 154
+       },
+       {
+        "end_seq": 285,
+        "fact": "sound_high",
+        "notice_seq": 284,
+        "root_seq": 283
+       }
+      ],
+      "operation": "whistling",
+      "saturated": true
+     }
+    ],
+    "lookback_roots": 32,
+    "scope": "selected_whistle_fountain"
+   },
+   "history_context_v": 1,
+   "next_use": {
+    "families": [
+     "W"
+    ],
+    "menu": [
+     {
+      "family": "W",
+      "op": "quiet",
+      "origin": {
+       "end_seq": 285,
+       "fact": "sound_high",
+       "notice_seq": 284,
+       "root_seq": 283
+      }
+     },
+     {
+      "family": "W",
+      "op": "whistle_attention",
+      "origin": {
+       "end_seq": 285,
+       "fact": "sound_high",
+       "notice_seq": 284,
+       "root_seq": 283
+      }
+     }
+    ]
+   },
+   "prior_coverage": {
+    "omitted": 0,
+    "shown": 1
+   },
+   "prior_whispers": [
+    {
+     "accepted_seq": 6,
+     "accepted_turn": 1,
+     "active_at_snapshot": false,
+     "duration": 0,
+     "expires_turn": 0,
+     "expiry_observed": false,
+     "id": 1,
+     "mutation": "ambient"
+    }
+   ],
+   "summary": {
+    "observed": {
+     "budget": 2,
+     "insight": 0,
+     "reserved": 0,
+     "safe": 2,
+     "sanity": 100,
+     "spent": 0,
+     "turn": 1133,
+     "vitals": {
+      "hp": 0,
+      "hp_max": 13,
+      "power": 11,
+      "power_max": 11
+     }
+    },
+    "recent": [
+     {
+      "event": "apply",
+      "phase": "attempt",
+      "safe": 2,
+      "turn": 1113,
+      "vitals": {
+       "hp": 13,
+       "hp_max": 13,
+       "power": 11,
+       "power_max": 11
+      }
+     },
+     {
+      "event": "backtrack",
+      "phase": "result",
+      "safe": 2,
+      "turn": 1116,
+      "vitals": {
+       "hp": 13,
+       "hp_max": 13,
+       "power": 11,
+       "power_max": 11
+      }
+     },
+     {
+      "event": "backtrack",
+      "phase": "result",
+      "safe": 2,
+      "turn": 1117,
+      "vitals": {
+       "hp": 13,
+       "hp_max": 13,
+       "power": 11,
+       "power_max": 11
+      }
+     },
+     {
+      "event": "backtrack",
+      "phase": "result",
+      "safe": 2,
+      "turn": 1118,
+      "vitals": {
+       "hp": 13,
+       "hp_max": 13,
+       "power": 11,
+       "power_max": 11
+      }
+     },
+     {
+      "event": "backtrack",
+      "phase": "result",
+      "safe": 2,
+      "turn": 1119,
+      "vitals": {
+       "hp": 13,
+       "hp_max": 13,
+       "power": 11,
+       "power_max": 11
+      }
+     },
+     {
+      "event": "backtrack",
+      "phase": "result",
+      "safe": 2,
+      "turn": 1120,
+      "vitals": {
+       "hp": 13,
+       "hp_max": 13,
+       "power": 11,
+       "power_max": 11
+      }
+     },
+     {
+      "event": "backtrack",
+      "phase": "result",
+      "safe": 2,
+      "turn": 1121,
+      "vitals": {
+       "hp": 13,
+       "hp_max": 13,
+       "power": 11,
+       "power_max": 11
+      }
+     },
+     {
+      "event": "backtrack",
+      "phase": "result",
+      "safe": 2,
+      "turn": 1122,
+      "vitals": {
+       "hp": 13,
+       "hp_max": 13,
+       "power": 11,
+       "power_max": 11
+      }
+     },
+     {
+      "event": "backtrack",
+      "phase": "result",
+      "safe": 2,
+      "turn": 1123,
+      "vitals": {
+       "hp": 13,
+       "hp_max": 13,
+       "power": 11,
+       "power_max": 11
+      }
+     },
+     {
+      "event": "kill",
+      "phase": "attempt",
+      "safe": 2,
+      "turn": 1131,
+      "vitals": {
+       "hp": 7,
+       "hp_max": 13,
+       "power": 11,
+       "power_max": 11
+      }
+     },
+     {
+      "event": "apply",
+      "phase": "attempt",
+      "safe": 2,
+      "turn": 1133,
+      "vitals": {
+       "hp": 3,
+       "hp_max": 13,
+       "power": 11,
+       "power_max": 11
+      }
+     },
+     {
+      "event": "death",
+      "phase": "result",
+      "safe": 2,
+      "turn": 1133,
+      "vitals": {
+       "hp": 0,
+       "hp_max": 13,
+       "power": 11,
+       "power_max": 11
+      }
+     }
+    ]
+   }
+  },
+  "reveal": [
+   "The Crawling Chaos remembers.",
+   "  Turn 1, as you arrived on a level: whisper 1 (ambient) was admitted.",
+   "    Telegraph: \"A distant whisper brushes against your thoughts.\"",
+   "    Effect: an omen only; no rule changed.",
+   "    Delivered: yes, \"The shadows lean closer.\" was shown with the telegraph.",
+   "    Spent at once.",
+   "  Admitted 1, delivered 1; cruelty spent 0.",
+   "  1 other candidate was refused; none took effect.",
+   ""
+  ],
+  "role": "Bard",
+  "source": "sweep:bard-00023/events.jsonl"
+ },
+ "bard-00041": {
+  "events_sha256": "02c3ad87b9611e745f127a0aaa20dd5273b3068a3a7514c1b1d6f4fc4495fae1",
+  "public_context": {
+   "episodes": {
+    "coverage": {
+     "blocked": {
+      "count": 1,
+      "saturated": false
+     },
+     "completed_without_notice": {
+      "count": 0,
+      "saturated": false
+     },
+     "incomplete": {
+      "count": 0,
+      "saturated": false
+     },
+     "omitted_roots": {
+      "count": 0,
+      "saturated": false
+     }
+    },
+    "episode_context_v": 1,
+    "episodes": [
+     {
+      "count": 3,
+      "evidence": [
+       {
+        "end_seq": 313,
+        "fact": "sound_high",
+        "notice_seq": 312,
+        "root_seq": 311
+       },
+       {
+        "end_seq": 320,
+        "fact": "sound_high",
+        "notice_seq": 319,
+        "root_seq": 318
+       },
+       {
+        "end_seq": 429,
+        "fact": "sound_high",
+        "notice_seq": 428,
+        "root_seq": 427
+       }
+      ],
+      "operation": "whistling",
+      "saturated": true
+     }
+    ],
+    "lookback_roots": 32,
+    "scope": "selected_whistle_fountain"
+   },
+   "history_context_v": 1,
+   "next_use": {
+    "families": [
+     "W"
+    ],
+    "menu": [
+     {
+      "family": "W",
+      "op": "quiet",
+      "origin": {
+       "end_seq": 429,
+       "fact": "sound_high",
+       "notice_seq": 428,
+       "root_seq": 427
+      }
+     },
+     {
+      "family": "W",
+      "op": "whistle_attention",
+      "origin": {
+       "end_seq": 429,
+       "fact": "sound_high",
+       "notice_seq": 428,
+       "root_seq": 427
+      }
+     }
+    ]
+   },
+   "prior_coverage": {
+    "omitted": 0,
+    "shown": 2
+   },
+   "prior_whispers": [
+    {
+     "accepted_seq": 6,
+     "accepted_turn": 1,
+     "active_at_snapshot": false,
+     "duration": 0,
+     "expires_turn": 0,
+     "expiry_observed": false,
+     "id": 1,
+     "mutation": "ambient"
+    },
+    {
+     "accepted_seq": 373,
+     "accepted_turn": 1016,
+     "active_at_snapshot": false,
+     "duration": 192,
+     "expires_turn": 1208,
+     "expiry_observed": true,
+     "id": 2,
+     "mutation": "door_reluctance"
+    }
+   ],
+   "summary": {
+    "observed": {
+     "budget": 0,
+     "insight": 0,
+     "reserved": 0,
+     "safe": 3,
+     "sanity": 100,
+     "spent": 3,
+     "turn": 1870,
+     "vitals": {
+      "hp": 13,
+      "hp_max": 13,
+      "power": 11,
+      "power_max": 11
+     }
+    },
+    "recent": [
+     {
+      "event": "expiry",
+      "phase": "result",
+      "safe": 3,
+      "turn": 1208,
+      "vitals": {
+       "hp": 13,
+       "hp_max": 13,
+       "power": 11,
+       "power_max": 11
+      }
+     },
+     {
+      "event": "apply",
+      "phase": "attempt",
+      "safe": 3,
+      "turn": 1236,
+      "vitals": {
+       "hp": 13,
+       "hp_max": 13,
+       "power": 11,
+       "power_max": 11
+      }
+     },
+     {
+      "event": "apply",
+      "phase": "attempt",
+      "safe": 3,
+      "turn": 1253,
+      "vitals": {
+       "hp": 13,
+       "hp_max": 13,
+       "power": 11,
+       "power_max": 11
+      }
+     },
+     {
+      "event": "apply",
+      "phase": "attempt",
+      "safe": 3,
+      "turn": 1254,
+      "vitals": {
+       "hp": 13,
+       "hp_max": 13,
+       "power": 11,
+       "power_max": 11
+      }
+     },
+     {
+      "event": "eat",
+      "phase": "attempt",
+      "safe": 3,
+      "turn": 1394,
+      "vitals": {
+       "hp": 13,
+       "hp_max": 13,
+       "power": 11,
+       "power_max": 11
+      }
+     },
+     {
+      "event": "apply",
+      "phase": "attempt",
+      "safe": 3,
+      "turn": 1410,
+      "vitals": {
+       "hp": 13,
+       "hp_max": 13,
+       "power": 11,
+       "power_max": 11
+      }
+     },
+     {
+      "event": "apply",
+      "phase": "attempt",
+      "safe": 3,
+      "turn": 1411,
+      "vitals": {
+       "hp": 13,
+       "hp_max": 13,
+       "power": 11,
+       "power_max": 11
+      }
+     },
+     {
+      "event": "apply",
+      "phase": "attempt",
+      "safe": 3,
+      "turn": 1422,
+      "vitals": {
+       "hp": 13,
+       "hp_max": 13,
+       "power": 11,
+       "power_max": 11
+      }
+     },
+     {
+      "event": "apply",
+      "phase": "attempt",
+      "safe": 3,
+      "turn": 1466,
+      "vitals": {
+       "hp": 13,
+       "hp_max": 13,
+       "power": 11,
+       "power_max": 11
+      }
+     },
+     {
+      "event": "eat",
+      "phase": "attempt",
+      "safe": 3,
+      "turn": 1601,
+      "vitals": {
+       "hp": 13,
+       "hp_max": 13,
+       "power": 11,
+       "power_max": 11
+      }
+     },
+     {
+      "event": "eat",
+      "phase": "attempt",
+      "safe": 3,
+      "turn": 1837,
+      "vitals": {
+       "hp": 13,
+       "hp_max": 13,
+       "power": 11,
+       "power_max": 11
+      }
+     },
+     {
+      "event": "death",
+      "phase": "result",
+      "safe": 3,
+      "turn": 1870,
+      "vitals": {
+       "hp": 13,
+       "hp_max": 13,
+       "power": 11,
+       "power_max": 11
+      }
+     }
+    ]
+   }
+  },
+  "reveal": [
+   "The Crawling Chaos remembers.",
+   "  Turn 1, as you arrived on a level: whisper 1 (ambient) was admitted.",
+   "    Telegraph: \"A distant whisper brushes against your thoughts.\"",
+   "    Effect: an omen only; no rule changed.",
+   "    Delivered: yes, \"The shadows lean closer.\" was shown with the telegraph.",
+   "    Spent at once.",
+   "  Motif: the whistle, 2 programs, felt 1 time.",
+   "  Turn 345: next-use program 1 was admitted.",
+   "    Origin: you whistled on DL2 on turn 335.",
+   "    Rebound: first written about an earlier one (turn 13).",
+   "    Telegraph: \"For a while, your whistles may carry farther than they should.\"",
+   "    Effect: for a while, any whistle could answer it, at most 2 times.",
+   "    Delivered: yes, 2 times; you saw your companion answer the whistle.",
+   "    Ended: its uses ran out or it expired before the game ended.",
+   "  Turn 1016: next-use program 2 was admitted.",
+   "    Origin: you whistled on DL2 on turn 997.",
+   "    Rebound: first written about an earlier one (turn 592).",
+   "    Recurrence: \"Again, the whistle carries farther than it should.\"",
+   "    Telegraph: \"For a while, your whistles may carry farther than they should.\"",
+   "    Effect: for a while, any whistle could answer it, at most 2 times.",
+   "    Delivered: no; no manifestation reached you.",
+   "    Ended: its uses ran out or it expired before the game ended.",
+   "  Turn 1016, as you prayed: whisper 2 (door_reluctance) was admitted.",
+   "    Telegraph: \"The doors of this place seem to lean against you.\"",
+   "    Effect: closed doors resisted you more often, for 192 turns.",
+   "    Delivered: no; a rule change has no separate manifestation.",
+   "    Ended: expired on turn 1208.",
+   "  Admitted 4, delivered 2; cruelty spent 3.",
+   ""
+  ],
+  "role": "Bard",
+  "source": "sweep:bard-00041/events.jsonl"
+ },
+ "bard-default-path-00007": {
+  "events_sha256": "37b1d813320c85991d283ae7f850ce923e60ad9484586e46600fad8d811afdca",
+  "public_context": {
+   "episodes": {
+    "coverage": {
+     "blocked": {
+      "count": 2,
+      "saturated": false
+     },
+     "completed_without_notice": {
+      "count": 3,
+      "saturated": false
+     },
+     "incomplete": {
+      "count": 0,
+      "saturated": false
+     },
+     "omitted_roots": {
+      "count": 0,
+      "saturated": false
+     }
+    },
+    "episode_context_v": 1,
+    "episodes": [
+     {
+      "count": 1,
+      "evidence": [
+       {
+        "end_seq": 344,
+        "fact": "attention",
+        "notice_seq": 343,
+        "root_seq": 342
+       }
+      ],
+      "operation": "whistle_attention",
+      "saturated": false
+     },
+     {
+      "count": 3,
+      "evidence": [
+       {
+        "end_seq": 202,
+        "fact": "sound_high",
+        "notice_seq": 201,
+        "root_seq": 200
+       },
+       {
+        "end_seq": 211,
+        "fact": "sound_high",
+        "notice_seq": 210,
+        "root_seq": 209
+       },
+       {
+        "end_seq": 430,
+        "fact": "sound_high",
+        "notice_seq": 429,
+        "root_seq": 428
+       }
+      ],
+      "operation": "whistling",
+      "saturated": true
+     }
+    ],
+    "lookback_roots": 32,
+    "scope": "selected_whistle_fountain"
+   },
+   "history_context_v": 1,
+   "next_use": {
+    "families": [
+     "W"
+    ],
+    "menu": [
+     {
+      "family": "W",
+      "op": "quiet",
+      "origin": {
+       "end_seq": 430,
+       "fact": "sound_high",
+       "notice_seq": 429,
+       "root_seq": 428
+      }
+     },
+     {
+      "family": "W",
+      "op": "whistle_attention",
+      "origin": {
+       "end_seq": 430,
+       "fact": "sound_high",
+       "notice_seq": 429,
+       "root_seq": 428
+      }
+     }
+    ]
+   },
+   "prior_coverage": {
+    "omitted": 0,
+    "shown": 3
+   },
+   "prior_whispers": [
+    {
+     "accepted_seq": 6,
+     "accepted_turn": 1,
+     "active_at_snapshot": false,
+     "duration": 0,
+     "expires_turn": 0,
+     "expiry_observed": false,
+     "id": 1,
+     "mutation": "ambient"
+    },
+    {
+     "accepted_seq": 257,
+     "accepted_turn": 986,
+     "active_at_snapshot": false,
+     "duration": 62,
+     "expires_turn": 1048,
+     "expiry_observed": true,
+     "id": 2,
+     "mutation": "door_reluctance"
+    },
+    {
+     "accepted_seq": 402,
+     "accepted_turn": 1505,
+     "active_at_snapshot": false,
+     "duration": 72,
+     "expires_turn": 1577,
+     "expiry_observed": true,
+     "id": 3,
+     "mutation": "door_reluctance"
+    }
+   ],
+   "summary": {
+    "observed": {
+     "budget": 1,
+     "insight": 0,
+     "reserved": 0,
+     "safe": 7,
+     "sanity": 97,
+     "spent": 6,
+     "turn": 1681,
+     "vitals": {
+      "hp": 28,
+      "hp_max": 28,
+      "power": 31,
+      "power_max": 31
+     }
+    },
+    "recent": [
+     {
+      "event": "backtrack",
+      "phase": "result",
+      "safe": 6,
+      "turn": 1592,
+      "vitals": {
+       "hp": 28,
+       "hp_max": 28,
+       "power": 31,
+       "power_max": 31
+      }
+     },
+     {
+      "event": "backtrack",
+      "phase": "result",
+      "safe": 6,
+      "turn": 1597,
+      "vitals": {
+       "hp": 28,
+       "hp_max": 28,
+       "power": 31,
+       "power_max": 31
+      }
+     },
+     {
+      "event": "apply",
+      "phase": "attempt",
+      "safe": 6,
+      "turn": 1609,
+      "vitals": {
+       "hp": 28,
+       "hp_max": 28,
+       "power": 31,
+       "power_max": 31
+      }
+     },
+     {
+      "event": "backtrack",
+      "phase": "result",
+      "safe": 6,
+      "turn": 1610,
+      "vitals": {
+       "hp": 28,
+       "hp_max": 28,
+       "power": 31,
+       "power_max": 31
+      }
+     },
+     {
+      "event": "backtrack",
+      "phase": "result",
+      "safe": 6,
+      "turn": 1612,
+      "vitals": {
+       "hp": 28,
+       "hp_max": 28,
+       "power": 31,
+       "power_max": 31
+      }
+     },
+     {
+      "event": "backtrack",
+      "phase": "result",
+      "safe": 6,
+      "turn": 1625,
+      "vitals": {
+       "hp": 28,
+       "hp_max": 28,
+       "power": 31,
+       "power_max": 31
+      }
+     },
+     {
+      "event": "backtrack",
+      "phase": "result",
+      "safe": 6,
+      "turn": 1630,
+      "vitals": {
+       "hp": 28,
+       "hp_max": 28,
+       "power": 31,
+       "power_max": 31
+      }
+     },
+     {
+      "event": "level_leave",
+      "phase": "result",
+      "safe": 6,
+      "turn": 1680,
+      "vitals": {
+       "hp": 28,
+       "hp_max": 28,
+       "power": 31,
+       "power_max": 31
+      }
+     },
+     {
+      "event": "level_enter",
+      "phase": "result",
+      "safe": 6,
+      "turn": 1680,
+      "vitals": {
+       "hp": 28,
+       "hp_max": 28,
+       "power": 31,
+       "power_max": 31
+      }
+     },
+     {
+      "event": "safe_point",
+      "phase": "result",
+      "safe": 7,
+      "turn": 1680,
+      "vitals": {
+       "hp": 28,
+       "hp_max": 28,
+       "power": 31,
+       "power_max": 31
+      }
+     },
+     {
+      "event": "ack",
+      "phase": "result",
+      "safe": 7,
+      "turn": 1680,
+      "vitals": {
+       "hp": 28,
+       "hp_max": 28,
+       "power": 31,
+       "power_max": 31
+      }
+     },
+     {
+      "event": "death",
+      "phase": "result",
+      "safe": 7,
+      "turn": 1681,
+      "vitals": {
+       "hp": 28,
+       "hp_max": 28,
+       "power": 31,
+       "power_max": 31
+      }
+     }
+    ]
+   }
+  },
+  "reveal": [
+   "The Crawling Chaos remembers.",
+   "  Turn 1, as you arrived on a level: whisper 1 (ambient) was admitted.",
+   "    Telegraph: \"A distant whisper brushes against your thoughts.\"",
+   "    Effect: an omen only; no rule changed.",
+   "    Delivered: yes, \"The shadows lean closer.\" was shown with the telegraph.",
+   "    Spent at once.",
+   "  Turn 24, after you doubled back: a haunting was admitted.",
+   "    Telegraph: \"Something has learned the rhythm of your footsteps.\"",
+   "    Effect: an echo hound was set to follow your trail.",
+   "    Delivered: yes, you saw it follow your trail 5 times.",
+   "    Ended: its hunt ended on turn 84.",
+   "  Motif: the whistle, 2 programs, felt 1 time.",
+   "  Turn 398: next-use program 1 was admitted.",
+   "    Origin: you whistled on DL2 on turn 185.",
+   "    Rebound: first written about an earlier one (turn 46).",
+   "    Telegraph: \"For a while, your whistles may carry farther than they should.\"",
+   "    Effect: for a while, any whistle could answer it, at most 2 times.",
+   "    Delivered: no; no manifestation reached you.",
+   "    Ended: its uses ran out or it expired before the game ended.",
+   "  Turn 1180: next-use program 2 was admitted.",
+   "    Origin: you whistled on DL4 on turn 1152.",
+   "    Rebound: first written about an earlier one (turn 1079).",
+   "    Telegraph: \"For a while, your whistles may carry farther than they should.\"",
+   "    Effect: for a while, any whistle could answer it, at most 2 times.",
+   "    Delivered: yes, 1 time; you saw your companion answer the whistle.",
+   "    Ended: its uses ran out or it expired before the game ended.",
+   "  Turn 986, as you prayed: whisper 2 (door_reluctance) was admitted.",
+   "    Telegraph: \"The doors of this place seem to lean against you.\"",
+   "    Effect: closed doors resisted you more often, for 62 turns.",
+   "    Delivered: no; a rule change has no separate manifestation.",
+   "    Ended: expired on turn 1048.",
+   "  Turn 1505, as your Sanity crossed a threshold: whisper 3 (door_reluctance) was admitted.",
+   "    Telegraph: \"The doors of this place seem to lean against you.\"",
+   "    Effect: closed doors resisted you more often, for 72 turns.",
+   "    Delivered: no; a rule change has no separate manifestation.",
+   "    Ended: expired on turn 1577.",
+   "  Admitted 6, delivered 3; cruelty spent 6.",
+   "  1 other candidate was refused; none took effect.",
+   ""
+  ],
+  "role": "Bard",
+  "source": "sweep:bard-default-path-00007/events.jsonl"
+ },
+ "bard-default-path-00023": {
+  "events_sha256": "5dc6f286b50aae061c29c5ca8e70051c1ff9ceafa18decb0a2049f25a0f3e06d",
+  "public_context": {
+   "episodes": {
+    "coverage": {
+     "blocked": {
+      "count": 0,
+      "saturated": false
+     },
+     "completed_without_notice": {
+      "count": 0,
+      "saturated": false
+     },
+     "incomplete": {
+      "count": 0,
+      "saturated": false
+     },
+     "omitted_roots": {
+      "count": 0,
+      "saturated": false
+     }
+    },
+    "episode_context_v": 1,
+    "episodes": [
+     {
+      "count": 3,
+      "evidence": [
+       {
+        "end_seq": 228,
+        "fact": "sound_high",
+        "notice_seq": 227,
+        "root_seq": 226
+       },
+       {
+        "end_seq": 246,
+        "fact": "sound_high",
+        "notice_seq": 245,
+        "root_seq": 244
+       },
+       {
+        "end_seq": 342,
+        "fact": "sound_high",
+        "notice_seq": 341,
+        "root_seq": 340
+       }
+      ],
+      "operation": "whistling",
+      "saturated": true
+     }
+    ],
+    "lookback_roots": 32,
+    "scope": "selected_whistle_fountain"
+   },
+   "history_context_v": 1,
+   "next_use": {
+    "families": [
+     "W"
+    ],
+    "menu": [
+     {
+      "family": "W",
+      "op": "quiet",
+      "origin": {
+       "end_seq": 342,
+       "fact": "sound_high",
+       "notice_seq": 341,
+       "root_seq": 340
+      }
+     },
+     {
+      "family": "W",
+      "op": "whistle_attention",
+      "origin": {
+       "end_seq": 342,
+       "fact": "sound_high",
+       "notice_seq": 341,
+       "root_seq": 340
+      }
+     }
+    ]
+   },
+   "prior_coverage": {
+    "omitted": 0,
+    "shown": 1
+   },
+   "prior_whispers": [
+    {
+     "accepted_seq": 6,
+     "accepted_turn": 1,
+     "active_at_snapshot": false,
+     "duration": 0,
+     "expires_turn": 0,
+     "expiry_observed": false,
+     "id": 1,
+     "mutation": "ambient"
+    }
+   ],
+   "summary": {
+    "observed": {
+     "budget": 1,
+     "insight": 0,
+     "reserved": 0,
+     "safe": 2,
+     "sanity": 100,
+     "spent": 2,
+     "turn": 1717,
+     "vitals": {
+      "hp": 0,
+      "hp_max": 13,
+      "power": 11,
+      "power_max": 11
+     }
+    },
+    "recent": [
+     {
+      "event": "eat",
+      "phase": "attempt",
+      "safe": 2,
+      "turn": 1536,
+      "vitals": {
+       "hp": 11,
+       "hp_max": 13,
+       "power": 11,
+       "power_max": 11
+      }
+     },
+     {
+      "event": "apply",
+      "phase": "attempt",
+      "safe": 2,
+      "turn": 1543,
+      "vitals": {
+       "hp": 11,
+       "hp_max": 13,
+       "power": 11,
+       "power_max": 11
+      }
+     },
+     {
+      "event": "backtrack",
+      "phase": "result",
+      "safe": 2,
+      "turn": 1548,
+      "vitals": {
+       "hp": 11,
+       "hp_max": 13,
+       "power": 11,
+       "power_max": 11
+      }
+     },
+     {
+      "event": "apply",
+      "phase": "attempt",
+      "safe": 2,
+      "turn": 1554,
+      "vitals": {
+       "hp": 11,
+       "hp_max": 13,
+       "power": 11,
+       "power_max": 11
+      }
+     },
+     {
+      "event": "backtrack",
+      "phase": "result",
+      "safe": 2,
+      "turn": 1590,
+      "vitals": {
+       "hp": 11,
+       "hp_max": 13,
+       "power": 11,
+       "power_max": 11
+      }
+     },
+     {
+      "event": "backtrack",
+      "phase": "result",
+      "safe": 2,
+      "turn": 1591,
+      "vitals": {
+       "hp": 11,
+       "hp_max": 13,
+       "power": 11,
+       "power_max": 11
+      }
+     },
+     {
+      "event": "backtrack",
+      "phase": "result",
+      "safe": 2,
+      "turn": 1592,
+      "vitals": {
+       "hp": 11,
+       "hp_max": 13,
+       "power": 11,
+       "power_max": 11
+      }
+     },
+     {
+      "event": "backtrack",
+      "phase": "result",
+      "safe": 2,
+      "turn": 1596,
+      "vitals": {
+       "hp": 11,
+       "hp_max": 13,
+       "power": 11,
+       "power_max": 11
+      }
+     },
+     {
+      "event": "backtrack",
+      "phase": "result",
+      "safe": 2,
+      "turn": 1597,
+      "vitals": {
+       "hp": 11,
+       "hp_max": 13,
+       "power": 11,
+       "power_max": 11
+      }
+     },
+     {
+      "event": "backtrack",
+      "phase": "result",
+      "safe": 2,
+      "turn": 1607,
+      "vitals": {
+       "hp": 11,
+       "hp_max": 13,
+       "power": 11,
+       "power_max": 11
+      }
+     },
+     {
+      "event": "backtrack",
+      "phase": "result",
+      "safe": 2,
+      "turn": 1647,
+      "vitals": {
+       "hp": 12,
+       "hp_max": 13,
+       "power": 11,
+       "power_max": 11
+      }
+     },
+     {
+      "event": "death",
+      "phase": "result",
+      "safe": 2,
+      "turn": 1717,
+      "vitals": {
+       "hp": 0,
+       "hp_max": 13,
+       "power": 11,
+       "power_max": 11
+      }
+     }
+    ]
+   }
+  },
+  "reveal": [
+   "The Crawling Chaos remembers.",
+   "  Turn 1, as you arrived on a level: whisper 1 (ambient) was admitted.",
+   "    Telegraph: \"A distant whisper brushes against your thoughts.\"",
+   "    Effect: an omen only; no rule changed.",
+   "    Delivered: yes, \"The shadows lean closer.\" was shown with the telegraph.",
+   "    Spent at once.",
+   "  Turn 7, after you doubled back: a haunting was admitted.",
+   "    Telegraph: \"Something has learned the rhythm of your footsteps.\"",
+   "    Effect: an echo hound was set to follow your trail.",
+   "    Delivered: yes, you saw it follow your trail 2 times.",
+   "    Ended: its hunt ended on turn 67.",
+   "  Admitted 2, delivered 2; cruelty spent 2.",
+   "  1 other candidate was refused; none took effect.",
+   ""
+  ],
+  "role": "Bard",
+  "source": "sweep:bard-default-path-00023/events.jsonl"
+ },
+ "bard-default-path-00041": {
+  "events_sha256": "c1a21d5289f4927098a16f1fbeea69bfa620b08515a68bc4c4d2dde93ab44b53",
+  "public_context": {
+   "episodes": {
+    "coverage": {
+     "blocked": {
+      "count": 0,
+      "saturated": false
+     },
+     "completed_without_notice": {
+      "count": 0,
+      "saturated": false
+     },
+     "incomplete": {
+      "count": 0,
+      "saturated": false
+     },
+     "omitted_roots": {
+      "count": 0,
+      "saturated": false
+     }
+    },
+    "episode_context_v": 1,
+    "episodes": [
+     {
+      "count": 1,
+      "evidence": [
+       {
+        "end_seq": 321,
+        "fact": "attention",
+        "notice_seq": 320,
+        "root_seq": 319
+       }
+      ],
+      "operation": "whistle_attention",
+      "saturated": false
+     },
+     {
+      "count": 3,
+      "evidence": [
+       {
+        "end_seq": 235,
+        "fact": "sound_high",
+        "notice_seq": 234,
+        "root_seq": 233
+       },
+       {
+        "end_seq": 243,
+        "fact": "sound_high",
+        "notice_seq": 242,
+        "root_seq": 241
+       },
+       {
+        "end_seq": 379,
+        "fact": "sound_high",
+        "notice_seq": 378,
+        "root_seq": 377
+       }
+      ],
+      "operation": "whistling",
+      "saturated": true
+     }
+    ],
+    "lookback_roots": 32,
+    "scope": "selected_whistle_fountain"
+   },
+   "history_context_v": 1,
+   "next_use": {
+    "families": [
+     "W"
+    ],
+    "menu": [
+     {
+      "family": "W",
+      "op": "quiet",
+      "origin": {
+       "end_seq": 379,
+       "fact": "sound_high",
+       "notice_seq": 378,
+       "root_seq": 377
+      }
+     },
+     {
+      "family": "W",
+      "op": "whistle_attention",
+      "origin": {
+       "end_seq": 379,
+       "fact": "sound_high",
+       "notice_seq": 378,
+       "root_seq": 377
+      }
+     }
+    ]
+   },
+   "prior_coverage": {
+    "omitted": 0,
+    "shown": 1
+   },
+   "prior_whispers": [
+    {
+     "accepted_seq": 6,
+     "accepted_turn": 1,
+     "active_at_snapshot": false,
+     "duration": 0,
+     "expires_turn": 0,
+     "expiry_observed": false,
+     "id": 1,
+     "mutation": "ambient"
+    }
+   ],
+   "summary": {
+    "observed": {
+     "budget": 0,
+     "insight": 0,
+     "reserved": 0,
+     "safe": 2,
+     "sanity": 100,
+     "spent": 3,
+     "turn": 2003,
+     "vitals": {
+      "hp": 13,
+      "hp_max": 13,
+      "power": 11,
+      "power_max": 11
+     }
+    },
+    "recent": [
+     {
+      "event": "backtrack",
+      "phase": "result",
+      "safe": 2,
+      "turn": 1702,
+      "vitals": {
+       "hp": 13,
+       "hp_max": 13,
+       "power": 11,
+       "power_max": 11
+      }
+     },
+     {
+      "event": "eat",
+      "phase": "attempt",
+      "safe": 2,
+      "turn": 1718,
+      "vitals": {
+       "hp": 13,
+       "hp_max": 13,
+       "power": 11,
+       "power_max": 11
+      }
+     },
+     {
+      "event": "apply",
+      "phase": "attempt",
+      "safe": 2,
+      "turn": 1733,
+      "vitals": {
+       "hp": 13,
+       "hp_max": 13,
+       "power": 11,
+       "power_max": 11
+      }
+     },
+     {
+      "event": "apply",
+      "phase": "attempt",
+      "safe": 2,
+      "turn": 1750,
+      "vitals": {
+       "hp": 13,
+       "hp_max": 13,
+       "power": 11,
+       "power_max": 11
+      }
+     },
+     {
+      "event": "apply",
+      "phase": "attempt",
+      "safe": 2,
+      "turn": 1752,
+      "vitals": {
+       "hp": 13,
+       "hp_max": 13,
+       "power": 11,
+       "power_max": 11
+      }
+     },
+     {
+      "event": "apply",
+      "phase": "attempt",
+      "safe": 2,
+      "turn": 1752,
+      "vitals": {
+       "hp": 13,
+       "hp_max": 13,
+       "power": 11,
+       "power_max": 11
+      }
+     },
+     {
+      "event": "backtrack",
+      "phase": "result",
+      "safe": 2,
+      "turn": 1754,
+      "vitals": {
+       "hp": 13,
+       "hp_max": 13,
+       "power": 11,
+       "power_max": 11
+      }
+     },
+     {
+      "event": "backtrack",
+      "phase": "result",
+      "safe": 2,
+      "turn": 1756,
+      "vitals": {
+       "hp": 13,
+       "hp_max": 13,
+       "power": 11,
+       "power_max": 11
+      }
+     },
+     {
+      "event": "backtrack",
+      "phase": "result",
+      "safe": 2,
+      "turn": 1787,
+      "vitals": {
+       "hp": 13,
+       "hp_max": 13,
+       "power": 11,
+       "power_max": 11
+      }
+     },
+     {
+      "event": "apply",
+      "phase": "attempt",
+      "safe": 2,
+      "turn": 1854,
+      "vitals": {
+       "hp": 13,
+       "hp_max": 13,
+       "power": 11,
+       "power_max": 11
+      }
+     },
+     {
+      "event": "eat",
+      "phase": "attempt",
+      "safe": 2,
+      "turn": 1929,
+      "vitals": {
+       "hp": 13,
+       "hp_max": 13,
+       "power": 11,
+       "power_max": 11
+      }
+     },
+     {
+      "event": "death",
+      "phase": "result",
+      "safe": 2,
+      "turn": 2003,
+      "vitals": {
+       "hp": 13,
+       "hp_max": 13,
+       "power": 11,
+       "power_max": 11
+      }
+     }
+    ]
+   }
+  },
+  "reveal": [
+   "The Crawling Chaos remembers.",
+   "  Turn 1, as you arrived on a level: whisper 1 (ambient) was admitted.",
+   "    Telegraph: \"A distant whisper brushes against your thoughts.\"",
+   "    Effect: an omen only; no rule changed.",
+   "    Delivered: yes, \"The shadows lean closer.\" was shown with the telegraph.",
+   "    Spent at once.",
+   "  Turn 6, after you doubled back: a haunting was admitted.",
+   "    Telegraph: \"Something has learned the rhythm of your footsteps.\"",
+   "    Effect: an echo hound was set to follow your trail.",
+   "    Delivered: yes, you saw it follow your trail 3 times.",
+   "    Ended: its hunt ended on turn 66.",
+   "  Turn 1018: a next-use program was admitted.",
+   "    Origin: you whistled on DL1 on turn 950.",
+   "    Rebound: first written about an earlier one (turn 43).",
+   "    Telegraph: \"For a while, your whistles may carry farther than they should.\"",
+   "    Effect: for a while, any whistle could answer it, at most 2 times.",
+   "    Delivered: yes, 1 time; you saw your companion answer the whistle.",
+   "    Ended: its uses ran out or it expired before the game ended.",
+   "  Admitted 3, delivered 3; cruelty spent 3.",
+   ""
+  ],
+  "role": "Bard",
+  "source": "sweep:bard-default-path-00041/events.jsonl"
+ },
+ "bard-inherited-00007": {
+  "events_sha256": "07eed45a3facc5cfd3059563386d639f1bbf897c214615c2a9f324d39a8c692b",
+  "public_context": {
+   "episodes": {
+    "coverage": {
+     "blocked": {
+      "count": 0,
+      "saturated": false
+     },
+     "completed_without_notice": {
+      "count": 0,
+      "saturated": false
+     },
+     "incomplete": {
+      "count": 0,
+      "saturated": false
+     },
+     "omitted_roots": {
+      "count": 0,
+      "saturated": false
+     }
+    },
+    "episode_context_v": 1,
+    "episodes": [
+     {
+      "count": 3,
+      "evidence": [
+       {
+        "end_seq": 70,
+        "fact": "sound_high",
+        "notice_seq": 69,
+        "root_seq": 68
+       },
+       {
+        "end_seq": 75,
+        "fact": "sound_high",
+        "notice_seq": 74,
+        "root_seq": 73
+       },
+       {
+        "end_seq": 135,
+        "fact": "sound_high",
+        "notice_seq": 134,
+        "root_seq": 133
+       }
+      ],
+      "operation": "whistling",
+      "saturated": true
+     }
+    ],
+    "lookback_roots": 32,
+    "scope": "selected_whistle_fountain"
+   },
+   "history_context_v": 1,
+   "next_use": {
+    "families": [
+     "W"
+    ],
+    "menu": [
+     {
+      "family": "W",
+      "op": "quiet",
+      "origin": {
+       "end_seq": 135,
+       "fact": "sound_high",
+       "notice_seq": 134,
+       "root_seq": 133
+      }
+     },
+     {
+      "family": "W",
+      "op": "whistle_attention",
+      "origin": {
+       "end_seq": 135,
+       "fact": "sound_high",
+       "notice_seq": 134,
+       "root_seq": 133
+      }
+     }
+    ]
+   },
+   "prior_coverage": {
+    "omitted": 0,
+    "shown": 1
+   },
+   "prior_whispers": [
+    {
+     "accepted_seq": 6,
+     "accepted_turn": 1,
+     "active_at_snapshot": false,
+     "duration": 0,
+     "expires_turn": 0,
+     "expiry_observed": false,
+     "id": 1,
+     "mutation": "ambient"
+    }
+   ],
+   "summary": {
+    "observed": {
+     "budget": 1,
+     "insight": 0,
+     "reserved": 0,
+     "safe": 3,
+     "sanity": 99,
+     "spent": 1,
+     "turn": 2014,
+     "vitals": {
+      "hp": 6,
+      "hp_max": 12,
+      "power": 8,
+      "power_max": 8
+     }
+    },
+    "recent": [
+     {
+      "event": "kill",
+      "phase": "attempt",
+      "safe": 3,
+      "turn": 1591,
+      "vitals": {
+       "hp": 12,
+       "hp_max": 12,
+       "power": 8,
+       "power_max": 8
+      }
+     },
+     {
+      "event": "backtrack",
+      "phase": "result",
+      "safe": 3,
+      "turn": 1593,
+      "vitals": {
+       "hp": 12,
+       "hp_max": 12,
+       "power": 8,
+       "power_max": 8
+      }
+     },
+     {
+      "event": "backtrack",
+      "phase": "result",
+      "safe": 3,
+      "turn": 1594,
+      "vitals": {
+       "hp": 12,
+       "hp_max": 12,
+       "power": 8,
+       "power_max": 8
+      }
+     },
+     {
+      "event": "backtrack",
+      "phase": "result",
+      "safe": 3,
+      "turn": 1614,
+      "vitals": {
+       "hp": 12,
+       "hp_max": 12,
+       "power": 8,
+       "power_max": 8
+      }
+     },
+     {
+      "event": "kill",
+      "phase": "attempt",
+      "safe": 3,
+      "turn": 1814,
+      "vitals": {
+       "hp": 7,
+       "hp_max": 12,
+       "power": 8,
+       "power_max": 8
+      }
+     },
+     {
+      "event": "apply",
+      "phase": "attempt",
+      "safe": 3,
+      "turn": 1823,
+      "vitals": {
+       "hp": 7,
+       "hp_max": 12,
+       "power": 8,
+       "power_max": 8
+      }
+     },
+     {
+      "event": "apply",
+      "phase": "attempt",
+      "safe": 3,
+      "turn": 1823,
+      "vitals": {
+       "hp": 7,
+       "hp_max": 12,
+       "power": 8,
+       "power_max": 8
+      }
+     },
+     {
+      "event": "apply",
+      "phase": "attempt",
+      "safe": 3,
+      "turn": 1824,
+      "vitals": {
+       "hp": 7,
+       "hp_max": 12,
+       "power": 8,
+       "power_max": 8
+      }
+     },
+     {
+      "event": "backtrack",
+      "phase": "result",
+      "safe": 3,
+      "turn": 1936,
+      "vitals": {
+       "hp": 8,
+       "hp_max": 12,
+       "power": 8,
+       "power_max": 8
+      }
+     },
+     {
+      "event": "backtrack",
+      "phase": "result",
+      "safe": 3,
+      "turn": 1984,
+      "vitals": {
+       "hp": 6,
+       "hp_max": 12,
+       "power": 8,
+       "power_max": 8
+      }
+     },
+     {
+      "event": "eat",
+      "phase": "attempt",
+      "safe": 3,
+      "turn": 1994,
+      "vitals": {
+       "hp": 6,
+       "hp_max": 12,
+       "power": 8,
+       "power_max": 8
+      }
+     },
+     {
+      "event": "death",
+      "phase": "result",
+      "safe": 3,
+      "turn": 2014,
+      "vitals": {
+       "hp": 6,
+       "hp_max": 12,
+       "power": 8,
+       "power_max": 8
+      }
+     }
+    ]
+   }
+  },
+  "reveal": [
+   "The Crawling Chaos remembers.",
+   "  Turn 1, as you arrived on a level: whisper 1 (ambient) was admitted.",
+   "    Telegraph: \"A distant whisper brushes against your thoughts.\"",
+   "    Effect: an omen only; no rule changed.",
+   "    Delivered: yes, \"The shadows lean closer.\" was shown with the telegraph.",
+   "    Spent at once.",
+   "  Turn 1311: a next-use program was admitted.",
+   "    Origin: you whistled on DL1 on turn 1148.",
+   "    Rebound: first written about an earlier one (turn 17).",
+   "    Telegraph: \"For a while, your whistles may carry farther than they should.\"",
+   "    Effect: for a while, any whistle could answer it, at most 2 times.",
+   "    Delivered: no; no manifestation reached you.",
+   "    Ended: its uses ran out or it expired before the game ended.",
+   "  Admitted 2, delivered 1; cruelty spent 1.",
+   ""
+  ],
+  "role": "Bard",
+  "source": "sweep:bard-inherited-00007/events.jsonl"
+ },
+ "bard-inherited-00023": {
+  "events_sha256": "0f9d8da52a9f8fc947690d305188d54cb4ff1e1a02dc9cd4cb13cb1132bacfb4",
+  "public_context": {
+   "episodes": {
+    "coverage": {
+     "blocked": {
+      "count": 0,
+      "saturated": false
+     },
+     "completed_without_notice": {
+      "count": 0,
+      "saturated": false
+     },
+     "incomplete": {
+      "count": 0,
+      "saturated": false
+     },
+     "omitted_roots": {
+      "count": 0,
+      "saturated": false
+     }
+    },
+    "episode_context_v": 1,
+    "episodes": [
+     {
+      "count": 3,
+      "evidence": [
+       {
+        "end_seq": 22,
+        "fact": "sound_high",
+        "notice_seq": 21,
+        "root_seq": 20
+       },
+       {
+        "end_seq": 38,
+        "fact": "sound_high",
+        "notice_seq": 37,
+        "root_seq": 36
+       },
+       {
+        "end_seq": 46,
+        "fact": "sound_high",
+        "notice_seq": 45,
+        "root_seq": 44
+       }
+      ],
+      "operation": "whistling",
+      "saturated": true
+     }
+    ],
+    "lookback_roots": 32,
+    "scope": "selected_whistle_fountain"
+   },
+   "history_context_v": 1,
+   "next_use": {
+    "families": [
+     "W"
+    ],
+    "menu": [
+     {
+      "family": "W",
+      "op": "quiet",
+      "origin": {
+       "end_seq": 46,
+       "fact": "sound_high",
+       "notice_seq": 45,
+       "root_seq": 44
+      }
+     },
+     {
+      "family": "W",
+      "op": "whistle_attention",
+      "origin": {
+       "end_seq": 46,
+       "fact": "sound_high",
+       "notice_seq": 45,
+       "root_seq": 44
+      }
+     }
+    ]
+   },
+   "prior_coverage": {
+    "omitted": 0,
+    "shown": 1
+   },
+   "prior_whispers": [
+    {
+     "accepted_seq": 6,
+     "accepted_turn": 1,
+     "active_at_snapshot": false,
+     "duration": 0,
+     "expires_turn": 0,
+     "expiry_observed": false,
+     "id": 1,
+     "mutation": "ambient"
+    }
+   ],
+   "summary": {
+    "observed": {
+     "budget": 2,
+     "insight": 0,
+     "reserved": 0,
+     "safe": 2,
+     "sanity": 100,
+     "spent": 0,
+     "turn": 219,
+     "vitals": {
+      "hp": 0,
+      "hp_max": 17,
+      "power": 10,
+      "power_max": 10
+     }
+    },
+    "recent": [
+     {
+      "event": "backtrack",
+      "phase": "result",
+      "safe": 1,
+      "turn": 98,
+      "vitals": {
+       "hp": 13,
+       "hp_max": 13,
+       "power": 10,
+       "power_max": 10
+      }
+     },
+     {
+      "event": "backtrack",
+      "phase": "result",
+      "safe": 1,
+      "turn": 105,
+      "vitals": {
+       "hp": 13,
+       "hp_max": 13,
+       "power": 10,
+       "power_max": 10
+      }
+     },
+     {
+      "event": "backtrack",
+      "phase": "result",
+      "safe": 1,
+      "turn": 107,
+      "vitals": {
+       "hp": 13,
+       "hp_max": 13,
+       "power": 10,
+       "power_max": 10
+      }
+     },
+     {
+      "event": "backtrack",
+      "phase": "result",
+      "safe": 1,
+      "turn": 118,
+      "vitals": {
+       "hp": 13,
+       "hp_max": 13,
+       "power": 10,
+       "power_max": 10
+      }
+     },
+     {
+      "event": "backtrack",
+      "phase": "result",
+      "safe": 1,
+      "turn": 119,
+      "vitals": {
+       "hp": 13,
+       "hp_max": 13,
+       "power": 10,
+       "power_max": 10
+      }
+     },
+     {
+      "event": "backtrack",
+      "phase": "result",
+      "safe": 1,
+      "turn": 122,
+      "vitals": {
+       "hp": 13,
+       "hp_max": 13,
+       "power": 10,
+       "power_max": 10
+      }
+     },
+     {
+      "event": "backtrack",
+      "phase": "result",
+      "safe": 1,
+      "turn": 124,
+      "vitals": {
+       "hp": 10,
+       "hp_max": 13,
+       "power": 10,
+       "power_max": 10
+      }
+     },
+     {
+      "event": "pray",
+      "phase": "attempt",
+      "prayer": "confirmed",
+      "safe": 1,
+      "turn": 127,
+      "vitals": {
+       "hp": 6,
+       "hp_max": 13,
+       "power": 10,
+       "power_max": 10
+      }
+     },
+     {
+      "event": "safe_point",
+      "phase": "result",
+      "safe": 2,
+      "turn": 127,
+      "vitals": {
+       "hp": 6,
+       "hp_max": 13,
+       "power": 10,
+       "power_max": 10
+      }
+     },
+     {
+      "event": "ack",
+      "phase": "result",
+      "safe": 2,
+      "turn": 127,
+      "vitals": {
+       "hp": 6,
+       "hp_max": 13,
+       "power": 10,
+       "power_max": 10
+      }
+     },
+     {
+      "event": "backtrack",
+      "phase": "result",
+      "safe": 2,
+      "turn": 135,
+      "vitals": {
+       "hp": 6,
+       "hp_max": 17,
+       "power": 10,
+       "power_max": 10
+      }
+     },
+     {
+      "event": "death",
+      "phase": "result",
+      "safe": 2,
+      "turn": 219,
+      "vitals": {
+       "hp": 0,
+       "hp_max": 17,
+       "power": 10,
+       "power_max": 10
+      }
+     }
+    ]
+   }
+  },
+  "reveal": [
+   "The Crawling Chaos remembers.",
+   "  Turn 1, as you arrived on a level: whisper 1 (ambient) was admitted.",
+   "    Telegraph: \"A distant whisper brushes against your thoughts.\"",
+   "    Effect: an omen only; no rule changed.",
+   "    Delivered: yes, \"The shadows lean closer.\" was shown with the telegraph.",
+   "    Spent at once.",
+   "  Admitted 1, delivered 1; cruelty spent 0.",
+   "  1 other candidate was refused; none took effect.",
+   ""
+  ],
+  "role": "Bard",
+  "source": "sweep:bard-inherited-00023/events.jsonl"
+ },
+ "bard-inherited-00041": {
+  "events_sha256": "31353fe4b4e187fb2d540df94688abdb4514c362da68a5084e156d650e95f27c",
+  "public_context": {
+   "episodes": {
+    "coverage": {
+     "blocked": {
+      "count": 0,
+      "saturated": false
+     },
+     "completed_without_notice": {
+      "count": 0,
+      "saturated": false
+     },
+     "incomplete": {
+      "count": 0,
+      "saturated": false
+     },
+     "omitted_roots": {
+      "count": 0,
+      "saturated": false
+     }
+    },
+    "episode_context_v": 1,
+    "episodes": [],
+    "lookback_roots": 32,
+    "scope": "selected_whistle_fountain"
+   },
+   "history_context_v": 1,
+   "next_use": {
+    "families": [],
+    "menu": []
+   },
+   "prior_coverage": {
+    "omitted": 0,
+    "shown": 2
+   },
+   "prior_whispers": [
+    {
+     "accepted_seq": 6,
+     "accepted_turn": 1,
+     "active_at_snapshot": false,
+     "duration": 0,
+     "expires_turn": 0,
+     "expiry_observed": false,
+     "id": 1,
+     "mutation": "ambient"
+    },
+    {
+     "accepted_seq": 65,
+     "accepted_turn": 315,
+     "active_at_snapshot": false,
+     "duration": 192,
+     "expires_turn": 507,
+     "expiry_observed": true,
+     "id": 2,
+     "mutation": "door_reluctance"
+    }
+   ],
+   "summary": {
+    "observed": {
+     "budget": 1,
+     "insight": 0,
+     "reserved": 0,
+     "safe": 3,
+     "sanity": 100,
+     "spent": 1,
+     "turn": 515,
+     "vitals": {
+      "hp": 0,
+      "hp_max": 17,
+      "power": 9,
+      "power_max": 9
+     }
+    },
+    "recent": [
+     {
+      "event": "safe_point",
+      "phase": "result",
+      "safe": 3,
+      "turn": 315,
+      "vitals": {
+       "hp": 6,
+       "hp_max": 13,
+       "power": 9,
+       "power_max": 9
+      }
+     },
+     {
+      "event": "telegraph",
+      "phase": "result",
+      "safe": 3,
+      "turn": 315,
+      "vitals": {
+       "hp": 6,
+       "hp_max": 13,
+       "power": 9,
+       "power_max": 9
+      }
+     },
+     {
+      "event": "ack",
+      "phase": "result",
+      "safe": 3,
+      "turn": 315,
+      "vitals": {
+       "hp": 6,
+       "hp_max": 13,
+       "power": 9,
+       "power_max": 9
+      }
+     },
+     {
+      "event": "kill",
+      "phase": "attempt",
+      "safe": 3,
+      "turn": 332,
+      "vitals": {
+       "hp": 17,
+       "hp_max": 17,
+       "power": 9,
+       "power_max": 9
+      }
+     },
+     {
+      "event": "backtrack",
+      "phase": "result",
+      "safe": 3,
+      "turn": 338,
+      "vitals": {
+       "hp": 17,
+       "hp_max": 17,
+       "power": 9,
+       "power_max": 9
+      }
+     },
+     {
+      "event": "backtrack",
+      "phase": "result",
+      "safe": 3,
+      "turn": 346,
+      "vitals": {
+       "hp": 17,
+       "hp_max": 17,
+       "power": 9,
+       "power_max": 9
+      }
+     },
+     {
+      "event": "backtrack",
+      "phase": "result",
+      "safe": 3,
+      "turn": 348,
+      "vitals": {
+       "hp": 17,
+       "hp_max": 17,
+       "power": 9,
+       "power_max": 9
+      }
+     },
+     {
+      "event": "backtrack",
+      "phase": "result",
+      "safe": 3,
+      "turn": 411,
+      "vitals": {
+       "hp": 17,
+       "hp_max": 17,
+       "power": 9,
+       "power_max": 9
+      }
+     },
+     {
+      "event": "backtrack",
+      "phase": "result",
+      "safe": 3,
+      "turn": 412,
+      "vitals": {
+       "hp": 17,
+       "hp_max": 17,
+       "power": 9,
+       "power_max": 9
+      }
+     },
+     {
+      "event": "backtrack",
+      "phase": "result",
+      "safe": 3,
+      "turn": 413,
+      "vitals": {
+       "hp": 17,
+       "hp_max": 17,
+       "power": 9,
+       "power_max": 9
+      }
+     },
+     {
+      "event": "expiry",
+      "phase": "result",
+      "safe": 3,
+      "turn": 507,
+      "vitals": {
+       "hp": 5,
+       "hp_max": 17,
+       "power": 9,
+       "power_max": 9
+      }
+     },
+     {
+      "event": "death",
+      "phase": "result",
+      "safe": 3,
+      "turn": 515,
+      "vitals": {
+       "hp": 0,
+       "hp_max": 17,
+       "power": 9,
+       "power_max": 9
+      }
+     }
+    ]
+   }
+  },
+  "reveal": [
+   "The Crawling Chaos remembers.",
+   "  Turn 1, as you arrived on a level: whisper 1 (ambient) was admitted.",
+   "    Telegraph: \"A distant whisper brushes against your thoughts.\"",
+   "    Effect: an omen only; no rule changed.",
+   "    Delivered: yes, \"The shadows lean closer.\" was shown with the telegraph.",
+   "    Spent at once.",
+   "  Turn 315, as you prayed: whisper 2 (door_reluctance) was admitted.",
+   "    Telegraph: \"The doors of this place seem to lean against you.\"",
+   "    Effect: closed doors resisted you more often, for 192 turns.",
+   "    Delivered: no; a rule change has no separate manifestation.",
+   "    Ended: expired on turn 507.",
+   "  Admitted 2, delivered 1; cruelty spent 1.",
+   ""
+  ],
+  "role": "Bard",
+  "source": "sweep:bard-inherited-00041/events.jsonl"
+ },
+ "broad-restore-capture": {
+  "events_sha256": "ea86b0cdfb488e7aea273bec8d2d562ac3af429d33f38ae0f4c6c4581a42461a",
+  "public_context": {
+   "episodes": {
+    "coverage": {
+     "blocked": {
+      "count": 0,
+      "saturated": false
+     },
+     "completed_without_notice": {
+      "count": 0,
+      "saturated": false
+     },
+     "incomplete": {
+      "count": 0,
+      "saturated": false
+     },
+     "omitted_roots": {
+      "count": 0,
+      "saturated": false
+     }
+    },
+    "episode_context_v": 1,
+    "episodes": [
+     {
+      "count": 3,
+      "evidence": [
+       {
+        "end_seq": 235,
+        "fact": "sound_high",
+        "notice_seq": 234,
+        "root_seq": 233
+       },
+       {
+        "end_seq": 252,
+        "fact": "sound_high",
+        "notice_seq": 251,
+        "root_seq": 250
+       },
+       {
+        "end_seq": 284,
+        "fact": "sound_high",
+        "notice_seq": 283,
+        "root_seq": 282
+       }
+      ],
+      "operation": "whistling",
+      "saturated": true
+     }
+    ],
+    "lookback_roots": 32,
+    "scope": "selected_whistle_fountain"
+   },
+   "history_context_v": 1,
+   "next_use": {
+    "families": [
+     "W"
+    ],
+    "menu": [
+     {
+      "family": "W",
+      "op": "quiet",
+      "origin": {
+       "end_seq": 284,
+       "fact": "sound_high",
+       "notice_seq": 283,
+       "root_seq": 282
+      }
+     },
+     {
+      "family": "W",
+      "op": "whistle_attention",
+      "origin": {
+       "end_seq": 284,
+       "fact": "sound_high",
+       "notice_seq": 283,
+       "root_seq": 282
+      }
+     }
+    ]
+   },
+   "prior_coverage": {
+    "omitted": 0,
+    "shown": 2
+   },
+   "prior_whispers": [
+    {
+     "accepted_seq": 6,
+     "accepted_turn": 1,
+     "active_at_snapshot": false,
+     "duration": 0,
+     "expires_turn": 0,
+     "expiry_observed": false,
+     "id": 1,
+     "mutation": "ambient"
+    },
+    {
+     "accepted_seq": 228,
+     "accepted_turn": 1032,
+     "active_at_snapshot": false,
+     "duration": 62,
+     "expires_turn": 1094,
+     "expiry_observed": true,
+     "id": 2,
+     "mutation": "door_reluctance"
+    }
+   ],
+   "summary": {
+    "observed": {
+     "budget": 0,
+     "insight": 0,
+     "reserved": 0,
+     "safe": 5,
+     "sanity": 100,
+     "spent": 4,
+     "turn": 2003,
+     "vitals": {
+      "hp": 25,
+      "hp_max": 25,
+      "power": 13,
+      "power_max": 13
+     }
+    },
+    "recent": [
+     {
+      "event": "backtrack",
+      "phase": "result",
+      "safe": 5,
+      "turn": 1363,
+      "vitals": {
+       "hp": 17,
+       "hp_max": 17,
+       "power": 7,
+       "power_max": 7
+      }
+     },
+     {
+      "event": "backtrack",
+      "phase": "result",
+      "safe": 5,
+      "turn": 1381,
+      "vitals": {
+       "hp": 17,
+       "hp_max": 17,
+       "power": 7,
+       "power_max": 7
+      }
+     },
+     {
+      "event": "backtrack",
+      "phase": "result",
+      "safe": 5,
+      "turn": 1382,
+      "vitals": {
+       "hp": 17,
+       "hp_max": 17,
+       "power": 7,
+       "power_max": 7
+      }
+     },
+     {
+      "event": "backtrack",
+      "phase": "result",
+      "safe": 5,
+      "turn": 1393,
+      "vitals": {
+       "hp": 17,
+       "hp_max": 17,
+       "power": 7,
+       "power_max": 7
+      }
+     },
+     {
+      "event": "backtrack",
+      "phase": "result",
+      "safe": 5,
+      "turn": 1394,
+      "vitals": {
+       "hp": 17,
+       "hp_max": 17,
+       "power": 7,
+       "power_max": 7
+      }
+     },
+     {
+      "event": "backtrack",
+      "phase": "result",
+      "safe": 5,
+      "turn": 1395,
+      "vitals": {
+       "hp": 17,
+       "hp_max": 17,
+       "power": 7,
+       "power_max": 7
+      }
+     },
+     {
+      "event": "kill",
+      "phase": "attempt",
+      "safe": 5,
+      "turn": 1502,
+      "vitals": {
+       "hp": 12,
+       "hp_max": 17,
+       "power": 7,
+       "power_max": 7
+      }
+     },
+     {
+      "event": "apply",
+      "phase": "attempt",
+      "safe": 5,
+      "turn": 1663,
+      "vitals": {
+       "hp": 25,
+       "hp_max": 25,
+       "power": 13,
+       "power_max": 13
+      }
+     },
+     {
+      "event": "apply",
+      "phase": "attempt",
+      "safe": 5,
+      "turn": 1718,
+      "vitals": {
+       "hp": 25,
+       "hp_max": 25,
+       "power": 13,
+       "power_max": 13
+      }
+     },
+     {
+      "event": "apply",
+      "phase": "attempt",
+      "safe": 5,
+      "turn": 1743,
+      "vitals": {
+       "hp": 25,
+       "hp_max": 25,
+       "power": 13,
+       "power_max": 13
+      }
+     },
+     {
+      "event": "apply",
+      "phase": "attempt",
+      "safe": 5,
+      "turn": 1898,
+      "vitals": {
+       "hp": 25,
+       "hp_max": 25,
+       "power": 13,
+       "power_max": 13
+      }
+     },
+     {
+      "event": "death",
+      "phase": "result",
+      "safe": 5,
+      "turn": 2003,
+      "vitals": {
+       "hp": 25,
+       "hp_max": 25,
+       "power": 13,
+       "power_max": 13
+      }
+     }
+    ]
+   }
+  },
+  "reveal": [
+   "The Crawling Chaos remembers.",
+   "  Turn 1, as you arrived on a level: whisper 1 (ambient) was admitted.",
+   "    Telegraph: \"A distant whisper brushes against your thoughts.\"",
+   "    Effect: an omen only; no rule changed.",
+   "    Delivered: yes, \"The shadows lean closer.\" was shown with the telegraph.",
+   "    Spent at once.",
+   "  Turn 17, after you doubled back: a haunting was admitted.",
+   "    Telegraph: \"Something has learned the rhythm of your footsteps.\"",
+   "    Effect: an echo hound was set to follow your trail.",
+   "    Delivered: yes, you saw it follow your trail 1 time.",
+   "    Ended: its hunt ended on turn 77.",
+   "  Motif: the whistle, 1 program, felt 0 times.",
+   "  Turn 925: next-use program 2 was admitted.",
+   "    Origin: you whistled on DL2 on turn 850.",
+   "    Rebound: first written about an earlier one (turn 393).",
+   "    Telegraph: \"For a while, your whistles may carry farther than they should.\"",
+   "    Effect: for a while, any whistle could answer it, at most 2 times.",
+   "    Delivered: no; no manifestation reached you.",
+   "    Ended: its uses ran out or it expired before the game ended.",
+   "  Turn 1032, as you arrived on a level: whisper 2 (door_reluctance) was admitted.",
+   "    Telegraph: \"The doors of this place seem to lean against you.\"",
+   "    Effect: closed doors resisted you more often, for 62 turns.",
+   "    Delivered: no; a rule change has no separate manifestation.",
+   "    Ended: expired on turn 1094.",
+   "  Admitted 4, delivered 2; cruelty spent 4.",
+   "  2 other candidates were refused; none took effect.",
+   ""
+  ],
+  "role": null,
+  "source": "docs/evidence/broad-restore-level/capture/run/events.jsonl"
+ },
+ "door-reluctance-capture": {
+  "events_sha256": "7d7bcc233fda2b092b0fe4ac2944293acd494e4bc0aca7fccbc5b7241746ffd6",
+  "public_context": {
+   "episodes": {
+    "coverage": {
+     "blocked": {
+      "count": 0,
+      "saturated": false
+     },
+     "completed_without_notice": {
+      "count": 0,
+      "saturated": false
+     },
+     "incomplete": {
+      "count": 0,
+      "saturated": false
+     },
+     "omitted_roots": {
+      "count": 0,
+      "saturated": false
+     }
+    },
+    "episode_context_v": 1,
+    "episodes": [
+     {
+      "count": 3,
+      "evidence": [
+       {
+        "end_seq": 284,
+        "fact": "sound_high",
+        "notice_seq": 283,
+        "root_seq": 282
+       },
+       {
+        "end_seq": 309,
+        "fact": "sound_high",
+        "notice_seq": 308,
+        "root_seq": 307
+       },
+       {
+        "end_seq": 401,
+        "fact": "sound_high",
+        "notice_seq": 400,
+        "root_seq": 399
+       }
+      ],
+      "operation": "whistling",
+      "saturated": true
+     }
+    ],
+    "lookback_roots": 32,
+    "scope": "selected_whistle_fountain"
+   },
+   "history_context_v": 1,
+   "next_use": {
+    "families": [
+     "W"
+    ],
+    "menu": [
+     {
+      "family": "W",
+      "op": "quiet",
+      "origin": {
+       "end_seq": 401,
+       "fact": "sound_high",
+       "notice_seq": 400,
+       "root_seq": 399
+      }
+     },
+     {
+      "family": "W",
+      "op": "whistle_attention",
+      "origin": {
+       "end_seq": 401,
+       "fact": "sound_high",
+       "notice_seq": 400,
+       "root_seq": 399
+      }
+     }
+    ]
+   },
+   "prior_coverage": {
+    "omitted": 0,
+    "shown": 2
+   },
+   "prior_whispers": [
+    {
+     "accepted_seq": 6,
+     "accepted_turn": 1,
+     "active_at_snapshot": false,
+     "duration": 0,
+     "expires_turn": 0,
+     "expiry_observed": false,
+     "id": 1,
+     "mutation": "ambient"
+    },
+    {
+     "accepted_seq": 262,
+     "accepted_turn": 822,
+     "active_at_snapshot": false,
+     "duration": 192,
+     "expires_turn": 1014,
+     "expiry_observed": true,
+     "id": 2,
+     "mutation": "door_reluctance"
+    }
+   ],
+   "summary": {
+    "observed": {
+     "budget": 2,
+     "insight": 0,
+     "reserved": 0,
+     "safe": 5,
+     "sanity": 100,
+     "spent": 2,
+     "turn": 2008,
+     "vitals": {
+      "hp": 13,
+      "hp_max": 13,
+      "power": 9,
+      "power_max": 9
+     }
+    },
+    "recent": [
+     {
+      "event": "backtrack",
+      "phase": "result",
+      "safe": 4,
+      "turn": 1470,
+      "vitals": {
+       "hp": 13,
+       "hp_max": 13,
+       "power": 9,
+       "power_max": 9
+      }
+     },
+     {
+      "event": "apply",
+      "phase": "attempt",
+      "safe": 4,
+      "turn": 1501,
+      "vitals": {
+       "hp": 13,
+       "hp_max": 13,
+       "power": 9,
+       "power_max": 9
+      }
+     },
+     {
+      "event": "backtrack",
+      "phase": "result",
+      "safe": 4,
+      "turn": 1518,
+      "vitals": {
+       "hp": 13,
+       "hp_max": 13,
+       "power": 9,
+       "power_max": 9
+      }
+     },
+     {
+      "event": "eat",
+      "phase": "attempt",
+      "safe": 4,
+      "turn": 1558,
+      "vitals": {
+       "hp": 13,
+       "hp_max": 13,
+       "power": 9,
+       "power_max": 9
+      }
+     },
+     {
+      "event": "apply",
+      "phase": "attempt",
+      "safe": 4,
+      "turn": 1573,
+      "vitals": {
+       "hp": 13,
+       "hp_max": 13,
+       "power": 9,
+       "power_max": 9
+      }
+     },
+     {
+      "event": "backtrack",
+      "phase": "result",
+      "safe": 4,
+      "turn": 1590,
+      "vitals": {
+       "hp": 13,
+       "hp_max": 13,
+       "power": 9,
+       "power_max": 9
+      }
+     },
+     {
+      "event": "apply",
+      "phase": "attempt",
+      "safe": 4,
+      "turn": 1756,
+      "vitals": {
+       "hp": 13,
+       "hp_max": 13,
+       "power": 9,
+       "power_max": 9
+      }
+     },
+     {
+      "event": "eat",
+      "phase": "attempt",
+      "safe": 4,
+      "turn": 1758,
+      "vitals": {
+       "hp": 13,
+       "hp_max": 13,
+       "power": 9,
+       "power_max": 9
+      }
+     },
+     {
+      "event": "pray",
+      "phase": "attempt",
+      "prayer": "confirmed",
+      "safe": 4,
+      "turn": 1934,
+      "vitals": {
+       "hp": 13,
+       "hp_max": 13,
+       "power": 9,
+       "power_max": 9
+      }
+     },
+     {
+      "event": "safe_point",
+      "phase": "result",
+      "safe": 5,
+      "turn": 1934,
+      "vitals": {
+       "hp": 13,
+       "hp_max": 13,
+       "power": 9,
+       "power_max": 9
+      }
+     },
+     {
+      "event": "ack",
+      "phase": "result",
+      "safe": 5,
+      "turn": 1934,
+      "vitals": {
+       "hp": 13,
+       "hp_max": 13,
+       "power": 9,
+       "power_max": 9
+      }
+     },
+     {
+      "event": "death",
+      "phase": "result",
+      "safe": 5,
+      "turn": 2008,
+      "vitals": {
+       "hp": 13,
+       "hp_max": 13,
+       "power": 9,
+       "power_max": 9
+      }
+     }
+    ]
+   }
+  },
+  "reveal": null,
+  "role": null,
+  "source": "docs/evidence/door-reluctance-1/capture/events.jsonl"
+ },
+ "madman-00007": {
+  "events_sha256": "2a7fbc5f5a887358c71481d7fbfae81a380a421bd078b18886609534d440ae34",
+  "public_context": {
+   "episodes": {
+    "coverage": {
+     "blocked": {
+      "count": 0,
+      "saturated": false
+     },
+     "completed_without_notice": {
+      "count": 0,
+      "saturated": false
+     },
+     "incomplete": {
+      "count": 0,
+      "saturated": false
+     },
+     "omitted_roots": {
+      "count": 0,
+      "saturated": false
+     }
+    },
+    "episode_context_v": 1,
+    "episodes": [],
+    "lookback_roots": 32,
+    "scope": "selected_whistle_fountain"
+   },
+   "history_context_v": 1,
+   "next_use": {
+    "families": [],
+    "menu": []
+   },
+   "prior_coverage": {
+    "omitted": 0,
+    "shown": 2
+   },
+   "prior_whispers": [
+    {
+     "accepted_seq": 6,
+     "accepted_turn": 1,
+     "active_at_snapshot": false,
+     "duration": 0,
+     "expires_turn": 0,
+     "expiry_observed": false,
+     "id": 1,
+     "mutation": "ambient"
+    },
+    {
+     "accepted_seq": 71,
+     "accepted_turn": 641,
+     "active_at_snapshot": false,
+     "duration": 24,
+     "expires_turn": 665,
+     "expiry_observed": true,
+     "id": 2,
+     "mutation": "hunger_rate"
+    }
+   ],
+   "summary": {
+    "observed": {
+     "budget": 0,
+     "insight": 0,
+     "reserved": 0,
+     "safe": 4,
+     "sanity": 75,
+     "spent": 3,
+     "turn": 834,
+     "vitals": {
+      "hp": 0,
+      "hp_max": 4,
+      "power": 7,
+      "power_max": 8
+     }
+    },
+    "recent": [
+     {
+      "event": "backtrack",
+      "phase": "result",
+      "safe": 3,
+      "turn": 791,
+      "vitals": {
+       "hp": 14,
+       "hp_max": 14,
+       "power": 10,
+       "power_max": 10
+      }
+     },
+     {
+      "event": "backtrack",
+      "phase": "result",
+      "safe": 3,
+      "turn": 792,
+      "vitals": {
+       "hp": 14,
+       "hp_max": 14,
+       "power": 10,
+       "power_max": 10
+      }
+     },
+     {
+      "event": "backtrack",
+      "phase": "result",
+      "safe": 3,
+      "turn": 799,
+      "vitals": {
+       "hp": 14,
+       "hp_max": 14,
+       "power": 10,
+       "power_max": 10
+      }
+     },
+     {
+      "event": "backtrack",
+      "phase": "result",
+      "safe": 3,
+      "turn": 800,
+      "vitals": {
+       "hp": 14,
+       "hp_max": 14,
+       "power": 10,
+       "power_max": 10
+      }
+     },
+     {
+      "event": "backtrack",
+      "phase": "result",
+      "safe": 3,
+      "turn": 801,
+      "vitals": {
+       "hp": 14,
+       "hp_max": 14,
+       "power": 10,
+       "power_max": 10
+      }
+     },
+     {
+      "event": "backtrack",
+      "phase": "result",
+      "safe": 3,
+      "turn": 813,
+      "vitals": {
+       "hp": 14,
+       "hp_max": 14,
+       "power": 10,
+       "power_max": 10
+      }
+     },
+     {
+      "event": "backtrack",
+      "phase": "result",
+      "safe": 3,
+      "turn": 814,
+      "vitals": {
+       "hp": 14,
+       "hp_max": 14,
+       "power": 10,
+       "power_max": 10
+      }
+     },
+     {
+      "event": "backtrack",
+      "phase": "result",
+      "safe": 3,
+      "turn": 815,
+      "vitals": {
+       "hp": 14,
+       "hp_max": 14,
+       "power": 10,
+       "power_max": 10
+      }
+     },
+     {
+      "event": "pray",
+      "phase": "attempt",
+      "prayer": "confirmed",
+      "safe": 3,
+      "turn": 822,
+      "vitals": {
+       "hp": 14,
+       "hp_max": 14,
+       "power": 10,
+       "power_max": 10
+      }
+     },
+     {
+      "event": "safe_point",
+      "phase": "result",
+      "safe": 4,
+      "turn": 822,
+      "vitals": {
+       "hp": 14,
+       "hp_max": 14,
+       "power": 10,
+       "power_max": 10
+      }
+     },
+     {
+      "event": "ack",
+      "phase": "result",
+      "safe": 4,
+      "turn": 822,
+      "vitals": {
+       "hp": 14,
+       "hp_max": 14,
+       "power": 10,
+       "power_max": 10
+      }
+     },
+     {
+      "event": "death",
+      "phase": "result",
+      "safe": 4,
+      "turn": 834,
+      "vitals": {
+       "hp": 0,
+       "hp_max": 4,
+       "power": 7,
+       "power_max": 8
+      }
+     }
+    ]
+   }
+  },
+  "reveal": [
+   "The Crawling Chaos remembers.",
+   "  Turn 1, as you arrived on a level: whisper 1 (ambient) was admitted.",
+   "    Telegraph: \"A distant whisper brushes against your thoughts.\"",
+   "    Effect: an omen only; no rule changed.",
+   "    Delivered: yes, \"The shadows lean closer.\" was shown with the telegraph.",
+   "    Spent at once.",
+   "  Turn 641, as you arrived on a level: whisper 2 (hunger_rate) was admitted.",
+   "    Telegraph: \"An unnatural hunger coils in your stomach.\"",
+   "    Effect: you grew hungry twice as fast, for 24 turns.",
+   "    Delivered: no; a rule change has no separate manifestation.",
+   "    Ended: expired on turn 665.",
+   "  Admitted 2, delivered 1; cruelty spent 3.",
+   ""
+  ],
+  "role": "Madman",
+  "source": "sweep:madman-00007/events.jsonl"
+ },
+ "madman-00023": {
+  "events_sha256": "2323ad7d181d6331292582cb599dfcd3e52e828569a4f5917cb377c324a9c78c",
+  "public_context": {
+   "episodes": {
+    "coverage": {
+     "blocked": {
+      "count": 0,
+      "saturated": false
+     },
+     "completed_without_notice": {
+      "count": 0,
+      "saturated": false
+     },
+     "incomplete": {
+      "count": 0,
+      "saturated": false
+     },
+     "omitted_roots": {
+      "count": 0,
+      "saturated": false
+     }
+    },
+    "episode_context_v": 1,
+    "episodes": [],
+    "lookback_roots": 32,
+    "scope": "selected_whistle_fountain"
+   },
+   "history_context_v": 1,
+   "next_use": {
+    "families": [],
+    "menu": []
+   },
+   "prior_coverage": {
+    "omitted": 0,
+    "shown": 1
+   },
+   "prior_whispers": [
+    {
+     "accepted_seq": 6,
+     "accepted_turn": 1,
+     "active_at_snapshot": false,
+     "duration": 0,
+     "expires_turn": 0,
+     "expiry_observed": false,
+     "id": 1,
+     "mutation": "ambient"
+    }
+   ],
+   "summary": {
+    "observed": {
+     "budget": 3,
+     "insight": 0,
+     "reserved": 0,
+     "safe": 2,
+     "sanity": 75,
+     "spent": 0,
+     "turn": 290,
+     "vitals": {
+      "hp": 0,
+      "hp_max": 14,
+      "power": 12,
+      "power_max": 12
+     }
+    },
+    "recent": [
+     {
+      "event": "backtrack",
+      "phase": "result",
+      "safe": 1,
+      "turn": 182,
+      "vitals": {
+       "hp": 11,
+       "hp_max": 14,
+       "power": 12,
+       "power_max": 12
+      }
+     },
+     {
+      "event": "backtrack",
+      "phase": "result",
+      "safe": 1,
+      "turn": 183,
+      "vitals": {
+       "hp": 11,
+       "hp_max": 14,
+       "power": 12,
+       "power_max": 12
+      }
+     },
+     {
+      "event": "backtrack",
+      "phase": "result",
+      "safe": 1,
+      "turn": 184,
+      "vitals": {
+       "hp": 11,
+       "hp_max": 14,
+       "power": 12,
+       "power_max": 12
+      }
+     },
+     {
+      "event": "backtrack",
+      "phase": "result",
+      "safe": 1,
+      "turn": 187,
+      "vitals": {
+       "hp": 11,
+       "hp_max": 14,
+       "power": 12,
+       "power_max": 12
+      }
+     },
+     {
+      "event": "backtrack",
+      "phase": "result",
+      "safe": 1,
+      "turn": 196,
+      "vitals": {
+       "hp": 11,
+       "hp_max": 14,
+       "power": 12,
+       "power_max": 12
+      }
+     },
+     {
+      "event": "backtrack",
+      "phase": "result",
+      "safe": 1,
+      "turn": 197,
+      "vitals": {
+       "hp": 11,
+       "hp_max": 14,
+       "power": 12,
+       "power_max": 12
+      }
+     },
+     {
+      "event": "backtrack",
+      "phase": "result",
+      "safe": 1,
+      "turn": 198,
+      "vitals": {
+       "hp": 11,
+       "hp_max": 14,
+       "power": 12,
+       "power_max": 12
+      }
+     },
+     {
+      "event": "kill",
+      "phase": "attempt",
+      "safe": 1,
+      "turn": 287,
+      "vitals": {
+       "hp": 10,
+       "hp_max": 14,
+       "power": 12,
+       "power_max": 12
+      }
+     },
+     {
+      "event": "pray",
+      "phase": "attempt",
+      "prayer": "confirmed",
+      "safe": 1,
+      "turn": 289,
+      "vitals": {
+       "hp": 7,
+       "hp_max": 14,
+       "power": 12,
+       "power_max": 12
+      }
+     },
+     {
+      "event": "safe_point",
+      "phase": "result",
+      "safe": 2,
+      "turn": 289,
+      "vitals": {
+       "hp": 7,
+       "hp_max": 14,
+       "power": 12,
+       "power_max": 12
+      }
+     },
+     {
+      "event": "ack",
+      "phase": "result",
+      "safe": 2,
+      "turn": 289,
+      "vitals": {
+       "hp": 7,
+       "hp_max": 14,
+       "power": 12,
+       "power_max": 12
+      }
+     },
+     {
+      "event": "death",
+      "phase": "result",
+      "safe": 2,
+      "turn": 290,
+      "vitals": {
+       "hp": 0,
+       "hp_max": 14,
+       "power": 12,
+       "power_max": 12
+      }
+     }
+    ]
+   }
+  },
+  "reveal": [
+   "The Crawling Chaos remembers.",
+   "  Turn 1, as you arrived on a level: whisper 1 (ambient) was admitted.",
+   "    Telegraph: \"A distant whisper brushes against your thoughts.\"",
+   "    Effect: an omen only; no rule changed.",
+   "    Delivered: yes, \"The shadows lean closer.\" was shown with the telegraph.",
+   "    Spent at once.",
+   "  Admitted 1, delivered 1; cruelty spent 0.",
+   ""
+  ],
+  "role": "Madman",
+  "source": "sweep:madman-00023/events.jsonl"
+ },
+ "madman-00041": {
+  "events_sha256": "31529ccb9d5fc336bbb1c04a56cc3d4104f92e847bc4d9463017fe7decb95469",
+  "public_context": {
+   "episodes": {
+    "coverage": {
+     "blocked": {
+      "count": 0,
+      "saturated": false
+     },
+     "completed_without_notice": {
+      "count": 1,
+      "saturated": false
+     },
+     "incomplete": {
+      "count": 0,
+      "saturated": false
+     },
+     "omitted_roots": {
+      "count": 0,
+      "saturated": false
+     }
+    },
+    "episode_context_v": 1,
+    "episodes": [],
+    "lookback_roots": 32,
+    "scope": "selected_whistle_fountain"
+   },
+   "history_context_v": 1,
+   "next_use": {
+    "families": [],
+    "menu": []
+   },
+   "prior_coverage": {
+    "omitted": 0,
+    "shown": 1
+   },
+   "prior_whispers": [
+    {
+     "accepted_seq": 6,
+     "accepted_turn": 1,
+     "active_at_snapshot": false,
+     "duration": 0,
+     "expires_turn": 0,
+     "expiry_observed": false,
+     "id": 1,
+     "mutation": "ambient"
+    }
+   ],
+   "summary": {
+    "observed": {
+     "budget": 3,
+     "insight": 0,
+     "reserved": 0,
+     "safe": 2,
+     "sanity": 75,
+     "spent": 0,
+     "turn": 385,
+     "vitals": {
+      "hp": 0,
+      "hp_max": 10,
+      "power": 7,
+      "power_max": 9
+     }
+    },
+    "recent": [
+     {
+      "event": "safe_point",
+      "phase": "result",
+      "safe": 1,
+      "turn": 1,
+      "vitals": {
+       "hp": 14,
+       "hp_max": 14,
+       "power": 11,
+       "power_max": 11
+      }
+     },
+     {
+      "event": "telegraph",
+      "phase": "result",
+      "safe": 1,
+      "turn": 1,
+      "vitals": {
+       "hp": 14,
+       "hp_max": 14,
+       "power": 11,
+       "power_max": 11
+      }
+     },
+     {
+      "event": "ack",
+      "phase": "result",
+      "safe": 1,
+      "turn": 1,
+      "vitals": {
+       "hp": 14,
+       "hp_max": 14,
+       "power": 11,
+       "power_max": 11
+      }
+     },
+     {
+      "event": "kill",
+      "phase": "attempt",
+      "safe": 1,
+      "turn": 21,
+      "vitals": {
+       "hp": 14,
+       "hp_max": 14,
+       "power": 11,
+       "power_max": 11
+      }
+     },
+     {
+      "event": "backtrack",
+      "phase": "result",
+      "safe": 1,
+      "turn": 286,
+      "vitals": {
+       "hp": 14,
+       "hp_max": 14,
+       "power": 11,
+       "power_max": 11
+      }
+     },
+     {
+      "event": "backtrack",
+      "phase": "result",
+      "safe": 1,
+      "turn": 375,
+      "vitals": {
+       "hp": 14,
+       "hp_max": 14,
+       "power": 11,
+       "power_max": 11
+      }
+     },
+     {
+      "event": "backtrack",
+      "phase": "result",
+      "safe": 1,
+      "turn": 376,
+      "vitals": {
+       "hp": 14,
+       "hp_max": 14,
+       "power": 11,
+       "power_max": 11
+      }
+     },
+     {
+      "event": "backtrack",
+      "phase": "result",
+      "safe": 1,
+      "turn": 377,
+      "vitals": {
+       "hp": 14,
+       "hp_max": 14,
+       "power": 11,
+       "power_max": 11
+      }
+     },
+     {
+      "event": "pray",
+      "phase": "attempt",
+      "prayer": "confirmed",
+      "safe": 1,
+      "turn": 382,
+      "vitals": {
+       "hp": 7,
+       "hp_max": 14,
+       "power": 11,
+       "power_max": 11
+      }
+     },
+     {
+      "event": "safe_point",
+      "phase": "result",
+      "safe": 2,
+      "turn": 382,
+      "vitals": {
+       "hp": 7,
+       "hp_max": 14,
+       "power": 11,
+       "power_max": 11
+      }
+     },
+     {
+      "event": "ack",
+      "phase": "result",
+      "safe": 2,
+      "turn": 382,
+      "vitals": {
+       "hp": 7,
+       "hp_max": 14,
+       "power": 11,
+       "power_max": 11
+      }
+     },
+     {
+      "event": "death",
+      "phase": "result",
+      "safe": 2,
+      "turn": 385,
+      "vitals": {
+       "hp": 0,
+       "hp_max": 10,
+       "power": 7,
+       "power_max": 9
+      }
+     }
+    ]
+   }
+  },
+  "reveal": [
+   "The Crawling Chaos remembers.",
+   "  Turn 1, as you arrived on a level: whisper 1 (ambient) was admitted.",
+   "    Telegraph: \"A distant whisper brushes against your thoughts.\"",
+   "    Effect: an omen only; no rule changed.",
+   "    Delivered: yes, \"The shadows lean closer.\" was shown with the telegraph.",
+   "    Spent at once.",
+   "  Admitted 1, delivered 1; cruelty spent 0.",
+   ""
+  ],
+  "role": "Madman",
+  "source": "sweep:madman-00041/events.jsonl"
+ },
+ "wizard-default-path-00007": {
+  "events_sha256": "6890cfead200e64fe3345ce2b8be5f6f46e6c413d577872003fcd74246426747",
+  "public_context": {
+   "episodes": {
+    "coverage": {
+     "blocked": {
+      "count": 0,
+      "saturated": false
+     },
+     "completed_without_notice": {
+      "count": 0,
+      "saturated": false
+     },
+     "incomplete": {
+      "count": 0,
+      "saturated": false
+     },
+     "omitted_roots": {
+      "count": 0,
+      "saturated": false
+     }
+    },
+    "episode_context_v": 1,
+    "episodes": [],
+    "lookback_roots": 32,
+    "scope": "selected_whistle_fountain"
+   },
+   "history_context_v": 1,
+   "next_use": {
+    "families": [],
+    "menu": []
+   },
+   "prior_coverage": {
+    "omitted": 0,
+    "shown": 1
+   },
+   "prior_whispers": [
+    {
+     "accepted_seq": 6,
+     "accepted_turn": 1,
+     "active_at_snapshot": false,
+     "duration": 0,
+     "expires_turn": 0,
+     "expiry_observed": false,
+     "id": 1,
+     "mutation": "ambient"
+    }
+   ],
+   "summary": {
+    "observed": {
+     "budget": 1,
+     "insight": 0,
+     "reserved": 0,
+     "safe": 3,
+     "sanity": 100,
+     "spent": 2,
+     "turn": 1773,
+     "vitals": {
+      "hp": 12,
+      "hp_max": 12,
+      "power": 10,
+      "power_max": 10
+     }
+    },
+    "recent": [
+     {
+      "event": "backtrack",
+      "phase": "result",
+      "safe": 2,
+      "turn": 1276,
+      "vitals": {
+       "hp": 12,
+       "hp_max": 12,
+       "power": 10,
+       "power_max": 10
+      }
+     },
+     {
+      "event": "backtrack",
+      "phase": "result",
+      "safe": 2,
+      "turn": 1296,
+      "vitals": {
+       "hp": 12,
+       "hp_max": 12,
+       "power": 10,
+       "power_max": 10
+      }
+     },
+     {
+      "event": "backtrack",
+      "phase": "result",
+      "safe": 2,
+      "turn": 1380,
+      "vitals": {
+       "hp": 12,
+       "hp_max": 12,
+       "power": 10,
+       "power_max": 10
+      }
+     },
+     {
+      "event": "backtrack",
+      "phase": "result",
+      "safe": 2,
+      "turn": 1382,
+      "vitals": {
+       "hp": 12,
+       "hp_max": 12,
+       "power": 10,
+       "power_max": 10
+      }
+     },
+     {
+      "event": "eat",
+      "phase": "attempt",
+      "safe": 2,
+      "turn": 1400,
+      "vitals": {
+       "hp": 12,
+       "hp_max": 12,
+       "power": 10,
+       "power_max": 10
+      }
+     },
+     {
+      "event": "backtrack",
+      "phase": "result",
+      "safe": 2,
+      "turn": 1470,
+      "vitals": {
+       "hp": 12,
+       "hp_max": 12,
+       "power": 10,
+       "power_max": 10
+      }
+     },
+     {
+      "event": "backtrack",
+      "phase": "result",
+      "safe": 2,
+      "turn": 1529,
+      "vitals": {
+       "hp": 12,
+       "hp_max": 12,
+       "power": 10,
+       "power_max": 10
+      }
+     },
+     {
+      "event": "pray",
+      "phase": "attempt",
+      "prayer": "confirmed",
+      "safe": 2,
+      "turn": 1638,
+      "vitals": {
+       "hp": 12,
+       "hp_max": 12,
+       "power": 10,
+       "power_max": 10
+      }
+     },
+     {
+      "event": "safe_point",
+      "phase": "result",
+      "safe": 3,
+      "turn": 1638,
+      "vitals": {
+       "hp": 12,
+       "hp_max": 12,
+       "power": 10,
+       "power_max": 10
+      }
+     },
+     {
+      "event": "ack",
+      "phase": "result",
+      "safe": 3,
+      "turn": 1638,
+      "vitals": {
+       "hp": 12,
+       "hp_max": 12,
+       "power": 10,
+       "power_max": 10
+      }
+     },
+     {
+      "event": "eat",
+      "phase": "attempt",
+      "safe": 3,
+      "turn": 1641,
+      "vitals": {
+       "hp": 12,
+       "hp_max": 12,
+       "power": 10,
+       "power_max": 10
+      }
+     },
+     {
+      "event": "death",
+      "phase": "result",
+      "safe": 3,
+      "turn": 1773,
+      "vitals": {
+       "hp": 12,
+       "hp_max": 12,
+       "power": 10,
+       "power_max": 10
+      }
+     }
+    ]
+   }
+  },
+  "reveal": [
+   "The Crawling Chaos remembers.",
+   "  Turn 1, as you arrived on a level: whisper 1 (ambient) was admitted.",
+   "    Telegraph: \"A distant whisper brushes against your thoughts.\"",
+   "    Effect: an omen only; no rule changed.",
+   "    Delivered: yes, \"The shadows lean closer.\" was shown with the telegraph.",
+   "    Spent at once.",
+   "  Turn 11, after you doubled back: a haunting was admitted.",
+   "    Telegraph: \"Something has learned the rhythm of your footsteps.\"",
+   "    Effect: an echo hound was set to follow your trail.",
+   "    Delivered: yes, you saw it follow your trail 2 times.",
+   "    Ended: its hunt ended on turn 71.",
+   "  Admitted 2, delivered 2; cruelty spent 2.",
+   ""
+  ],
+  "role": "Wizard",
+  "source": "sweep:wizard-default-path-00007/events.jsonl"
+ },
+ "wizard-default-path-00023": {
+  "events_sha256": "2371db477da45424359a9ea1087a10d518de3f8003376488eea1cdb7e6f26c85",
+  "public_context": {
+   "episodes": {
+    "coverage": {
+     "blocked": {
+      "count": 0,
+      "saturated": false
+     },
+     "completed_without_notice": {
+      "count": 0,
+      "saturated": false
+     },
+     "incomplete": {
+      "count": 0,
+      "saturated": false
+     },
+     "omitted_roots": {
+      "count": 0,
+      "saturated": false
+     }
+    },
+    "episode_context_v": 1,
+    "episodes": [
+     {
+      "count": 1,
+      "evidence": [
+       {
+        "end_seq": 106,
+        "fact": "water_refreshed",
+        "notice_seq": 105,
+        "root_seq": 104
+       }
+      ],
+      "operation": "fountain_drink",
+      "saturated": false
+     }
+    ],
+    "lookback_roots": 32,
+    "scope": "selected_whistle_fountain"
+   },
+   "history_context_v": 1,
+   "next_use": {
+    "families": [
+     "F"
+    ],
+    "menu": [
+     {
+      "family": "F",
+      "op": "quiet",
+      "origin": {
+       "end_seq": 106,
+       "fact": "water_refreshed",
+       "notice_seq": 105,
+       "root_seq": 104
+      }
+     },
+     {
+      "family": "F",
+      "op": "fountain_refresh",
+      "origin": {
+       "end_seq": 106,
+       "fact": "water_refreshed",
+       "notice_seq": 105,
+       "root_seq": 104
+      }
+     }
+    ]
+   },
+   "prior_coverage": {
+    "omitted": 0,
+    "shown": 1
+   },
+   "prior_whispers": [
+    {
+     "accepted_seq": 6,
+     "accepted_turn": 1,
+     "active_at_snapshot": false,
+     "duration": 0,
+     "expires_turn": 0,
+     "expiry_observed": false,
+     "id": 1,
+     "mutation": "ambient"
+    }
+   ],
+   "summary": {
+    "observed": {
+     "budget": 1,
+     "insight": 0,
+     "reserved": 0,
+     "safe": 4,
+     "sanity": 100,
+     "spent": 2,
+     "turn": 1238,
+     "vitals": {
+      "hp": 22,
+      "hp_max": 22,
+      "power": 22,
+      "power_max": 22
+     }
+    },
+    "recent": [
+     {
+      "event": "backtrack",
+      "phase": "result",
+      "safe": 4,
+      "turn": 660,
+      "vitals": {
+       "hp": 13,
+       "hp_max": 17,
+       "power": 12,
+       "power_max": 12
+      }
+     },
+     {
+      "event": "backtrack",
+      "phase": "result",
+      "safe": 4,
+      "turn": 661,
+      "vitals": {
+       "hp": 13,
+       "hp_max": 17,
+       "power": 12,
+       "power_max": 12
+      }
+     },
+     {
+      "event": "kill",
+      "phase": "attempt",
+      "safe": 4,
+      "turn": 678,
+      "vitals": {
+       "hp": 13,
+       "hp_max": 17,
+       "power": 12,
+       "power_max": 12
+      }
+     },
+     {
+      "event": "eat",
+      "phase": "attempt",
+      "safe": 4,
+      "turn": 692,
+      "vitals": {
+       "hp": 13,
+       "hp_max": 17,
+       "power": 12,
+       "power_max": 12
+      }
+     },
+     {
+      "event": "session",
+      "phase": "result",
+      "safe": 4,
+      "turn": 700,
+      "vitals": {
+       "hp": 12,
+       "hp_max": 17,
+       "power": 12,
+       "power_max": 12
+      }
+     },
+     {
+      "event": "kill",
+      "phase": "attempt",
+      "safe": 4,
+      "turn": 702,
+      "vitals": {
+       "hp": 12,
+       "hp_max": 17,
+       "power": 12,
+       "power_max": 12
+      }
+     },
+     {
+      "event": "backtrack",
+      "phase": "result",
+      "safe": 4,
+      "turn": 706,
+      "vitals": {
+       "hp": 17,
+       "hp_max": 22,
+       "power": 22,
+       "power_max": 22
+      }
+     },
+     {
+      "event": "backtrack",
+      "phase": "result",
+      "safe": 4,
+      "turn": 709,
+      "vitals": {
+       "hp": 17,
+       "hp_max": 22,
+       "power": 22,
+       "power_max": 22
+      }
+     },
+     {
+      "event": "backtrack",
+      "phase": "result",
+      "safe": 4,
+      "turn": 714,
+      "vitals": {
+       "hp": 17,
+       "hp_max": 22,
+       "power": 22,
+       "power_max": 22
+      }
+     },
+     {
+      "event": "eat",
+      "phase": "attempt",
+      "safe": 4,
+      "turn": 908,
+      "vitals": {
+       "hp": 22,
+       "hp_max": 22,
+       "power": 22,
+       "power_max": 22
+      }
+     },
+     {
+      "event": "eat",
+      "phase": "attempt",
+      "safe": 4,
+      "turn": 1115,
+      "vitals": {
+       "hp": 22,
+       "hp_max": 22,
+       "power": 22,
+       "power_max": 22
+      }
+     },
+     {
+      "event": "death",
+      "phase": "result",
+      "safe": 4,
+      "turn": 1238,
+      "vitals": {
+       "hp": 22,
+       "hp_max": 22,
+       "power": 22,
+       "power_max": 22
+      }
+     }
+    ]
+   }
+  },
+  "reveal": [
+   "The Crawling Chaos remembers.",
+   "  Turn 1, as you arrived on a level: whisper 1 (ambient) was admitted.",
+   "    Telegraph: \"A distant whisper brushes against your thoughts.\"",
+   "    Effect: an omen only; no rule changed.",
+   "    Delivered: yes, \"The shadows lean closer.\" was shown with the telegraph.",
+   "    Spent at once.",
+   "  Turn 12, after you doubled back: a haunting was admitted.",
+   "    Telegraph: \"Something has learned the rhythm of your footsteps.\"",
+   "    Effect: an echo hound was set to follow your trail.",
+   "    Delivered: no; you never saw it follow your trail.",
+   "    Ended: its hunt ended on turn 72.",
+   "  Admitted 2, delivered 1; cruelty spent 2.",
+   ""
+  ],
+  "role": "Wizard",
+  "source": "sweep:wizard-default-path-00023/events.jsonl"
+ },
+ "wizard-default-path-00041": {
+  "events_sha256": "c62ffb74ac5830aed6b359670621ae8c9f58dbefbd7af13ee494054bc85fe341",
+  "public_context": {
+   "episodes": {
+    "coverage": {
+     "blocked": {
+      "count": 0,
+      "saturated": false
+     },
+     "completed_without_notice": {
+      "count": 1,
+      "saturated": false
+     },
+     "incomplete": {
+      "count": 0,
+      "saturated": false
+     },
+     "omitted_roots": {
+      "count": 0,
+      "saturated": false
+     }
+    },
+    "episode_context_v": 1,
+    "episodes": [
+     {
+      "count": 1,
+      "evidence": [
+       {
+        "end_seq": 207,
+        "fact": "water_foul",
+        "notice_seq": 206,
+        "root_seq": 205
+       }
+      ],
+      "operation": "fountain_drink",
+      "saturated": false
+     },
+     {
+      "count": 3,
+      "evidence": [
+       {
+        "end_seq": 147,
+        "fact": "sound_strange",
+        "notice_seq": 146,
+        "root_seq": 145
+       },
+       {
+        "end_seq": 176,
+        "fact": "sound_strange",
+        "notice_seq": 175,
+        "root_seq": 174
+       },
+       {
+        "end_seq": 231,
+        "fact": "sound_strange",
+        "notice_seq": 230,
+        "root_seq": 229
+       }
+      ],
+      "operation": "whistling",
+      "saturated": true
+     }
+    ],
+    "lookback_roots": 32,
+    "scope": "selected_whistle_fountain"
+   },
+   "history_context_v": 1,
+   "next_use": {
+    "families": [
+     "W"
+    ],
+    "menu": [
+     {
+      "family": "W",
+      "op": "quiet",
+      "origin": {
+       "end_seq": 231,
+       "fact": "sound_strange",
+       "notice_seq": 230,
+       "root_seq": 229
+      }
+     },
+     {
+      "family": "W",
+      "op": "whistle_attention",
+      "origin": {
+       "end_seq": 231,
+       "fact": "sound_strange",
+       "notice_seq": 230,
+       "root_seq": 229
+      }
+     }
+    ]
+   },
+   "prior_coverage": {
+    "omitted": 0,
+    "shown": 3
+   },
+   "prior_whispers": [
+    {
+     "accepted_seq": 6,
+     "accepted_turn": 1,
+     "active_at_snapshot": false,
+     "duration": 0,
+     "expires_turn": 0,
+     "expiry_observed": false,
+     "id": 1,
+     "mutation": "ambient"
+    },
+    {
+     "accepted_seq": 127,
+     "accepted_turn": 647,
+     "active_at_snapshot": false,
+     "duration": 192,
+     "expires_turn": 839,
+     "expiry_observed": true,
+     "id": 2,
+     "mutation": "door_reluctance"
+    },
+    {
+     "accepted_seq": 251,
+     "accepted_turn": 1287,
+     "active_at_snapshot": true,
+     "duration": 72,
+     "expires_turn": 1359,
+     "expiry_observed": false,
+     "id": 3,
+     "mutation": "door_reluctance"
+    }
+   ],
+   "summary": {
+    "observed": {
+     "budget": 0,
+     "insight": 0,
+     "reserved": 1,
+     "safe": 6,
+     "sanity": 100,
+     "spent": 6,
+     "turn": 1288,
+     "vitals": {
+      "hp": 25,
+      "hp_max": 25,
+      "power": 33,
+      "power_max": 33
+     }
+    },
+    "recent": [
+     {
+      "event": "backtrack",
+      "phase": "result",
+      "safe": 5,
+      "turn": 1226,
+      "vitals": {
+       "hp": 25,
+       "hp_max": 25,
+       "power": 33,
+       "power_max": 33
+      }
+     },
+     {
+      "event": "kill",
+      "phase": "attempt",
+      "safe": 5,
+      "turn": 1241,
+      "vitals": {
+       "hp": 25,
+       "hp_max": 25,
+       "power": 33,
+       "power_max": 33
+      }
+     },
+     {
+      "event": "backtrack",
+      "phase": "result",
+      "safe": 5,
+      "turn": 1243,
+      "vitals": {
+       "hp": 25,
+       "hp_max": 25,
+       "power": 33,
+       "power_max": 33
+      }
+     },
+     {
+      "event": "backtrack",
+      "phase": "result",
+      "safe": 5,
+      "turn": 1264,
+      "vitals": {
+       "hp": 25,
+       "hp_max": 25,
+       "power": 33,
+       "power_max": 33
+      }
+     },
+     {
+      "event": "backtrack",
+      "phase": "result",
+      "safe": 5,
+      "turn": 1265,
+      "vitals": {
+       "hp": 25,
+       "hp_max": 25,
+       "power": 33,
+       "power_max": 33
+      }
+     },
+     {
+      "event": "backtrack",
+      "phase": "result",
+      "safe": 5,
+      "turn": 1266,
+      "vitals": {
+       "hp": 25,
+       "hp_max": 25,
+       "power": 33,
+       "power_max": 33
+      }
+     },
+     {
+      "event": "level_leave",
+      "phase": "result",
+      "safe": 5,
+      "turn": 1287,
+      "vitals": {
+       "hp": 25,
+       "hp_max": 25,
+       "power": 33,
+       "power_max": 33
+      }
+     },
+     {
+      "event": "level_enter",
+      "phase": "result",
+      "safe": 5,
+      "turn": 1287,
+      "vitals": {
+       "hp": 25,
+       "hp_max": 25,
+       "power": 33,
+       "power_max": 33
+      }
+     },
+     {
+      "event": "safe_point",
+      "phase": "result",
+      "safe": 6,
+      "turn": 1287,
+      "vitals": {
+       "hp": 25,
+       "hp_max": 25,
+       "power": 33,
+       "power_max": 33
+      }
+     },
+     {
+      "event": "telegraph",
+      "phase": "result",
+      "safe": 6,
+      "turn": 1287,
+      "vitals": {
+       "hp": 25,
+       "hp_max": 25,
+       "power": 33,
+       "power_max": 33
+      }
+     },
+     {
+      "event": "ack",
+      "phase": "result",
+      "safe": 6,
+      "turn": 1287,
+      "vitals": {
+       "hp": 25,
+       "hp_max": 25,
+       "power": 33,
+       "power_max": 33
+      }
+     },
+     {
+      "event": "death",
+      "phase": "result",
+      "safe": 6,
+      "turn": 1288,
+      "vitals": {
+       "hp": 25,
+       "hp_max": 25,
+       "power": 33,
+       "power_max": 33
+      }
+     }
+    ]
+   }
+  },
+  "reveal": [
+   "The Crawling Chaos remembers.",
+   "  Turn 1, as you arrived on a level: whisper 1 (ambient) was admitted.",
+   "    Telegraph: \"A distant whisper brushes against your thoughts.\"",
+   "    Effect: an omen only; no rule changed.",
+   "    Delivered: yes, \"The shadows lean closer.\" was shown with the telegraph.",
+   "    Spent at once.",
+   "  Turn 11, after you doubled back: a haunting was admitted.",
+   "    Telegraph: \"Something has learned the rhythm of your footsteps.\"",
+   "    Effect: an echo hound was set to follow your trail.",
+   "    Delivered: yes, you saw it follow your trail 1 time.",
+   "    Ended: its hunt ended on turn 71.",
+   "  Turn 647, as you arrived on a level: whisper 2 (door_reluctance) was admitted.",
+   "    Telegraph: \"The doors of this place seem to lean against you.\"",
+   "    Effect: closed doors resisted you more often, for 192 turns.",
+   "    Delivered: no; a rule change has no separate manifestation.",
+   "    Ended: expired on turn 839.",
+   "  Motif: the whistle, 2 programs, felt 0 times.",
+   "  Turn 647: next-use program 2 was admitted.",
+   "    Origin: you whistled on DL3 on turn 590.",
+   "    Rebound: first written about an earlier one (turn 357).",
+   "    Telegraph: \"For a while, your whistles may carry farther than they should.\"",
+   "    Effect: for a while, any whistle could answer it, at most 2 times.",
+   "    Delivered: no; no manifestation reached you.",
+   "    Ended: its uses ran out or it expired before the game ended.",
+   "  Turn 962: next-use program 3 was admitted.",
+   "    Origin: you whistled on DL4 on turn 941.",
+   "    Telegraph: \"For a while, your whistles may carry farther than they should.\"",
+   "    Effect: for a while, any whistle could answer it, at most 2 times.",
+   "    Delivered: no; no manifestation reached you.",
+   "    Ended: its uses ran out or it expired before the game ended.",
+   "  Turn 1287, as you arrived on a level: whisper 3 (door_reluctance) was admitted.",
+   "    Telegraph: \"The doors of this place seem to lean against you.\"",
+   "    Effect: closed doors resisted you more often, for 72 turns.",
+   "    Delivered: no; a rule change has no separate manifestation.",
+   "    Ended: still in force when the game ended (due turn 1359).",
+   "  Admitted 6, delivered 2; cruelty spent 6.",
+   "  1 other candidate was refused; none took effect.",
+   ""
+  ],
+  "role": "Wizard",
+  "source": "sweep:wizard-default-path-00041/events.jsonl"
+ }
+}

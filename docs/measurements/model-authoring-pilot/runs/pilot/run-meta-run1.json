@@ -1,0 +1,10 @@
+{
+ "provider": "xai-oauth",
+ "model": "grok-4.7",
+ "route": "hermes proxy --provider xai (OAuth), 127.0.0.1:8771/v1/chat/completions",
+ "max_tokens": 6000,
+ "timeout_s": 180,
+ "validator_lib_sha256": "199b29adbd779a5c680c9e5407f054b85b56f143a5e0a56ed41d5ad6477a4961",
+ "plan": "main",
+ "jobs": 226
+}

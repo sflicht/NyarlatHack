@@ -1,0 +1,339 @@
+{
+ "_total": {
+  "calls": 318,
+  "run_dirs": [
+   "smoke",
+   "pilot-run0-stopped",
+   "pilot",
+   "others"
+  ]
+ },
+ "curio": {
+  "admitted": 68,
+  "admitted_by_layer": {
+   "abbott": 9,
+   "carroll": 9,
+   "chambers": 9,
+   "gilman": 8,
+   "hodgson": 8,
+   "mackay": 8,
+   "poe": 8,
+   "wilde": 9
+  },
+  "calls": 72,
+  "completion_tokens_median": 932,
+  "distinct_apply_median": 16,
+  "distinct_inspect_median": 7,
+  "failure_kinds": {
+   "envelope:authoring_response_must_be_one_json_object": 1,
+   "envelope:continuity_note_must_be_utf_bytes": 1,
+   "envelope:lua_source_must_be_utf_bytes": 1,
+   "transport": 1
+  },
+  "first_apply_delta": {
+   "-2": 1,
+   "-1": 52,
+   "0": 15
+  },
+  "grid_runtime_failures_any": 0,
+  "histories": 17,
+  "latency_s": {
+   "max": 294.261,
+   "median": 137.827,
+   "p90": 188.081
+  },
+  "layers": {
+   "abbott": 9,
+   "carroll": 9,
+   "chambers": 9,
+   "gilman": 9,
+   "hodgson": 8,
+   "mackay": 9,
+   "poe": 10,
+   "wilde": 9
+  },
+  "motif_mentions": {
+   "back": 2,
+   "bard": 0,
+   "door": 0,
+   "eat": 9,
+   "echo": 0,
+   "fountain": 0,
+   "hound": 0,
+   "hunger": 0,
+   "mad": 0,
+   "note": 3,
+   "pray": 0,
+   "retrac": 0,
+   "song": 0,
+   "step": 0,
+   "tune": 0,
+   "whistl": 0,
+   "wizard": 0
+  },
+  "names": [
+   "Certain Slip",
+   "Cloth Hem-Weight",
+   "Consensus Slip",
+   "Contrary Visiting-Card",
+   "Crooked Bone Button",
+   "Darning Wool Card",
+   "Either-End Ribbon",
+   "Folded Square Card",
+   "Frayed Program Card",
+   "Frayed Sounding Plummet",
+   "Gilt Hand-Glass",
+   "Gilt Pocket Glass",
+   "Gilt Revision Case",
+   "Hairline Pitch Pipe",
+   "Hollow Peg",
+   "Ivory Calling Card",
+   "Ivory Courtesy Card",
+   "Ivory Peg",
+   "Late Vanity Glass",
+   "Late-Join Mitre",
+   "Late-Join Tin Square",
+   "Loose Pearl Clasp",
+   "Margin Tally",
+   "Mother-of-Pearl Compact",
+   "Other-Hand Label",
+   "Other-Side Slip",
+   "Pale Cadence Ribbon",
+   "Pale Rosin Cake",
+   "Pallid Concert Ribbon",
+   "Pallid Ivory Comb",
+   "Paper-Lined Thimble",
+   "Pitted Sounding Cup",
+   "Pitted Sounding-Cup",
+   "Pitted sounding chip",
+   "Resewn Cuff",
+   "Running Stitch Cuff",
+   "Salt-Cord Sounding Lead",
+   "Salt-Knotted Fathom Cord",
+   "Salt-scored Pocket Lead",
+   "Saltbit Caliper",
+   "Seam-tally Card",
+   "Silver Card Case",
+   "Smudged Reckoning-Slip",
+   "Spare Metronome Tooth",
+   "Split Reed Case",
+   "Sure Tally Slip",
+   "The Compliment Glass",
+   "The Contrary Button",
+   "The Contrary Thimble",
+   "The Enamel Thumb-Glass",
+   "The Excepting Rule",
+   "The Sure Margin",
+   "Twice-Marked Strip",
+   "Unclosed Set-Square",
+   "Unclosed Square",
+   "Uncounted Silk Spool",
+   "Unmet Square",
+   "Unresolved Measure",
+   "Warped Pitch-Pipe",
+   "Worn Claque Bone",
+   "counted margin card",
+   "credence wafer",
+   "fourth corner",
+   "pale bodkin",
+   "the cuff-note glove",
+   "unclosed square",
+   "unclosed square",
+   "warp-count scrap"
+  ],
+  "reasoning_tokens_median": 14070,
+  "served_models": {
+   "None": 1,
+   "grok-4.7": 71
+  },
+  "single_inspect_text": 0,
+  "transport_failures": 1,
+  "transport_retries": 25
+ },
+ "curio_history": {
+  "admitted": 33,
+  "admitted_by_layer": {
+   "abbott": 4,
+   "carroll": 4,
+   "chambers": 4,
+   "gilman": 4,
+   "hodgson": 4,
+   "mackay": 4,
+   "poe": 5,
+   "wilde": 4
+  },
+  "calls": 33,
+  "completion_tokens_median": 1034,
+  "distinct_apply_median": 17,
+  "distinct_inspect_median": 7,
+  "failure_kinds": {},
+  "first_apply_delta": {
+   "-1": 18,
+   "0": 13,
+   "1": 2
+  },
+  "grid_runtime_failures_any": 0,
+  "histories": 17,
+  "latency_s": {
+   "max": 297.874,
+   "median": 181.688,
+   "p90": 252.351
+  },
+  "layers": {
+   "abbott": 4,
+   "carroll": 4,
+   "chambers": 4,
+   "gilman": 4,
+   "hodgson": 4,
+   "mackay": 4,
+   "poe": 5,
+   "wilde": 4
+  },
+  "motif_mentions": {
+   "back": 1,
+   "bard": 0,
+   "door": 0,
+   "eat": 7,
+   "echo": 1,
+   "fountain": 0,
+   "hound": 0,
+   "hunger": 0,
+   "mad": 0,
+   "note": 13,
+   "pray": 0,
+   "retrac": 0,
+   "song": 0,
+   "step": 1,
+   "tune": 0,
+   "whistl": 1,
+   "wizard": 1
+  },
+  "names": [
+   "Agreeing Reed",
+   "Assent Slip",
+   "Bias Seam",
+   "Concord Reed",
+   "Contrary Pitch Card",
+   "Contrary Teaspoon",
+   "Courtesy Glass",
+   "Cracked Call-Slip",
+   "Edgewise Brass Square",
+   "Frayed Sounding Twine",
+   "Gilt Lip-Case",
+   "Gilt Reed Case",
+   "Hairline Pitch-Pipe",
+   "Hairline Reed",
+   "Hairline Square",
+   "Ivory Programme Slip",
+   "Late-Line Phial",
+   "Misruled Card",
+   "Pallid Interval Slip",
+   "Pleat Tally",
+   "Resin Tuning Peg",
+   "Rose-Silk Reed Case",
+   "Salt-scoured Listening Cup",
+   "Salt-stiff Reed",
+   "Saltbit Sounding Bead",
+   "Scored Hem Card",
+   "The Recanting Card",
+   "The Twice-Ended Reed",
+   "Unjoined Square",
+   "Waxed Consensus Slip",
+   "Waxed Pitch-Pipe",
+   "ruled brass square",
+   "visiting-card case"
+  ],
+  "reasoning_tokens_median": 16927,
+  "served_models": {
+   "grok-4.7": 33
+  },
+  "single_inspect_text": 0,
+  "transport_failures": 0,
+  "transport_retries": 4
+ },
+ "flavour": {
+  "admitted": 57,
+  "calls": 61,
+  "completion_tokens_median": 119,
+  "failure_kinds": {
+   "display_bounds": 4
+  },
+  "histories": 16,
+  "latency_s": {
+   "max": 255.796,
+   "median": 47.354,
+   "p90": 161.469
+  },
+  "reasoning_tokens_median": 5279,
+  "served_models": {
+   "grok-4.7": 61
+  },
+  "stray_numbers": [],
+  "transport_failures": 0,
+  "transport_retries": 0
+ },
+ "hound": {
+  "admitted": 61,
+  "agreement_median": 1.0,
+  "calls": 61,
+  "completion_tokens_median": 165,
+  "distinct_sources": 52,
+  "failure_kinds": {},
+  "histories": 17,
+  "identical_to_footsteps_pack_all_cases": 61,
+  "latency_s": {
+   "max": 208.259,
+   "median": 32.304,
+   "p90": 43.586
+  },
+  "reasoning_tokens_median": 3352,
+  "served_models": {
+   "grok-4.7": 61
+  },
+  "transport_failures": 0,
+  "transport_retries": 0
+ },
+ "hound_free": {
+  "admitted": 30,
+  "agreement_median": 0.5583333333333333,
+  "calls": 30,
+  "completion_tokens_median": 588,
+  "distinct_sources": 30,
+  "failure_kinds": {},
+  "histories": 17,
+  "identical_to_footsteps_pack_all_cases": 0,
+  "latency_s": {
+   "max": 234.326,
+   "median": 92.566,
+   "p90": 198.967
+  },
+  "reasoning_tokens_median": 8459,
+  "served_models": {
+   "grok-4.7": 30
+  },
+  "transport_failures": 0,
+  "transport_retries": 1
+ },
+ "next_use": {
+  "admitted": 61,
+  "calls": 61,
+  "completion_tokens_median": 161,
+  "distinct_sources": 61,
+  "effect_op_share_median": 0.25,
+  "failure_kinds": {},
+  "histories": 17,
+  "latency_s": {
+   "max": 108.419,
+   "median": 63.582,
+   "p90": 92.259
+  },
+  "never_acts": 0,
+  "reasoning_tokens_median": 6583,
+  "served_models": {
+   "grok-4.7": 61
+  },
+  "transport_failures": 0,
+  "transport_retries": 0,
+  "uses_delay": 17
+ }
+}

@@ -1,0 +1,19 @@
+{
+ "broad-restore-capture": "docs/evidence/broad-restore-level/capture/run/events.jsonl",
+ "door-reluctance-capture": "docs/evidence/door-reluctance-1/capture/events.jsonl",
+ "bard-00007": "sweep:bard-00007/events.jsonl",
+ "bard-00023": "sweep:bard-00023/events.jsonl",
+ "bard-00041": "sweep:bard-00041/events.jsonl",
+ "bard-default-path-00007": "sweep:bard-default-path-00007/events.jsonl",
+ "bard-default-path-00023": "sweep:bard-default-path-00023/events.jsonl",
+ "bard-default-path-00041": "sweep:bard-default-path-00041/events.jsonl",
+ "bard-inherited-00007": "sweep:bard-inherited-00007/events.jsonl",
+ "bard-inherited-00023": "sweep:bard-inherited-00023/events.jsonl",
+ "bard-inherited-00041": "sweep:bard-inherited-00041/events.jsonl",
+ "madman-00007": "sweep:madman-00007/events.jsonl",
+ "madman-00023": "sweep:madman-00023/events.jsonl",
+ "madman-00041": "sweep:madman-00041/events.jsonl",
+ "wizard-default-path-00007": "sweep:wizard-default-path-00007/events.jsonl",
+ "wizard-default-path-00023": "sweep:wizard-default-path-00023/events.jsonl",
+ "wizard-default-path-00041": "sweep:wizard-default-path-00041/events.jsonl"
+}

@@ -1,0 +1,1 @@
+{"lines":["I remember turn 1, as you arrived: an ambient whisper was admitted, an omen only, no rule changed; the shadows leaning closer was shown, spent at once.","Turn 641, as you arrived: whisper 2, hunger_rate, was admitted; you grew hungry twice as fast for 24 turns, no separate manifestation, expired on turn 665.","Admitted 2, delivered 1; cruelty spent 3."]}
