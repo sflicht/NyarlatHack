@@ -104,6 +104,17 @@ def _curio_command(args):
     return {"operation": op, "verified": True}
 
 
+def _codex_config(args):
+    """The ChatGPT OAuth commands read provider and model from configuration
+    (flag, then environment); they support only provider openai-codex."""
+    from .author_config import require_provider, resolve
+
+    return require_provider(
+        resolve(args.author_provider, args.author_model, args.api_key_env, os.environ),
+        "openai-codex",
+    )
+
+
 def _history_parser(sub):
     p = sub.add_parser("history", help="opt-in mixed-history pilot; separate from play")
     p.add_argument("--run-dir", type=Path, required=True)
@@ -118,6 +129,9 @@ def _history_parser(sub):
     p.add_argument("--max-bytes", type=int, default=DEFAULT_BYTES)
     p.add_argument("--max-events", type=int, default=DEFAULT_EVENTS)
     p.add_argument("--install-only", action="store_true")
+    from .author_config import add_arguments as add_author_arguments
+
+    add_author_arguments(p)
 
 
 def _history_command(args):
@@ -133,7 +147,10 @@ def _history_command(args):
             raise ValueError("OAuth requires only an existing model ledger")
         from .oauth import OAuthBackend
 
-        transport = OAuthBackend(args.model_ledger, require_existing=True)
+        config = _codex_config(args)
+        transport = OAuthBackend(
+            args.model_ledger, model=config.model, require_existing=True
+        )
         transport.preflight()  # Read-only; before provider factory or mailbox creation.
         backend = OAuthHistoryBackend(transport)
     elif args.backend == "replay":
@@ -203,6 +220,9 @@ def main(argv=None):
             p.add_argument("--seed", type=int, default=0)
         if name == "oauth":
             p.add_argument("--ledger", type=Path, required=True)
+            from .author_config import add_arguments as add_author_arguments
+
+            add_author_arguments(p)
         if name in ("random", "model", "oauth"):
             p.add_argument(
                 "--ordinary-food",
@@ -271,7 +291,10 @@ def main(argv=None):
         elif args.command == "oauth":
             from .oauth import OAuthBackend
 
-            backend = OAuthBackend(args.ledger, ordinary_food=args.ordinary_food)
+            config = _codex_config(args)
+            backend = OAuthBackend(
+                args.ledger, model=config.model, ordinary_food=args.ordinary_food
+            )
         else:
             from .model import ModelBackend
 
@@ -299,6 +322,12 @@ def main(argv=None):
         print(json.dumps(result, sort_keys=True))
         return 0
     except Exception as exc:
+        from .author_config import AuthorConfigError
+
+        if type(exc) is AuthorConfigError:
+            # Fixed text naming only flags and variables, never a supplied value.
+            print("chaos: " + str(exc), file=sys.stderr)
+            return 2
         # Static error class only: raw paths, model text, HTTP bodies may contain controls/secrets.
         print(
             "chaos: failed closed ("

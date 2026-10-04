@@ -187,11 +187,24 @@ records `haunting` events such as `pre_admitted`, `accepted`, `rejected`, or
 
 ## Authorized model connection
 
-The model is pinned to `gpt-5.6-luna` using provider `openai-codex` at the ChatGPT
-subscription endpoint. OAuth means Open Authorization. The adapter uses Hermes's
-existing root-managed OAuth client and refresh machinery. It does not create an
-agent/tool loop, change the default model, copy tokens, create profiles or fall
-back to an API-key provider. API means application programming interface.
+First Haunting used `gpt-5.6-luna` through provider `openai-codex` at the
+ChatGPT subscription endpoint. OAuth means Open Authorization. The adapter uses
+Hermes's existing root-managed OAuth client and refresh machinery. It does not
+create an agent/tool loop, change the default model, copy tokens, create profiles
+or fall back to an API-key provider. API means application programming interface.
+
+**Provider and model are configuration, not constants.** Each command below
+needs both, by flag or environment variable; the flag wins over the variable,
+and with neither set the command stops before touching a provider or ledger:
+
+| Setting | Flag | Environment variable |
+|---|---|---|
+| Provider | `--author-provider openai-codex` | `NYARLATHACK_AUTHOR_PROVIDER` |
+| Model | `--author-model <id>` | `NYARLATHACK_AUTHOR_MODEL` |
+
+These commands support only `openai-codex`. A ledger records the model it was
+created for and refuses any other, so the existing First Haunting ledger needs
+`--author-model gpt-5.6-luna`.
 
 Use a Python environment where Hermes is installed. On this host it is:
 
@@ -219,7 +232,8 @@ To run the Tier 2 director through this route, explicitly:
 ```sh
 /home/hermes/workspace/hermes-agent-integration/.venv/bin/python -m chaos oauth \
   --run-dir /absolute/private/run \
-  --ledger /home/hermes/.local/share/nyarlathack/milestone2/model-ledger.json
+  --ledger /home/hermes/.local/share/nyarlathack/milestone2/model-ledger.json \
+  --author-provider openai-codex --author-model gpt-5.6-luna
 ```
 
 To request another source candidate within that same approved allowance:
@@ -227,7 +241,8 @@ To request another source candidate within that same approved allowance:
 ```sh
 /home/hermes/workspace/hermes-agent-integration/.venv/bin/python \
   scripts/generate_haunting.py --execute-live \
-  --events /actual/run/events.jsonl --output /new/private/candidate-directory
+  --events /actual/run/events.jsonl --output /new/private/candidate-directory \
+  --author-provider openai-codex --author-model gpt-5.6-luna
 ```
 
 That script requires actual recorded backtracking, whitelists the summary,

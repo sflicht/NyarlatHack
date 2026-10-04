@@ -255,6 +255,10 @@ class GenerationScriptTests(unittest.TestCase):
                     "Wizard",
                     "--race",
                     "human",
+                    "--author-provider",
+                    "openai-codex",
+                    "--author-model",
+                    "gpt-5.6-luna",
                 ]
             )
         self.assertEqual(status, 0)
@@ -269,7 +273,9 @@ class GenerationScriptTests(unittest.TestCase):
                 "ledger",
             )
         }
-        expected.update(literary_layer="poe", role="Wizard", race="human")
+        expected.update(
+            literary_layer="poe", role="Wizard", race="human", model="gpt-5.6-luna"
+        )
         self.assertEqual(service.call_args.kwargs, expected)
         service.assert_called_once()
 
@@ -345,6 +351,10 @@ class GenerationScriptTests(unittest.TestCase):
             str(journal),
             "--ledger",
             str(fake.ledger),
+            "--author-provider",
+            "openai-codex",
+            "--author-model",
+            "gpt-5.6-luna",
         ]
         generate = curio_generation.generate_curio
         with patch.object(
@@ -352,7 +362,9 @@ class GenerationScriptTests(unittest.TestCase):
             "generate_curio",
             side_effect=lambda **kw: generate(**kw, client_factory=fake.factory),
         ):
-            status, _, _ = self.invoke(args[:-1] + [str(self.root / "absent-ledger")])
+            status, _, _ = self.invoke(
+                args[:-5] + [str(self.root / "absent-ledger")] + args[-4:]
+            )
             self.assertEqual(status, 2)
             self.assertFalse(output.exists())
             self.assertEqual(calls, [])

@@ -51,7 +51,9 @@ class OAuthMenuTests(unittest.TestCase):
         self.addCleanup(self.tmp.cleanup)
         self.ledger = Path(self.tmp.name) / "never-created.json"
         self.factory = Mock(side_effect=AssertionError("no credential/provider access"))
-        self.backend = OAuthBackend(self.ledger, client_factory=self.factory)
+        self.backend = OAuthBackend(
+            self.ledger, model="gpt-5.6-luna", client_factory=self.factory
+        )
 
     def tearDown(self):
         self.factory.assert_not_called()

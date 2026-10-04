@@ -150,6 +150,9 @@ def add_parser(sub):
         action="store_true",
         help="--ordinary: turn off the default echo hound (#198)",
     )
+    from .author_config import add_arguments as add_author_arguments
+
+    add_author_arguments(p)
     p.add_argument(
         "game_args",
         nargs=argparse.REMAINDER,
@@ -174,6 +177,22 @@ def _configuration(args):
         or min(args.max_events, args.max_bytes, args.max_submissions) < 1
     ):
         raise ValueError("invalid director limits")
+    from .author_config import resolve as resolve_author
+
+    # Model-authoring settings: flag, then environment, then none. Invalid
+    # settings stop here, before any run directory exists. Nothing in play
+    # calls a model yet; a fresh --ordinary run records the configuration so
+    # restore follows it. The key itself is never read here.
+    args.author = resolve_author(
+        getattr(args, "author_provider", None),
+        getattr(args, "author_model", None),
+        getattr(args, "api_key_env", None),
+        os.environ,
+    )
+    args.author_flags = any(
+        getattr(args, name, None) is not None
+        for name in ("author_provider", "author_model", "api_key_env")
+    )
     m1 = _m1_default(args)
     if args.backend in ("pack", None):
         if (args.seed is not None and not m1) or args.ordinary_food:
@@ -406,6 +425,10 @@ CHOICE_KEYS_V5 = CHOICE_KEYS_V3
 # program (next_use_program_v 4). A v5 record keeps C's rules exactly (ring
 # off); a record whose fields do not match its version fails closed.
 CHOICE_KEYS_V6 = CHOICE_KEYS_V3
+# v7 (model authoring): "author" records the configured provider, model and,
+# for API-key providers, the key variable's NAME (never a key). A run with no
+# authoring configuration keeps writing v6 exactly.
+CHOICE_KEYS_V7 = CHOICE_KEYS_V6 | {"author"}
 
 
 def _explicit(args):
@@ -437,7 +460,7 @@ def _read_choice(directory):
     if (
         not isinstance(record, dict)
         or type(record.get("v")) is not int
-        or record["v"] not in (1, 2, 3, 4, 5, 6)
+        or record["v"] not in (1, 2, 3, 4, 5, 6, 7)
         or set(record)
         != {
             1: CHOICE_KEYS,
@@ -446,6 +469,7 @@ def _read_choice(directory):
             4: CHOICE_KEYS_V4,
             5: CHOICE_KEYS_V5,
             6: CHOICE_KEYS_V6,
+            7: CHOICE_KEYS_V7,
         }[record["v"]]
         or not isinstance(record["haunt"], bool)
         or not isinstance(record["next_use"], bool)
@@ -456,13 +480,13 @@ def _read_choice(directory):
         keys = {"enabled", "cap"}
         keys |= {"repair"} if record["v"] >= 4 else set()
         keys |= {"broad"} if record["v"] >= 5 else set()
-        keys |= {"ring"} if record["v"] == 6 else set()
+        keys |= {"ring"} if record["v"] >= 6 else set()
         if (
             type(m2) is not dict
             or set(m2) != keys
             or (record["v"] >= 4 and m2["repair"] is not m2["enabled"])
             or (record["v"] >= 5 and m2["broad"] is not m2["enabled"])
-            or (record["v"] == 6 and m2["ring"] is not m2["enabled"])
+            or (record["v"] >= 6 and m2["ring"] is not m2["enabled"])
             or type(m2["enabled"]) is not bool
             or type(m2["cap"]) is not int
             or m2["cap"] != 3
@@ -478,6 +502,12 @@ def _read_choice(directory):
         or not 0 <= whispers["seed"] < 2**63
     ):
         raise ValueError("invalid ordinary choice record")
+    if record["v"] == 7:
+        from .author_config import from_record
+
+        if record["author"] is None:
+            raise ValueError("invalid ordinary choice record")
+        from_record(record["author"])
     pack, digest = record["haunt_pack"], record["haunt_sha256"]
     if record["haunt"]:
         if not (isinstance(pack, str) and isinstance(digest, str)):
@@ -502,6 +532,9 @@ def _resolve_choice(args, restore_dir):
     before #198 has no record and keeps exactly its explicit flags.
     """
     haunt, next_use = _explicit(args)
+    author = getattr(args, "author", None)
+    author_flags = getattr(args, "author_flags", False)
+    args.author = None
     args.next_use_programs = 1
     args.next_use_repair = False
     args.next_use_broad = False
@@ -509,6 +542,14 @@ def _resolve_choice(args, restore_dir):
     if restore_dir is not None:
         record = _read_choice(restore_dir)
         args.m1_seed = None
+        # Restore follows the record; the environment is not re-read. Explicit
+        # authoring flags must match what the run recorded.
+        from .author_config import from_record
+
+        recorded = None if record is None else from_record(record.get("author"))
+        if author_flags and author != recorded:
+            raise ValueError("restore options conflict with the run's recorded choice")
+        args.author = recorded
         if record is None:
             args.next_use = next_use is True
             return None
@@ -542,8 +583,13 @@ def _resolve_choice(args, restore_dir):
         return None
     args.m1_seed = None
     if not args.ordinary:
+        # Model authoring is an --ordinary feature: plain play validates the
+        # settings and runs without model content. Explicit flags fail closed.
+        if author_flags:
+            raise ValueError("model-authoring settings apply to --ordinary play")
         args.next_use = next_use is True
         return None
+    args.author = author
     if haunt is None:
         args.haunt = HAUNT_DEFAULT
     args.next_use = next_use is not False
@@ -565,6 +611,9 @@ def _resolve_choice(args, restore_dir):
     record["whispers"] = (
         None if args.m1_seed is None else {"backend": "m1", "seed": args.m1_seed}
     )
+    if author is not None:
+        record["v"] = 7
+        record["author"] = author.record()
     record["haunt_pack"] = record["haunt_sha256"] = None
     if args.haunt is not None:
         pack = Path(args.haunt).resolve()

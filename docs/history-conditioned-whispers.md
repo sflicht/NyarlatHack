@@ -54,14 +54,16 @@ describe. The flag is an explicit host assertion, not automatic race detection.
 Do not run this beside another director on the same mailbox. A qualifying drink
 does not override Sanity, budget, active-effect or scheduling restrictions.
 
-The model option uses the existing pinned GPT-5.6 Luna / ChatGPT OAuth route.
+The model option uses the existing ChatGPT OAuth route (provider
+`openai-codex`); the model comes from `--author-model` or
+`NYARLATHACK_AUTHOR_MODEL`, never a constant, and must match the ledger's.
 OAuth is the subscription's authorization mechanism; this is not an API-key
 fallback. Use the existing configured interpreter and authorized ledger:
 
 ```sh
 /path/to/configured/python -m chaos history --run-dir "$RUN" \
   --backend oauth --ordinary-food --model-ledger /existing/private/model-ledger.json \
-  --max-runtime 90
+  --author-provider openai-codex --author-model gpt-5.6-luna --max-runtime 90
 ```
 
 The existing ledger **and its lock must already exist**. Missing or inconsistent

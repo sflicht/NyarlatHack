@@ -9,9 +9,14 @@ import unittest
 from unittest.mock import Mock, patch
 
 from chaos.__main__ import main
-from chaos.oauth import OAuthBackend
+from functools import partial
+
+from chaos.oauth import OAuthBackend as _OAuthBackend
 from current_history_fixtures import current_history_rows
 from test_episodes import wire
+
+
+OAuthBackend = partial(_OAuthBackend, model="gpt-5.6-luna")
 
 
 class HistoryCLITests(unittest.TestCase):
@@ -42,7 +47,7 @@ class HistoryCLITests(unittest.TestCase):
             transports = []
 
             def construct(*args, **kwargs):
-                transport = OAuthBackend(*args, client_factory=factory, **kwargs)
+                transport = _OAuthBackend(*args, client_factory=factory, **kwargs)
                 transports.append(transport)
                 return transport
 
@@ -60,6 +65,10 @@ class HistoryCLITests(unittest.TestCase):
                             "oauth",
                             "--model-ledger",
                             str(Path(directory) / "missing"),
+                            "--author-provider",
+                            "openai-codex",
+                            "--author-model",
+                            "gpt-5.6-luna",
                         ]
                     )
                 except SystemExit:

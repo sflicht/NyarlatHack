@@ -1,8 +1,8 @@
 # The Crawling Chaos director
 
 For the implemented constrained-runtime encounter, harmless history echoes, and
-the user-selected GPT-5.6 Luna / ChatGPT OAuth route, see
-[the First Haunting guide](../docs/milestone2.md). The generic HTTP model backend
+the ChatGPT OAuth route (provider and model set by `--author-provider` /
+`--author-model`), see [the First Haunting guide](../docs/milestone2.md). The generic HTTP model backend
 described below is an optional alternative, not an automatic fallback.
 
 Python 3.11+; standard library only. Run `python3 -m chaos --help` from the
@@ -113,6 +113,36 @@ cleanup. Director diagnostics go to the private `director.log`.
 This is a POSIX (Portable Operating System Interface) launcher, tested on Linux. `play` currently supports only offline
 pack/random modes; explicit model/OAuth commands below remain separate. Provider
 configuration is not universally interchangeable and never silently falls back.
+
+### Model-authoring settings
+
+`play` accepts the model-authoring settings now, validates them before any run
+directory exists, and records them so a restore follows them. No play surface
+calls a model yet; nothing configured is the default and plays exactly as before.
+
+| Setting | Flag | Environment variable | Default |
+|---|---|---|---|
+| Provider | `--author-provider` | `NYARLATHACK_AUTHOR_PROVIDER` | none |
+| Model | `--author-model` | `NYARLATHACK_AUTHOR_MODEL` | none |
+
+The flag wins over the variable, the variable over the default; an empty
+variable counts as unset. Providers: `xai-oauth` (Hermes's xAI OAuth login;
+NyarlatHack holds no key), `xai` (API key from the environment) and
+`openai-codex` (Hermes's ChatGPT OAuth). A provider without a model, a model
+without a provider, or an unknown provider stops with an error naming the flag
+and variable; a model id is never guessed.
+
+An API-key provider reads its key **only from the environment at run time**:
+`XAI_API_KEY` for `xai`, or the variable *named* by `--api-key-env` (a name,
+never a key; refused for OAuth providers). The key is never logged, written to
+the ledger, receipts or run evidence, or committed. If the variable is unset,
+the provider counts as unreachable and there is no model content.
+
+The xAI ledger (`$XDG_DATA_HOME/nyarlathack/xai-ledger.jsonl`, private) reserves
+each request durably before sending it and caps requests at 3 per surface per
+game, 200 per day (configurable) and 2000 per file. Rows record provider, model,
+route, time, HTTP status, latency, token counts, prompt and response SHA-256 and
+run id; never credentials or headers.
 
 ## Explicit saved-curio launch (offline)
 

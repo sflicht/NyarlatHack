@@ -11,9 +11,12 @@ from unittest.mock import patch
 
 from chaos.director import State, run
 from chaos.model import ModelBackend
-from chaos.oauth import MODEL, OAuthBackend
+from chaos.oauth import OAuthBackend
+
 from chaos.protocol import parse_request
 from test_director import REQ, append, current_event as event
+
+MODEL = "gpt-5.6-luna"  # fixture model id; real runs pass --author-model
 
 
 REQUEST = dict(REQ, at=2)
@@ -328,7 +331,7 @@ class OAuthResponseCleanupTests(CleanupContract, unittest.TestCase):
 
         self.client.close = close
         self.client.chat = SimpleNamespace(completions=SimpleNamespace(create=create))
-        return OAuthBackend(ledger, client_factory=factory)
+        return OAuthBackend(ledger, model=MODEL, client_factory=factory)
 
     def test_general_generation_preserves_exact_text_including_lua(self):
         for text in (
