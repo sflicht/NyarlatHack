@@ -1,0 +1,47 @@
+{
+ "bard": {
+  "games": 100,
+  "delivered": 0,
+  "guarded": 0,
+  "games_delivered": 0,
+  "games_guarded": 0,
+  "by_guard": {},
+  "journal_errors": 0
+ },
+ "bard-default-path": {
+  "games": 100,
+  "delivered": 0,
+  "guarded": 0,
+  "games_delivered": 0,
+  "games_guarded": 0,
+  "by_guard": {},
+  "journal_errors": 0
+ },
+ "bard-inherited": {
+  "games": 100,
+  "delivered": 0,
+  "guarded": 0,
+  "games_delivered": 0,
+  "games_guarded": 0,
+  "by_guard": {},
+  "journal_errors": 0
+ },
+ "madman": {
+  "games": 100,
+  "delivered": 0,
+  "guarded": 0,
+  "games_delivered": 0,
+  "games_guarded": 0,
+  "by_guard": {},
+  "journal_errors": 0
+ },
+ "wizard-default-path": {
+  "games": 100,
+  "delivered": 0,
+  "guarded": 0,
+  "games_delivered": 0,
+  "games_guarded": 0,
+  "by_guard": {},
+  "journal_errors": 0
+ }
+}

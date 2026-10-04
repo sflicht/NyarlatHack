@@ -125,7 +125,18 @@ seen in real play; the mapping test covers it.
 
 ## Paired sweep
 
-See [`docs/measurements/ring-whistle-238/`](../../measurements/ring-whistle-238/README.md).
+Main `3b89f6e2` vs ring `29349da08`, baseline-v2 seeds 1–100, five starts;
+full tables in [`docs/measurements/ring-whistle-238/`](../../measurements/ring-whistle-238/README.md).
+
+- Gate (part 1 / part 3), main → ring: bard-default-path 6/1 → 24/16, bard
+  13/6 → 34/31, bard-inherited 3/0 → 5/3, wizard-default-path 0/0 → 1/1,
+  madman 0/0 → 0/0.
+- Hound admission identical in all 500 seed pairs.
+- Ring uses delivered / guarded: 331 / 92; guards that fired: peaceful
+  adjacent 32, hostile adjacent 35, confused 22, low HP 3.
+- Restore rejects of a broad program saved on a deeper level than it was
+  admitted on: 1 game on main, 2 on ring. Pre-existing (#235); see the
+  measurement README.
 
 ## Player-visible delta
 
