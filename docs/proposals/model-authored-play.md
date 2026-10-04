@@ -245,9 +245,9 @@ director (`chaos/director.py:595-657` already polls with a deadline).
 - If the player reaches DL3 first, native expiry closes the chance, and
   nothing is shown.
 
-**Prerequisite.** The launcher's director runtime defaults to 300 s
-(`chaos/launcher.py:108-111`). Curio work needs its own deadline, or the
-playtest's long runtime as the ordinary default.
+**Director runtime (decided).** Model authoring gets its own background
+deadline of 6 minutes. All other director timing is unchanged, including
+the launcher's 300 s director runtime default (`chaos/launcher.py:108-111`).
 
 ### 3.2 Grounding
 
@@ -264,15 +264,17 @@ files. The hooks still see only sanity, insight, charges and state, so
 responsiveness lives in the prose fixed at generation. That is honest, and
 it is what the pilot measured.
 
-**Code change.** This needs one deliberate change in `chaos/curio.py`:
+**Code change (decided).** This needs one deliberate change in
+`chaos/curio.py`:
 
 - accept the projection as data;
 - **raise the curio prompt cap from 8192 to 12288 bytes**, matching the
   next-use author's cap. The pilot's largest history prompt was 10240.
 
-**Continuity.** There is one curio per game. Cross-game notes from the
-existing journal stay **off at launch**: a note is earlier model free text,
-the one channel that could carry stale claims. Turn them on after the A/B.
+**Continuity (decided).** There is one curio per game. Cross-game notes
+from the existing journal stay **off at launch**: a note is earlier model
+free text, the one channel that could carry stale claims. Revisit after the
+A/B.
 
 ### 3.3 Literary layer
 
@@ -314,13 +316,16 @@ backend publishes the logged source at the logged safe point, reusing
 - a test that a recorded curio game replays to identical events;
 - an answer on whether `mksobj(WHISTLE)` draws RNG.
 
-### 3.6 No credential or network
+### 3.6 No model configured or reachable
 
-The fallback is **no curio**. A canned curio would blur the A/B's no-curio
-arm.
+The fallback is **no curio** (decided). A canned curio would blur the A/B's
+no-curio arm.
 
-- Without a credential the director never asks, and the player sees
+- With no provider configured (§5.1), or a configured provider whose
+  credential is missing, the director never asks, and the player sees
   nothing.
+- A configured provider that is unreachable is the transport rows of §3.8:
+  no curio this game.
 - Tests and the random and replay backends stay offline through the
   existing injectable `client_factory` seam.
 
@@ -350,16 +355,16 @@ arm.
 
 ## 4. The other surfaces
 
-Each of these is its own later slice, with its own Sam decision. Curios go
-first.
+Curios go first, and the free-design hound comes next (decided). Next-use
+authoring and narration are each a later slice with its own Sam decision.
 
 - **Hound.** The prompt is the problem, not the model.
   - Replace the prescribed sentence in `haunting.txt` with the pilot's
     "design the pursuit from this summary; keep it learnable and escapable".
   - Generate at the same asynchronous point, before the haunt's admission.
     A free-design module still has to pass the shadow trial (#190).
-  - Keep `footsteps.lua` as the no-credential fallback, because the hound
-    is already on by default.
+  - Keep `footsteps.lua` as the fallback when no model is configured or
+    reachable, because the hound is already on by default.
   - The open question is whether varied pursuits play better. That needs
     people, not bots.
 - **Next-use programs.** Authoring is valid but adds little while the
@@ -376,27 +381,61 @@ first.
   - Its prompt needs room to interpret (motifs, the player's choices), and
     its checks need to enforce the 160-character bound.
 
-## 5. Provider plan: xAI OAuth through Hermes
+## 5. Provider plan: configurable provider and model
 
-### 5.1 Transport and keys
+### 5.1 Configuration
 
-**Development and the A/B** use Hermes's xAI OAuth login. NyarlatHack holds
-no key.
+The shipped software hard-codes **neither the provider nor the model**.
+Each is one setting, given by an executable flag or an environment
+variable:
 
-- Add `XaiOAuthBackend` to `chaos/oauth.py`. It uses Hermes's existing
+| Setting | Flag | Environment variable | Default |
+|---|---|---|---|
+| Provider | `--author-provider` | `NYARLATHACK_AUTHOR_PROVIDER` | none |
+| Model | `--author-model` | `NYARLATHACK_AUTHOR_MODEL` | none |
+
+**Precedence:** the flag wins over the environment variable, and the
+environment variable wins over the default. An empty variable counts as
+unset.
+
+**Provider values at launch:**
+
+- `xai-oauth`: the xAI OAuth login held by Hermes. `XaiOAuthBackend` in
+  `chaos/oauth.py` uses Hermes's existing
   `agent.auxiliary_client._build_xai_oauth_aux_client(model)`, the same
   pattern as today's `_build_codex_client` (`chaos/oauth.py:24-28`).
-- Hermes owns the credential pool and refresh. NyarlatHack never reads,
-  copies or logs a token.
-- The model is **one configuration value** (a `--model-authoring-model`
-  flag or a user config entry), set to the configured xAI model. It is not
-  a constant scattered through `chaos/`.
+  Hermes owns the credential pool and refresh. NyarlatHack never reads,
+  copies or logs a token. Development and the A/B use this value.
+- `xai`: the xAI API with a key from the user's environment (below), for
+  shipped software without Hermes.
+- `openai-codex`: the existing Codex OAuth adapter through Hermes, kept as a
+  value instead of a pin.
 
-**Shipped software without Hermes** takes its API key only from the user's
-environment at run time. **No API key appears in the code.**
+**Nothing configured.** With no provider, there is no model content: the
+director never asks, every surface falls back offline (no curio;
+`footsteps.lua` for the hound), and nothing is shown. This is the default.
 
-- The key comes only from the environment variable **`XAI_API_KEY`**,
-  read with `os.environ` when the backend is built. This follows
+**Partial or bad configuration.** A provider without a model, a model
+without a provider, or an unknown provider value stops the launcher before
+it creates a run directory, with an error naming the flag and variable to
+set. A model id is never guessed or defaulted.
+
+**Recording.** The resolved provider and model, and for API-key providers
+the *name* of the key variable, go in the run's choice record and in every
+ledger row and receipt. The key value never does.
+
+### 5.2 API keys
+
+An API key comes only from the user's environment at run time. **No API
+key appears in the code.**
+
+- **Which variable.** An API-key provider reads its provider-standard
+  variable: `XAI_API_KEY` for `xai`. The existing `--api-key-env` pattern
+  (`chaos/__main__.py:228`, "environment variable NAME, not a key") can
+  override it. That flag names a variable and never holds a key.
+  - The name must be a valid environment variable name.
+  - `--api-key-env` is rejected for OAuth providers, which hold no key.
+- The key is read with `os.environ` when the backend is built. This follows
   `ModelBackend`'s env-var-name pattern (`chaos/model.py:47-51`).
 - No key literal, key-like placeholder or sample key goes in source, config
   files, tests, fixtures, docs or the pilot harness. A test that needs "a
@@ -407,26 +446,35 @@ environment at run time. **No API key appears in the code.**
 - The key is never logged, never written to run evidence or the ledger,
   never put in an exception message, and never committed. Errors name only
   the variable ("XAI_API_KEY is not set").
+- A configured API-key provider whose variable is unset is "no model
+  reachable": no model content, as in §3.6.
 - The secret-history CI scan is the backstop, not the plan.
 
-### 5.2 Files to change (later slices, not this PR)
+### 5.3 Files to change (later slices, not this PR)
 
-- `chaos/oauth.py`: `XaiOAuthBackend` and the env-key variant; ledger
-  records per surface; the model read from configuration.
+- `chaos/oauth.py`: **remove the hard-coded `MODEL` / `PROVIDER` pin**
+  (`chaos/oauth.py:19-21`) and read both from configuration (§5.1);
+  `XaiOAuthBackend` and the `xai` API-key backend; ledger records per
+  surface.
+- `chaos/__main__.py` and `chaos/launcher.py`: `--author-provider`,
+  `--author-model` and `--api-key-env`, with the environment fallbacks and
+  precedence of §5.1.
 - `chaos/curio.py`: history projection as data; the cap raised to 12288.
 - `chaos/curio_generation.py`: called by the director, with a deadline;
   seeded layer selection; the prose truthfulness check.
 - `chaos/director.py`: the background authoring task and the trigger.
-- `chaos/launcher.py`: the ordinary default (on when a credential exists);
-  the runtime prerequisite (§3.1); a choice-record field naming the
-  authoring state so restore follows it, as #198 did for the hound.
+- `chaos/launcher.py`: the ordinary default (on when a provider is
+  configured and its credential is available); the 6-minute authoring
+  deadline (§3.1); a choice-record field naming the authoring state,
+  provider and model so restore follows it, as #198 did for the hound.
 - A curio replay backend beside `chaos/director.py:520-594`.
 - Tests: fake transports for every row of §3.8, and replay equivalence.
 
-### 5.3 Ledger and cap
+### 5.4 Ledger and cap
 
-The `$1, 20-attempt` openai-codex ledger stays as it is. xAI gets its own
-ledger beside it, sized for real use:
+Each provider keeps its own ledger. The `$1, 20-attempt` openai-codex
+ledger keeps its caps. The xAI providers get their own ledger beside it,
+sized for real use:
 
 - **Durability:** every HTTP attempt is reserved durably before it is sent
   (the pilot's `attempts.jsonl` pattern).
@@ -446,7 +494,7 @@ What goes where:
   replay needs.
 - **Neither** holds credentials or request headers.
 
-### 5.4 Latency and rate limits
+### 5.5 Latency and rate limits
 
 - **Pilot traffic:** 6–8 concurrent calls through the local proxy over
   about two hours, with no 429.
@@ -478,8 +526,12 @@ What goes where:
 ## 7. Slices
 
 1. The pilot (#241) and this proposal. Docs and measurement only.
-2. Transport and grounding:
-   - `XaiOAuthBackend` and the env-key variant;
+2. Configuration, transport and grounding:
+   - remove the hard-coded `MODEL` / `PROVIDER` pin in `chaos/oauth.py`;
+     read both from configuration (flag, then environment variable, then
+     the no-model default);
+   - `--api-key-env` for API-key providers;
+   - `XaiOAuthBackend` and the `xai` API-key backend;
    - the ledger;
    - curio history grounding and the cap change;
    - the replay backend;
@@ -489,20 +541,26 @@ What goes where:
    the launcher default. Evidence is a real nonwizard `--ordinary` capture
    showing a model curio admitted, found and used.
 4. The people A/B.
-5. Then, each by Sam's decision: the free-design hound, model-written
-   telegraph and reveal wording, and narration.
+5. The free-design hound (decided as next).
+6. Then, each by Sam's decision: model-written telegraph and reveal
+   wording, and narration.
 
-## 8. Open questions for Sam
+## 8. Decisions (Sam, 2026-10-04)
 
-1. **Grounding.** Give curios the public history (cap raised to 12288), or
-   keep them to sanity and insight? The pilot says history is what makes
-   them responsive.
-2. **Cross-game notes.** Off at launch (proposed), or on from the start?
-3. **Fallback.** No curio without a credential (proposed), or a
-   hand-authored one?
-4. **Director runtime.** Give model authoring its own deadline (proposed),
-   or make the long playtest runtime the ordinary default?
-5. **Key variable.** `XAI_API_KEY` (proposed), or a NyarlatHack-specific
-   name?
-6. **Order after curios.** Free-design hound next (proposed), or
-   model-written telegraph and reveal wording?
+Sam accepted all proposals.
+
+1. **First surface:** curios first.
+2. **Grounding:** curios get the public history, and the curio prompt cap
+   rises to 12288 bytes (§3.2).
+3. **Cross-game continuity notes:** off at launch; revisit after the A/B
+   (§3.2).
+4. **Fallback with no model configured or reachable:** no curio (§3.6).
+5. **Director runtime:** model authoring gets its own 6-minute background
+   deadline; other director timing is unchanged (§3.1).
+6. **Key variable for API-key providers:** the provider-standard name
+   (`XAI_API_KEY` for xAI), with an `--api-key-env` override that names a
+   variable and never holds a key (§5.2).
+7. **After curios:** the free-design hound comes next (§4, §7).
+
+Provider and model are both configured by flag or environment variable,
+with no hard-coded pin (§5.1), as Sam directed.
