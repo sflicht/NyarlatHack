@@ -188,7 +188,7 @@ class OfflineAuthorTests(unittest.TestCase):
             "SOURCE",
             "MEASURED",
             "UNKNOWN",
-            "de41c9ff080662fcb456a8b1135956bc85e153d8",
+            "48a37eab1eca62a3a04d99aa3e240263f0d64076",
             "do not persist",
             "not available in on_action",
             "not typical",
@@ -528,7 +528,7 @@ class OfflineAuthorTests(unittest.TestCase):
             (ROOT / "chaos/prompts/next-use-mechanics-sources.json").read_bytes()
         )
         self.assertEqual(
-            manifest["revision"], "de41c9ff080662fcb456a8b1135956bc85e153d8"
+            manifest["revision"], "48a37eab1eca62a3a04d99aa3e240263f0d64076"
         )
         for name in (
             "include/chaos_presentation.h",

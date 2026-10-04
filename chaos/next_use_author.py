@@ -21,7 +21,7 @@ from .protocol import strict_json
 
 ROOT = Path(__file__).resolve().parents[1]
 PROMPTS = ROOT / "chaos/prompts"
-SOURCE_REVISION = "de41c9ff080662fcb456a8b1135956bc85e153d8"
+SOURCE_REVISION = "48a37eab1eca62a3a04d99aa3e240263f0d64076"
 PROMPT_VERSION = "next-use-offline-author-v1"
 MAX_PROMPT_BYTES = 12288
 MAX_RESPONSE_BYTES = 8192

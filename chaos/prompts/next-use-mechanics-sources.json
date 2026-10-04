@@ -10,7 +10,7 @@
     "src/chaos_engine.c": "8969d484708d9558520f07ecdd389da5e1cfb98cce76f359233b70bc46934d47",
     "src/chaos_lua.c": "39837d31e32c7227f6f4ee3ecfc9c22cb19a43b0c7b8aa39b48405626bebab0a",
     "src/chaos_next_use.c": "45be16ce0ada4ea6747e1dee229b116c20bd5c9d3c01c5f76fa670ee74f8cfed",
-    "src/chaos_next_use_runtime.c": "b64054373073bfed33e67f733241c737c018189d609289e8913af8d581f63921",
+    "src/chaos_next_use_runtime.c": "96d950b7b87d397ea486ce3e20204841b5debd837611b4fbf2f7cdf9b0fb39b4",
     "src/chaos_next_use_safe.c": "1529f42c5254ea09666371ee1bb7ec1863fb107fb082edad81638c1b1b81122d",
     "src/chaos_presentation.c": "fa405cf41bb8852193b63e8f5c56d58dd7383129348f756bb16fb91ca2fda309",
     "src/dogmove.c": "0616a245bbfcb37a76443064619d1832334d6867be13b5fa99a930c4b165f7cf",
@@ -18,5 +18,5 @@
     "src/u_init.c": "9c9a4788d2c3ceffc91d18ed9c7168556571781d99ea3fe44ed95fbd01e5db68",
     "win/tty/wintty.c": "814b162e0923c1d880f1c6ab1655c0d1df8796aa431a4dc660e2fbd0f50bab41"
   },
-  "revision": "de41c9ff080662fcb456a8b1135956bc85e153d8"
+  "revision": "48a37eab1eca62a3a04d99aa3e240263f0d64076"
 }
