@@ -1,0 +1,1 @@
+{"source":"return function(c)\n  local n=#c.history\n  local i=1\n  if n>=4 then i=n-3 end\n  local t=c.history[i]\n  local dx=0\n  local dy=0\n  if t.x>c.mx then dx=1 elseif t.x<c.mx then dx=-1 end\n  if t.y>c.my then dy=1 elseif t.y<c.my then dy=-1 end\n  return {dx=dx,dy=dy,state=(c.state+1)%1000001}\nend\n"}

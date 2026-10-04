@@ -1,0 +1,1 @@
+{"next_use_author_v":2,"source":"return {on_action=function(context) local next_state=context.state if next_state<3 then next_state=next_state+1 end local op=\"quiet\" if context.trigger==\"W\" and context.own_witnessed==\"none\" and context.state<3 then op=\"whistle_attention\" end return {next_use_intent_v=2, op=op, state=next_state} end}"}

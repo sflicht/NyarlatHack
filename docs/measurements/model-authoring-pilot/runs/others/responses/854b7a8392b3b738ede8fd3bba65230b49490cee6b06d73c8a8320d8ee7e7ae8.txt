@@ -1,0 +1,1 @@
+{"next_use_author_v":2,"source":"return {on_action=function(c) local s=c.state if s<3 then s=s+1 end local op='quiet' if c.trigger=='W' and c.own_witnessed~='W' and c.variant==0 then op='whistle_attention' elseif c.trigger=='F' and c.own_witnessed=='W' and c.variant==0 then op='fountain_refresh' end return {next_use_intent_v=2,op=op,state=s} end}"}

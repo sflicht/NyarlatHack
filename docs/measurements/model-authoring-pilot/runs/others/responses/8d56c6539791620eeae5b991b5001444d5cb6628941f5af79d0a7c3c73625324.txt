@@ -1,0 +1,1 @@
+{"source":"return function(c)\nlocal n=#c.history\nlocal i=n-3\nif i<1 then i=1 end\nlocal t=c.history[i]\nlocal dx=0\nlocal dy=0\nif t.x>c.mx then dx=1 elseif t.x<c.mx then dx=-1 end\nif t.y>c.my then dy=1 elseif t.y<c.my then dy=-1 end\nlocal s=c.state+1\nif s>1000000 then s=0 end\nreturn {dx=dx,dy=dy,state=s}\nend\n"}

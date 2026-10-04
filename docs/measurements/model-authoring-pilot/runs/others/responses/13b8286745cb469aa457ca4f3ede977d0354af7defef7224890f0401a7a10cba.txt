@@ -1,0 +1,1 @@
+{"source":"return function(c) local h=c.history local n=#h local i=n-3 if i<1 then i=1 end local t=h[i] local dx=0 local dy=0 if t~=nil then local x=t.x-c.mx local y=t.y-c.my if x>0 then dx=1 elseif x<0 then dx=-1 end if y>0 then dy=1 elseif y<0 then dy=-1 end end local s=(c.state+1)%1000001 return {dx=dx,dy=dy,state=s} end"}
