@@ -1,0 +1,47 @@
+{
+  "version": 1,
+  "about": "Prose truthfulness rules for model-authored curios (proposal 3.4). A curio's hooks can only show text and request a Sanity change of -2..2; any text promising another effect is false. Heuristic: case-insensitive regular expressions over the name and every inspect/apply text the validation grid produced. False rejections are measured in docs/measurements/.",
+  "rules": [
+    {
+      "id": "item_gain",
+      "category": "items",
+      "pattern": "\\b(you (receive|obtain|gain|get|are given)|(into|in) your (pack|hands?|inventory|purse)|(gives?|grants?|bestows?|yields?|drops?) (you|a|an|some|the) (gift|gold|coins?|gems?|key|potion|scroll|wand|ring|amulet|weapon|treasure|item))\\b"
+    },
+    {
+      "id": "item_named",
+      "category": "items",
+      "pattern": "\\b(gold pieces?|potions? of|scrolls? of|wands? of|rings? of|amulets? of)\\b"
+    },
+    {
+      "id": "teleport",
+      "category": "teleports",
+      "pattern": "\\b(teleport\\w*|transports? you|whisk(s|ed)? (you|away|off)|(you are|you're) whisked|carries you (away|off|elsewhere)|you (are|find yourself) (elsewhere|somewhere else|on another (level|floor)))"
+    },
+    {
+      "id": "damage",
+      "category": "damage",
+      "pattern": "\\b((burns?|cuts?|wounds?|stings?|bites?|strikes?|hurts?|injures?|poisons?|kills?) you|hit points?|you (bleed|take damage|lose (\\d+ )?(hp|health|blood))|deals? damage)\\b"
+    },
+    {
+      "id": "monster_acts",
+      "category": "monsters",
+      "pattern": "\\b((summons|summoned|calls forth|calls up) (a|an|the|some|your|its|forth)\\b|monsters? (come|comes|attack|attacks|answer|answers|flee|flees|approach|approaches)|(your|the) (dog|kitten|pony|pet|companion) (comes|follows|obeys|attacks|answers|returns))"
+    },
+    {
+      "id": "future_event",
+      "category": "future",
+      "pattern": "\\b(you will (?!not\\b|never\\b)|it will (bring|give|lead|take|open|reveal|show you)|will (come|arrive|appear|return|happen) (soon|later|for you|to you)|on the next (level|floor)|later floor|next floor|tomorrow|someday)"
+    },
+    {
+      "id": "other_stat",
+      "category": "stats",
+      "pattern": "\\b(you (gain|lose|feel your) (insight|strength|wisdom|luck|experience|a level|levels)|(insight|luck|strength|wisdom) (rises|grows|increases|falls|decreases))\\b"
+    },
+    {
+      "id": "witnessed",
+      "category": "witness",
+      "pattern": "\\b((it|the \\w+) (remembers|recalls|saw|watched|witnessed) (you|your)|i (saw|watched|remember) you)\\b"
+    }
+  ],
+  "calibration": "Drafted, then narrowed once against #241's 101 parseable pilot curios: 'you will not ...' and 'summon agreement' were false positives. The witness rule was kept ('The case remembers your angle' is rejected). The rerun under docs/measurements/ is the first measurement on unseen text."
+}
