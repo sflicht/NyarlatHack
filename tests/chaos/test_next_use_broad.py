@@ -245,10 +245,69 @@ class NextUseBroadTests(unittest.TestCase):
                 _, trace = self.journal()
                 self.assertTrue(trace["structurally_complete"])
 
+    def test_broad_program_saved_on_a_deeper_level_restores_live(self):
+        # #238 restore reject: admitted on level 1, descent, save, restore on
+        # level 2. Before the fix restore_snapshot refused it outright.
+        for family in "WF":
+            with self.subTest(family=family):
+                _, steps, _ = self.run_case(family, "restore-level", journal=True)
+                self.assertEqual(steps["use1"]["delivered"], 1)
+                self.assertEqual(steps["descended"]["phase"], COMMITTED)
+                self.assertEqual(steps["wrong-run"]["result"], 0)
+                self.assertEqual(steps["restored"]["result"], 1)
+                self.assertEqual(steps["restored"]["snapshot_v"], 7)
+                self.assertEqual(steps["restored"]["phase"], COMMITTED)
+                self.assertEqual(steps["restored"]["delivered"], 1)
+                self.assertEqual(steps["restored"]["broad_active"], 1)
+                self.assertEqual(steps["resumed"]["result"], 1)
+                # The next qualifying use delivers, on the new level.
+                self.assertEqual(steps["use2"]["result"], 1)
+                self.assertEqual(steps["use2"]["delivered"], 2)
+                self.assertEqual(steps["use2"]["phase"], TERMINATED)
+                _, trace = self.journal()
+                self.assertTrue(trace["structurally_complete"])
+
+    def test_replay_holds_across_the_cross_level_restore(self):
+        for family in "WF":
+            with self.subTest(family=family):
+                _, steps, _ = self.run_case(family, "restore-level-replay")
+                self.assertEqual(steps["replayed-before-save"]["result"], 1)
+                self.assertEqual(steps["restored"]["result"], 1)
+                self.assertEqual(steps["use2"]["delivered"], 2)
+                self.assertEqual(steps["replayed-after-restore"]["result"], 1)
+
+    def test_single_use_control_ends_at_the_descent_before_the_save(self):
+        _, steps, _ = self.run_case("W", "restore-level", broad=False, journal=True)
+        self.assertEqual(steps["descended"]["phase"], TERMINATED)
+        self.assertEqual(steps["restored"]["result"], 1)  # terminal history
+        self.assertEqual(steps["restored"]["phase"], TERMINATED)
+        self.assertEqual(steps["use2"]["result"], 0)
+
+    def test_live_snapshot_restored_on_another_level(self):
+        # Single-use stays level-bound: refused. Broad without an open
+        # window is not level-bound: restored.
+        for broad, expected in ((False, 0), (True, 1)):
+            for family in "WF":
+                with self.subTest(broad=broad, family=family):
+                    _, steps, _ = self.run_case(family, "restore-foreign", broad=broad)
+                    self.assertEqual(steps["restored-elsewhere"]["result"], expected)
+
+    def test_open_window_snapshot_is_refused_on_another_level(self):
+        _, steps, _ = self.run_case("W", "restore-open-window")
+        self.assertEqual(steps["armed"]["result"], 1)
+        self.assertEqual(steps["window-other-level"]["result"], 0)
+        self.assertEqual(steps["window-own-level"]["result"], 1)
+
     def test_tampered_broad_snapshot_is_refused(self):
         _, steps, _ = self.run_case("W", "tamper")
         self.assertEqual(steps["untampered"]["result"], 1)
-        for step in ("tamper-uses", "tamper-version", "tamper-delivered"):
+        for step in (
+            "tamper-uses",
+            "tamper-version",
+            "tamper-delivered",
+            "tamper-level",
+            "tamper-armed-level",
+        ):
             with self.subTest(step=step):
                 self.assertEqual(steps[step]["result"], 0)
 

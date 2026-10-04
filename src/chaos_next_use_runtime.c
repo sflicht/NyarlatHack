@@ -2665,6 +2665,21 @@ int chaos_next_use_save(int fd)
     return 1;
 }
 
+/* What a live (unterminated) snapshot binds to the restoring level.
+ * Single-use: the whole program; it ends on level departure at the next
+ * boundary, so a live one saved elsewhere is foreign or tampered state.
+ * Broad (C): the program survives level changes, so its admission level
+ * binds nothing. Only an open W window is level-bound (armed_level_token);
+ * the boundary ends it on departure, so an open window on another level
+ * stays a refusal. validate() already ties armed_level_token to the window. */
+static int restore_level_bound_ok(const struct chaos_next_use_snapshot *snap,
+                                  long level_token)
+{
+    if (!snap->broad_uses) return snap->level_token == level_token;
+    return snap->w_runtime != CHAOS_W_RUNTIME_ARMED
+        || snap->armed_level_token == level_token;
+}
+
 static int restore_snapshot(int fd, long run_token, long level_token, int bound)
 {
     char magic[4];
@@ -2701,7 +2716,7 @@ static int restore_snapshot(int fd, long run_token, long level_token, int bound)
     if (present && bound && (run_token <= 0 || level_token <= 0
         || snap.run_token != run_token
         || (snap.phase != CHAOS_ATTEMPT_TERMINATED
-            && snap.level_token != level_token))) return 0;
+            && !restore_level_bound_ok(&snap, level_token)))) return 0;
     if (present) {
         if (!chaos_next_use_snapshot_import(&snap)) return 0;
         if (bound) {

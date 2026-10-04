@@ -1,0 +1,1900 @@
+{
+ "aggregate": {
+  "bard": {
+   "delivery_unknown_games": 1,
+   "director_sync_timeouts": 0,
+   "distinct_felt": {
+    "games_2plus": 0,
+    "games_2plus_excluding_hound": 0,
+    "games_2plus_raw_felt_events": 0,
+    "games_by_kind": {
+     "door": 0,
+     "hound": 0,
+     "hunger": 0,
+     "next_use": 0
+    },
+    "per_game": {
+     "0": 1
+    },
+    "sources_by_kind": {
+     "door": 0,
+     "hound": 0,
+     "hunger": 0,
+     "next_use": 0
+    }
+   },
+   "first_admission_move": null,
+   "first_felt": {
+    "by_kind": {
+     "door": 0,
+     "hound": 0,
+     "hunger": 0,
+     "next_use_F": 0,
+     "next_use_W": 0
+    },
+    "dlvl": null,
+    "games": 0,
+    "turn": null
+   },
+   "games": 1,
+   "games_reaching_stage": {
+    "admitted": 1,
+    "candidate": 1,
+    "delivered": 0,
+    "native_effect": 0,
+    "published": 1,
+    "qualifying_history": 1,
+    "trigger": 0
+   },
+   "games_with_whistle": 1,
+   "harness_errors": 1,
+   "hound": {
+    "games_accepted": 0,
+    "steps": 0
+   },
+   "last_turn": {
+    "max": 700,
+    "median": 700,
+    "min": 700,
+    "n": 1
+   },
+   "levels_visited": 3,
+   "loss_reasons": {
+    "admitted_trace_missing": 1
+   },
+   "max_dlvl": null,
+   "no_companion_refusals": {
+    "decisions": 1,
+    "games": 1
+   },
+   "nonzero_exit": 1,
+   "ordinary_whispers_admitted": 2,
+   "outcomes": {
+    "harness_error": 1
+   },
+   "per_1000_turns": {
+    "admitted": 1.429,
+    "delivered": 0.0,
+    "hound_accepted": 0.0
+   },
+   "per_level": {
+    "admitted": 0.333,
+    "delivered": 0.0,
+    "hound_accepted": 0.0
+   },
+   "policy": {
+    "flees": 0,
+    "prayers": 1,
+    "rests": 1,
+    "whistles_found": 0
+   },
+   "programs": [
+    {
+     "admitted": 0,
+     "delivered": 0,
+     "felt": 0,
+     "program": 1,
+     "published": 1,
+     "terminations": {
+      "rejected:no_companion_in_view": 1
+     }
+    },
+    {
+     "admitted": 1,
+     "delivered": 0,
+     "felt": 0,
+     "program": 2,
+     "published": 1,
+     "terminations": {}
+    },
+    {
+     "admitted": 0,
+     "delivered": 0,
+     "felt": 0,
+     "program": 3,
+     "published": 0,
+     "terminations": {}
+    }
+   ],
+   "qualifying_actions": {
+    "fountain_drink": 1,
+    "whistling": 16
+   },
+   "save_restore": {
+    "attempted": 1,
+    "restored": 0
+   },
+   "stage_totals": {
+    "admitted": 1,
+    "candidate": 16,
+    "delivered": 0,
+    "native_effect": 0,
+    "published": 2,
+    "qualifying_history": 16,
+    "trigger": 0
+   },
+   "start_budget": [
+    2
+   ],
+   "start_sanity": [
+    100
+   ],
+   "turns_played": 700,
+   "w_suppressions_by_reason": {},
+   "zero_delivered_games": 0
+  }
+ },
+ "games": [
+  {
+   "commands": 379,
+   "error": "AssertionError: ",
+   "exit_code": 1,
+   "final_status": {},
+   "funnel": {
+    "counts": {
+     "admitted": 1,
+     "candidate": 16,
+     "delivered": 0,
+     "native_effect": 0,
+     "published": 2,
+     "qualifying_history": 16,
+     "trigger": 0
+    },
+    "delivery_known": false,
+    "distinct_felt": [],
+    "effect_outcomes": [],
+    "felt_events": [],
+    "first_admission_move": null,
+    "first_felt": null,
+    "haunt": {},
+    "haunt_steps": 0,
+    "journal_status": "missing",
+    "last_turn": 700,
+    "loss": "admitted_trace_missing",
+    "ordinary_whispers_admitted": 2,
+    "programs": [
+     {
+      "admitted": 0,
+      "delivered": 0,
+      "delivery_known": true,
+      "felt": 0,
+      "journal_status": "missing",
+      "native_effect": 0,
+      "program": 1,
+      "published": 1,
+      "termination": "rejected:no_companion_in_view",
+      "trigger": 0
+     },
+     {
+      "admitted": 1,
+      "delivered": 0,
+      "delivery_known": false,
+      "felt": 0,
+      "journal_status": "incomplete",
+      "native_effect": 0,
+      "program": 2,
+      "published": 1,
+      "termination": null,
+      "trigger": 0
+     },
+     {
+      "admitted": 0,
+      "delivered": 0,
+      "delivery_known": true,
+      "felt": 0,
+      "journal_status": "missing",
+      "native_effect": 0,
+      "program": 3,
+      "published": 0,
+      "termination": null,
+      "trigger": 0
+     }
+    ],
+    "public_attention_completed": 0,
+    "qualifying_actions": {
+     "fountain_drink": 1,
+     "whistling": 16
+    },
+    "recorded_decisions": [
+     {
+      "at": 2,
+      "move": 325,
+      "reasons": [
+       "no_companion_in_view"
+      ],
+      "safe": 2
+     }
+    ],
+    "safe_points": {
+     "level_enter": 3,
+     "pray": 1
+    },
+    "session_details": [
+     "new"
+    ],
+    "start_budget": 2,
+    "start_sanity": 100,
+    "terminations": [],
+    "w_suppressions": []
+   },
+   "outcome": "harness_error",
+   "save_restore": {
+    "attempted": true,
+    "session_detail": null
+   },
+   "seed": 10,
+   "start": "bard",
+   "sync_timeouts": 0,
+   "v2": {
+    "dlvl_timeline": [
+     [
+      1,
+      1
+     ],
+     [
+      326,
+      2
+     ],
+     [
+      682,
+      3
+     ]
+    ],
+    "flees": 0,
+    "launcher": [
+     "--ordinary",
+     "--next-use",
+     "--no-haunt",
+     "--max-runtime",
+     "86400"
+    ],
+    "prayers": 1,
+    "rests": 1,
+    "status_timeline": [
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 1
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 2
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 3
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 6
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 7
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 9
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 13
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 14
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 15
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 16
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 17
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 18
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 19
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 29
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 30
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 31
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 32
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 33
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 39
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 40
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 41
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 42
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 45
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 46
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 47
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 48
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 49
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 50
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 51
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 60
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 61
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 62
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 63
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 76
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 77
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 80
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 82
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 83
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 84
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 85
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 100
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 101
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 111
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 112
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 113
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 114
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 115
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 129
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 139
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 148
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 149
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 150
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 151
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 168
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 169
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 173
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 174
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 176
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 177
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 180
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 181
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 196
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 197
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 198
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 199
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 206
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 207
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 208
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 209
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 214
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 215
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 221
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 222
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 223
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 224
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 225
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 226
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 227
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 228
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 229
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 231
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 232
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 233
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 234
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 235
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 236
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 237
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 238
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 239
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 240
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 241
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 242
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 243
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 244
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 246
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 247
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 248
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 249
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 250
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 251
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 252
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 253
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 254
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 255
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 256
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 258
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 260
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 261
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 262
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 263
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 264
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 265
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 266
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 267
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 268
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 269
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 270
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 271
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 272
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 273
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 275
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 276
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 277
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 278
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 279
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 289
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 291
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 292
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 293
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 294
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 295
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 296
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 297
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 299
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 301
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 302
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 303
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 304
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 305
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 306
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 307
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 308
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 309
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 310
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 311
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 316
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 317
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 318
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 319
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 320
+     },
+     {
+      "dlvl": 1,
+      "hunger": null,
+      "turn": 321
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 326
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 330
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 332
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 333
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 334
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 335
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 342
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 344
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 345
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 346
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 347
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 348
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 349
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 350
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 351
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 352
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 353
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 354
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 355
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 356
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 357
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 358
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 360
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 361
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 362
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 363
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 364
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 365
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 366
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 371
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 372
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 373
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 374
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 375
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 376
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 377
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 378
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 388
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 389
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 390
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 391
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 392
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 393
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 394
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 395
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 399
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 400
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 401
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 402
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 406
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 407
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 410
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 411
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 412
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 413
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 414
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 416
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 417
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 418
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 428
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 431
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 432
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 433
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 434
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 435
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 436
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 437
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 438
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 446
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 447
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 448
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 449
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 450
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 451
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 459
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 460
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 461
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 462
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 472
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 473
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 474
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 475
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 476
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 481
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 482
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 483
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 484
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 485
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 486
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 487
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 488
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 489
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 490
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 491
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 501
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 502
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 503
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 504
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 505
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 509
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 513
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 515
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 518
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 519
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 520
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 521
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 524
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 525
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 527
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 528
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 529
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 530
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 532
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 533
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 534
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 535
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 536
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 539
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 540
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 543
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 549
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 550
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 551
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 552
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 553
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 554
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 555
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 556
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 557
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 560
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 563
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 586
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 588
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 591
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 595
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 596
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 600
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 601
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 606
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 613
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 634
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 635
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 636
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 637
+     },
+     {
+      "dlvl": 2,
+      "hunger": "Hungry",
+      "turn": 648
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 649
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 650
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 654
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 655
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 656
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 657
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 658
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 659
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 677
+     },
+     {
+      "dlvl": 2,
+      "hunger": null,
+      "turn": 678
+     },
+     {
+      "dlvl": 3,
+      "hunger": null,
+      "turn": 682
+     },
+     {
+      "dlvl": 3,
+      "hunger": null,
+      "turn": 683
+     },
+     {
+      "dlvl": 3,
+      "hunger": "Hungry",
+      "turn": 687
+     },
+     {
+      "dlvl": 3,
+      "hunger": null,
+      "turn": 688
+     },
+     {
+      "dlvl": 3,
+      "hunger": null,
+      "turn": 690
+     },
+     {
+      "dlvl": 3,
+      "hunger": null,
+      "turn": 693
+     },
+     {
+      "dlvl": 3,
+      "hunger": null,
+      "turn": 697
+     },
+     {
+      "dlvl": 3,
+      "hunger": null,
+      "turn": 702
+     }
+    ],
+    "whistles_found": 0
+   },
+   "whistle_in_inventory": true
+  }
+ ],
+ "identity": {
+  "clock_source_sha256": "19795c57db9c74ad35584ca152d47b50102fc01fcddd4734beeec5671b67d58b",
+  "command": "python3 scripts/seed_sweep.py --seeds 10-10 --policy baseline-v2 --starts bard --out <stem>",
+  "dnethack_sha256": "790e3dd741ce169d32a53d112aed2f939be03a8d7347e8f75e26a8ac9f178ba3",
+  "funnel_source_sha256": "94ae86b219819516d949343fd041da307e66e02f6b18603cfbd5aa89ed218aa3",
+  "launcher": [
+   "--ordinary",
+   "--next-use",
+   "--no-haunt",
+   "--max-runtime",
+   "86400"
+  ],
+  "nhdat_sha256": "b7fc1a3aff42f759d4ee3d4db40e1d553ce753bc72c7dc75995a349c24719a96",
+  "player_source_sha256": "2ba6783a42a85100e0252efaff95d3383ebe66edc12051e14e8a0a14f13573b5",
+  "policy": "baseline-v2",
+  "policy_params": {
+   "flee_in_trouble": true,
+   "fountain_quaffs_per_level": 2,
+   "max_commands": 8000,
+   "max_dlvl": 5,
+   "max_turns": 2000,
+   "min_prayer_turn": 100,
+   "min_turns_per_level": 300,
+   "no_food_retry_turns": 200,
+   "p_fountain": 0.25,
+   "p_fountain_no_whistle": 1.0,
+   "p_search": 0.05,
+   "p_seek_tool": 0.5,
+   "p_travel_explore": 0.8,
+   "p_whistle": 0.03,
+   "prayer_gap_turns": 1000,
+   "rest_below": 0.67,
+   "rest_command": "20s",
+   "save_restore_turn": 700,
+   "settle_pages": 400,
+   "stall_commands": 200,
+   "travel_retries": 3,
+   "version": 2
+  },
+  "report_v": 4,
+  "revision": "3b89f6e2a25c7cd363d1e958e7f9ff5bce997163",
+  "seeds": [
+   10,
+   10
+  ],
+  "starts": {
+   "bard": "chaos.ordinary_start.OPTIONS,!mail"
+  }
+ },
+ "report_sha256": "d37b366fa063716c95db4967b08962de9ee8b5bb4c88edd1ad2bf97742cb455f"
+}

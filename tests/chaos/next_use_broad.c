@@ -82,9 +82,12 @@ static void bind_origin(const char *run, int family)
 
 /* As chaos_observe: the identity boundary keeps the runtime's own origin
  * liveness flags (an undeclared family must not claim a live origin). */
-static void boundary(long level)
+static long player_level = LEVEL_ONE; /* the level the player is on */
+
+static void boundary(long at)
 {
-    chaos_next_use_identity_boundary(RUN_TOKEN, level);
+    player_level = at;
+    chaos_next_use_identity_boundary(RUN_TOKEN, at);
 }
 
 static struct chaos_next_use_snapshot snap(void)
@@ -119,7 +122,7 @@ static int whistle(long root, int deliver)
         chaos_next_use_manifestation_complete(&witness, root + 4, 1);
     }
     monstermoves = start + 10;
-    boundary(LEVEL_ONE);
+    boundary(player_level);
     return 1;
 }
 
@@ -156,6 +159,19 @@ static void row(const char *step, int result)
            chaos_next_use_broad_active(), s.slot_w, s.slot_f);
 }
 
+/* Replay sink: every captured transition must replay exactly once into the
+ * engine's shadow runtime; the same record again must be blocked. */
+static int replay_applied, replay_failed;
+
+static int replay_sink(void *opaque, const struct chaos_next_use_replay_input *record)
+{
+    (void)opaque;
+    if (chaos_next_use_replay_record(record) == CHAOS_REPLAY_APPLIED) ++replay_applied;
+    else ++replay_failed;
+    if (chaos_next_use_replay_record(record) != CHAOS_REPLAY_BLOCKED_REPLAY) ++replay_failed;
+    return 1;
+}
+
 int main(int argc, char **argv)
 {
     struct chaos_next_use_safe_request req;
@@ -188,6 +204,9 @@ int main(int argc, char **argv)
     req.receipt = receipt_ok;
     bind_origin(argv[4], family);
     chaos_next_use_safe_bind_logical(RUN_TOKEN);
+    /* A capture prefix cannot be repaired later: attach before admission. */
+    if (!strcmp(scenario, "restore-level-replay"))
+        chaos_next_use_capture_set_sink(replay_sink, NULL);
     chaos_next_use_safe_try(&req, &admitted);
     /* Optional: write the production journal for the reader tests. */
     if (admitted.active && getenv("NYARL_BROAD_JOURNAL"))
@@ -249,6 +268,83 @@ int main(int argc, char **argv)
         row("use2", use(family, root + 10, 1));
         if (save) fclose(save);
         close(dir);
+    } else if (!strcmp(scenario, "restore-level")) {
+        /* #238 restore reject: admitted on level 1, one use delivered, a
+         * descent, a save on level 2, then restore on level 2. A broad
+         * program is level-independent, so it restores live and answers the
+         * next use; a single-use control has already ended at the descent. */
+        FILE *save = tmpfile();
+        int ok, resumed, wrong_run;
+        row("use1", use(family, root, 1));
+        boundary(LEVEL_TWO);
+        row("descended", 1);
+        ok = save && chaos_next_use_save(fileno(save));
+        chaos_next_use_safe_reset_for_test();
+        rewind(save);
+        wrong_run = chaos_next_use_restore_bound(fileno(save), RUN_TOKEN + 1, LEVEL_TWO);
+        row("wrong-run", wrong_run);
+        rewind(save);
+        ok = ok && chaos_next_use_restore_bound(fileno(save), RUN_TOKEN, LEVEL_TWO);
+        dir = open(argv[1], O_RDONLY | O_DIRECTORY);
+        resumed = ok && chaos_next_use_journal_resume(dir);
+        row("restored", ok);
+        row("resumed", resumed);
+        row("use2", use(family, root + 10, 1));
+        if (save) fclose(save);
+        close(dir);
+    } else if (!strcmp(scenario, "restore-level-replay")) {
+        /* As restore-level, with every transition shadow-replayed: replay
+         * holds before the save, and continues from the restored state on
+         * the deeper level. */
+        FILE *save = tmpfile();
+        int ok, before;
+        row("use1", use(family, root, 1));
+        boundary(LEVEL_TWO);
+        before = replay_applied;
+        row("replayed-before-save", before > 0 && !replay_failed);
+        ok = save && chaos_next_use_save(fileno(save));
+        chaos_next_use_safe_reset_for_test();
+        rewind(save);
+        ok = ok && chaos_next_use_restore_bound(fileno(save), RUN_TOKEN, LEVEL_TWO);
+        chaos_next_use_capture_set_sink(replay_sink, NULL);
+        row("restored", ok);
+        row("use2", use(family, root + 10, 1));
+        row("replayed-after-restore", replay_applied > before && !replay_failed);
+        printf("{\"step\":\"replay-counts\",\"applied\":%d,\"failed\":%d}\n",
+               replay_applied, replay_failed);
+        if (save) fclose(save);
+    } else if (!strcmp(scenario, "restore-foreign")) {
+        /* A live snapshot saved on level 1, restored on level 2 without a
+         * boundary in between (not reachable in play: foreign state). The
+         * single-use program is bound to its level and is refused; a broad
+         * program with no open window is not level-bound. */
+        FILE *save = tmpfile();
+        int ok;
+        ok = save && chaos_next_use_save(fileno(save));
+        chaos_next_use_safe_reset_for_test();
+        rewind(save);
+        ok = ok && chaos_next_use_restore_bound(fileno(save), RUN_TOKEN, LEVEL_TWO);
+        row("restored-elsewhere", ok);
+        if (save) fclose(save);
+    } else if (!strcmp(scenario, "restore-open-window")) {
+        /* An open W window is tied to the level it armed on, and the
+         * boundary ends it on departure. A snapshot with a window still open
+         * for level 1 cannot come from play on level 2: refused there, and
+         * still restorable on its own level. */
+        FILE *save = tmpfile();
+        int other, own, r;
+        r = chaos_next_use_on_action(CHAOS_NEXT_USE_FAMILY_W, root, 0);
+        chaos_next_use_capture_whistle(root, 7, monstermoves);
+        row("armed", r);
+        if (!save || !chaos_next_use_save(fileno(save))) return 1;
+        chaos_next_use_safe_reset_for_test();
+        rewind(save);
+        other = chaos_next_use_restore_bound(fileno(save), RUN_TOKEN, LEVEL_TWO);
+        row("window-other-level", other);
+        rewind(save);
+        own = chaos_next_use_restore_bound(fileno(save), RUN_TOKEN, LEVEL_ONE);
+        row("window-own-level", own);
+        fclose(save);
     } else if (!strcmp(scenario, "tamper")) {
         /* The saved effect bound is bound into the snapshot hash, and a v6
          * (single-use) snapshot may not carry broad state. */
@@ -259,6 +355,12 @@ int main(int argc, char **argv)
         row("tamper-version", chaos_next_use_snapshot_validate(&t));
         t = s; t.delivered = t.broad_uses + 1;
         row("tamper-delivered", chaos_next_use_snapshot_validate(&t));
+        /* The admission level stays bound into the binding hash. */
+        t = s; t.level_token = LEVEL_TWO;
+        row("tamper-level", chaos_next_use_snapshot_validate(&t));
+        /* An open window must name its level, and only an open window may. */
+        t = s; t.armed_level_token = LEVEL_TWO;
+        row("tamper-armed-level", chaos_next_use_snapshot_validate(&t));
         row("untampered", chaos_next_use_snapshot_validate(&s));
     } else if (!strcmp(scenario, "expiry")) {
         monstermoves = req.at_move + 100;
