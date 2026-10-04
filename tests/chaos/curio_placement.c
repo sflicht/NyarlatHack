@@ -59,7 +59,13 @@ int main(int argc, char **argv) {
     init_gods(); urace.malenum=PM_HUMAN; urole.malenum=PM_WIZARD;
     u.umonnum=u.umonster=PM_HUMAN; youmonst.data=&mons[PM_HUMAN];
     u.ulevel=1; u.usanity=100; u.uhp=10; flags.ident=1;
-    fixture(); before=u.curio; generation(0,1,0);
+    /* Slice 2b: a placing generation, mksobj(WHISTLE, MKOBJ_NOINIT) included,
+     * draws nothing from the RNG (counted rn2 draws and raw random()), so a
+     * replayed curio cannot shift the game's random stream. */
+    fixture(); before=u.curio;
+    expected=test_rng_begin();
+    generation(0,1,0);
+    test_rng_unchanged(expected);
     assert(creates==1 && u.curio.phase==CHAOS_CURIO_PLACED);
     o=fobj; assert(o && !o->nobj && o->o_id==u.curio.owner);
     assert(o->otyp==WHISTLE && o->quan==1 && o->nomerge);
