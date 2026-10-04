@@ -11,7 +11,12 @@ import unittest
 from unittest.mock import patch
 
 from chaos import curio_continuity as continuity, curio_store as store
-from chaos.oauth import MODEL, OAuthBackend
+from functools import partial
+
+from chaos.oauth import OAuthBackend as _OAuthBackend
+
+MODEL = "gpt-5.6-luna"  # fixture model id; real runs pass --author-model
+OAuthBackend = partial(_OAuthBackend, model=MODEL)
 
 # Neutral hand-written hook fixture, NOT generated literary production content.
 SOURCE = (
@@ -124,6 +129,7 @@ class GenerationTests(unittest.TestCase):
             journal_root=self.journal,
             ledger=self.ledger,
             fresh_ledger=True,
+            model=MODEL,
             client_factory=self.factory,
         )
         args.update(changes)
@@ -362,7 +368,7 @@ class GenerationTests(unittest.TestCase):
         self.rejected_before_factory()
 
     def test_reservation_sync_failure_no_factory_or_api(self):
-        original = OAuthBackend._ledger_update
+        original = _OAuthBackend._ledger_update
 
         def update(backend, fn, **kw):
             if kw.get("write", True):
@@ -372,7 +378,7 @@ class GenerationTests(unittest.TestCase):
                     return original(backend, fn, **kw)
             return original(backend, fn, **kw)
 
-        with patch.object(OAuthBackend, "_ledger_update", update):
+        with patch.object(_OAuthBackend, "_ledger_update", update):
             with self.assertRaises(OSError):
                 self.generate()
         self.assertEqual(self.factories, 0)

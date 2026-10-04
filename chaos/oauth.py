@@ -1,5 +1,10 @@
-"""Pinned ChatGPT OAuth calls, no agent/tool loop and no paid-API fallback.
+"""ChatGPT (openai-codex) OAuth calls, no agent/tool loop and no paid-API fallback.
 NetHack General Public License. Run with the installed Hermes Python environment.
+
+The model is configuration (--author-model / NYARLATHACK_AUTHOR_MODEL, see
+chaos/author_config.py), never a constant here. A ledger records the model it
+was created for and refuses any other, so its $1 / 20-attempt caps stay per
+ledger.
 """
 
 import copy
@@ -16,16 +21,23 @@ from .director import preferred_menu
 from .protocol import parse_request, strict_json
 from .response import normalize_whisper_response
 
-MODEL = "gpt-5.6-luna"
-PROVIDER = "openai-codex"
+PROVIDER = "openai-codex"  # this adapter's identity, not a configuration pin
 LIMIT = 20
 
 
-def native_client():
+def native_client(model):
     # Hermes owns the existing credential pool and refresh lock. Never copy tokens.
     from agent.auxiliary_client import _build_codex_client
 
-    return _build_codex_client(MODEL)
+    return _build_codex_client(model)
+
+
+def _model_id(model):
+    from .author_config import _MODEL
+
+    if type(model) is not str or not _MODEL.fullmatch(model):
+        raise ValueError("configured model id required (--author-model)")
+    return model
 
 
 CURIO_PURPOSE = "curio-generation"
@@ -41,9 +53,9 @@ _USAGE = (
 )
 
 
-def _empty_ledger():
+def _empty_ledger(model):
     return dict(
-        model=MODEL,
+        model=model,
         provider=PROVIDER,
         limit=LIMIT,
         cash_ceiling_usd=1,
@@ -54,8 +66,8 @@ def _empty_ledger():
     )
 
 
-def _validate_ledger(data):
-    expected = _empty_ledger()
+def _validate_ledger(data, model):
+    expected = _empty_ledger(model)
     if type(data) is not dict or data.keys() != expected.keys():
         raise ValueError("invalid authorization ledger schema")
     for key in expected.keys() - {"attempts", "records"}:
@@ -132,9 +144,10 @@ class OAuthBackend:
         self,
         ledger,
         *,
+        model,
         timeout=60,
         ordinary_food=False,
-        client_factory=native_client,
+        client_factory=None,
         purpose=None,
         fresh_ledger=False,
         require_existing=False,
@@ -149,12 +162,17 @@ class OAuthBackend:
             raise ValueError("fresh_ledger must be boolean")
         if type(require_existing) is not bool or (require_existing and fresh_ledger):
             raise ValueError("invalid existing-ledger requirement")
+        self.model = _model_id(model)
         self.require_existing = require_existing
         self.ledger = Path(ledger).absolute()
         self.timeout = timeout
         self.deadline = float("inf")
         self.ordinary_food = ordinary_food
-        self.factory = client_factory
+        self.factory = (
+            (lambda: native_client(self.model))
+            if client_factory is None
+            else client_factory
+        )
         self.purpose = purpose
         self.fresh_ledger = not require_existing and (fresh_ledger or purpose is None)
         self.last_receipt = None
@@ -185,12 +203,12 @@ class OAuthBackend:
                 except FileNotFoundError:
                     if not self.fresh_ledger:
                         raise
-                    data = _empty_ledger()
+                    data = _empty_ledger(self.model)
                 else:
                     data = strict_json(raw.decode("utf-8"), _LEDGER_CAP)
-                _validate_ledger(data)
+                _validate_ledger(data, self.model)
                 result = update(data)
-                _validate_ledger(data)
+                _validate_ledger(data, self.model)
                 if not write:
                     return result
                 raw = store._encode(data) + b"\n"
@@ -257,7 +275,7 @@ class OAuthBackend:
                                 "partial authorization evidence or directory cap"
                             )
                 if not store._exists(directory, self.ledger.name + ".lock"):
-                    self._available(_empty_ledger())
+                    self._available(_empty_ledger(self.model))
                     return
         self._ledger_update(self._available, write=False, create_lock=False)
 
@@ -270,7 +288,7 @@ class OAuthBackend:
             if index >= data["attempts"]:
                 raise ValueError("missing authorization record")
             return dict(
-                model=MODEL,
+                model=self.model,
                 provider=PROVIDER,
                 record_index=index,
                 record=copy.deepcopy(data["records"][index]),
@@ -305,7 +323,7 @@ class OAuthBackend:
             data["attempts"] += 1
             data["records"].append(record)
             return dict(
-                model=MODEL,
+                model=self.model,
                 provider=PROVIDER,
                 record_index=index,
                 record=copy.deepcopy(record),
@@ -340,7 +358,7 @@ class OAuthBackend:
                 data["records"][index].update(status=status, **metadata)
                 pending_record = copy.deepcopy(data["records"][index])
                 return dict(
-                    model=MODEL,
+                    model=self.model,
                     provider=PROVIDER,
                     record_index=index,
                     record=copy.deepcopy(data["records"][index]),
@@ -359,7 +377,7 @@ class OAuthBackend:
                 raise ValueError("ChatGPT OAuth is unavailable")
             target = urlsplit(str(client.base_url))
             if (
-                model != MODEL
+                model != self.model
                 or target.scheme != "https"
                 or target.hostname != "chatgpt.com"
                 or target.path.rstrip("/") != "/backend-api/codex"
@@ -379,7 +397,7 @@ class OAuthBackend:
             if timeout <= 0:
                 raise TimeoutError("director deadline exhausted")
             response = client.chat.completions.create(
-                model=MODEL,
+                model=self.model,
                 messages=[
                     {"role": "system", "content": instructions},
                     {"role": "user", "content": prompt},
@@ -396,7 +414,7 @@ class OAuthBackend:
             record_status("completed", usage=usage or None)
             choices = getattr(response, "choices", None)
             if (
-                getattr(response, "model", None) != MODEL
+                getattr(response, "model", None) != self.model
                 or type(choices) not in (list, tuple)
                 or len(choices) != 1
             ):

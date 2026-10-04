@@ -13,9 +13,11 @@ class OAuthTests(unittest.TestCase):
         self.assertIsNotNone(
             importlib.util.find_spec("chaos.oauth"), "OAuth backend not implemented"
         )
+        from functools import partial
+
         from chaos.oauth import OAuthBackend
 
-        self.Backend = OAuthBackend
+        self.Backend = partial(OAuthBackend, model="gpt-5.6-luna")
         self.tmp = tempfile.TemporaryDirectory()
         self.addCleanup(self.tmp.cleanup)
         self.ledger = Path(self.tmp.name) / "calls.json"
@@ -104,7 +106,7 @@ class OAuthTests(unittest.TestCase):
         self.assertEqual(len(self.calls), 1)
 
     def test_scoped_reservation_precedes_factory_and_persists_limit(self):
-        from chaos.oauth import MODEL
+        MODEL = "gpt-5.6-luna"
 
         made = []
 

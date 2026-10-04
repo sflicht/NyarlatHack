@@ -17,11 +17,19 @@ sys.path.insert(0, str(ROOT / "tests/chaos"))
 def main():
     from gameplay_support import Game
     from chaos.director import State, Mailbox
-    from chaos.oauth import OAuthBackend, MODEL, PROVIDER
+    import os
+
+    from chaos.author_config import add_arguments, require_provider, resolve
+    from chaos.oauth import OAuthBackend, PROVIDER
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--execute-live", action="store_true", required=True)
+    add_arguments(parser)
     args = parser.parse_args()
+    config = require_provider(
+        resolve(args.author_provider, args.author_model, args.api_key_env, os.environ),
+        PROVIDER,
+    )
     if not args.execute_live:
         return 2
     evidence = Path.home() / ".local/share/nyarlathack/milestone2"
@@ -48,9 +56,9 @@ def main():
         state = State()
         for event in game.events():
             state.ingest(event)
-        request = OAuthBackend(evidence / "model-ledger.json", timeout=60).choose(
-            state, state.last_id + 1, state.safe + 1
-        )
+        request = OAuthBackend(
+            evidence / "model-ledger.json", model=config.model, timeout=60
+        ).choose(state, state.last_id + 1, state.safe + 1)
         assert request is not None
         with Mailbox(game.run) as box:
             box.submit(request, state)
@@ -66,7 +74,7 @@ def main():
         assert accepted[0]["mutation"] == request["mutation"]
         assert game.quit() == 0
         receipt = {
-            "requested_model": MODEL,
+            "requested_model": config.model,
             "provider": PROVIDER,
             "route": "ChatGPT OAuth",
             "request": request,

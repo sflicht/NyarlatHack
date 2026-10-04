@@ -240,7 +240,10 @@ def _receipt(prepared, raw, transport):
         or candidate.lua_source != envelope.lua_source
     ):
         raise ValueError("candidate differs from exact backend output")
-    backend = OAuthBackend(prepared["paths"]["ledger"], purpose=CURIO_PURPOSE)
+    model = transport.get("model") if type(transport) is dict else None
+    backend = OAuthBackend(
+        prepared["paths"]["ledger"], model=model, purpose=CURIO_PURPOSE
+    )
     actual = backend.receipt(transport["record_index"])
     _equal(transport, actual)
     record = actual["record"]
@@ -322,13 +325,18 @@ def generate_curio(
     bundle_root,
     journal_root,
     ledger,
+    model,
     literary_layer="poe",
     role=None,
     race=None,
     fresh_ledger=False,
-    client_factory=native_client,
+    client_factory=None,
 ):
-    """One explicit attempt. No installation, implicit ledger reset or retries."""
+    """One explicit attempt. No installation, implicit ledger reset or retries.
+
+    model is the configured openai-codex model (--author-model /
+    NYARLATHACK_AUTHOR_MODEL); the shared ledger refuses any other model.
+    """
     paths = {
         k: continuity._path(v)
         for k, v in dict(
@@ -370,17 +378,21 @@ def generate_curio(
 
     def factory():
         stable()
-        client, model = client_factory()
+        if client_factory is None:
+            client, served = native_client(model)
+        else:
+            client, served = client_factory()
         try:
             stable()
         except Exception:
             if client is not None:
                 client.close()
             raise
-        return client, model
+        return client, served
 
     backend = OAuthBackend(
         paths["ledger"],
+        model=model,
         purpose=CURIO_PURPOSE,
         fresh_ledger=fresh_ledger,
         client_factory=factory,

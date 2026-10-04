@@ -30,6 +30,10 @@ class GenerationPreflightTests(unittest.TestCase):
                 "--output",
                 str(output),
                 "--execute-live",
+                "--author-provider",
+                "openai-codex",
+                "--author-model",
+                "gpt-5.6-luna",
             ]
             with (
                 patch.object(sys, "argv", argv),

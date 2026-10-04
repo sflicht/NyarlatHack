@@ -8,6 +8,7 @@ NGPL; see dat/license.
 
 import argparse
 import json
+import os
 from pathlib import Path
 import sys
 
@@ -54,7 +55,8 @@ def main(argv=None):
         "--ledger",
         type=Path,
         help="REQUIRED retained SAME shared authorization ledger; no creation/reset/migration. "
-        "Fixed curio limit 2 inside global 20/$1; pinned gpt-5.6-luna/openai-codex",
+        "Fixed curio limit 2 inside global 20/$1; the ledger accepts only the model "
+        "it was created for",
     )
     parser.add_argument(
         "--literary-layer",
@@ -75,6 +77,15 @@ def main(argv=None):
     parser.add_argument(
         "--race", help="optional host assertion, not inferred from event extras"
     )
+    parser.add_argument(
+        "--author-provider",
+        help="model-authoring provider; only openai-codex here; "
+        "overrides NYARLATHACK_AUTHOR_PROVIDER",
+    )
+    parser.add_argument(
+        "--author-model",
+        help="model id; overrides NYARLATHACK_AUTHOR_MODEL; never guessed",
+    )
     args = parser.parse_args(argv)
     generation_args = (
         args.event_file,
@@ -85,7 +96,14 @@ def main(argv=None):
     if args.inspect:
         if any(
             v is not None
-            for v in (*generation_args, args.literary_layer, args.role, args.race)
+            for v in (
+                *generation_args,
+                args.literary_layer,
+                args.role,
+                args.race,
+                args.author_provider,
+                args.author_model,
+            )
         ):
             parser.error("inspect takes only output-directory")
     elif any(v is None for v in generation_args):
@@ -98,7 +116,18 @@ def main(argv=None):
         if args.inspect:
             receipt = read_generation(args.output_directory)
         else:
+            from chaos.author_config import AuthorConfigError, require_provider, resolve
+
+            try:
+                config = require_provider(
+                    resolve(args.author_provider, args.author_model, None, os.environ),
+                    "openai-codex",
+                )
+            except AuthorConfigError as exc:
+                print("curio generation: " + str(exc), file=sys.stderr)
+                return 2
             receipt = generate_curio(
+                model=config.model,
                 event_file=args.event_file,
                 output_directory=args.output_directory,
                 bundle_root=args.bundle_root,

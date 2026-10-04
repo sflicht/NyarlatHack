@@ -11,7 +11,10 @@ sys.path.insert(0, str(ROOT))
 
 
 def main():
-    from chaos.oauth import OAuthBackend, MODEL, PROVIDER
+    import os
+
+    from chaos.author_config import add_arguments, require_provider, resolve
+    from chaos.oauth import OAuthBackend, PROVIDER
     from chaos.director import EventReader, State
     from chaos.protocol import strict_json
 
@@ -19,7 +22,12 @@ def main():
     parser.add_argument("--events", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--execute-live", action="store_true", required=True)
+    add_arguments(parser)
     args = parser.parse_args()
+    config = require_provider(
+        resolve(args.author_provider, args.author_model, args.api_key_env, os.environ),
+        PROVIDER,
+    )
     state = State()
     reader = EventReader(args.events)
     events = reader.read()
@@ -30,9 +38,9 @@ def main():
     prompt = (ROOT / "chaos/prompts/haunting.txt").read_text()
     evidence = Path.home() / ".local/share/nyarlathack/milestone2"
     args.output.mkdir(parents=True, mode=0o700, exist_ok=False)
-    response = OAuthBackend(evidence / "model-ledger.json").generate(
-        prompt, state.summary()
-    )
+    response = OAuthBackend(
+        evidence / "model-ledger.json", model=config.model
+    ).generate(prompt, state.summary())
     data = strict_json(response.encode(), 8192)
     if set(data) != {"source"} or not isinstance(data["source"], str):
         raise ValueError("source-only object required")
@@ -43,7 +51,7 @@ def main():
     path.write_bytes(source)
     path.chmod(0o600)
     receipt = {
-        "requested_model": MODEL,
+        "requested_model": config.model,
         "provider": PROVIDER,
         "live_model": True,
         "source_sha256": hashlib.sha256(source).hexdigest(),
