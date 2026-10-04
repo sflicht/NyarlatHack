@@ -1,0 +1,3 @@
+{"next_use_decision_v":1,"decision":"rejected","at":2,"safe":2,"move":316,"program_ordinal":1,"program_id":2,"reasons":["origin_expired"]}
+{"next_use_private_v":2,"kind":2,"seq":2,"program_ordinal":2,"program_id":2,"origins":[{"family":"W","published":81,"bound":188}]}
+{"next_use_decision_v":1,"decision":"rejected","at":5,"safe":5,"move":1342,"program_ordinal":3,"program_id":3,"reasons":["budget"]}
