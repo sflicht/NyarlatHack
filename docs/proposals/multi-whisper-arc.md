@@ -1,6 +1,8 @@
 # Proposal: the multi-whisper arc (M2, #164 pacing, #26)
 
-Status: design proposal for Sam. Nothing here is implemented. Tier B, docs only.
+Status: closed. The adopted gate was met by #238; see
+[Closing: the gate is met](#closing-the-gate-is-met). The sections before it
+are the original proposal, kept as written.
 
 Read with #26 (the arc), #164 (pacing, closed by PR #203), #199 (the order of
 work: #198, #200, #201, #1, then this) and
@@ -408,6 +410,70 @@ moved to the whistle and still suppresses most later programs there:
 8. **M2 acceptance target.** Two or more felt consequences in at least 35 of
    100 bard-default-path games (21 today), with the hound guard. Or a different
    threshold, or no numeric target. *Recommend 35 of 100.*
+
+## Closing: the gate is met
+
+The [adopted gate](#adopted-gate-for-arc-work) is met by #238 (ring), merged
+as `788499dfd`. Paired sweep, baseline-v2, seeds 1–100, five starts: main
+`3b89f6e2a` against ring `29349da08`. Full tables:
+[`docs/measurements/ring-whistle-238/`](../measurements/ring-whistle-238/README.md).
+
+Part 1 = games with 2+ distinct felt whispers excluding the hound (target 10).
+Part 3 = games feeling two next-use programs (target 3).
+
+| start | part 1, main → ring | part 3, main → ring |
+|---|---|---|
+| **bard-default-path** (gated) | 6 → **24** | 1 → **16** |
+| bard | 13 → 34 | 6 → 31 |
+| bard-inherited | 3 → 5 | 0 → 3 |
+| madman | 0 → 0 | 0 → 0 |
+| wizard-default-path | 0 → 1 | 0 → 1 |
+
+**Hound admission is unchanged**: the per-seed hound details and visible steps
+are identical in all 500 seed pairs (88 games with an accepted hound on each
+default path, 196 and 210 steps).
+
+Two ring games in the sweep (bard-inherited 26, bard-default-path 42) were
+harness errors from a restore bug that #239 fixed. Re-run on the merged head,
+both restore and play on. Only bard-inherited 26 changes the table: part 1
+becomes 6.
+
+### How we got here
+
+| step | PR | merge | one line |
+|---|---|---|---|
+| B, recurrence repair | #233 | `1f51bfff0` | Later programs author an effect, skip the companion check at admission and live 300 moves. Gate 2 / 0: the companion requirement moved to the whistle. |
+| C, broad next-use | #235 | `3f067b65f` | One program answers every use of its family until it has delivered twice, across levels. Gate 6 / 1. |
+| Diagnosis | #236 | `8d2c8df39` | Found the bottleneck: a whistle effect counted only if a visible companion then moved straight to the player. |
+| Proposal | #237 | `3b89f6e2a` | A whistle effect the player feels directly. Sam chose ring, default-on for new runs. |
+| Restore fix | #239 | `abce54b62` | A broad program saved on a deeper level than it was admitted on now restores. Present since #235. |
+| Ring | #238 | `788499dfd` | The whistle's note rings on and confuses the player for 5 moves, unless a public guard holds. Gate 24 / 16. |
+
+### Caveats
+
+- **Bot, not people.** The gate is measured with the baseline-v2 sweep bot.
+  It says what the engine delivers on screen. It does not say that a person
+  notices it, connects it to the whistle, or enjoys it. That is #44's
+  playtest.
+- **Fountain (F) programs were never felt.** No sweep on this arc recorded a
+  felt fountain effect, in any start. Every felt next-use event is a whistle.
+- **Ring costs the bot a little.** Bot deaths went 57 → 58 on
+  bard-default-path and 52 → 56 on bard (bard-inherited 92 → 91). Five moves of
+  confusion change where the bot walks, so a game diverges from its first
+  ring on; deaths moved in both directions seed by seed.
+- **The projections missed, in both directions.**
+  - #232 projected B at 8.0 / 3.4 and B plus C at 18.1 / 12.6 on
+    bard-default-path. B measured 2 / 0 and C 6 / 1. The projections assumed
+    a whistle with a companion in view would be felt about half the time, at
+    program 1's rate. For later programs the companion requirement simply
+    moved from admission to the whistle, and #236 showed the rule that credits
+    a companion's move rarely held.
+  - #237 bounded ring at 12 / 4 (23 / 13 without program 1's companion check).
+    Ring measured 24 / 16, above both. The bounds held admission at its old
+    level and credited each program once. Ring changed admission: program 1 no
+    longer needs a companion, deliveries earn pacing credit, so fewer
+    programs are refused for budget (16 → 9), admitted programs rose 68 → 106,
+    and each can ring twice.
 
 ## Appendix A: madman next-use admission, 10 → 8
 
