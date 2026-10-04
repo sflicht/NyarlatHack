@@ -286,6 +286,28 @@ class NextUseRingTests(unittest.TestCase):
         _, trace = self.journal()
         self.assertTrue(trace["structurally_complete"])
 
+    def test_ring_saved_on_a_deeper_level_restores_live(self):
+        """#239 on v8: ring, descend, save, restore on the deeper level."""
+        _, steps, _ = self.run_case("restore-level", journal=True)
+        self.assertEqual(steps["use1"]["result"], RANG)
+        # A ring program never arms a level-bound W window.
+        self.assertEqual(steps["window"]["w_runtime"], 0)
+        self.assertEqual(steps["window"]["armed_level_token"], 0)
+        self.assertEqual(steps["window"]["level_token"], 100001)
+        self.assertEqual(steps["descended"]["phase"], COMMITTED)
+        self.assertEqual(steps["wrong-run"]["result"], 0)
+        self.assertEqual(steps["restored"]["result"], 1)
+        self.assertEqual(steps["restored"]["phase"], COMMITTED)
+        self.assertEqual(steps["restored"]["snapshot_v"], 8)
+        self.assertEqual(steps["restored"]["ring_active"], 1)
+        self.assertEqual(steps["restored"]["delivered"], 1)
+        self.assertEqual(steps["resumed"]["result"], 1)
+        self.assertEqual(steps["use2"]["result"], RANG)
+        self.assertEqual(steps["use2"]["delivered"], 2)
+        self.assertEqual(steps["use2"]["phase"], TERMINATED)
+        _, trace = self.journal()
+        self.assertTrue(trace["structurally_complete"])
+
     def test_c_save_restore_still_restores_as_v7(self):
         _, steps, _ = self.run_case("restore", ring=False)
         self.assertEqual(steps["restored"]["result"], 1)

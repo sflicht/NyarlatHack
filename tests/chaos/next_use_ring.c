@@ -84,6 +84,9 @@ static void boundary(long level)
     chaos_next_use_identity_boundary(RUN_TOKEN, level);
 }
 
+/* The level a use happens on (restore-level descends to LEVEL_TWO). */
+static long player_level = LEVEL_ONE;
+
 static struct chaos_next_use_snapshot snap(void)
 {
     struct chaos_next_use_snapshot s;
@@ -108,7 +111,7 @@ static int ring(long root, int guard)
         r = chaos_next_use_whistle_ring(root, guard) ? 2 : 1;
     }
     monstermoves += 2;
-    boundary(LEVEL_ONE);
+    boundary(player_level);
     return r;
 }
 
@@ -227,6 +230,36 @@ int main(int argc, char **argv)
         rewind(save);
         chaos_next_use_safe_reset_for_test();
         ok = ok && chaos_next_use_restore_bound(fileno(save), RUN_TOKEN, LEVEL_ONE);
+        dir = open(argv[1], O_RDONLY | O_DIRECTORY);
+        resumed = ok && chaos_next_use_journal_resume(dir);
+        row("restored", ok);
+        row("resumed", resumed);
+        row("use2", ring(root + 10, CHAOS_RING_GUARD_NONE));
+        if (save) fclose(save);
+        close(dir);
+    } else if (!strcmp(scenario, "restore-level")) {
+        /* #239 on v8: ring once on level 1, descend, save, restore on
+         * level 2. A ring program never arms a W window, so the restore
+         * rule's window branch cannot apply to it. */
+        FILE *save = tmpfile();
+        struct chaos_next_use_snapshot s;
+        int ok, resumed;
+        row("use1", ring(root, CHAOS_RING_GUARD_NONE));
+        player_level = LEVEL_TWO;
+        boundary(player_level);
+        s = snap();
+        printf("{\"step\":\"window\",\"result\":1,\"w_runtime\":%d,"
+               "\"armed_level_token\":%ld,\"level_token\":%ld}\n",
+               (int) s.w_runtime, s.armed_level_token, s.level_token);
+        row("descended", 1);
+        ok = save && chaos_next_use_save(fileno(save));
+        rewind(save);
+        chaos_next_use_safe_reset_for_test();
+        row("wrong-run",
+            chaos_next_use_restore_bound(fileno(save), RUN_TOKEN + 1, LEVEL_TWO));
+        rewind(save);
+        chaos_next_use_safe_reset_for_test();
+        ok = ok && chaos_next_use_restore_bound(fileno(save), RUN_TOKEN, LEVEL_TWO);
         dir = open(argv[1], O_RDONLY | O_DIRECTORY);
         resumed = ok && chaos_next_use_journal_resume(dir);
         row("restored", ok);
