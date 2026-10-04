@@ -267,6 +267,15 @@ class NextUseBroadTests(unittest.TestCase):
                 _, trace = self.journal()
                 self.assertTrue(trace["structurally_complete"])
 
+    def test_replay_holds_across_the_cross_level_restore(self):
+        for family in "WF":
+            with self.subTest(family=family):
+                _, steps, _ = self.run_case(family, "restore-level-replay")
+                self.assertEqual(steps["replayed-before-save"]["result"], 1)
+                self.assertEqual(steps["restored"]["result"], 1)
+                self.assertEqual(steps["use2"]["delivered"], 2)
+                self.assertEqual(steps["replayed-after-restore"]["result"], 1)
+
     def test_single_use_control_ends_at_the_descent_before_the_save(self):
         _, steps, _ = self.run_case("W", "restore-level", broad=False, journal=True)
         self.assertEqual(steps["descended"]["phase"], TERMINATED)

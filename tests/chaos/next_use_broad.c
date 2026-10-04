@@ -159,6 +159,19 @@ static void row(const char *step, int result)
            chaos_next_use_broad_active(), s.slot_w, s.slot_f);
 }
 
+/* Replay sink: every captured transition must replay exactly once into the
+ * engine's shadow runtime; the same record again must be blocked. */
+static int replay_applied, replay_failed;
+
+static int replay_sink(void *opaque, const struct chaos_next_use_replay_input *record)
+{
+    (void)opaque;
+    if (chaos_next_use_replay_record(record) == CHAOS_REPLAY_APPLIED) ++replay_applied;
+    else ++replay_failed;
+    if (chaos_next_use_replay_record(record) != CHAOS_REPLAY_BLOCKED_REPLAY) ++replay_failed;
+    return 1;
+}
+
 int main(int argc, char **argv)
 {
     struct chaos_next_use_safe_request req;
@@ -191,6 +204,9 @@ int main(int argc, char **argv)
     req.receipt = receipt_ok;
     bind_origin(argv[4], family);
     chaos_next_use_safe_bind_logical(RUN_TOKEN);
+    /* A capture prefix cannot be repaired later: attach before admission. */
+    if (!strcmp(scenario, "restore-level-replay"))
+        chaos_next_use_capture_set_sink(replay_sink, NULL);
     chaos_next_use_safe_try(&req, &admitted);
     /* Optional: write the production journal for the reader tests. */
     if (admitted.active && getenv("NYARL_BROAD_JOURNAL"))
@@ -276,6 +292,27 @@ int main(int argc, char **argv)
         row("use2", use(family, root + 10, 1));
         if (save) fclose(save);
         close(dir);
+    } else if (!strcmp(scenario, "restore-level-replay")) {
+        /* As restore-level, with every transition shadow-replayed: replay
+         * holds before the save, and continues from the restored state on
+         * the deeper level. */
+        FILE *save = tmpfile();
+        int ok, before;
+        row("use1", use(family, root, 1));
+        boundary(LEVEL_TWO);
+        before = replay_applied;
+        row("replayed-before-save", before > 0 && !replay_failed);
+        ok = save && chaos_next_use_save(fileno(save));
+        chaos_next_use_safe_reset_for_test();
+        rewind(save);
+        ok = ok && chaos_next_use_restore_bound(fileno(save), RUN_TOKEN, LEVEL_TWO);
+        chaos_next_use_capture_set_sink(replay_sink, NULL);
+        row("restored", ok);
+        row("use2", use(family, root + 10, 1));
+        row("replayed-after-restore", replay_applied > before && !replay_failed);
+        printf("{\"step\":\"replay-counts\",\"applied\":%d,\"failed\":%d}\n",
+               replay_applied, replay_failed);
+        if (save) fclose(save);
     } else if (!strcmp(scenario, "restore-foreign")) {
         /* A live snapshot saved on level 1, restored on level 2 without a
          * boundary in between (not reachable in play: foreign state). The
