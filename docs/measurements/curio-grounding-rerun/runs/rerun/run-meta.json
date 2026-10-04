@@ -1,0 +1,11 @@
+{
+  "provider": "xai-oauth",
+  "model": "grok-4.7",
+  "deadline_s": 360,
+  "prompt_cap": 12288,
+  "validator_sha256": "199b29adbd779a5c680c9e5407f054b85b56f143a5e0a56ed41d5ad6477a4961",
+  "jobs": 34,
+  "workers": 4,
+  "started": "2026-10-04T21:24:09Z",
+  "finished": "2026-10-04T21:54:13Z"
+}

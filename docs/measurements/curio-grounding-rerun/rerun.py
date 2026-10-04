@@ -148,6 +148,12 @@ def generate(args):
     (out / "run-meta.json").write_text(json.dumps(meta, indent=2) + "\n")
 
 
+def _spread(values):
+    if not values:
+        return None
+    return dict(min=min(values), median=statistics.median(values), max=max(values))
+
+
 def analyze(args):
     out = Path(args.out)
     rows = []
@@ -162,6 +168,19 @@ def analyze(args):
     outcomes = {}
     for r in rows:
         outcomes[r["outcome"]] = outcomes.get(r["outcome"], 0) + 1
+    # Receipts are never rewritten. Jobs whose response arrived after the
+    # deadline are listed; curio_author now marks such a job "deadline"
+    # (LateResponse) instead of "ready", so they are not installable.
+    late = [
+        dict(job=r["job"], latency_s=r["latency_s"], recorded_outcome=r["outcome"])
+        for r in rows
+        if r["latency_s"] is not None and r["latency_s"] > curio_author.DEADLINE_S
+    ]
+    current = dict(outcomes)
+    for item in late:
+        if item["recorded_outcome"] != "deadline":
+            current[item["recorded_outcome"]] -= 1
+            current["deadline"] = current.get("deadline", 0) + 1
     native_admitted = [r for r in rows if r["native"] and r["native"]["admitted"]]
     rejected = [
         dict(
@@ -193,13 +212,24 @@ def analyze(args):
             max=max(latencies) if latencies else None,
             over_deadline=sum(x > curio_author.DEADLINE_S for x in latencies),
         ),
-        reasoning_tokens_median=statistics.median(
-            r["transport"]["record"].get("reasoning_tokens") or 0
-            for r in rows
-            if r["transport"] and r["transport"].get("record")
-        )
-        if rows
-        else None,
+        outcomes_under_current_code=current,
+        late_responses=late,
+        # Ledger usage: completion tokens include the model's reasoning; the
+        # xai-oauth route reports no separate reasoning count.
+        completion_tokens=_spread(
+            [
+                r["transport"]["record"]["usage"]["completion_tokens"]
+                for r in rows
+                if r["transport"] and (r["transport"]["record"].get("usage") or {})
+            ]
+        ),
+        prompt_tokens=_spread(
+            [
+                r["transport"]["record"]["usage"]["prompt_tokens"]
+                for r in rows
+                if r["transport"] and (r["transport"]["record"].get("usage") or {})
+            ]
+        ),
         truth_rejections=rejected,
     )
     text = json.dumps(summary, indent=2) + "\n"

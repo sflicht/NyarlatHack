@@ -1,0 +1,68 @@
+{
+  "jobs": 34,
+  "outcomes": {
+    "ready": 33,
+    "truth_rejected": 1
+  },
+  "envelope_ok": 34,
+  "native_admitted": 34,
+  "truth_rejected": 1,
+  "ready": 33,
+  "layers": {
+    "abbott": 7,
+    "carroll": 5,
+    "chambers": 7,
+    "gilman": 2,
+    "hodgson": 2,
+    "mackay": 3,
+    "poe": 5,
+    "wilde": 3
+  },
+  "latency_s": {
+    "median": 200.3655,
+    "p90": 299.135,
+    "max": 390.854,
+    "over_deadline": 2
+  },
+  "outcomes_under_current_code": {
+    "ready": 31,
+    "truth_rejected": 1,
+    "deadline": 2
+  },
+  "late_responses": [
+    {
+      "job": "bard-00023-r0",
+      "latency_s": 390.854,
+      "recorded_outcome": "ready"
+    },
+    {
+      "job": "bard-inherited-00023-r0",
+      "latency_s": 368.066,
+      "recorded_outcome": "ready"
+    }
+  ],
+  "completion_tokens": {
+    "min": 10358,
+    "median": 20366.0,
+    "max": 42779
+  },
+  "prompt_tokens": {
+    "min": 3646,
+    "median": 3834.5,
+    "max": 3985
+  },
+  "truth_rejections": [
+    {
+      "job": "madman-00023-r0",
+      "name": "Crooked Winder",
+      "hits": [
+        {
+          "category": "items",
+          "match": "give the key",
+          "rule": "item_gain",
+          "text": "You give the key a half-turn. No clock answers. Under the thumb the oval is, already, deeper."
+        }
+      ]
+    }
+  ]
+}
