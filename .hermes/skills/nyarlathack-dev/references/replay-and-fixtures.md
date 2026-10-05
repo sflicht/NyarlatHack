@@ -101,6 +101,15 @@ validate driver contracts, not native pickup, application or printed Sanity effe
 retain a separate real nonwizard smoke and exact input-tape replay before claiming
 that lifecycle. Bound unknown-menu handling and fail without inventing evidence.
 
+Intercept the native `Pick up what?` menu before the generic prompt handler
+cancels it. During a tool pickup, the public `(` group selector chooses tools
+across menu pages; Enter commits the selection. Keep that handler scoped to
+pickup, page preceding messages with a bound, and verify an inventory change
+before marking the square successful. Bound unsuccessful retries separately.
+Exercise the native menu with a controlled nonwizard fixture that drops an
+owned tool and a non-tool, then verifies only the tool returns; label this as
+menu-driver evidence, not natural discovery or a generated-curio encounter.
+
 ## Comparing dumplogs
 
 Stock-baseline and current-build dumplogs differ in the

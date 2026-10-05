@@ -94,6 +94,53 @@ class CapturePlayerTests(unittest.TestCase):
         p.act.assert_called_once_with(",")
         p.inspect_and_apply.assert_called_once_with("q")
 
+    def test_public_pile_menu_selects_tools_before_generic_settle(self):
+        p = self.player()
+        p.act = Player.act.__get__(p)
+        p.commands, p.log = 0, []
+        p.exited = Mock(return_value=False)
+        p.sync_director = Mock()
+        p._inventory = Mock(
+            side_effect=[({}, None), ({"a": "an unfamiliar tool"}, None)]
+        )
+        p.inspect_and_apply = Mock(return_value=None)
+        p.send = Mock(
+            side_effect=[
+                b"Pick up what?\nTools\na - an unfamiliar tool\n"
+                b"Comestibles\nb - a food ration\n(end)",
+                b"a - an unfamiliar tool.",
+            ]
+        )
+        p.pickup_tool()
+        self.assertEqual([c.args[0] for c in p.send.call_args_list], [",", "(\n"])
+        p.inspect_and_apply.assert_called_once_with("a")
+
+    def test_pickup_pages_messages_before_handling_the_pile_menu(self):
+        p = self.player()
+        p._pickup_menu_pending = True
+        p.exited = Mock(return_value=False)
+        p.send = Mock(
+            side_effect=[
+                b"Pick up what?\nTools\na - a tool\n(1 of 2)",
+                b"a - a tool.",
+            ]
+        )
+        p.settle(b"You see several objects here.--More--")
+        self.assertEqual([c.args[0] for c in p.send.call_args_list], [" ", "(\n"])
+
+    def test_unrelated_or_unrequested_menus_are_still_cancelled(self):
+        for pending, text in (
+            (False, b"Pick up what?\nTools\na - a tool\n(end)"),
+            (True, b"What do you want to drop?\nTools\na - a tool\n(end)"),
+        ):
+            with self.subTest(pending=pending, text=text):
+                p = self.player()
+                p._pickup_menu_pending = pending
+                p.exited = Mock(return_value=False)
+                p.send = Mock(return_value=b"")
+                p.settle(text)
+                p.send.assert_called_once_with("\x1b")
+
     def player(self):
         p = CapturePlayer.__new__(CapturePlayer)
         p.screen = Screen()
@@ -192,10 +239,19 @@ class CapturePlayerTests(unittest.TestCase):
     def test_arriving_on_remembered_tool_attempts_pickup_once(self):
         p = self.player()
         p.map_memory = {1: {(5, 5): "("}}
-        p.pickup_tool = Mock(return_value=None)
+        p.pickup_tool = Mock(side_effect=lambda: setattr(p, "pickup_succeeded", True))
         p.explore({"turn": 400}, 1, (5, 5))
         p.explore({"turn": 401}, 1, (5, 5))
         p.pickup_tool.assert_called_once_with()
+
+    def test_failed_pickup_retries_boundedly_without_claiming_success(self):
+        p = self.player()
+        p.map_memory = {1: {(5, 5): "("}}
+        p.pickup_tool = Mock(return_value=None)
+        for turn in range(400, 405):
+            p.explore({"turn": turn}, 1, (5, 5))
+        self.assertEqual(p.pickup_tool.call_count, 3)
+        self.assertNotIn((1, (5, 5)), p.pickup_tried)
 
     def test_failed_public_step_is_not_retried_forever(self):
         p = self.player()

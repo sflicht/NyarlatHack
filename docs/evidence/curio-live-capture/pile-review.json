@@ -1,0 +1,63 @@
+{
+  "scope": "Capture-player menu-driver repair; not a generated-curio encounter",
+  "base_head": "008b9fa87a61e3c6c94fb499aca50f22ece21f42",
+  "review_original": "deleg_1d06ac0d: reveal literal already fixed; multi-object pickup cancellation reproduced and fixed",
+  "review_followup": "deleg_bb322f46 pending collection",
+  "component_tests": 21,
+  "fast_tests": 1791,
+  "fast_skips": 238,
+  "fast_seconds": 205.474,
+  "fast_exit": 0,
+  "development_build": {
+    "CHAOS": 1,
+    "exit": 0,
+    "compiler_warning_count": 0
+  },
+  "hosted_current_head": "not yet pushed at evidence creation",
+  "new_author_requests": 0,
+  "native_pile_fixture": {
+    "kind": "controlled ordinary native pile fixture; not natural discovery",
+    "model_transport": "construction and generate patched to raise",
+    "passed": true,
+    "initial_inventory": {
+      "b": "a blessed +1 leather cloak (being worn) {15}",
+      "c": "an uncursed +0 pair of high boots (being worn) {20}",
+      "d": "3 uncursed apples {6}",
+      "e": "3 uncursed oranges {6}",
+      "f": "5 uncursed potions of booze {100}",
+      "a": "an uncursed wooden flute {5}",
+      "g": "an uncursed tin whistle {3}"
+    },
+    "tool": "an uncursed wooden flute {5}",
+    "other": "3 uncursed apples {6}",
+    "after": {
+      "b": "a blessed +1 leather cloak (being worn) {15}",
+      "c": "an uncursed +0 pair of high boots (being worn) {20}",
+      "e": "3 uncursed oranges {6}",
+      "f": "5 uncursed potions of booze {100}",
+      "a": "an uncursed wooden flute {5}",
+      "g": "an uncursed tin whistle {3}"
+    },
+    "pickup_menu_seen": true,
+    "pickup_succeeded": true,
+    "exit_code": 0,
+    "source_sha256": {
+      "tests/chaos/curio_capture_player.py": "2e4571e0dab2dd1097a00a997c1437378a0629ca1532106f6c3a1cc708d4bb70",
+      "tests/chaos/sweep_player.py": "c8e0ff37aa36f9ddf22e24ec017caec3c348fc53eb66963d0ae5e4b395889405"
+    },
+    "driver_sha256": "46375be4d0bdb565cbde3be21e187953ade8c28d0441c78c82a40f333c098a1e"
+  },
+  "artifact_root": "/home/hermes/.hermes/reports/nyarlathack-3b/pile-review",
+  "hashes": {
+    "red-menu.log": "08c3f72a273fdbf855bcb41dedd039f6d6d433b50423a1d265af1dd172d6cdff",
+    "red-retry.log": "a891e9cec3c66307ac25cad0bb2bec94d58d91dc07ba2d0175f63f1268e5a875",
+    "red-more.log": "00ce6996c56bef7fc6682a3f25bbef7cf9daebabc78b955381634c063b11e725",
+    "green.log": "1d9c686c6ad64cd668e55ca8c31fcc52fc4e54e527d9905e46ae2c72d06fdcdd",
+    "fast.log": "7d7e4ccce4613d9a459c9465f91834ee8f44cfffdc0441bca40026316448b7cc",
+    "build.log": "465f8eef39e8dec9100f5cda1b3843ac4eb7f6dbe28def78d493d8f28f746f1e",
+    "native-pile-001/terminal.raw": "2898e972dcd2d1d4196c0dcc153cc3ebd59b18b525de2b067059945a7e6e560d",
+    "native-pile-001/inputs.json": "e753b4a34296cf5dbd72a115bffb86f4de2d3e8efbaff7edf7ea48979f63d5d5",
+    "native-pile-001/result.json": "84288f70f3a55d755155abce70d1000b103fd7a37dd8ee9201538046ed967db2"
+  },
+  "live_capture_blocker": "Active session instructions prohibit model calls; board q_ff081623 asks for the standing instruction source to be reconciled, or offline-only scope."
+}

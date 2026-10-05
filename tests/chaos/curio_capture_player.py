@@ -145,14 +145,40 @@ class CapturePlayer(Player):
             return result
         return self.act("a" + letter) if can_apply else None
 
+    def settle(self, text):
+        if getattr(self, "_pickup_menu_pending", False):
+            for _ in range(20):
+                if b"--More--" not in text:
+                    break
+                text = self.send(" ")
+            else:
+                raise AssertionError("capture pickup messages exceeded 20 pages")
+        plain = ANSI.sub(b"", text)
+        if (
+            getattr(self, "_pickup_menu_pending", False)
+            and b"Pick up what?" in plain
+            and re.search(rb"\(end\)|\(\d+ of \d+\)", plain)
+        ):
+            # Native query_objlist exposes '(' as the Tools group selector,
+            # including off-page entries. Only use it inside our pickup action.
+            self._pickup_menu_pending = False
+            text = self.send("(\n")
+        return super().settle(text)
+
     def pickup_tool(self):
+        self.pickup_succeeded = False
         before, _ = self._inventory()
-        result = self.act(",")
+        self._pickup_menu_pending = True
+        try:
+            result = self.act(",")
+        finally:
+            self._pickup_menu_pending = False
         if result:
             return result
         after, _ = self._inventory()
         for letter, description in after.items():
             if before.get(letter) != description:
+                self.pickup_succeeded = True
                 result = self.inspect_and_apply(letter)
                 if result:
                     return result
@@ -185,9 +211,15 @@ class CapturePlayer(Player):
         visited = self.visited.setdefault(level, set())
         visited.add(hero)
         tried = self.__dict__.setdefault("pickup_tried", set())
-        if terrain.get(hero) == "(" and (level, hero) not in tried:
-            tried.add((level, hero))
-            return self.pickup_tool()
+        attempts = self.__dict__.setdefault("pickup_attempts", {})
+        spot = level, hero
+        if terrain.get(hero) == "(" and spot not in tried and attempts.get(spot, 0) < 3:
+            attempts[spot] = attempts.get(spot, 0) + 1
+            self.pickup_succeeded = False
+            result = self.pickup_tool()
+            if self.pickup_succeeded:
+                tried.add(spot)
+            return result
         if terrain.get(hero) == ">":
             return self.act(">")
         # Cardinal steps avoid illegal diagonals through doorways. Never plan
