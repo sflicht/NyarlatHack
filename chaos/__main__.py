@@ -50,6 +50,14 @@ def _curio_parser(sub):
         p.add_argument(
             "--candidate-id", help="exact lowercase source SHA-256; bundle mode only"
         )
+    for op, text in (
+        ("admission", "after a game: bind the engine's own admission into evidence"),
+        ("replay-stage", "before a replay game: stage the logged source and index"),
+        ("replay-verify", "after a replay game: same admission index and bytes"),
+    ):
+        p = commands.add_parser(op, help=text)
+        p.add_argument("--run-dir", type=Path, required=True)
+        p.add_argument("--evidence", type=Path, required=True)
     p = commands.add_parser(
         "continuity", help="explicit offline journal operations; no automatic repair"
     )
@@ -87,6 +95,14 @@ def _curio_command(args):
             candidate_id=args.candidate_id,
             mode="fresh" if args.curio_command == "install" else "verify",
         )
+    if args.curio_command in ("admission", "replay-stage", "replay-verify"):
+        from . import curio_director as lane
+
+        return {
+            "admission": lane.record_admission,
+            "replay-stage": lane.stage_replay,
+            "replay-verify": lane.verify_replay,
+        }[args.curio_command](args.run_dir, args.evidence)
     from . import curio_continuity as continuity
 
     op = args.continuity_command
@@ -237,6 +253,12 @@ def main(argv=None):
                 required=True,
                 help="source-run accepted ACK evidence",
             )
+            p.add_argument(
+                "--curio-evidence",
+                type=Path,
+                help="recorded curio evidence with admission.json: staged before "
+                "the schedule runs; the engine admits it at the logged index",
+            )
         if name == "model":
             p.add_argument(
                 "--endpoint",
@@ -288,6 +310,10 @@ def main(argv=None):
             backend = RandomBackend(args.seed, args.ordinary_food)
         elif args.command == "replay":
             backend = ScheduleBackend(load_replay(args.journal, args.accepted_events))
+            if args.curio_evidence is not None:
+                from .curio_director import stage_replay
+
+                stage_replay(args.run_dir, args.curio_evidence)
         elif args.command == "oauth":
             from .oauth import OAuthBackend
 

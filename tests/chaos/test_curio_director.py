@@ -467,6 +467,49 @@ class ReplayStagingTests(LaneBase):
         with self.assertRaises(ValueError):
             backend.verify_admission(self.rundir)
 
+    def test_cli_admission_stage_verify(self):
+        import subprocess
+        import sys
+
+        evidence = self.recorded()
+        replay = self.root / "replay"
+        replay.mkdir(mode=0o700)
+
+        def cli(op, run):
+            p = subprocess.run(
+                [
+                    sys.executable,
+                    "-B",
+                    "-m",
+                    "chaos",
+                    "curio",
+                    op,
+                    "--run-dir",
+                    str(run),
+                    "--evidence",
+                    str(evidence),
+                ],
+                capture_output=True,
+                text=True,
+                timeout=60,
+                cwd=Path(__file__).resolve().parents[2],
+            )
+            return p.returncode, p.stdout, p.stderr
+
+        code, out, err = cli("admission", self.rundir)
+        self.assertEqual(code, 0, err)
+        self.assertEqual(json.loads(out)["safe"], 6)
+        code, out, err = cli("replay-verify", replay)
+        self.assertEqual(code, 2)  # no replay game yet: fails closed
+        code, out, err = cli("replay-stage", replay)
+        self.assertEqual(code, 0, err)
+        self.assertEqual((replay / "curio-safe").read_bytes(), b"6\n")
+        shutil.copyfile(self.rundir / "events.jsonl", replay / "events.jsonl")
+        shutil.copyfile(self.rundir / "curio-used.lua", replay / "curio-used.lua")
+        os.chmod(replay / "curio-used.lua", 0o600)
+        code, out, err = cli("replay-verify", replay)
+        self.assertEqual(code, 0, err)
+
     def test_replay_at_a_different_index_is_caught(self):
         evidence = self.recorded()
         lane_mod.record_admission(self.rundir, evidence)
