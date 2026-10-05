@@ -385,8 +385,8 @@ class CurioLane:
                     "install.json",
                     curio_author._encode(
                         dict(
-                            v=2,
-                            advisory_safe=safe,
+                            v=1,
+                            safe=safe,  # director-observed: advisory only
                             source_sha256=curio_author._sha(source),
                         )
                     ),

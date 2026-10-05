@@ -200,8 +200,8 @@ class PublishTests(LaneBase):
         install = json.loads(
             (self.rundir / "curio-evidence" / "install.json").read_text()
         )
-        self.assertEqual(install["v"], 2)
-        self.assertEqual(install["advisory_safe"], 5)
+        self.assertEqual(install["v"], 1)  # 2b's format; "safe" is advisory
+        self.assertEqual(install["safe"], 5)
         lane_record = lane_mod.read_lane(self.rundir)
         self.assertEqual(
             (lane_record["step"], lane_record["evidence"]),
@@ -451,6 +451,21 @@ class ReplayStagingTests(LaneBase):
         shutil.copyfile(self.rundir / "curio-used.lua", replay / "curio-used.lua")
         os.chmod(replay / "curio-used.lua", 0o600)
         self.assertEqual(lane_mod.verify_replay(replay, evidence), admission)
+
+    def test_curio_replay_backend_cross_checks_the_engine(self):
+        from chaos.curio_replay import CurioReplayBackend
+
+        evidence = self.recorded()
+        backend = CurioReplayBackend(evidence)
+        self.assertIsNone(backend.verify_admission(self.rundir))  # pre-3a record
+        admission = lane_mod.record_admission(self.rundir, evidence)
+        self.assertEqual(backend.verify_admission(self.rundir), admission)
+        with open(self.rundir / "events.jsonl", "ab") as f:
+            f.write(
+                event_line(event="curio", phase="result", detail="pre_admitted", safe=9)
+            )
+        with self.assertRaises(ValueError):
+            backend.verify_admission(self.rundir)
 
     def test_replay_at_a_different_index_is_caught(self):
         evidence = self.recorded()
