@@ -17,6 +17,11 @@ adds traps found while hooking dNAO. Re-grep before trusting any function name.
   identity.
 - Maintain admitted-effect history and expiry without a healthy transport; gate
   new admission, not lifecycle maintenance, on transport.
+- Keep the director's writer lock distinct from engine-consumer serialization.
+  An event emitted before a native mailbox read does not prove that read has
+  finished. Live publication needs a shared engine/director critical section
+  covering the index observation and publication; test the race, not just the
+  single-writer property. Keep network calls outside that critical section.
 - Admit only player-known observations; match status-display semantics. Don't call
   identification/hallucination renderers or draw RNG to build context. Don't expose
   invisible creature movement in director events.
