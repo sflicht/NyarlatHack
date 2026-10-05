@@ -33,7 +33,7 @@ from .director import (
     eligible,
     secure_open,
 )
-from .protocol import parse_request
+from .protocol import REGISTRY, parse_request
 
 SIGNALS = (signal.SIGINT, signal.SIGTERM, signal.SIGHUP)
 GRACE = 2.0
@@ -91,6 +91,13 @@ def add_parser(sub):
     p.add_argument(
         "--curio-candidate-id",
         help="exact 64 lowercase hex source identity; requires --curio-bundle-root",
+    )
+    p.add_argument(
+        "--curio-validator",
+        type=Path,
+        help="model authoring: absolute path of the native curio validator "
+        "library (default $NYARLATHACK_CURIO_VALIDATOR, then "
+        "<game-root>/curio-validator.so); without one there is no model curio",
     )
     p.add_argument(
         "--game-root",
@@ -429,6 +436,12 @@ CHOICE_KEYS_V6 = CHOICE_KEYS_V3
 # for API-key providers, the key variable's NAME (never a key). A run with no
 # authoring configuration keeps writing v6 exactly.
 CHOICE_KEYS_V7 = CHOICE_KEYS_V6 | {"author"}
+# v8 (slice 3a): "authoring" records what startup found for the configured
+# provider: "live" (a backend was built; curio-lane.json carries the lane) or
+# "no_model" (unreachable or unusable: the game runs without model content).
+# Restore follows it and never re-probes the provider.
+CHOICE_KEYS_V8 = CHOICE_KEYS_V7 | {"authoring"}
+AUTHORING_STATES = ("live", "no_model")
 
 
 def _explicit(args):
@@ -460,7 +473,7 @@ def _read_choice(directory):
     if (
         not isinstance(record, dict)
         or type(record.get("v")) is not int
-        or record["v"] not in (1, 2, 3, 4, 5, 6, 7)
+        or record["v"] not in (1, 2, 3, 4, 5, 6, 7, 8)
         or set(record)
         != {
             1: CHOICE_KEYS,
@@ -470,6 +483,7 @@ def _read_choice(directory):
             5: CHOICE_KEYS_V5,
             6: CHOICE_KEYS_V6,
             7: CHOICE_KEYS_V7,
+            8: CHOICE_KEYS_V8,
         }[record["v"]]
         or not isinstance(record["haunt"], bool)
         or not isinstance(record["next_use"], bool)
@@ -502,12 +516,14 @@ def _read_choice(directory):
         or not 0 <= whispers["seed"] < 2**63
     ):
         raise ValueError("invalid ordinary choice record")
-    if record["v"] == 7:
+    if record["v"] >= 7:
         from .author_config import from_record
 
         if record["author"] is None:
             raise ValueError("invalid ordinary choice record")
         from_record(record["author"])
+    if record["v"] == 8 and record["authoring"] not in AUTHORING_STATES:
+        raise ValueError("invalid ordinary choice record")
     pack, digest = record["haunt_pack"], record["haunt_sha256"]
     if record["haunt"]:
         if not (isinstance(pack, str) and isinstance(digest, str)):
@@ -550,6 +566,8 @@ def _resolve_choice(args, restore_dir):
         if author_flags and author != recorded:
             raise ValueError("restore options conflict with the run's recorded choice")
         args.author = recorded
+        # v7 (before slice 3a) never had a curio lane; follow it as off.
+        args.authoring = None if record is None else record.get("authoring")
         if record is None:
             args.next_use = next_use is True
             return None
@@ -582,6 +600,7 @@ def _resolve_choice(args, restore_dir):
             args.next_use_ring = record["m2"].get("ring", False)
         return None
     args.m1_seed = None
+    args.authoring = None
     if not args.ordinary:
         # Model authoring is an --ordinary feature: plain play validates the
         # settings and runs without model content. Explicit flags fail closed.
@@ -688,11 +707,17 @@ def _offline_loop(box, backend, reader, state, args, ready):
             broad=getattr(args, "next_use_broad", False),
             ring=getattr(args, "next_use_ring", False),
         )
-    while time.monotonic() < deadline or first:
+    lane = getattr(args, "curio_lane", None)
+    while time.monotonic() < deadline or first or (lane is not None and lane.active):
+        # Past the director runtime only the curio lane runs (its own 480 s
+        # authoring deadline); whisper scheduling keeps today's timing.
+        whispers = time.monotonic() < deadline or first
         for event in reader.read(allow_observations=getattr(args, "next_use", False)):
             if event.get("v") in (2, 4) and event.get("event") == "observation":
                 continue
             state.ingest(event)
+            if lane is not None:
+                lane.note(event)
         if next_use is not None:
             result = next_use.poll(box)
             status = result["status"]
@@ -708,8 +733,14 @@ def _offline_loop(box, backend, reader, state, args, ready):
         if first:
             _validate_startup_pending(backend, state, pending)
         known_pending = dict(pending) if pending is not None else None
+        if lane is not None and state.latest is not None:
+            # A planned (published, unacknowledged) whisper keeps its unit.
+            planned = REGISTRY[pending["mutation"]][0] if pending else 0
+            lane.poll(planned_cost=planned, safe=state.safe, latest=state.latest)
         done = False
-        if not pending:
+        if not whispers:
+            pass
+        elif not pending:
             request = None
             if isinstance(backend, ScheduleBackend):
                 request = backend.next(state)
@@ -734,9 +765,15 @@ def _offline_loop(box, backend, reader, state, args, ready):
             os.write(ready, b"R")  # Ready means valid state + initial pack publication.
             os.close(ready)
             first = False
-        if done:
+        if done and (lane is None or not lane.active):
             return
-        time.sleep(min(args.poll, max(0, deadline - time.monotonic())))
+        if done:
+            whispers = False
+        time.sleep(
+            args.poll
+            if lane is not None and lane.active
+            else min(args.poll, max(0, deadline - time.monotonic()))
+        )
 
 
 def _fork_director(box, backend, reader, state, args, log):
@@ -843,6 +880,92 @@ def _haunt_install(box, raw, *, restore):
         haunt.publish(box.path, raw)
 
 
+def _curio_validator(args, root):
+    """The native validator library, or None (then: no model curio)."""
+    path = getattr(args, "curio_validator", None)
+    if path is None and os.environ.get("NYARLATHACK_CURIO_VALIDATOR"):
+        path = Path(os.environ["NYARLATHACK_CURIO_VALIDATOR"])
+    if path is None:
+        path = root / "curio-validator.so"
+        if not path.is_file():
+            return None
+    from .curio_native import CurioValidator
+
+    return CurioValidator(Path(path).absolute())
+
+
+def _author_ledger(config):
+    from . import xai
+
+    if config.provider in ("xai", "xai-oauth"):
+        return xai.XaiLedger(), False
+    path = Path(xai.default_ledger()).with_name("oauth-curio-ledger.json")
+    return path, not path.exists()
+
+
+def _authoring_startup(args, choice, root, restore_dir):
+    """Slice 3a: build the authoring backend BEFORE any run directory,
+    mailbox, ledger row or fork exists (building may os.execv into Hermes).
+
+    Returns None when this game has no curio lane, else a dict with the
+    backend (None when the provider proved unusable), validator and game id.
+    A fresh record gains "authoring": "live" or "no_model"; restore follows
+    the record and never re-decides it.
+    """
+    if args.author is None:
+        return None
+    if restore_dir is not None and getattr(args, "authoring", None) != "live":
+        return None
+    from . import curio_author
+    from .xai import NoModelReachable
+
+    game = None
+    if restore_dir is not None:
+        from .curio_director import read_lane
+
+        lane = read_lane(restore_dir)
+        game = None if lane is None else lane["game"]
+    game = game or os.urandom(16).hex()
+    # Build first: this is where Hermes may re-exec the interpreter.
+    ledger, fresh = _author_ledger(args.author)
+    backend, reason = None, None
+    try:
+        backend = curio_author.build_backend(
+            args.author, ledger=ledger, run_id=game, fresh_ledger=fresh
+        )
+    except NoModelReachable:
+        reason = "no_model_reachable"
+    validator = _curio_validator(args, root) if backend is not None else None
+    if backend is not None and validator is None:
+        backend, reason = None, "no_validator"
+    if reason is not None:
+        print(
+            "chaos: model authoring unavailable (" + reason + "); "
+            "this game runs without model content",
+            file=sys.stderr,
+            flush=True,
+        )
+    if choice is not None:
+        choice["v"] = 8
+        choice["authoring"] = "live" if backend is not None else "no_model"
+        if backend is None:
+            return None
+    return dict(backend=backend, validator=validator, game=game, reason=reason)
+
+
+def _curio_lane(directory, authoring, *, fresh):
+    if authoring is None:
+        return None
+    from .curio_director import CurioLane, new_lane
+
+    if fresh:
+        new_lane(directory, game=authoring["game"])
+    lane = CurioLane(directory, authoring["backend"], validator=authoring["validator"])
+    if authoring["backend"] is None and authoring["reason"]:
+        lane.mark_no_model(authoring["reason"])
+    return lane
+
+
 def play(args):
     backend, root, executable = _configuration(args)
     refused = _refuse_ordinary_over_save(args, root)
@@ -853,6 +976,7 @@ def play(args):
     choice = _resolve_choice(args, restore_dir)
     if args.m1_seed is not None:
         backend = OrdinaryBackend(args.m1_seed)
+    authoring = _authoring_startup(args, choice, root, restore_dir)
     haunt = _haunt_preflight(args)
     directory = restore_dir if restore_dir is not None else _directory(args)
     print(
@@ -899,6 +1023,9 @@ def play(args):
                 _write_choice(directory, choice)
             if haunt is not None:
                 _haunt_install(box, haunt, restore=args.reuse_run_dir is not None)
+            args.curio_lane = _curio_lane(
+                directory, authoring, fresh=args.reuse_run_dir is None
+            )
             log = secure_open(
                 directory / "director.log", os.O_WRONLY | os.O_CREAT | os.O_APPEND
             )

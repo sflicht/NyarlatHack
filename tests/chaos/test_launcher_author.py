@@ -128,7 +128,12 @@ class LauncherAuthorTests(unittest.TestCase):
         )
         self.assertEqual(result.returncode, 0, result.stderr)
         choice = self.choice(run)
-        self.assertEqual(choice["v"], 7)
+        # Slice 3a: startup records what it found. No Hermes login and no
+        # validator here, so this game runs without model content.
+        self.assertEqual(choice["v"], 8)
+        self.assertEqual(choice["authoring"], "no_model")
+        self.assertIn("model authoring unavailable", result.stderr)
+        self.assertFalse((run / "curio-lane.json").exists())
         self.assertEqual(
             choice["author"], dict(provider="xai-oauth", model=MODEL, key_env=None)
         )
@@ -247,10 +252,17 @@ class LauncherAuthorTests(unittest.TestCase):
                 result = self.run_cli("--ordinary", "--reuse-run-dir", str(run))
                 self.assertEqual(result.returncode, 2, result.stderr)
                 self.assertFalse(self.marker.exists())
-        # A v6 record may not carry an author field.
-        target.write_text(json.dumps(dict(good, v=6)))
-        result = self.run_cli("--ordinary", "--reuse-run-dir", str(run))
-        self.assertEqual(result.returncode, 2, result.stderr)
+        # A v6 record may not carry an author field; a v7 none of authoring.
+        for version in (6, 7):
+            with self.subTest(version=version):
+                target.write_text(json.dumps(dict(good, v=version)))
+                result = self.run_cli("--ordinary", "--reuse-run-dir", str(run))
+                self.assertEqual(result.returncode, 2, result.stderr)
+        for state in ("maybe", None, True):
+            with self.subTest(authoring=state):
+                target.write_text(json.dumps(dict(good, authoring=state)))
+                result = self.run_cli("--ordinary", "--reuse-run-dir", str(run))
+                self.assertEqual(result.returncode, 2, result.stderr)
 
     def test_no_key_is_read_or_recorded_by_the_launcher(self):
         key = "t" + os.urandom(24).hex()  # throwaway, this process only
