@@ -171,3 +171,5 @@ skills to `~/.hermes/skills/`; after creating one for this project, move its
 folder here and commit it with the work that produced it. Edit existing project
 skills in place; Git history is their only record. A skill is a procedure: no
 results, dates or status (those go in GitHub issues or `docs/`).
+
+For subtle, systemic, costly-to-rediscover problems, write a postmortem in `docs/postmortem/NNNN-<slug>.md` using the `postmortem` skill (`~/.hermes/skills/postmortem/SKILL.md`); the bridge surfaces it to orchestrators.
