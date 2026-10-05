@@ -310,9 +310,71 @@ class CurioAdmissionTests(unittest.TestCase):
             "symlink", 1, None, lambda r: (r / "curio.lua").symlink_to("/dev/null")
         )
         self.run_case("fifo", 1, None, lambda r: os.mkfifo(r / "curio.lua", 0o600))
+        # A second link is a publication in progress: no verdict this safe
+        # point, and the same source is admitted once the link is gone.
         self.run_case(
-            "hardlink", 1, setup=lambda r: os.link(r / "curio.lua", r / "other")
+            "hardlink", 0, setup=lambda r: os.link(r / "curio.lua", r / "other")
         )
+        self.run_case(
+            "relink", 2, setup=lambda r: os.link(r / "curio.lua", r / "other")
+        )
+
+    def test_publish_race_logs_the_engine_index(self):
+        # The director publishes with no lock between processes. Whichever
+        # side of the engine's read the rename lands on, the engine's own
+        # admission event names the safe index at which it read the source.
+        for mode, safe in (("racebefore", 1), ("raceafter", 2)):
+            with self.subTest(mode=mode):
+                run = self.artifacts / (mode + "-race")
+                run.mkdir(mode=0o700)
+                p = subprocess.run(
+                    [str(self.exe), mode, "2"],
+                    env={
+                        **os.environ,
+                        "NYARLATHACK_RUN_DIR": str(run),
+                        "CURIO_RACE_SOURCE": SOURCE.decode(),
+                    },
+                    capture_output=True,
+                    text=True,
+                    timeout=10,
+                )
+                self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+                events = [
+                    parse_event(line)
+                    for line in (run / "events.jsonl").read_bytes().splitlines()
+                ]
+                admitted = [
+                    e["safe"]
+                    for e in events
+                    if e["event"] == "curio" and e["detail"] == "pre_admitted"
+                ]
+                self.assertEqual(admitted, [safe])
+                self.assertEqual((run / "curio-used.lua").read_bytes(), SOURCE)
+                self.assertFalse((run / ".publish-race").exists())
+
+    def test_replay_admission_index(self):
+        def due(text, mode=0o600):
+            def setup(run):
+                (run / "curio-safe").write_bytes(text)
+                (run / "curio-safe").chmod(mode)
+
+            return setup
+
+        # The engine admits a staged source iff its safe index equals the
+        # logged one; earlier waits, later or malformed rejects.
+        self.run_case("duenow", 2, setup=due(b"1\n"))
+        self.run_case("duelater", 2, setup=due(b"2\n"))
+        for text in (b"0\n", b"01\n", b"x\n", b"", b"2147483648\n", b"1 \n"):
+            with self.subTest(text=text):
+                self.run_case("duebad", 1, setup=due(text))
+        self.run_case("dueperm", 1, setup=due(b"1\n", 0o644))
+
+        def linked(run):
+            (run / "real-safe").write_bytes(b"1\n")
+            (run / "real-safe").chmod(0o600)
+            (run / "curio-safe").symlink_to(run / "real-safe")
+
+        self.run_case("duelink", 1, setup=linked)
 
     def test_evidence_fail_closed(self):
         run = self.run_case(

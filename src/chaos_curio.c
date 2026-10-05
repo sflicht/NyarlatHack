@@ -242,6 +242,37 @@ static int curio_private(int fd)
         && !(st.st_mode & (07777 & ~0600));
 }
 
+/* A second link is a publication still in progress, never a verdict. */
+static int curio_linked(int fd)
+{
+    struct stat st;
+    return !fstat(fd, &st) && S_ISREG(st.st_mode) && st.st_nlink > 1;
+}
+
+/* Replay binding (like a whisper's "at"): curio-safe holds the decimal safe
+ * index the recorded engine admitted at. 1: due now; 0: not yet; -1: reject.
+ * Absent means live play: admit at the first eligible safe point. */
+static int curio_due(int dir)
+{
+    char buf[16];
+    ssize_t n;
+    long at = 0;
+    int fd, i;
+    fd = openat(dir, "curio-safe", O_RDONLY | O_NOFOLLOW | O_NONBLOCK | O_CLOEXEC);
+    if (fd < 0) return errno == ENOENT ? 1 : -1;
+    if (!curio_private(fd)) { close(fd); return -1; }
+    do n = read(fd, buf, sizeof buf); while (n < 0 && errno == EINTR);
+    if (close(fd) || n < 1 || n > 11) return -1;
+    if (buf[n - 1] == '\n') --n;
+    if (n < 1 || n > 10 || (buf[0] == '0' && n > 1)) return -1;
+    for (i = 0; i < n; ++i) {
+        if (buf[i] < '0' || buf[i] > '9') return -1;
+        at = at * 10 + (buf[i] - '0');
+    }
+    if (at > CHAOS_MAX_COUNTER) return -1;
+    return u.chaos.safe < at ? 0 : u.chaos.safe == at ? 1 : -1;
+}
+
 static int curio_evidence(int dir, const char *source, size_t len)
 {
     int fd, ok = 0, attempts = 0;
@@ -276,7 +307,7 @@ void chaos_curio_safe(int dir)
     char text[161];
     size_t used = 0;
     ssize_t n = 0;
-    int fd, attempts = 0, closed;
+    int fd, attempts = 0, closed, due = 1;
     static int busy;
     if (busy || chaos_shadow_active()) return;
     /* Dungeon zero is the main dungeon; use local, not absolute depth. */
@@ -296,6 +327,10 @@ void chaos_curio_safe(int dir)
     busy = 1;
     fd = openat(dir, "curio.lua", O_RDONLY | O_NOFOLLOW | O_NONBLOCK | O_CLOEXEC);
     if (fd < 0 && errno == ENOENT) { busy = 0; return; }
+    if (fd >= 0) due = curio_due(dir);
+    /* Not yet available: retry at the next safe point, state unchanged. */
+    if (fd >= 0 && (!due || curio_linked(fd))) { close(fd); busy = 0; return; }
+    if (due < 0) { close(fd); fd = -1; }
     /* Only absence is retryable after looking for a candidate. Keep failures
      * canonical and empty; source is held locally until the final commit. */
     memset(&u.curio, 0, sizeof u.curio);
