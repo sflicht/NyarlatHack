@@ -38,6 +38,12 @@ native-acceptance builds are done only by `scripts/prepare_native_ci.py` (see
   also `PKG_CONFIG_PATH=/usr/lib/x86_64-linux-gnu/pkgconfig`. When Lua setup
   fails, check `pkg-config --cflags --libs lua5.4` before treating errors as
   skips.
+- For test commands launched under tmux, use an explicit clean environment
+  (`env -i` plus HOME, PATH=/usr/bin:/bin, TMPDIR and the system pkg-config
+  settings). The tmux server may retain a different compiler/pkg-config PATH
+  from the current terminal. Merely setting PKG_CONFIG does not fix tests that
+  invoke the literal `pkg-config` command; preserve setup-failure logs and rerun
+  the unchanged suite with the corrected environment.
 - For an A/B build of another revision (`git archive` into a scratch root), run
   it under `env -i HOME=... PATH=/usr/bin:/bin ...`. Conda variables inherited
   by background shells break the `lua.h` include.

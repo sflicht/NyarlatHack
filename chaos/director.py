@@ -569,12 +569,21 @@ def replay_request(row, state):
 
 
 def load_replay(journal, evidence):
+    from .history import HistoryState
+
     reader = EventReader(evidence)
-    state = State()
-    for e in reader.read():
-        state.ingest(e)
+    events = reader.read(allow_observations=True)
     if reader.tail:
         raise ValueError("incomplete ACK evidence")
+    # Ordinary games mix observation and legacy ACK rows. Validate the whole
+    # stream (including observation ordering), then use its checked ACK view.
+    if any(e.get("v") in (2, 4) for e in events):
+        state = HistoryState(b"".join(json.dumps(e).encode() + b"\n" for e in events))
+    else:
+        # Preserve legacy ACK-only evidence: it need not start a full session.
+        state = State()
+        for e in events:
+            state.ingest(e)
     require_current_replay(state)
     requests = []
     fd = secure_open(journal)
@@ -615,7 +624,13 @@ def run(
     reason = "runtime_cap"
     with Mailbox(directory) as box:
         while time.monotonic() < deadline:
-            for e in reader.read():
+            for e in reader.read(
+                allow_observations=isinstance(backend, ScheduleBackend)
+            ):
+                # The episode parser has validated these rows. They are not
+                # legacy whisper ACKs; mirror the ordinary launcher's ingestion.
+                if e.get("v") in (2, 4) and e.get("event") == "observation":
+                    continue
                 state.ingest(e)
             if state.ended:
                 reason = "death"

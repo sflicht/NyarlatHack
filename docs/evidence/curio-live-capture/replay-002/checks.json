@@ -1,0 +1,68 @@
+{
+  "outcome": "turn_limit",
+  "error": null,
+  "final_status": {
+    "dlvl": 2,
+    "hp": 13,
+    "hp_max": 13,
+    "turn": 2025,
+    "hunger": "Fainting"
+  },
+  "exit_code": 0,
+  "guarded_inputs": 1250,
+  "expected_inputs": 1250,
+  "equality": {
+    "inputs.json": true,
+    "run/events.jsonl": true,
+    "run/curio-used.lua": true,
+    "xlogfile": true
+  },
+  "replay_admission": {
+    "safe": 2,
+    "source_sha256": "fcbb97db5434501f2d9f7e15a5087fcfe448f1db1d37ae01eed9b9306a8713d7"
+  },
+  "ledger_unchanged": true,
+  "public_history_equal": true,
+  "prefix_hash_equal": true,
+  "evidence_chain_verified": true,
+  "save_comparison": "unavailable: live save was not snapshotted",
+  "cli_scope": "Native equality used launcher harness and shared stage_replay primitive. Separate test_cli_curio_replay_stages_exact_source_and_engine_index exercises the CLI on the ended captured stream; not a concurrent standalone-CLI native game.",
+  "artifact_checks": {
+    "inputs.json": {
+      "bytes": 8414,
+      "live_sha256": "3ef6f641a5f87f0e3d225901757de3e7ef284f1154f321553fc27203e5fde391",
+      "replay_sha256": "3ef6f641a5f87f0e3d225901757de3e7ef284f1154f321553fc27203e5fde391",
+      "byte_identical": true
+    },
+    "run/events.jsonl": {
+      "bytes": 74236,
+      "live_sha256": "a4a0759bba04507d2de9f2204c2a4eca259d25b7a8adfc826ae628c68d6af961",
+      "replay_sha256": "a4a0759bba04507d2de9f2204c2a4eca259d25b7a8adfc826ae628c68d6af961",
+      "byte_identical": true
+    },
+    "run/curio-used.lua": {
+      "bytes": 2452,
+      "live_sha256": "fcbb97db5434501f2d9f7e15a5087fcfe448f1db1d37ae01eed9b9306a8713d7",
+      "replay_sha256": "fcbb97db5434501f2d9f7e15a5087fcfe448f1db1d37ae01eed9b9306a8713d7",
+      "byte_identical": true
+    },
+    "xlogfile": {
+      "bytes": 396,
+      "live_sha256": "8404b319b0897d7a38aa34451259781f0c5f775d7137e731b5a47f90555f760e",
+      "replay_sha256": "8404b319b0897d7a38aa34451259781f0c5f775d7137e731b5a47f90555f760e",
+      "byte_identical": true
+    }
+  },
+  "chronology": [
+    {
+      "attempt": "replay-001",
+      "outcome": "failed before game input: replay loader rejected v2 observation event"
+    },
+    {
+      "attempt": "replay-002",
+      "outcome": "completed with corrected ordinary-observation parsing"
+    }
+  ],
+  "build_identity": "same recorded native binaries, data and deterministic clock; checked before first input",
+  "transport_guard": "XaiBackend.__init__, XaiBackend.generate, curio_author.build_backend and curio_author.author_curio patched to raise; Hermes runtime not imported"
+}
