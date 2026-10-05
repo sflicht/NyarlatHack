@@ -16,6 +16,14 @@ controlled replay and ordinary (nonwizard) experiments. Deeper topic notes:
   restart policy; a fixture with per-effect resets is not ordinary replay.
 - Inherited external inputs (for example `MAIL`) can break replay even under
   fixed clock/entropy. Use an owned empty private mailbox (0700 dir, 0600 file).
+- Keep the deterministic native clock out of the Python model transport: launch
+  Python without `LD_PRELOAD`, then restore it only in the game child's environment,
+  so certificate checks, ledger dates and deadlines use real wall time.
+- Preserve the real model-ledger location when a PTY harness replaces `HOME`;
+  explicitly set the existing `XDG_DATA_HOME` and `HERMES_HOME`, without copying
+  credentials. Otherwise each private game home can silently get a fresh ledger.
+- Snapshot each native save immediately after its successful process exit and
+  before restore consumes it; a save/restore event alone cannot prove byte equality.
 
 ## Driving the game
 

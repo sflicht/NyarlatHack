@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Live curio capture — incomplete checkpoint</title>
+<style>body{font:17px/1.6 system-ui,sans-serif;color:#182635;background:#f5f7fa;margin:0}main{max-width:880px;margin:40px auto;padding:36px;background:white;border-radius:12px}h1{line-height:1.2}h2{margin-top:2em}table{border-collapse:collapse;width:100%}td,th{text-align:left;border-bottom:1px solid #dae1e7;padding:9px}code{font-size:.9em;overflow-wrap:anywhere}.status{background:#fff1cf;padding:16px;border-left:5px solid #be8300}blockquote{border-left:3px solid #789;padding-left:18px}a{color:#175da6}</style>
+<main><p>NyarlatHack · slice 3b · 5 October 2026 · interim evidence</p>
+<h1>Live authoring worked.<br>The full curio encounter did not.</h1>
+<p class="status"><strong>Incomplete Tier A verification.</strong> Tier A covers game-state authority and replay. This checkpoint is not acceptance: the player never reached placement, inspection or application, and replay has not run.</p>
+<p>A <em>curio</em> is a model-authored object whose Lua source is validated and executed by the game engine. The <em>director</em> is the separate process proposing it; a <em>safe point</em> is an engine-controlled opportunity to admit a proposal.</p>
+<h2>What actually ran</h2>
+<p>One nonwizard ordinary Bard game, seed 1, with the existing <code>baseline-v2</code> screen-driven player unchanged. The hound and next-use features remained at their ordinary defaults. The harness allowed 0.12 seconds after actions for transport scheduling and paused real time while the actual author request was pending; it did not advance turns, force the trigger or alter engine state.</p>
+<p>Launcher configuration: <code>python3 -m chaos play --ordinary --author-provider xai-oauth --author-model grok-4.7 --curio-validator LIBRARY</code>, with private run/game roots and a 3600-second director bound. The committed code revision was <code>a2f2eac06475fdf7f08b527aa9e0432641a75f27</code>. The deterministic clock applied to the native game, not the Python transport or its certificate checks.</p>
+<table><tr><th>Measured check</th><th>Result</th></tr>
+<tr><td>Real trigger</td><td>Turn 150; remaining budget 1</td></tr>
+<tr><td>Model request</td><td>One request; Grok 4.7 via Hermes xai-oauth; completed, HTTP 200</td></tr>
+<tr><td>Authoring latency</td><td>289.692 seconds; deadline 480 seconds</td></tr>
+<tr><td>Validation</td><td>Ready; native validator admitted; no truth-check hits</td></tr>
+<tr><td>Engine admission</td><td>Safe point 2, turn 337</td></tr>
+<tr><td>Game outcome</td><td>Quit at turn 2025 on dungeon level 2; native exit 0</td></tr>
+<tr><td>Later-floor placement / inspection / application</td><td>Not reached</td></tr>
+</table>
+<p>The single request used 3,820 prompt tokens and 23,916 completion tokens, 27,736 total. The append-only ledger contains its reservation and completion. The allowance remains three requests per surface per game and 200 per day. Sam's authorization was answered at approximately <strong>10:59Z on 2026-10-05 (6:59 a.m. Eastern)</strong>; 05:50Z was the question time, not the authorization time.</p>
+<h2>Authority, public context and process fork</h2>
+<p>Recomputing the recorded 13,793-byte native-event prefix reproduced its SHA-256 (Secure Hash Algorithm, 256-bit) checksum. The prompt's <code>public_history</code> exactly matched <code>public_context(HistoryState(prefix))</code>; the combined instructions/prompt checksum also matched. The engine events, not the director's advisory index, establish admission at safe point 2.</p>
+<p>Diagnostics show the backend object already existed in launcher process 3192114 before the fork; only the main thread was alive. Child 3192124 began authoring and completed the request. The recorded states were idle, requested, ready and published. This proves this forked path completed without a stale-lock hang. Code inspection shows the HTTP client itself is constructed lazily inside the child, so this is <em>not</em> a claim that an already-open HTTP connection survived the fork.</p>
+<h2>Player-visible evidence and limits</h2>
+<p>The retained terminal stream contains this exact warning:</p>
+<blockquote>An uncanny curio may appear on a later floor.</blockquote>
+<p>The engine's end-of-game reveal record correctly reports:</p>
+<blockquote>Effect: it was never placed.<br>Delivered: no; you never applied it.</blockquote>
+<p>The harness declined the optional on-screen reveal menu. The two reveal rows above are from <code>reveal.json</code>, not a claim that the player opened that menu. No inspection text or Sanity change was observed. The player reached level 2 at turn 338 but never descended again. It ended fainting at its turn bound. A future separately named capture policy should improve public-screen exploration, seek and inspect a discovered curio, and explicitly open the reveal menu; the existing gate policy must remain unchanged.</p>
+<h2>Remaining gates</h2>
+<p>The replay command was deferred by the heavy-work wrapper with exit 75 because both slots were occupied. It was not run outside the wrapper. The prepared harness is unexecuted. A live save/restore occurred at turn 700, but the save bytes were not copied before restoration; no save-equivalence claim is possible for this attempt. Future captures must retain each save before restoring it.</p>
+<p>The capture's CHAOS=1 build completed with zero warnings. CHAOS=0, the fast suite, the native suite, standalone replay command coverage, complete curio gameplay and a green continuous-integration head remain outstanding. There are no production-code changes in this checkpoint.</p>
+<h2>Evidence</h2>
+<p><a href="attempt-001/checks.json">Machine-readable checks</a> · <a href="attempt-001/run/events.jsonl">Native events</a> · <a href="attempt-001/run/curio-evidence/receipt.json">Author receipt</a> · <a href="attempt-001/fork-lane.jsonl">Fork and lane diagnostics</a> · <a href="attempt-001/ledger-after.json">Ledger</a> · <a href="artifacts.json">Full artifact inventory and checksums</a></p>
+<p>Raw terminal bytes, full result, executed capture sources and unexecuted replay sources are retained under <code>/home/hermes/.hermes/reports/nyarlathack-3b/</code>. The inventory distinguishes their exact filenames and checksums. This failed lifecycle attempt remains part of the record regardless of later outcomes.</p>
+</main></html>
