@@ -149,7 +149,12 @@ class CurioDirectorGameplayTests(unittest.TestCase):
         self.assertLess(replay_first, admission["safe"])
         self.assertEqual(lane_mod.verify_replay(replay.run, evidence), admission)
         self.assertEqual(backend.verify_admission(replay.run), admission)
-        backend.verify(replay.run)
+        # The 2b store verify() needs the store's install receipt; the lane
+        # publishes by rename instead, so compare the engine's bytes directly.
+        self.assertEqual(
+            (replay.run / "curio-used.lua").read_bytes(),
+            (evidence / "source.lua").read_bytes(),
+        )
 
         rows = [e["detail"] for e in record.events() if e["event"] == "curio"]
         self.assertIn("admitted", rows)

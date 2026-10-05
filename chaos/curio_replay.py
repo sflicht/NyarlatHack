@@ -57,7 +57,9 @@ class CurioReplayBackend:
         return receipt
 
     def verify(self, run_directory):
-        """Read-only: installed bytes and the engine's curio-used.lua match."""
+        """Read-only: installed bytes and the engine's curio-used.lua match.
+        For a store install (install()); a lane-staged replay has no store
+        receipt and is checked by verify_admission instead."""
         return store.install_saved_source(
             run_directory, source_file=self.evidence / "source.lua", mode="verify"
         )
