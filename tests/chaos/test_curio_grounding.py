@@ -252,6 +252,57 @@ class TruthTests(unittest.TestCase):
             with self.subTest(text=text):
                 self.assertEqual(curio_truth.check([text]), [])
 
+    def test_item_gain_requires_a_recipient(self):
+        winder = (
+            "You give the key a half-turn. No clock answers. "
+            "Under the thumb the oval is, already, deeper."
+        )
+        self.assertEqual(curio_truth.check([winder]), [])
+        for verb in (
+            "give",
+            "gives",
+            "grant",
+            "grants",
+            "bestow",
+            "bestows",
+            "yield",
+            "yields",
+            "drop",
+            "drops",
+        ):
+            for article in ("a", "an", "some", "the"):
+                text = f"It {verb} you {article} key."
+                with self.subTest(text=text):
+                    self.assertIn(
+                        "item_gain", {h["rule"] for h in curio_truth.check([text])}
+                    )
+        self.assertEqual(curio_truth.check(["It gives the key a turn."]), [])
+
+    def test_frozen_pilot_and_rerun_have_no_new_truth_rejections(self):
+        base = ROOT / "docs/measurements"
+        pilot = base / "model-authoring-pilot/runs/pilot/ledger.jsonl"
+        admitted = [
+            row["outcome"]
+            for line in pilot.read_text().splitlines()
+            if (row := json.loads(line))["surface"] in ("curio", "curio_history")
+            and row.get("outcome", {}).get("admitted")
+        ]
+        self.assertEqual(len(admitted), 92)
+        for native in admitted:
+            texts = [native["name"], native["inspect"], native["apply"]["text"]]
+            with self.subTest(pilot=native["name"]):
+                self.assertEqual(curio_truth.check(texts), [])
+        jobs = base / "curio-grounding-rerun/runs/rerun/jobs"
+        receipts = [
+            json.loads(p.read_text()) for p in sorted(jobs.glob("*/receipt.json"))
+        ]
+        self.assertEqual(len(receipts), 34)
+        for receipt in receipts:
+            with self.subTest(rerun=receipt["native"]["name"]):
+                self.assertEqual(
+                    curio_truth.check(curio_truth.curio_texts(receipt["native"])), []
+                )
+
     def test_rules_come_from_the_data_file(self):
         data = json.loads(curio_truth.RULES_FILE.read_text())
         self.assertEqual(data["version"], 1)
@@ -339,14 +390,45 @@ class AuthoringTests(Base):
         self.assertEqual(sent[0]["content"], prepared["instructions"])
         self.assertEqual(sent[1]["content"], prepared["prompt"])
 
-    def test_six_minute_deadline_reaches_the_transport(self):
+    def test_eight_minute_deadline_reaches_the_transport(self):
         backend = self.backend()
-        self.author(backend)
-        self.assertEqual(curio_author.DEADLINE_S, 360)
-        self.assertEqual(backend.timeout, 360)
+        receipt = self.author(backend)
+        self.assertEqual(curio_author.DEADLINE_S, 480)
+        self.assertEqual(backend.timeout, 480)
+        self.assertEqual(receipt["deadline_s"], 480)
+        self.assertGreater(self.client.calls[0]["timeout"], 479)
+        self.assertLessEqual(self.client.calls[0]["timeout"], 480)
         self.assertLess(backend.deadline, float("inf"))
         with self.assertRaises(ValueError):
-            self.author(deadline_s=361)
+            self.author(deadline_s=481)
+
+    def test_transport_retries_stay_in_one_deadline_and_three_reservations(self):
+        backend = self.backend()
+        client = self.client
+        complete = client.create
+        calls = []
+
+        class Unavailable(RuntimeError):
+            status_code = 502
+            response = NS(headers={"Retry-After": "0"})
+
+        def flaky(**kwargs):
+            calls.append(kwargs)
+            if len(calls) < 3:
+                raise Unavailable("fake transport failure")
+            return complete(**kwargs)
+
+        client.chat.completions.create = flaky
+        receipt = self.author(backend)
+        self.assertEqual(receipt["outcome"], "ready")
+        self.assertEqual(len(calls), 3)
+        self.assertEqual(
+            [r["status"] for r in self.ledger.rows()],
+            ["reserved", "failed", "reserved", "failed", "reserved", "completed"],
+        )
+        timeouts = [call["timeout"] for call in calls]
+        self.assertTrue(all(0 < n <= 480 for n in timeouts))
+        self.assertEqual(timeouts, sorted(timeouts, reverse=True))
 
     def test_response_after_the_deadline_is_never_ready(self):
         backend = self.backend()
@@ -376,6 +458,21 @@ class AuthoringTests(Base):
         self.assertFalse((evidence / "source.lua").exists())
         with self.assertRaisesRegex(ValueError, "only a ready curio"):
             curio_author.read_evidence(evidence)
+
+    def test_validation_cannot_finish_after_the_authoring_deadline(self):
+        validator = FakeValidator()
+        validate = validator.validate
+
+        def slow(*args):
+            import time
+
+            time.sleep(0.15)
+            return validate(*args)
+
+        validator.validate = slow
+        receipt = self.author(validator=validator, deadline_s=0.1)
+        self.assertEqual(receipt["outcome"], "deadline")
+        self.assertEqual(receipt["error_type"], "LateValidation")
 
     def test_rejections_are_recorded_and_never_ready(self):
         cases = (
@@ -482,6 +579,150 @@ class AuthoringTests(Base):
         self.assertEqual(receipt["outcome"], "ready")
         self.assertEqual(receipt["provider"], "openai-codex")
         self.assertEqual(receipt["transport"]["record"]["status"], "completed")
+
+
+class TransportRetryTests(Base):
+    def failure_backend(self, status, header="0", failure=None):
+        backend = self.backend()
+        self.sent = 0
+
+        class ProviderFailure(RuntimeError):
+            status_code = status
+            response = NS(headers={"Retry-After": header})
+
+        def broken(**kwargs):
+            self.sent += 1
+            raise failure or ProviderFailure("fixture only")
+
+        self.client.chat.completions.create = broken
+        return backend
+
+    def test_no_more_than_two_retries_on_provider_error_502_or_429(self):
+        for status in (None, 502, 429):
+            with self.subTest(status=status):
+                backend = self.failure_backend(status)
+                backend.run_id = "failure-" + str(status)
+                receipt = self.author(backend)
+                self.assertEqual(receipt["outcome"], "transport_failed")
+                self.assertEqual(self.sent, 3)
+                self.assertEqual(len(receipt["transport_attempts"]), 3)
+                self.assertFalse(any(self.root.glob("events-*/curio.lua")))
+
+    def test_retry_after_is_honoured(self):
+        backend = self.failure_backend(429, "2")
+        with patch("chaos.curio_author.time.sleep") as sleep:
+            receipt = self.author(backend)
+        self.assertEqual(self.sent, 3)
+        self.assertEqual([c.args for c in sleep.call_args_list], [(2.0,), (2.0,)])
+        self.assertEqual(receipt["outcome"], "transport_failed")
+
+    def test_retry_after_that_cannot_fit_never_retries_early(self):
+        backend = self.failure_backend(429, "481")
+        with patch("chaos.curio_author.time.sleep") as sleep:
+            receipt = self.author(backend)
+        self.assertEqual(self.sent, 1)
+        sleep.assert_not_called()
+        self.assertEqual(receipt["outcome"], "transport_failed")
+
+    def test_surface_cap_includes_prior_attempts(self):
+        backend = self.failure_backend(502)
+        self.ledger.reserve(self.config, "game-1", "curio", "0" * 64)
+        receipt = self.author(backend)
+        self.assertEqual(self.sent, 2)
+        self.assertEqual(receipt["error_type"], "LedgerCapReached")
+        self.assertEqual(sum(r["status"] == "reserved" for r in self.ledger.rows()), 3)
+
+    def test_no_retry_for_auth_or_bad_request_or_timeout(self):
+        for status, error in (
+            (401, None),
+            (403, None),
+            (400, None),
+            (None, TimeoutError()),
+        ):
+            with self.subTest(status=status, error=type(error).__name__):
+                backend = self.failure_backend(status, failure=error)
+                backend.run_id = "no-retry-" + str(status)
+                receipt = self.author(backend)
+                self.assertEqual(self.sent, 1)
+                self.assertEqual(
+                    receipt["outcome"],
+                    "deadline" if error is not None else "transport_failed",
+                )
+
+    def test_ledger_failure_cannot_authorize_a_retry(self):
+        backend = self.failure_backend(502)
+        with patch.object(self.ledger, "finish", side_effect=OSError("fixture")):
+            receipt = self.author(backend)
+        self.assertEqual(self.sent, 1)
+        self.assertEqual(receipt["error_type"], "OSError")
+        self.assertEqual([r["status"] for r in self.ledger.rows()], ["reserved"])
+
+    def test_api_client_does_not_reuse_retry_after_from_a_previous_response(self):
+        calls = []
+        body = json.dumps(
+            dict(model=MODEL, choices=[dict(message=dict(content=envelope()))])
+        ).encode()
+
+        class Connection:
+            def __init__(self, *args, **kwargs):
+                calls.append(None)
+                self.number = len(calls)
+
+            def request(self, *args, **kwargs):
+                if self.number == 2:
+                    raise ConnectionError("fixture")
+
+            def getresponse(self):
+                return NS(
+                    status=502 if self.number == 1 else 200,
+                    getheader=lambda name: "5" if self.number == 1 else None,
+                    read=lambda n: b"" if self.number == 1 else body,
+                )
+
+            def close(self):
+                pass
+
+        client = xai._HttpClient(uuid.uuid4().hex)
+        backend = curio_author.build_backend(
+            self.config,
+            ledger=self.ledger,
+            run_id="fresh-header",
+            client_factory=lambda: (client, MODEL),
+        )
+        with (
+            patch("chaos.xai.http.client.HTTPSConnection", Connection),
+            patch("chaos.curio_author.time.sleep") as sleep,
+        ):
+            receipt = self.author(backend)
+        self.assertEqual(receipt["outcome"], "ready")
+        self.assertEqual([c.args for c in sleep.call_args_list], [(5.0,), (1.0,)])
+        self.assertEqual(
+            [r["http_status"] for r in self.ledger.rows() if r["status"] != "reserved"],
+            [502, None, 200],
+        )
+
+    def test_http_date_invalid_and_unbounded_retry_after(self):
+        from chaos.transport_retry import retry_delay
+
+        error = RuntimeError("fixture")
+        with patch("chaos.transport_retry.time.time", return_value=0):
+            self.assertEqual(
+                retry_delay(
+                    error, status=429, retry_after="Thu, 01 Jan 1970 00:00:10 GMT"
+                ),
+                10,
+            )
+            self.assertEqual(
+                retry_delay(
+                    error, status=429, retry_after="Thu, 01 Jan 1970 00:00:00 GMT"
+                ),
+                0,
+            )
+        for bad in ("NaN", "-1", "1.5", "not a date"):
+            self.assertEqual(retry_delay(error, status=429, retry_after=bad), 1)
+        self.assertEqual(
+            retry_delay(error, status=429, retry_after="9" * 100), float("inf")
+        )
 
 
 class KeyNeverLeaksTests(Base):

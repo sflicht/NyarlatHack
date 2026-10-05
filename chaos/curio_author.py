@@ -1,6 +1,6 @@
 """Configured, history-grounded curio authoring and its run evidence (NGPL).
 
-Proposal sections 3.2-3.5. One bounded attempt for one game:
+Proposal sections 3.2-3.5. One bounded authoring request for one game:
 
 1. build_backend(config, ...) builds the configured transport. For xai and
    xai-oauth that is chaos.xai's ledgered XaiBackend; for openai-codex it is
@@ -10,7 +10,8 @@ Proposal sections 3.2-3.5. One bounded attempt for one game:
 2. author_curio(backend, ...) projects the checked native history with
    chaos.history.public_context, picks the literary layer from the game seed
    (curio.seeded_layer), composes the prompt (no cross-game continuity notes),
-   sends one request within the 6-minute authoring deadline, parses the
+   sends within one 8-minute authoring deadline (at most two transport retries),
+   parses the
    envelope, runs native validation (the engine's own admission calls plus a
    validation grid, chaos.curio_native) and then the prose truthfulness check
    (chaos.curio_truth). Every step is written to a fresh private evidence
@@ -33,7 +34,7 @@ import time
 from . import curio, curio_store as store, curio_truth
 from .history import public_context, snapshot_history
 
-DEADLINE_S = 360  # Sam: the authoring deadline is 6 minutes
+DEADLINE_S = 480  # Sam: raised to 8 minutes after the 368/391 s rerun responses
 SURFACE = "curio"
 OUTCOMES = (
     "transport_failed",
@@ -131,9 +132,13 @@ def author_curio(
     role=None,
     deadline_s=DEADLINE_S,
 ):
-    """One attempt; returns the receipt dict also written to receipt.json."""
+    """One authoring request; up to three ledgered sends within one deadline.
+
+    Backends without an explicit retry hint are never retried. All known send
+    receipts are retained in transport_attempts; no ledger cap is reset.
+    """
     if type(deadline_s) not in (int, float) or not 0 < deadline_s <= DEADLINE_S:
-        raise ValueError("authoring deadline outside 0..360 seconds")
+        raise ValueError("authoring deadline outside 0..480 seconds")
     started = time.monotonic()
     prepared = compose(events_dir, game_seed=game_seed, role=role)
     provider = getattr(getattr(backend, "config", None), "provider", None)
@@ -169,17 +174,40 @@ def author_curio(
             return dict(receipt)
 
         backend.deadline = started + deadline_s
-        try:
-            raw, transport = backend.generate(
-                prepared["instructions"], prepared["prompt"], return_receipt=True
-            )
-        except Exception as exc:
-            return finish(
-                "deadline" if isinstance(exc, TimeoutError) else "transport_failed",
-                error_type=type(exc).__name__[:80],
-                latency_s=round(time.monotonic() - started, 3),
-                transport=getattr(backend, "last_receipt", None),
-            )
+        attempts = []
+        for attempt in range(3):
+            # A backend must opt in after a known-durable transport failure;
+            # never retry arbitrary validation, credential or ledger errors.
+            backend.retry_delay = None
+            try:
+                raw, transport = backend.generate(
+                    prepared["instructions"], prepared["prompt"], return_receipt=True
+                )
+                attempts.append(transport)
+                break
+            except Exception as exc:
+                transport = getattr(backend, "last_receipt", None)
+                attempts.append(transport)
+                delay = getattr(backend, "retry_delay", None)
+                remaining = backend.deadline - time.monotonic()
+                timed_out = isinstance(exc, TimeoutError) or remaining <= 0
+                if (
+                    not timed_out
+                    and attempt < 2
+                    and delay is not None
+                    and delay >= 0
+                    and delay < remaining
+                ):
+                    time.sleep(delay)
+                    continue
+                return finish(
+                    "deadline" if timed_out else "transport_failed",
+                    error_type=type(exc).__name__[:80],
+                    latency_s=round(time.monotonic() - started, 3),
+                    transport=transport,
+                    transport_attempts=attempts,
+                )
+        receipt["transport_attempts"] = attempts
         arrived = time.monotonic()
         raw_bytes = raw.encode("utf-8")
         store._publish(d, "raw-response.txt", raw_bytes)
@@ -207,6 +235,8 @@ def author_curio(
         if not native["admitted"]:
             return finish("native_rejected")
         hits = curio_truth.check(curio_truth.curio_texts(native))
+        if time.monotonic() > started + deadline_s:
+            return finish("deadline", error_type="LateValidation", truth_hits=hits)
         return finish("truth_rejected" if hits else "ready", truth_hits=hits)
 
 

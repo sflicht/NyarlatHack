@@ -256,6 +256,7 @@ class _HttpClient:
         self.base_url = base_url
         self.chat = SimpleNamespace(completions=SimpleNamespace(create=self._create))
         self.last_status = None
+        self.last_retry_after = None
 
     def __repr__(self):
         return f"<xai http client {self.base_url}>"
@@ -264,6 +265,8 @@ class _HttpClient:
         pass
 
     def _create(self, *, model, messages, timeout, tools=None, **_ignored):
+        self.last_status = None
+        self.last_retry_after = None
         body = json.dumps(
             {"model": model, "messages": messages, "stream": False}
         ).encode()
@@ -281,6 +284,11 @@ class _HttpClient:
             )
             response = conn.getresponse()
             self.last_status = response.status
+            self.last_retry_after = (
+                response.getheader("Retry-After")
+                if hasattr(response, "getheader")
+                else None
+            )
             raw = response.read(MAX_RESPONSE_BYTES * 4 + 1)
         finally:
             conn.close()
@@ -416,6 +424,7 @@ class XaiBackend:
         if deadline <= time.monotonic():
             raise TimeoutError("authoring deadline exhausted")
         self.last_receipt = None
+        self.retry_delay = None
         self.reservation_attempted = True
         reserved = self.ledger.reserve(
             self.config, self.run_id, self.surface, _sha(instructions + "\0" + prompt)
@@ -424,6 +433,7 @@ class XaiBackend:
         started = time.monotonic()
         client = None
         status = None
+        retry_wait = None
         try:
             client, served = self._factory()
             if client is None:
@@ -446,15 +456,28 @@ class XaiBackend:
             remaining = deadline - time.monotonic()
             if remaining <= 0:
                 raise TimeoutError("authoring deadline exhausted")
-            response = client.chat.completions.create(
-                model=self.config.model,
-                messages=[
-                    {"role": "system", "content": instructions},
-                    {"role": "user", "content": prompt},
-                ],
-                tools=[],
-                timeout=remaining,
-            )
+            try:
+                response = client.chat.completions.create(
+                    model=self.config.model,
+                    messages=[
+                        {"role": "system", "content": instructions},
+                        {"role": "user", "content": prompt},
+                    ],
+                    tools=[],
+                    timeout=remaining,
+                )
+            except Exception as exc:
+                from .transport_retry import retry_delay
+
+                status = getattr(exc, "status_code", None) or getattr(
+                    client, "last_status", None
+                )
+                retry_wait = retry_delay(
+                    exc,
+                    status=status,
+                    retry_after=getattr(client, "last_retry_after", None),
+                )
+                raise
             status = getattr(client, "last_status", None) or 200
             usage = {}
             for field in _USAGE:
@@ -498,6 +521,9 @@ class XaiBackend:
                 error_type=type(exc).__name__[:80],
             )
             self.last_receipt = self._receipt(row)
+            # Only a known-durable failed reservation permits a retry. Ledger
+            # uncertainty must never become an extra provider request.
+            self.retry_delay = retry_wait
             raise
         finally:
             if client is not None:

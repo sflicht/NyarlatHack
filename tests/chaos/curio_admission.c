@@ -29,11 +29,25 @@ int __wrap_close(int fd) {
     return __real_close(fd);
 }
 int __real_openat(int, const char *, int, ...);
+static const char *race_source;
+static void race_publish(void) {
+    /* The director's publication: temp, then rename(2). */
+    char tmp[1024], dst[1024]; int fd; const char *run=getenv("NYARLATHACK_RUN_DIR");
+    snprintf(tmp,sizeof tmp,"%s/.publish-race",run);
+    snprintf(dst,sizeof dst,"%s/curio.lua",run);
+    fd=open(tmp,O_CREAT|O_EXCL|O_WRONLY,0600); assert(fd>=0);
+    assert(write(fd,race_source,strlen(race_source))==(ssize_t)strlen(race_source));
+    assert(!fsync(fd)); close(fd); assert(!rename(tmp,dst));
+    race_source=0;
+}
 int __wrap_openat(int dir, const char *name, int flags, ...) {
     int fd;
     if (!strcmp(name,"curio.lua")) ++source_opens;
     if (flags & O_CREAT) fd=__real_openat(dir,name,flags,0600);
     else fd=__real_openat(dir,name,flags);
+    /* Publish lands just AFTER the engine looked: next safe point admits. */
+    if (race_source && !strcmp(mode,"raceafter") && !strcmp(name,"curio.lua")
+        && fd<0) { int e=errno; race_publish(); errno=e; }
     if (!strcmp(name,"curio-used.lua")) evidence_fd=fd;
     return fd;
 }
@@ -42,6 +56,10 @@ ssize_t __wrap_write(int fd, const void *buf, size_t n) {
     if (fd==evidence_fd && !strcmp(mode,"shortwrite") && n>3) n=3;
     if (!strcmp(mode,"prefail") && memmem(buf,n,"pre_admitted",12)) { errno=EIO; return -1; }
     if (!strcmp(mode,"transportfail") && memmem(buf,n,"safe_point",10)) { errno=EIO; return -1; }
+    /* Publish lands while the engine sits at the safe point, before it looks. */
+    if (race_source && !strcmp(mode,"racebefore") && memmem(buf,n,"safe_point",10)) {
+        ssize_t w=__real_write(fd,buf,n); race_publish(); return w;
+    }
     if (!strcmp(mode,"finalfail") && memmem(buf,n,"\"detail\":\"admitted\"",strlen("\"detail\":\"admitted\""))) { errno=EIO; return -1; }
     return __real_write(fd,buf,n);
 }
@@ -94,8 +112,14 @@ int main(int argc, char **argv) {
     if (!strcmp(mode,"budget")) { chaos_state_init(&u.chaos); u.chaos.spent=2; }
     if (!strcmp(mode,"noadvance")) { chaos_state_init(&u.chaos); u.chaos.safe=CHAOS_MAX_COUNTER; }
     if (initial_spent) { chaos_state_init(&u.chaos); u.chaos.spent=initial_spent; }
+    if (!strcmp(mode,"racebefore")||!strcmp(mode,"raceafter"))
+        race_source=getenv("CURIO_RACE_SOURCE");
     rng=test_rng_begin();
     chaos_start();
+    if (!strcmp(mode,"raceafter")) {
+        assert(!race_source && u.curio.phase==CHAOS_CURIO_VIRGIN && !warned);
+        chaos_safe("sleep");
+    }
     if (!strcmp(mode,"tight")||!strcmp(mode,"tight-control")||!strcmp(mode,"exhausted")) chaos_safe("sleep");
     if (!strcmp(mode,"invalidstate")) {
         struct chaos_state invalid;int dir;
@@ -107,11 +131,23 @@ int main(int argc, char **argv) {
         assert(u.curio.phase==CHAOS_CURIO_VIRGIN);test_rng_unchanged(rng);return 0;
     }
     if (!strcmp(mode,"noadvance") || !strcmp(mode,"budget")) chaos_safe("sleep");
+    if (!strcmp(mode,"relink") || !strcmp(mode,"duelater")) {
+        char path[1024];
+        /* Publication in progress / not yet due: no verdict, no cost. */
+        assert(u.curio.phase==CHAOS_CURIO_VIRGIN && !warned && !spend_calls);
+        if (!strcmp(mode,"relink")) {
+            snprintf(path,sizeof path,"%s/other",getenv("NYARLATHACK_RUN_DIR"));
+            assert(!unlink(path));
+        }
+        chaos_safe("sleep");
+    }
     assert(u.curio.phase==(unsigned)expected);
     assert(chaos_curio_valid(&u.curio));
     assert(u.chaos.last_id==prefixed && u.chaos.reserved==0);
     assert(u.chaos.cosmetic_seen==prefixed && u.chaos.cosmetic_last_turn==(prefixed?10:0));
-    assert(u.chaos.safe==(!strcmp(mode,"noadvance")?CHAOS_MAX_COUNTER:1));
+    assert(u.chaos.safe==(!strcmp(mode,"noadvance")?CHAOS_MAX_COUNTER
+                          :!strcmp(mode,"relink")||!strcmp(mode,"duelater")
+                           ||!strcmp(mode,"raceafter")?2:1));
     if (expected==CHAOS_CURIO_ADMITTED) {
         assert(warned==1 && u.chaos.spent==initial_spent+1);
         assert(!strcmp(u.curio.name,"Exact counter"));

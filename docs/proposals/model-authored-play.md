@@ -238,7 +238,8 @@ point where all of these hold:
 **Asynchronous; never blocks.** Generation is a background task in the
 director (`chaos/director.py:595-657` already polls with a deadline).
 
-- The deadline is **6 minutes**, above the pilot's 298 s maximum.
+- The deadline is **8 minutes (480 s)**: raised to 8 minutes, Sam
+  2026-10-04, after the rerun's 368/391 s responses.
 - On success the director runs the same native checks the engine will, then
   publishes `curio.lua` under the mailbox lock. The engine picks it up at the
   next safe point.
@@ -246,7 +247,7 @@ director (`chaos/director.py:595-657` already polls with a deadline).
   nothing is shown.
 
 **Director runtime (decided).** Model authoring gets its own background
-deadline of 6 minutes. All other director timing is unchanged, including
+deadline of 8 minutes. All other director timing is unchanged, including
 the launcher's 300 s director runtime default (`chaos/launcher.py:108-111`).
 
 ### 3.2 Grounding
@@ -555,8 +556,9 @@ Sam accepted all proposals.
 3. **Cross-game continuity notes:** off at launch; revisit after the A/B
    (§3.2).
 4. **Fallback with no model configured or reachable:** no curio (§3.6).
-5. **Director runtime:** model authoring gets its own 6-minute background
-   deadline; other director timing is unchanged (§3.1).
+5. **Director runtime:** model authoring gets its own background deadline,
+   raised to 8 minutes, Sam 2026-10-04, after the rerun's 368/391 s responses.
+   Other director timing is unchanged (§3.1).
 6. **Key variable for API-key providers:** the provider-standard name
    (`XAI_API_KEY` for xAI), with an `--api-key-env` override that names a
    variable and never holds a key (§5.2).

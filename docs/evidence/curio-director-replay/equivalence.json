@@ -1,0 +1,27 @@
+{
+  "lane_states": [
+    "requested",
+    "published"
+  ],
+  "curio_rows": [
+    "pre_admitted",
+    "admitted",
+    "placed"
+  ],
+  "director_observed_safe": 1,
+  "engine_admission": {
+    "safe": 2,
+    "source_sha256": "1be903af37df87c0c48595cecb8bcb0a8f422b5ec03cc2d036472c0777b733a2"
+  },
+  "replay_first_safe": 1,
+  "events_sha256": "84101a66ecedcbc49b86e5bd01242cdf4e14bdb4e727f184f64821e14e83db97",
+  "record_save_sha256": "ed43eec73511eaf404cf5ac8280714ce2622ec03b6c0f526d352eec9b826ff27",
+  "replay_save_sha256": "d36208259b92c046b542c11c816898b4235fc43988132714b33bc9019754cf73",
+  "save_bytes": 355072,
+  "save_state_differences": 0,
+  "hackpids": [
+    3009433,
+    3009435
+  ],
+  "inputs": 23
+}

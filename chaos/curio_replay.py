@@ -57,7 +57,23 @@ class CurioReplayBackend:
         return receipt
 
     def verify(self, run_directory):
-        """Read-only: installed bytes and the engine's curio-used.lua match."""
+        """Read-only: installed bytes and the engine's curio-used.lua match.
+        For a store install (install()); a lane-staged replay has no store
+        receipt and is checked by verify_admission instead."""
         return store.install_saved_source(
             run_directory, source_file=self.evidence / "source.lua", mode="verify"
         )
+
+    def verify_admission(self, run_directory):
+        """Slice 3a: the ENGINE's admission event in the replayed game matches
+        the recorded one (safe index and source SHA-256). install.json's
+        director-observed index is advisory; this is the authoritative check.
+        Evidence recorded before 3a has no admission record: returns None."""
+        from .curio_director import ADMISSION, read_admission, verify_replay
+
+        if not (self.evidence / ADMISSION).exists():
+            return None
+        expected = read_admission(self.evidence)
+        if expected["source_sha256"] != self.receipt["lua_source_sha256"]:
+            raise ValueError("admission record does not match the evidence")
+        return verify_replay(run_directory, self.evidence)

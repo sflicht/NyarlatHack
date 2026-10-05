@@ -5,7 +5,7 @@
     {
       "id": "item_gain",
       "category": "items",
-      "pattern": "\\b(you (receive|obtain|gain|get|are given)|(into|in) your (pack|hands?|inventory|purse)|(gives?|grants?|bestows?|yields?|drops?) (you|a|an|some|the) (gift|gold|coins?|gems?|key|potion|scroll|wand|ring|amulet|weapon|treasure|item))\\b"
+      "pattern": "\\b(you (receive|obtain|gain|get|are given)|(into|in) your (pack|hands?|inventory|purse)|(gives?|grants?|bestows?|yields?|drops?) you (a|an|some|the) (gift|gold|coins?|gems?|key|potion|scroll|wand|ring|amulet|weapon|treasure|item))\\b"
     },
     {
       "id": "item_named",
@@ -43,5 +43,5 @@
       "pattern": "\\b((it|the \\w+) (remembers|recalls|saw|watched|witnessed) (you|your)|i (saw|watched|remember) you)\\b"
     }
   ],
-  "calibration": "Drafted, then narrowed once against #241's 101 parseable pilot curios: 'you will not ...' and 'summon agreement' were false positives. The witness rule was kept ('The case remembers your angle' is rejected). The rerun under docs/measurements/ is the first measurement on unseen text."
+  "calibration": "Drafted, then narrowed once against #241's 101 parseable pilot curios: 'you will not ...' and 'summon agreement' were false positives. The witness rule was kept ('The case remembers your angle' is rejected). The rerun under docs/measurements/ is the first measurement on unseen text. Sam 2026-10-04 approved narrowing the giving clause of item_gain to an explicit recipient: (gives?|grants?|bestows?|yields?|drops?) you (a|an|some|the) followed by an item noun. The bare give-the-item form is removed: Crooked Winder's 'You give the key a half-turn' is not an item transfer. The other item_gain alternatives are unchanged. Offline recalibration covers the 92 admitted pilot curios' recorded admission texts and all recorded grid texts of the 34 rerun curios; no rejections after this change. This does not measure the miss rate."
 }
