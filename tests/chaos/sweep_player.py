@@ -173,11 +173,22 @@ def _with_options(options, policy="baseline-v2"):
 
 
 class Player:
-    def __init__(self, dnethackdir, clock, root, seed, start, policy, asset_pool):
+    def __init__(
+        self,
+        dnethackdir,
+        clock,
+        root,
+        seed,
+        start,
+        policy,
+        asset_pool,
+        *,
+        game_type=None,
+    ):
         self.params = POLICIES[policy]
         self.seed, self.start_name, self.policy = seed, start, policy
         self.rng = random.Random(f"{policy}:{start}:{seed}")
-        self.game = Game(
+        self.game = (Game if game_type is None else game_type)(
             dnethackdir,
             clock,
             observe=True,

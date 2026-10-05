@@ -61,7 +61,12 @@ native-acceptance builds are done only by `scripts/prepare_native_ci.py` (see
   assignments in a scratch makefile; even `make -n` on the full makefile may
   regenerate dependency includes.
 - Don't regenerate `include/macromagic.h` unless its inputs changed (AGENTS.md).
-- Generated headers stay git-ignored.
+- Generated headers stay git-ignored. After `make clean`, even the fast suite
+  needs native headers for its compiled unit fixtures. A full development
+  install regenerates them under heavy admission. Preparing only `pm.h`,
+  `onames.h`, `gnames.h` and `verinfo.h` is insufficient: the save-layout reporter
+  also includes `date.h`, whose make target depends on the engine objects.
+  Retain missing-header failures; do not convert their setup errors into skips.
 
 ## Pitfalls
 

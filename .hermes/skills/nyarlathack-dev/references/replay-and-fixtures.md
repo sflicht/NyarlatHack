@@ -83,6 +83,24 @@ controlled replay and ordinary (nonwizard) experiments. Deeper topic notes:
 8. Label synthetic history-removal experiments; never feed fabricated history into
    a positive native run. Automated wall time is not human pacing.
 
+## Separate ordinary capture players
+
+Keep lifecycle-capture policies separately named and out of the sweep gate's
+policy registry. Inject a specialized game driver through an optional factory;
+leave the default factory and the hash-pinned `gameplay_support.py` untouched.
+Use only public terminal glyphs, colors, inventory letters and menus to choose
+inputs. Enable native pet highlighting before excluding tame glyphs from combat.
+Do not use an authored item's private source/name as an inventory-selection oracle.
+
+Copy and hash completed native save files **before** invoking restore, which
+consumes the originals. A matching event stream is not save-byte equivalence.
+Accept the exact native question, `Do you want to know what watched you?`,
+then page its output; default
+harnesses can decline it even when the reveal file exists. Screen/IO unit fixtures
+validate driver contracts, not native pickup, application or printed Sanity effects;
+retain a separate real nonwizard smoke and exact input-tape replay before claiming
+that lifecycle. Bound unknown-menu handling and fail without inventing evidence.
+
 ## Comparing dumplogs
 
 Stock-baseline and current-build dumplogs differ in the
