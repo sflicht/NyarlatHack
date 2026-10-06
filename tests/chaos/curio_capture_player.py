@@ -123,7 +123,9 @@ class CapturePlayer(Player):
         text, items = self.send("i"), {}
         for _ in range(20):
             page = dict(
-                re.findall(r"(?m)^\s*([a-zA-Z]) [-+] (.+?)\s*$", self.screen.text())
+                # The menu column overlays the map: an item row may begin with
+                # map glyphs, so anchor on the menu entry, not the row start.
+                re.findall(r"(?m)(?:^|\s)([a-zA-Z]) [-+] (.+?)\s*$", self.screen.text())
             )
             items.update(page)
             if letter in page:

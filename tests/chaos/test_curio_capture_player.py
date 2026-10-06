@@ -321,6 +321,20 @@ class CapturePlayerTests(unittest.TestCase):
         p.explore({"turn": 400}, 1, (9, 5))
         p.act.assert_called_once_with("10s")
 
+    def test_inventory_row_overlaying_the_map_is_parsed(self):
+        p = self.player()
+        lines = [
+            "Inventory: 598/550 weight (8/52 slots)",
+            "                       g - an uncursed tin whistle {3}",
+            "                  │@·· o - a Twice-Counted Seam",
+            "                  ·^[· (end)",
+        ]
+        p.screen.text = Mock(return_value="\n".join(lines))
+        p.send = Mock(return_value=b"(end)")
+        items, _ = p._inventory()
+        self.assertEqual(items["o"], "a Twice-Counted Seam")
+        self.assertEqual(items["g"], "an uncursed tin whistle {3}")
+
     def test_steps_into_a_dark_room_enclosed_by_walls(self):
         p = self.player()
         rows = p.screen.rows
