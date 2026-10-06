@@ -1,0 +1,71 @@
+{
+  "outcome": "died",
+  "error": null,
+  "final_status": null,
+  "exit_code": 0,
+  "guarded_inputs": 964,
+  "expected_inputs": 964,
+  "equality": {
+    "inputs.json": true,
+    "run/events.jsonl": true,
+    "run/curio-used.lua": true,
+    "xlogfile": true,
+    "run/reveal.json": true,
+    "run/whispers.jsonl": true
+  },
+  "saves": {
+    "0001/1001ChaosReview": {
+      "bytes": 320439,
+      "live_sha256": "68c8750855ba803d5eef77789c725779e0c8f35b826d7c4016bcedd94dd4c4cb",
+      "replay_sha256": "9965eef4d8db43757c5fcdef55174642e6d54ecc4bbad185c6b36f342dd71779",
+      "byte_identical": false,
+      "state_differences": 1,
+      "first": [
+        [
+          48132,
+          "438dc1c28ab4d50e",
+          "7f7901b472fedd01"
+        ]
+      ],
+      "pids": [
+        3378967,
+        3385449
+      ]
+    }
+  },
+  "replay_admission": {
+    "safe": 2,
+    "source_sha256": "ccb359b3b09ba15b5d79f0e512e3ca7542a315c63235a4b0b80246c3116157de"
+  },
+  "ledger_unchanged": true,
+  "prefix_sha256_equal": true,
+  "public_history_equal": true,
+  "evidence_chain_verified": true,
+  "live_admission": {
+    "safe": 2,
+    "source_sha256": "ccb359b3b09ba15b5d79f0e512e3ca7542a315c63235a4b0b80246c3116157de"
+  },
+  "save_compare": {
+    "save_bytes": 320439,
+    "raw_differences": [
+      [
+        48132,
+        "438dc1c28ab4d50e",
+        "7f7901b472fedd01"
+      ]
+    ],
+    "game_token_live": "438dc1c28ab4d50e",
+    "game_token_replay": "7f7901b472fedd01",
+    "token_occurrences_live": 1,
+    "token_occurrences_replay": 1,
+    "state_differences_after_pid_pointer_token": 0,
+    "remaining": []
+  },
+  "harness_v2_note": "Replay 001 used a recorded-stream ScheduleBackend and lost 3 live 'ack duplicate' rows (request 2 published ahead of its safe point); replay 002 keeps the launcher's own model-free OrdinaryBackend, as live play did, and checks the journal byte-for-byte afterwards.",
+  "transport_patched_to_raise": [
+    "XaiBackend.__init__",
+    "XaiBackend.generate",
+    "curio_author.build_backend",
+    "curio_author.author_curio"
+  ]
+}

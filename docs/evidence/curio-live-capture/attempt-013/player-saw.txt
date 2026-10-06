@@ -1,0 +1,23 @@
+Verbatim terminal text from live attempt 013 (seed 12), in order. Line breaks are the
+game's own (CR/LF normalised); status-line redraws between messages are omitted.
+
+T:356   An uncanny curio may appear on a later floor.
+T:707   You fall down the stairs.   (to main-dungeon DL3; engine event 'curio placed'
+        is written while that new level is generated)
+T:833   You see here a glass reed locket.
+T:835   l - a glass reed locket.
+T:835   [I - Describe this item]
+        a glass reed locket
+        A cracked locket holds a hair-thin glass reed. One edge is cooler, as if a
+        breath stopped short.
+T:835   [a - Apply]
+        The curio requests a Sanity change of -1; native limits may reduce it. This
+        spends one use.
+        You breathe across the reed. A high thin tone starts, then stops one step short
+        of closing.
+end     Do you want to know what watched you? [ynq] (n) y
+          Turn 356: a curio was admitted.
+            Telegraph: "An uncanny curio may appear on a later floor."
+            Effect: a curio whistle was placed on a new level on turn 707.
+            Delivered: yes, you applied it 1 time (Sanity -1 in total).
+            Ended: 2 uses left when the game ended.
