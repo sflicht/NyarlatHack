@@ -234,6 +234,20 @@ class CapturePlayerTests(unittest.TestCase):
         p.send.assert_not_called()
         self.assertNotEqual(p.act.call_args.args[0], ">")
 
+    def test_falling_beside_the_stair_walks_to_it_before_looking(self):
+        p = self.player()
+        p.screen.rows[5][5] = ">"
+        p.send = Mock(return_value=b"There is a branch staircase up here.")
+        heroes = iter([(5, 5), (6, 5)])
+        p.hero = Mock(side_effect=lambda: next(heroes))
+        p.find = Mock(return_value=[(6, 5)])
+        p.travel = Mock(return_value=None)
+        with patch("curio_capture_player.status", return_value={"dlvl": 3}):
+            p.descend(2, (5, 5))
+        p.travel.assert_called_once_with((6, 5))
+        p.send.assert_called_once_with(":")
+        self.assertEqual([c.args[0] for c in p.act.call_args_list], [">", "<"])
+
     def test_arriving_by_main_staircase_stays(self):
         p = self.player()
         p.screen.rows[5][5] = ">"

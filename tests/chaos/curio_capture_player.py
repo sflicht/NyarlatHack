@@ -214,6 +214,23 @@ class CapturePlayer(Player):
         s = status(self.screen)
         if s is None or s["dlvl"] != level + 1:
             return None
+        # Falling down the stairs (e.g. Burdened) can land beside them: walk
+        # to the nearest visible up staircase first (ordinary travel).
+        hero_now = self.hero()
+        ups = sorted(
+            self.find("<"),
+            key=lambda t: (
+                (abs(t[0] - hero_now[0]) + abs(t[1] - hero_now[1]), t)
+                if hero_now
+                else t
+            ),
+        )
+        if hero_now and ups and ups[0] != hero_now:
+            result = self.travel(ups[0])
+            if result:
+                return result
+            if self.hero() != ups[0]:
+                return None
         if b"branch staircase up" not in self.look_here():
             return None
         self.__dict__.setdefault("branch_stairs", set()).add((level, hero))
