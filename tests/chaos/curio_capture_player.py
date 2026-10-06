@@ -57,6 +57,9 @@ class CaptureGame(Game):
         raise AssertionError("capture endgame did not exit: " + repr(text[-500:]))
 
     def save(self):
+        # The saving process's pid is the save's hackpid; replay comparison
+        # must exclude it, so record it before the session ends.
+        reader_pid = getattr(self, "_reader_pid", None)
         code = super().save()
         if code:
             return code
@@ -68,7 +71,7 @@ class CaptureGame(Game):
         snapshots.mkdir(exist_ok=True)
         dest = snapshots / f"{len(list(snapshots.iterdir())) + 1:04d}"
         dest.mkdir()  # Never silently overwrite retained evidence.
-        manifest = {}
+        manifest = {"reader_pid": reader_pid}
         for path in files:
             target = dest / path.name
             shutil.copy2(path, target)
@@ -220,7 +223,12 @@ class CapturePlayer(Player):
             if self.pickup_succeeded:
                 tried.add(spot)
             return result
-        if terrain.get(hero) == ">":
+        # Honour the inherited baseline-v2 dwell (public turn counter only):
+        # without it the player dives past DL1-2 before the curio trigger's
+        # public 150-turn history exists, and native expiry closes the chance.
+        since = self.level_since.get(level, s["turn"])
+        dwell = s["turn"] - since < self.params["min_turns_per_level"]
+        if terrain.get(hero) == ">" and not dwell:
             return self.act(">")
         # Cardinal steps avoid illegal diagonals through doorways. Never plan
         # through unseen stone or peek at the engine's level data.
@@ -241,7 +249,7 @@ class CapturePlayer(Player):
                     routes[nxt] = first or key
                     queue.append((nxt, first or key))
         tools = [p for p in routes if terrain[p] == "(" and p not in visited]
-        stairs = [p for p in routes if terrain[p] == ">"]
+        stairs = [] if dwell else [p for p in routes if terrain[p] == ">"]
         unvisited = [p for p in routes if p not in visited]
         target = next(iter(tools or stairs or unvisited), None)
         if target is None:

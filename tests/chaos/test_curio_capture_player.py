@@ -192,6 +192,22 @@ class CapturePlayerTests(unittest.TestCase):
         p.explore({"turn": 402}, 2, (6, 5))
         p.act.assert_called_once_with("10s")
 
+    def test_dwells_min_turns_per_level_before_descending(self):
+        p = self.player()
+        p.level_since = {1: 100}
+        p.screen.rows[5][6] = ">"
+        p.screen.rows[5][4] = "·"
+        p.explore({"turn": 399}, 1, (5, 5))
+        self.assertNotEqual(p.act.call_args.args[0], "l")
+        p.act.reset_mock()
+        p.screen.rows[5][5] = ">"
+        p.screen.rows[5][6] = "·"
+        p.explore({"turn": 399}, 1, (5, 5))
+        self.assertNotEqual(p.act.call_args.args[0], ">")
+        p.act.reset_mock()
+        p.explore({"turn": 400}, 1, (5, 5))
+        p.act.assert_called_once_with(">")
+
     def test_does_not_route_through_unseen_stone(self):
         p = self.player()
         p.screen.rows[5][8] = ">"
