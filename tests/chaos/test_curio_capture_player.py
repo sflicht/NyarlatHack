@@ -284,6 +284,25 @@ class CapturePlayerTests(unittest.TestCase):
         p.explore({"turn": 401}, 1, (5, 5))
         p.travel.assert_not_called()  # retries exhausted: explore instead
 
+    def test_searches_a_corridor_dead_end_before_other_edges(self):
+        p = self.player()
+        for x in range(6, 10):
+            p.screen.rows[5][x] = "#"
+        p.screen.rows[5][5] = "·"  # room floor; the hero stands at (9, 5)
+        p.screen.rows[5][9] = "@"
+        p.screen.x = 9
+        p.map_memory = {1: {(9, 5): "#"}}  # seen as corridor before stepping on
+        p.visited[1] = {
+            (x, y)
+            for y in range(22)
+            for x, glyph in enumerate(p.screen.rows[y])
+            if glyph != " "
+        }
+        for turn in range(400, 412):
+            p.explore({"turn": turn}, 1, (9, 5))
+        keys = [c.args[0] for c in p.act.call_args_list]
+        self.assertEqual(keys[:6], ["10s"] * 6)  # (9,5) is the dead end
+
     def test_arriving_by_main_staircase_stays(self):
         p = self.player()
         p.screen.rows[5][5] = ">"

@@ -356,7 +356,24 @@ class CapturePlayer(Player):
                     for key in "hjkl"
                 )
             ]
-            target = min(edges, key=lambda point: searches.get(point, 0), default=hero)
+            # Hidden passages continue public corridor dead ends: search those
+            # first (up to 6 x 10s each), before spreading over room edges.
+            dead_ends = [
+                point
+                for point in [hero, *routes]
+                if terrain.get(point) == "#"
+                and searches.get(point, 0) < 6
+                and sum(
+                    terrain.get((point[0] + dx, point[1] + dy)) in WALKABLE
+                    for dx, dy in DELTA.values()
+                )
+                == 1
+            ]
+            target = min(
+                dead_ends or edges,
+                key=lambda point: searches.get(point, 0),
+                default=hero,
+            )
             if target == hero:
                 searches[hero] = searches.get(hero, 0) + 1
                 return self.act("10s")
