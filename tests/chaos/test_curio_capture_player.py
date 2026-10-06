@@ -303,6 +303,22 @@ class CapturePlayerTests(unittest.TestCase):
         keys = [c.args[0] for c in p.act.call_args_list]
         self.assertEqual(keys[:6], ["10s"] * 6)  # (9,5) is the dead end
 
+    def test_steps_into_a_dark_room_enclosed_by_walls(self):
+        p = self.player()
+        rows = p.screen.rows
+        for x in range(3, 12):
+            rows[3][x] = rows[7][x] = "─"
+        for y in range(4, 7):
+            rows[y][3] = rows[y][11] = "│"
+        rows[5][4] = "▒"  # doorway; the hero stands just inside it at (5, 5)
+        p.visited[1] = {(5, 5), (4, 5)}
+        p.explore({"turn": 400}, 1, (5, 5))
+        self.assertIn(p.act.call_args.args[0], "jkl")
+
+    def test_blank_outside_rooms_is_not_a_frontier(self):
+        terrain = {(5, 5): "#", (6, 4): "#"}
+        self.assertFalse(CapturePlayer.dark_room_cell(terrain, (6, 5)))
+
     def test_arriving_by_main_staircase_stays(self):
         p = self.player()
         p.screen.rows[5][5] = ">"

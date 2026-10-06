@@ -312,19 +312,26 @@ class CapturePlayer(Player):
             for key in "hjkl":
                 dx, dy = DELTA[key]
                 nxt = point[0] + dx, point[1] + dy
-                if (
-                    nxt not in seen
-                    and terrain.get(nxt) in WALKABLE
-                    and failed.get((point, nxt), 0) < 3
-                ):
+                if nxt in seen or failed.get((point, nxt), 0) >= 3:
+                    continue
+                if terrain.get(nxt) in WALKABLE:
                     seen.add(nxt)
                     routes[nxt] = first or key
                     queue.append((nxt, first or key))
-        tools = [p for p in routes if terrain[p] == "(" and p not in visited]
+                elif nxt not in terrain and self.dark_room_cell(terrain, nxt):
+                    # Unlit room floor is blank on screen: a one-step frontier
+                    # target, never routed through.
+                    seen.add(nxt)
+                    routes[nxt] = first or key
+        tools = [p for p in routes if terrain.get(p) == "(" and p not in visited]
         stairs = (
             []
             if dwell
-            else [p for p in routes if terrain[p] == ">" and (level, p) not in branches]
+            else [
+                p
+                for p in routes
+                if terrain.get(p) == ">" and (level, p) not in branches
+            ]
         )
         searched = sum(self.__dict__.get("edge_searches", {}).get(level, {}).values())
         if not tools and not stairs and not dwell and searched >= 3:
@@ -341,7 +348,8 @@ class CapturePlayer(Player):
             )
             if far:
                 return self.travel_v2(level, far[0])
-        unvisited = [p for p in routes if p not in visited]
+        unvisited = [p for p in routes if p not in visited and p in terrain]
+        unvisited += [p for p in routes if p not in terrain]  # dark frontier last
         target = next(iter(tools or stairs or unvisited), None)
         if target is None:
             searches = self.__dict__.setdefault("edge_searches", {}).setdefault(
@@ -382,13 +390,29 @@ class CapturePlayer(Player):
         nxt = hero[0] + dx, hero[1] + dy
         self.previous_step = level, hero, nxt
         opened = self.__dict__.setdefault("opened_doors", set())
-        if terrain[nxt] == "▒" and (level, nxt) not in opened:
+        if terrain.get(nxt) == "▒" and (level, nxt) not in opened:
             result = self.act("o" + key)
             message = self.screen.line(0)
             if "The door opens." in message or "This door is already open." in message:
                 opened.add((level, nxt))
             return result
         return self.act(key)
+
+    @staticmethod
+    def dark_room_cell(terrain, point):
+        """A blank cell enclosed on all four sides (within 30 cells) by
+        remembered room glyphs, never by corridor: public screen memory only."""
+        for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+            x, y = point
+            glyph = None
+            for _ in range(30):
+                x, y = x + dx, y + dy
+                glyph = terrain.get((x, y))
+                if glyph is not None:
+                    break
+            if glyph is None or glyph == "#":
+                return False
+        return True
 
     def monsters(self, hero):
         return [
