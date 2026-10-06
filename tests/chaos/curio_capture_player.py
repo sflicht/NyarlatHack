@@ -214,8 +214,18 @@ class CapturePlayer(Player):
         s = status(self.screen)
         if s is None or s["dlvl"] != level + 1:
             return None
-        # Falling down the stairs (e.g. Burdened) can land beside them: walk
-        # to the nearest visible up staircase first (ordinary travel).
+        # Falling down the stairs (e.g. Burdened) can land beside them, often
+        # with the pet standing on them: wait a few turns for a visible '<'
+        # (public screen only), then walk to it (ordinary travel).
+        for _ in range(3):
+            if self.find("<"):
+                break
+            result = self.act("s")
+            if result:
+                return result
+            s = status(self.screen)
+            if s is None or s["dlvl"] != level + 1:
+                return None
         hero_now = self.hero()
         ups = sorted(
             self.find("<"),

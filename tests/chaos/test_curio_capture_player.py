@@ -141,6 +141,11 @@ class CapturePlayerTests(unittest.TestCase):
                 p.settle(text)
                 p.send.assert_called_once_with("\x1b")
 
+    @staticmethod
+    def arrive_on_up_stair(p, at):
+        find = Player.find.__get__(p)
+        p.find = lambda chars: [at] if chars == "<" else find(chars)
+
     def player(self):
         p = CapturePlayer.__new__(CapturePlayer)
         p.screen = Screen()
@@ -219,6 +224,7 @@ class CapturePlayerTests(unittest.TestCase):
         p.visited[3] = {(1, 1)}
         p.level_since[3] = 401
         p.send = Mock(return_value=b"There is a branch staircase up here.")
+        self.arrive_on_up_stair(p, (5, 5))
         with patch("curio_capture_player.status", return_value={"dlvl": 3}):
             p.explore({"turn": 400}, 2, (5, 5))
         p.send.assert_called_once_with(":")  # public look only after arrival
@@ -248,10 +254,24 @@ class CapturePlayerTests(unittest.TestCase):
         p.send.assert_called_once_with(":")
         self.assertEqual([c.args[0] for c in p.act.call_args_list], [">", "<"])
 
+    def test_waits_for_a_hidden_up_stair_to_appear_before_walking(self):
+        p = self.player()
+        p.screen.rows[5][5] = ">"
+        p.send = Mock(return_value=b"There is a branch staircase up here.")
+        heroes = iter([(5, 5), (6, 5)])
+        p.hero = Mock(side_effect=lambda: next(heroes))
+        p.find = Mock(side_effect=[[], [(6, 5)], [(6, 5)]])  # pet moves off
+        p.travel = Mock(return_value=None)
+        with patch("curio_capture_player.status", return_value={"dlvl": 3}):
+            p.descend(2, (5, 5))
+        self.assertEqual([c.args[0] for c in p.act.call_args_list], [">", "s", "<"])
+        p.travel.assert_called_once_with((6, 5))
+
     def test_arriving_by_main_staircase_stays(self):
         p = self.player()
         p.screen.rows[5][5] = ">"
         p.send = Mock(return_value=b"There is a staircase up here.")
+        self.arrive_on_up_stair(p, (5, 5))
         with patch("curio_capture_player.status", return_value={"dlvl": 3}):
             p.explore({"turn": 400}, 2, (5, 5))
         p.send.assert_called_once_with(":")
