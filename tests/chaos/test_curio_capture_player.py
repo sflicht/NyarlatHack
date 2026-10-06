@@ -151,7 +151,10 @@ class CapturePlayerTests(unittest.TestCase):
         p.whistle = "a"
         p.quaffs, p.travel_short, p.visited = {}, {}, {}
         p.not_fountains = set()
-        p.level_since = {1: 0}
+        p.level_since = {1: 0, 2: 0}
+        p.commands, p.log = 0, []
+        p.exited = Mock(return_value=False)
+        p.send = Mock(return_value=b"There is a staircase down here.")
         p.act = Mock(return_value=None)
         return p
 
@@ -206,6 +209,32 @@ class CapturePlayerTests(unittest.TestCase):
         self.assertNotEqual(p.act.call_args.args[0], ">")
         p.act.reset_mock()
         p.explore({"turn": 400}, 1, (5, 5))
+        p.act.assert_called_once_with(">")
+
+    def test_branch_staircase_is_looked_at_and_never_taken(self):
+        p = self.player()
+        p.commands, p.log = 0, []
+        p.exited = Mock(return_value=False)
+        p.screen.rows[5][5] = ">"
+        p.screen.rows[5][6] = "·"
+        p.send = Mock(return_value=b"There is a branch staircase down here.")
+        p.explore({"turn": 400}, 2, (5, 5))
+        p.send.assert_called_once_with(":")
+        self.assertNotEqual(p.act.call_args.args[0], ">")
+        p.send.reset_mock()
+        p.act.reset_mock()
+        p.explore({"turn": 401}, 2, (5, 5))
+        p.send.assert_not_called()  # remembered publicly; not re-asked
+        self.assertNotEqual(p.act.call_args.args[0], ">")
+
+    def test_main_staircase_is_looked_at_then_taken(self):
+        p = self.player()
+        p.commands, p.log = 0, []
+        p.exited = Mock(return_value=False)
+        p.screen.rows[5][5] = ">"
+        p.send = Mock(return_value=b"There is a staircase down here.")
+        p.explore({"turn": 400}, 2, (5, 5))
+        p.send.assert_called_once_with(":")
         p.act.assert_called_once_with(">")
 
     def test_does_not_route_through_unseen_stone(self):

@@ -187,6 +187,19 @@ class CapturePlayer(Player):
                     return result
         return None
 
+    def branch_stair_here(self):
+        """Ask the game what is here (':'); True only for its own words."""
+        self.commands += 1
+        self.log.append(":")
+        text = seen = self.send(":")
+        for _ in range(20):
+            if b"--More--" not in text and not re.search(rb"\(\d+ of \d+\)", text):
+                break
+            text = self.send(" ")
+            seen += text
+        self.settle(text)
+        return b"branch staircase down" in ANSI.sub(b"", seen)
+
     def explore(self, s, level, hero):
         if hero is None:
             return self.act("s")
@@ -228,8 +241,14 @@ class CapturePlayer(Player):
         # public 150-turn history exists, and native expiry closes the chance.
         since = self.level_since.get(level, s["turn"])
         dwell = s["turn"] - since < self.params["min_turns_per_level"]
-        if terrain.get(hero) == ">" and not dwell:
-            return self.act(">")
+        branches = self.__dict__.setdefault("branch_stairs", set())
+        if terrain.get(hero) == ">" and not dwell and (level, hero) not in branches:
+            # Public look (no game time): stay in the main dungeon, whose
+            # DL2-3 is the only place a curio is ever placed (documented rule).
+            if self.branch_stair_here():
+                branches.add((level, hero))
+            else:
+                return self.act(">")
         # Cardinal steps avoid illegal diagonals through doorways. Never plan
         # through unseen stone or peek at the engine's level data.
         queue: deque[tuple[tuple[int, int], str | None]] = deque([(hero, None)])
@@ -249,7 +268,11 @@ class CapturePlayer(Player):
                     routes[nxt] = first or key
                     queue.append((nxt, first or key))
         tools = [p for p in routes if terrain[p] == "(" and p not in visited]
-        stairs = [] if dwell else [p for p in routes if terrain[p] == ">"]
+        stairs = (
+            []
+            if dwell
+            else [p for p in routes if terrain[p] == ">" and (level, p) not in branches]
+        )
         unvisited = [p for p in routes if p not in visited]
         target = next(iter(tools or stairs or unvisited), None)
         if target is None:
