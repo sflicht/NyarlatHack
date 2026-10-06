@@ -267,6 +267,23 @@ class CapturePlayerTests(unittest.TestCase):
         self.assertEqual([c.args[0] for c in p.act.call_args_list], [">", "s", "<"])
         p.travel.assert_called_once_with((6, 5))
 
+    def test_stair_across_a_dark_room_uses_native_travel_boundedly(self):
+        p = self.player()
+        p.screen.rows[5][9] = ">"  # blank (dark) floor between hero and stair
+        p.travel = Mock(return_value=None)
+        for turn in range(397, 400):  # ordinary exploration first: searches
+            p.explore({"turn": turn}, 1, (5, 5))
+        self.assertEqual([c.args[0] for c in p.act.call_args_list], ["10s"] * 3)
+        p.travel.assert_not_called()
+        p.act.reset_mock()
+        p.explore({"turn": 400}, 1, (5, 5))
+        p.travel.assert_called_once_with((9, 5))
+        p.act.assert_not_called()
+        p.travel_short[(1, (9, 5))] = p.params["travel_retries"]
+        p.travel.reset_mock()
+        p.explore({"turn": 401}, 1, (5, 5))
+        p.travel.assert_not_called()  # retries exhausted: explore instead
+
     def test_arriving_by_main_staircase_stays(self):
         p = self.player()
         p.screen.rows[5][5] = ">"

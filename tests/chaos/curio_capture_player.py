@@ -326,6 +326,21 @@ class CapturePlayer(Player):
             if dwell
             else [p for p in routes if terrain[p] == ">" and (level, p) not in branches]
         )
+        searched = sum(self.__dict__.get("edge_searches", {}).get(level, {}).values())
+        if not tools and not stairs and not dwell and searched >= 3:
+            # A '>' seen across a dark room has no remembered floor to route
+            # over. Only once ordinary exploration is exhausted (three edge
+            # searches on this level), use the game's own travel command, as
+            # baseline-v2 does, bounded by its travel_retries.
+            far = sorted(
+                p
+                for p, glyph in terrain.items()
+                if glyph == ">"
+                and (level, p) not in branches
+                and self.reachable(level, p)
+            )
+            if far:
+                return self.travel_v2(level, far[0])
         unvisited = [p for p in routes if p not in visited]
         target = next(iter(tools or stairs or unvisited), None)
         if target is None:
