@@ -11,6 +11,7 @@ import time
 
 from gameplay_support import ANSI, Game
 from sweep_player import DELTA, DIRS, START_OPTIONS, WALKABLE, Player, _with_options
+from sweep_screen import status
 
 
 class CaptureGame(Game):
@@ -187,8 +188,8 @@ class CapturePlayer(Player):
                     return result
         return None
 
-    def branch_stair_here(self):
-        """Ask the game what is here (':'); True only for its own words."""
+    def look_here(self):
+        """Ask the game what is here (':'; no game time). Returns its words."""
         self.commands += 1
         self.log.append(":")
         text = seen = self.send(":")
@@ -198,7 +199,37 @@ class CapturePlayer(Player):
             text = self.send(" ")
             seen += text
         self.settle(text)
-        return b"branch staircase down" in ANSI.sub(b"", seen)
+        return ANSI.sub(b"", seen)
+
+    def descend(self, level, hero):
+        """Take '>'; if the game then says we stand on a branch staircase up,
+        we left the main dungeon: remember that stair and climb back.
+
+        The game only names a branch staircase after it has been used, so the
+        check happens on arrival. Curios are placed only on main-dungeon
+        DL2-3, and a branch level neither expires nor places one."""
+        result = self.act(">")
+        if result:
+            return result
+        s = status(self.screen)
+        if s is None or s["dlvl"] != level + 1:
+            return None
+        if b"branch staircase up" not in self.look_here():
+            return None
+        self.__dict__.setdefault("branch_stairs", set()).add((level, hero))
+        self.branch_bounces = getattr(self, "branch_bounces", 0) + 1
+        result = self.act("<")
+        # The branch level shares the status line's Dlvl number with the main
+        # dungeon level below; never let its public memory leak into that one.
+        for memory in (
+            self.__dict__.get("map_memory", {}),
+            self.visited,
+            self.level_since,
+            self.__dict__.get("failed_steps", {}),
+            self.__dict__.get("edge_searches", {}),
+        ):
+            memory.pop(level + 1, None)
+        return result
 
     def explore(self, s, level, hero):
         if hero is None:
@@ -243,12 +274,7 @@ class CapturePlayer(Player):
         dwell = s["turn"] - since < self.params["min_turns_per_level"]
         branches = self.__dict__.setdefault("branch_stairs", set())
         if terrain.get(hero) == ">" and not dwell and (level, hero) not in branches:
-            # Public look (no game time): stay in the main dungeon, whose
-            # DL2-3 is the only place a curio is ever placed (documented rule).
-            if self.branch_stair_here():
-                branches.add((level, hero))
-            else:
-                return self.act(">")
+            return self.descend(level, hero)
         # Cardinal steps avoid illegal diagonals through doorways. Never plan
         # through unseen stone or peek at the engine's level data.
         queue: deque[tuple[tuple[int, int], str | None]] = deque([(hero, None)])

@@ -211,29 +211,35 @@ class CapturePlayerTests(unittest.TestCase):
         p.explore({"turn": 400}, 1, (5, 5))
         p.act.assert_called_once_with(">")
 
-    def test_branch_staircase_is_looked_at_and_never_taken(self):
+    def test_arriving_by_branch_staircase_climbs_back_and_never_retakes_it(self):
         p = self.player()
-        p.commands, p.log = 0, []
-        p.exited = Mock(return_value=False)
         p.screen.rows[5][5] = ">"
         p.screen.rows[5][6] = "·"
-        p.send = Mock(return_value=b"There is a branch staircase down here.")
-        p.explore({"turn": 400}, 2, (5, 5))
-        p.send.assert_called_once_with(":")
-        self.assertNotEqual(p.act.call_args.args[0], ">")
+        p.map_memory = {3: {(1, 1): "·"}}
+        p.visited[3] = {(1, 1)}
+        p.level_since[3] = 401
+        p.send = Mock(return_value=b"There is a branch staircase up here.")
+        with patch("curio_capture_player.status", return_value={"dlvl": 3}):
+            p.explore({"turn": 400}, 2, (5, 5))
+        p.send.assert_called_once_with(":")  # public look only after arrival
+        self.assertEqual([c.args[0] for c in p.act.call_args_list], [">", "<"])
+        self.assertIn((2, (5, 5)), p.branch_stairs)
+        # The branch level's memory never leaks into main-dungeon level 3.
+        self.assertNotIn(3, p.map_memory)
+        self.assertNotIn(3, p.visited)
+        self.assertNotIn(3, p.level_since)
         p.send.reset_mock()
         p.act.reset_mock()
         p.explore({"turn": 401}, 2, (5, 5))
-        p.send.assert_not_called()  # remembered publicly; not re-asked
+        p.send.assert_not_called()
         self.assertNotEqual(p.act.call_args.args[0], ">")
 
-    def test_main_staircase_is_looked_at_then_taken(self):
+    def test_arriving_by_main_staircase_stays(self):
         p = self.player()
-        p.commands, p.log = 0, []
-        p.exited = Mock(return_value=False)
         p.screen.rows[5][5] = ">"
-        p.send = Mock(return_value=b"There is a staircase down here.")
-        p.explore({"turn": 400}, 2, (5, 5))
+        p.send = Mock(return_value=b"There is a staircase up here.")
+        with patch("curio_capture_player.status", return_value={"dlvl": 3}):
+            p.explore({"turn": 400}, 2, (5, 5))
         p.send.assert_called_once_with(":")
         p.act.assert_called_once_with(">")
 
