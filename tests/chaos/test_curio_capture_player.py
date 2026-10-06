@@ -303,6 +303,24 @@ class CapturePlayerTests(unittest.TestCase):
         keys = [c.args[0] for c in p.act.call_args_list]
         self.assertEqual(keys[:6], ["10s"] * 6)  # (9,5) is the dead end
 
+    def test_corridor_end_beside_a_junction_is_still_a_dead_end(self):
+        p = self.player()
+        for x in range(6, 10):
+            p.screen.rows[5][x] = "#"
+        p.screen.rows[4][8] = "#"  # a branch diagonal to the end (9, 5)
+        p.screen.rows[5][5] = "·"
+        p.screen.rows[5][9] = "@"
+        p.screen.x = 9
+        p.map_memory = {1: {(9, 5): "#"}}
+        p.visited[1] = {
+            (x, y)
+            for y in range(22)
+            for x, glyph in enumerate(p.screen.rows[y])
+            if glyph != " "
+        }
+        p.explore({"turn": 400}, 1, (9, 5))
+        p.act.assert_called_once_with("10s")
+
     def test_steps_into_a_dark_room_enclosed_by_walls(self):
         p = self.player()
         rows = p.screen.rows

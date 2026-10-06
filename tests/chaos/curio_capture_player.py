@@ -373,9 +373,9 @@ class CapturePlayer(Player):
                 and searches.get(point, 0) < 6
                 and sum(
                     terrain.get((point[0] + dx, point[1] + dy)) in WALKABLE
-                    for dx, dy in DELTA.values()
+                    for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1))
                 )
-                == 1
+                <= 1
             ]
             target = min(
                 dead_ends or edges,
