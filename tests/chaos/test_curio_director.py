@@ -423,6 +423,174 @@ class RestoreTests(LaneBase):
                     lane_mod.read_lane(self.rundir)
 
 
+class FakeClock:
+    """The lane's injected monotonic clock: moves only when a test says so."""
+
+    def __init__(self):
+        self.now = 1000.0
+        self._lock = threading.Lock()
+
+    def __call__(self):
+        with self._lock:
+            return self.now
+
+    def advance(self, seconds):
+        with self._lock:
+            self.now += seconds
+
+
+class LaneDeadlineTests(LaneBase):
+    """Attempt 010: a request that never settles must not keep the lane
+    requested. The deadline is the lane's, on its own clock; the transport
+    is gated by events, never by real sleeps or wall-clock thresholds."""
+
+    DEADLINE = curio_author.DEADLINE_S
+
+    def gated(self, replies=None, on_send=None):
+        """A backend whose sends block until self.release is set."""
+        self.release = threading.Event()
+        self.entered = threading.Event()
+        client = FakeClient(envelope())
+        original = client.create
+        replies = iter(replies or [])
+
+        def create(**kwargs):
+            self.entered.set()
+            if on_send is not None:
+                on_send()
+            else:
+                assert self.release.wait(10), "test never released the send"
+            client.content = next(replies, client.content)
+            return original(**kwargs)
+
+        return self.backend(create=create)
+
+    def timed_lane(self, backend):
+        self.clock = FakeClock()
+        return self.lane(backend, clock=self.clock)
+
+    def assert_lane_deadline(self):
+        record = lane_mod.read_lane(self.rundir)
+        self.assertEqual(
+            (record["step"], record["outcome"], record.get("error_type")),
+            ("failed", "deadline", "LaneDeadline"),
+        )
+
+    def assert_nothing_ready(self):
+        self.assertFalse(self.published())
+        self.assertFalse((self.rundir / "curio-safe").exists())
+        for name in lane_mod.EVIDENCE:
+            if (self.rundir / name).exists():
+                # Exactly what restore and replay accept as "not ready".
+                with self.assertRaises((OSError, ValueError)):
+                    curio_author.read_evidence(self.rundir / name)
+
+    def hung_past_deadline(self):
+        lane = self.timed_lane(self.gated())
+        self.assertEqual(lane.poll(safe=5), "requested")
+        self.assertTrue(self.entered.wait(10))
+        self.clock.advance(self.DEADLINE - 1)
+        self.assertEqual(lane.poll(safe=6), "requested")
+        self.clock.advance(1)
+        self.assertEqual(lane.poll(safe=7), "failed")
+        return lane
+
+    def test_hang_past_the_deadline_fails_durably(self):
+        lane = self.hung_past_deadline()
+        self.assertTrue(lane.thread.is_alive())  # the transport is still hung
+        self.assert_lane_deadline()
+        self.assertEqual(lane_mod.read_lane(self.rundir)["safe"], 7)
+        self.assertFalse(lane.active)
+        self.assert_nothing_ready()
+        self.release.set()
+        lane.wait(10)
+
+    def test_late_result_after_failure_is_ignored(self):
+        lane = self.hung_past_deadline()
+        thread = lane.thread
+        self.release.set()  # a complete, valid curio arrives after failure
+        thread.join(10)
+        self.assertFalse(thread.is_alive())
+        for safe in (8, 9, 10):
+            self.assertEqual(lane.poll(safe=safe), "failed")
+        self.assert_lane_deadline()
+        self.assert_nothing_ready()
+        receipt = json.loads(
+            (self.rundir / "curio-evidence" / "receipt.json").read_text()
+        )
+        self.assertEqual(
+            (receipt["outcome"], receipt["error_type"], receipt["late_outcome"]),
+            ("deadline", "LaneDeadline", "ready"),
+        )
+        # The thread finished its own ledger row truthfully; no second send.
+        statuses = [r["status"] for r in self.ledger.rows()]
+        self.assertEqual(statuses.count("reserved"), 1)
+        self.assertEqual(statuses.count("completed"), 1)
+
+    def test_restore_after_failure_never_asks_again(self):
+        lane = self.hung_past_deadline()
+        self.release.set()
+        lane.wait(10)
+        restored = self.lane()
+        self.assertEqual(restored.state, "failed")
+        for safe in (8, 9, 10):
+            self.assertEqual(restored.poll(safe=safe), "failed")
+        self.assertFalse(restored.active)
+        self.assert_lane_deadline()
+        self.assert_nothing_ready()
+        self.assertEqual(self.sends(), 1)
+
+    def test_restore_before_the_failure_was_recorded_never_publishes(self):
+        # The director died after its clock expired the request but before
+        # any poll recorded it: the late thread's receipt must not read ready.
+        lane = self.timed_lane(self.gated())
+        self.assertEqual(lane.poll(safe=5), "requested")
+        self.assertTrue(self.entered.wait(10))
+        self.clock.advance(self.DEADLINE + 5)
+        self.release.set()
+        lane.wait(10)
+        self.assertEqual(lane_mod.read_lane(self.rundir)["step"], "requested")
+        restored = self.lane()
+        self.assertEqual(restored.state, "failed")
+        self.assertEqual(restored.poll(safe=9), "failed")
+        self.assert_nothing_ready()
+        self.assertEqual(self.sends(), 1)
+
+    def test_regeneration_stays_inside_the_total_deadline(self):
+        clock = FakeClock()
+        sends = []
+
+        def on_send():
+            sends.append(clock())
+            # First reply (not JSON) after 400 s; the regeneration's reply
+            # would land 100 s later, past the one total deadline.
+            clock.advance(400 if len(sends) == 1 else 100)
+
+        backend = self.gated(["not json", envelope()], on_send=on_send)
+        lane = self.lane(backend, clock=clock)
+        self.clock = clock
+        self.assertEqual(self.drive(lane), "failed")
+        self.assert_lane_deadline()
+        self.assert_nothing_ready()
+        self.assertEqual(self.sends(), 2)
+        second = json.loads(
+            (self.rundir / "curio-evidence-2" / "receipt.json").read_text()
+        )
+        # The regeneration was given only the remainder of the 480 s.
+        self.assertEqual(second["deadline_s"], self.DEADLINE - 400)
+        self.assertEqual(second["late_outcome"], "ready")
+
+    def test_result_inside_the_deadline_still_publishes(self):
+        clock = FakeClock()
+        backend = self.gated(on_send=lambda: clock.advance(self.DEADLINE - 1))
+        lane = self.lane(backend, clock=clock)
+        self.assertEqual(lane.poll(safe=5), "requested")
+        lane.wait(10)
+        clock.advance(60)  # the director polls late: the result still stands
+        self.assertEqual(lane.poll(safe=6), "published")
+        self.assertTrue(self.published())
+
+
 class ReplayStagingTests(LaneBase):
     def recorded(self):
         self.drive(self.lane())

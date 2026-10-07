@@ -240,6 +240,11 @@ director (`chaos/director.py:595-657` already polls with a deadline).
 
 - The deadline is **8 minutes (480 s)**: raised to 8 minutes, Sam
   2026-10-04, after the rerun's 368/391 s responses.
+- The lane enforces it on its own monotonic clock from the request, whatever
+  the transport does, and a regeneration gets only the remainder. Past it the
+  lane records `failed` / `deadline` / `LaneDeadline` and stops. A result that
+  arrives later is written as that failure, never as ready, so nothing is
+  published and no restore or replay can use it.
 - On success the director runs the same native checks the engine will, then
   publishes `curio.lua` under the mailbox lock. The engine picks it up at the
   next safe point.
@@ -346,7 +351,7 @@ no-curio arm.
 | Failure | Handling | Player sees |
 |---|---|---|
 | Provider error, 502, 429 | Up to 2 transport retries within the deadline; honour `Retry-After` | Nothing |
-| Deadline passed | Abandon; ledger records it | Nothing |
+| Deadline passed | Abandon on the lane's clock (`LaneDeadline`); ledger records it | Nothing |
 | Not JSON, or over size | Reject; at most 1 regeneration if time allows | Nothing |
 | Invalid Lua or grid failure | Reject before install | Nothing |
 | Prose promises a false effect | Reject before install | Nothing |

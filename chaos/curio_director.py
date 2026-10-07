@@ -29,6 +29,15 @@ The record is written BEFORE any send, so a restored game never makes a
 second model request: an in-flight generation is abandoned on restore (its
 reservation still counts in the ledger), and a ready-but-unpublished curio is
 published from its verified evidence with no model call.
+
+The authoring deadline (480 s, regeneration included) is the lane's own: it
+is measured on the lane's monotonic clock from the request, independent of
+the transport. A hung or trickling request cannot keep the lane requested.
+Once the deadline passes with no settled result, poll() records failed with
+outcome "deadline" and error_type "LaneDeadline". Whatever the authoring
+thread produces afterwards is ignored: its final receipt is written as that
+deadline failure (never "ready"), so nothing is published and no restore or
+replay can take it as ready. The thread may still finish its ledger row.
 """
 
 import json
@@ -47,6 +56,9 @@ EVIDENCE = ("curio-evidence", "curio-evidence-2")
 ADMISSION = "admission.json"
 _STEPS = ("idle", "requested", "ready", "failed", "published", "no_model")
 _KEYS = {"v", "game", "seed", "step", "safe", "outcome", "evidence"}
+# Optional: only the lane-clock deadline failure names its error type.
+_ERROR_TYPES = ("LaneDeadline",)
+LANE_DEADLINE = "LaneDeadline"
 _REGENERATE = ("envelope_rejected",)  # 3.8: not JSON, or over size
 _PHASES = {
     "pre_admitted": "ADMITTED",
@@ -123,7 +135,9 @@ def read_lane(directory):
     record = json.loads(raw)
     if (
         type(record) is not dict
-        or set(record) != _KEYS
+        or set(record) - {"error_type"} != _KEYS
+        or record.get("error_type", _ERROR_TYPES[0]) not in _ERROR_TYPES
+        or ("error_type" in record and record["step"] != "failed")
         or record["v"] != 1
         or record["step"] not in _STEPS
         or record["evidence"] not in (None, *EVIDENCE)
@@ -137,8 +151,13 @@ def read_lane(directory):
     return record
 
 
-def _write_lane(directory, record, step, safe, outcome=None, evidence=None):
+def _write_lane(
+    directory, record, step, safe, outcome=None, evidence=None, error_type=None
+):
     record = dict(record, step=step, safe=safe, outcome=outcome, evidence=evidence)
+    record.pop("error_type", None)
+    if error_type is not None:
+        record["error_type"] = error_type
     _rename_publish(directory, LANE, _encode(record), replace=True)
     return record
 
@@ -204,14 +223,22 @@ class CurioLane:
         deadline_s=curio_author.DEADLINE_S,
         phase=None,
         snapshot=None,
+        clock=time.monotonic,
     ):
         """Follows the run's lane record (new_lane() writes it for a fresh
-        game). No record: authoring was never configured, the lane is off."""
+        game). No record: authoring was never configured, the lane is off.
+        clock is the lane's monotonic clock; the deadline is measured on it."""
         self.directory = Path(directory)
         self.backend = backend
         self.validator = validator
         self.role = role
         self.deadline_s = deadline_s
+        self.clock = clock
+        # Shared with the authoring thread: _started, _expired, _settled.
+        self._lock = threading.Lock()
+        self._started = None
+        self._expired = False  # the lane's clock gave up; results are void
+        self._settled = False  # a ready receipt was written in time
         # The engine's curio phase: read once, then kept current by note()
         # from the events the director loop already ingests.
         self._phase = curio_phase(self.directory)
@@ -285,8 +312,11 @@ class CurioLane:
         """
         if self.state == "idle" and self._worth_checking(latest, planned_cost):
             self._maybe_request(planned_cost)
-        elif self.state == "requested" and not self.thread.is_alive():
-            self._finished(safe)
+        elif self.state == "requested":
+            if not self.thread.is_alive():
+                self._finished(safe)
+            else:
+                self._check_deadline(safe)
         if self.state == "ready":
             self._publish(safe)
         return self.state
@@ -319,14 +349,18 @@ class CurioLane:
             self.directory, self.record, "requested", history.safe
         )
         self.state = "requested"
+        self._started = self.clock()  # the deadline runs from the request
         self.thread = threading.Thread(target=self._author, daemon=True)
         self.thread.start()
 
+    def _remaining(self):
+        return self.deadline_s - (self.clock() - self._started)
+
     def _author(self):
-        started = time.monotonic()
         for name in EVIDENCE:
-            remaining = self.deadline_s - (time.monotonic() - started)
-            if remaining <= 0:
+            # One total deadline: a regeneration gets only what is left.
+            remaining = self._remaining()
+            if remaining <= 0 or self._expired:
                 break
             try:
                 receipt = curio_author.author_curio(
@@ -337,6 +371,7 @@ class CurioLane:
                     validator=self.validator,
                     role=self.role,
                     deadline_s=remaining,
+                    gate=self._gate,
                 )
             except Exception as exc:  # recorded, never raised into the loop
                 receipt = dict(outcome="lane_error", error_type=type(exc).__name__)
@@ -344,6 +379,41 @@ class CurioLane:
             self.receipts.append(receipt)
             if receipt["outcome"] not in _REGENERATE:
                 break  # at most one regeneration, and only for 3.8's row
+
+    def _gate(self, outcome, fields, write):
+        """Called by author_curio for its final receipt, on the authoring
+        thread. Past the lane's deadline the receipt is written as the lane's
+        deadline failure, never as ready; in time, a ready receipt settles
+        the request so poll() no longer expires it."""
+        with self._lock:
+            if self._expired or self._remaining() <= 0:
+                self._expired = True
+                # What the late thread would have reported, kept for the
+                # record only; the outcome is the lane's deadline.
+                late = dict(fields, error_type=LANE_DEADLINE, late_outcome=outcome)
+                return write("deadline", late)
+            if outcome == "ready":
+                self._settled = True
+            return write(outcome, fields)
+
+    def _check_deadline(self, safe):
+        """The thread is still running: fail durably once the lane's own
+        clock passes the deadline, whatever the transport is doing."""
+        with self._lock:
+            if self._settled or self._remaining() > 0:
+                return
+            self._expired = True
+        self.record = _write_lane(
+            self.directory,
+            self.record,
+            "failed",
+            safe,
+            "deadline",
+            error_type=LANE_DEADLINE,
+        )
+        self.state = "failed"
+        # The daemon thread is left to finish its own ledger row; its result
+        # is void (see _gate) and nothing reads self.receipts any more.
 
     def _finished(self, safe):
         last = self.receipts[-1] if self.receipts else dict(outcome="lane_error")
@@ -355,6 +425,9 @@ class CurioLane:
             safe,
             last["outcome"],
             last.get("evidence") if ready else None,
+            error_type=(
+                LANE_DEADLINE if last.get("error_type") == LANE_DEADLINE else None
+            ),
         )
         self.state = self.record["step"]
         self.thread = None
