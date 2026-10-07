@@ -273,6 +273,62 @@ class RevealTests(unittest.TestCase):
         turns = [int(t) for t in re.findall(r"^  Turn (\d+)", section, re.M)]
         self.assertEqual(turns, sorted(turns))
 
+    # --- the curio by the name the player saw --------------------------------
+    def placed_curio(self):
+        self.append(
+            event_row(1, 5, "session", "new")
+            + event_row(2, 356, "curio", "admitted")
+            + event_row(3, 707, "curio", "placed")
+        )
+
+    def test_placed_curio_is_named_as_the_player_saw_it(self):
+        self.placed_curio()
+        section, xlog = self.reveal_of("curio_placed", "curio_name=glass reed locket")
+        self.assertIn(
+            '    Effect: "glass reed locket" was placed on a new level on turn 707.\n',
+            section,
+        )
+        self.assertNotIn("curio whistle", section)
+        self.assertEqual(xlog, ":chaos_admitted=1:chaos_delivered=0:chaos_spent=3")
+
+    def test_any_printable_name_survives_line_json_and_xlog(self):
+        # Every character the validator admits (32..126), quotes, backslash,
+        # colon and percent included: reveal_of() checks the JSON record
+        # carries the rendered lines byte for byte.
+        printable = "".join(chr(c) for c in range(33, 127))
+        names = [
+            'the "unclosed" square',
+            "50% of a \\ key: maybe",
+            " x ",
+            "A" * 48,
+            *(printable[i : i + 48] for i in range(0, len(printable), 48)),
+        ]
+        for name in names:
+            with self.subTest(name=name):
+                self.path.joinpath("events.jsonl").unlink(missing_ok=True)
+                self.placed_curio()
+                section, xlog = self.reveal_of("curio_placed", "curio_name=" + name)
+                self.assertIn(f'    Effect: "{name}" was placed', section)
+                self.assertEqual(
+                    xlog, ":chaos_admitted=1:chaos_delivered=0:chaos_spent=3"
+                )
+
+    def test_without_an_engine_name_the_old_wording_stays(self):
+        for host in (
+            ("curio_placed",),  # an older save: no name reached the reveal
+            ("curio_placed", "curio_name=" + "A" * 49),  # over 48: refused
+            ("curio_placed", "curio_name=   "),  # blank: refused
+            ("curio_placed", "curio_name=bad\ttab"),  # not printable: refused
+        ):
+            with self.subTest(host=host):
+                self.path.joinpath("events.jsonl").unlink(missing_ok=True)
+                self.placed_curio()
+                section, _ = self.reveal_of(*host)
+                self.assertIn(
+                    "    Effect: a curio whistle was placed on a new level on turn 707.",
+                    section,
+                )
+
     # --- #165: FCFS budget refusal and haunt lifecycle end -----------------
     def test_haunting_budget_refusal_is_counted_never_narrated(self):
         # Only a budget refusal: no admission, so no section and no xlog.

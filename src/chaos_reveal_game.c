@@ -122,6 +122,7 @@ static void compute(void)
     reveal.host.haunt_until = u.haunt.until;
     reveal.host.curio_placed = u.curio.phase == CHAOS_CURIO_PLACED;
     reveal.host.curio_charges = u.curio.charges;
+    chaos_reveal_curio_name(&reveal.host, u.curio.name, sizeof u.curio.name);
     next_use_facts(&reveal.host);
     chaos_reveal_finish(&reveal);
 }

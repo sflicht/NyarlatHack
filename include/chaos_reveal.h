@@ -94,6 +94,9 @@ struct chaos_reveal_host {
     int haunt_active;            /* u.haunt still active at the end */
     long haunt_until;
     int curio_charges, curio_placed;
+    /* The admitted curio's own name (u.curio.name: validator-bounded, 1-48
+     * printable ASCII), as the player saw it; empty when unknown. */
+    char curio_name[49];
     int next_use_last_rejected;  /* the engine's last next-use attempt refused */
     struct chaos_reveal_next_use nu;   /* the live (latest) program */
     /* Arc 1: earlier, closed programs of this game, oldest first, copied
@@ -138,6 +141,10 @@ void chaos_reveal_receipt_line(struct chaos_reveal *, const char *);
 int chaos_reveal_read(struct chaos_reveal *, int dir);
 /* Apply host facts, order chronologically and compute the tallies. */
 void chaos_reveal_finish(struct chaos_reveal *);
+/* Copy a curio name (cap bytes, NUL-terminated within cap) into the host
+ * facts only if it is 1-48 printable ASCII with a non-space; else empty, and
+ * the reveal keeps its generic wording. */
+void chaos_reveal_curio_name(struct chaos_reveal_host *, const char *, size_t);
 void chaos_reveal_render(const struct chaos_reveal *, chaos_reveal_emit, void *);
 /* #188: the rendered section as one JSON object for `chaos chronicle`:
  * {"reveal_v":1,"final_turn":..,"admitted":..,"delivered":..,"spent":..,
