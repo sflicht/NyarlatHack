@@ -169,7 +169,8 @@ class HoundDirectorGameplayTests(unittest.TestCase):
         os.unlink(unbound.run / "haunting-due")
         self.play(unbound)
         early = self.haunting(unbound)[0]
-        self.assertLess(early["seq"], first["seq"], (early, first))
+        # A window is (turn, next seq); quiet turns share a seq, so compare both.
+        self.assertLess((early["turn"], early["seq"]), (first["turn"], first["seq"]))
         self.assertNotEqual(
             (unbound.run / "events.jsonl").read_bytes(),
             (record.run / "events.jsonl").read_bytes(),
