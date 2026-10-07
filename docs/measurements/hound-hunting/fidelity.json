@@ -1,0 +1,1199 @@
+[
+ {
+  "source": "footsteps",
+  "room": "bare-6x4",
+  "host": {
+   "room": "bare-6x4",
+   "steps": 64,
+   "moved": 64,
+   "contacts": 12,
+   "min_dist": 1,
+   "median_dist": 3,
+   "escaped": 1,
+   "failure": null
+  },
+  "engine": {
+   "moved": 64,
+   "contacts": 12,
+   "min_dist": 1,
+   "median_dist": 3,
+   "escaped": 1
+  }
+ },
+ {
+  "source": "footsteps",
+  "room": "bare-12x6",
+  "host": {
+   "room": "bare-12x6",
+   "steps": 64,
+   "moved": 64,
+   "contacts": 3,
+   "min_dist": 1,
+   "median_dist": 3,
+   "escaped": 1,
+   "failure": null
+  },
+  "engine": {
+   "moved": 64,
+   "contacts": 3,
+   "min_dist": 1,
+   "median_dist": 3,
+   "escaped": 1
+  }
+ },
+ {
+  "source": "footsteps",
+  "room": "bare-20x8",
+  "host": {
+   "room": "bare-20x8",
+   "steps": 64,
+   "moved": 64,
+   "contacts": 3,
+   "min_dist": 1,
+   "median_dist": 3,
+   "escaped": 1,
+   "failure": null
+  },
+  "engine": {
+   "moved": 64,
+   "contacts": 3,
+   "min_dist": 1,
+   "median_dist": 3,
+   "escaped": 1
+  }
+ },
+ {
+  "source": "00-bard-00007",
+  "room": "bare-6x4",
+  "host": {
+   "room": "bare-6x4",
+   "steps": 64,
+   "moved": 43,
+   "contacts": 0,
+   "min_dist": 2,
+   "median_dist": 3,
+   "escaped": 1,
+   "failure": "never_closes"
+  },
+  "engine": {
+   "moved": 43,
+   "contacts": 0,
+   "min_dist": 2,
+   "median_dist": 3,
+   "escaped": 1
+  }
+ },
+ {
+  "source": "00-bard-00007",
+  "room": "bare-12x6",
+  "host": {
+   "room": "bare-12x6",
+   "steps": 64,
+   "moved": 43,
+   "contacts": 0,
+   "min_dist": 2,
+   "median_dist": 5,
+   "escaped": 1,
+   "failure": "never_closes"
+  },
+  "engine": {
+   "moved": 43,
+   "contacts": 0,
+   "min_dist": 2,
+   "median_dist": 5,
+   "escaped": 1
+  }
+ },
+ {
+  "source": "00-bard-00007",
+  "room": "bare-20x8",
+  "host": {
+   "room": "bare-20x8",
+   "steps": 64,
+   "moved": 44,
+   "contacts": 0,
+   "min_dist": 2,
+   "median_dist": 6,
+   "escaped": 1,
+   "failure": "never_closes"
+  },
+  "engine": {
+   "moved": 44,
+   "contacts": 0,
+   "min_dist": 2,
+   "median_dist": 6,
+   "escaped": 1
+  }
+ },
+ {
+  "source": "01-bard-00023",
+  "room": "bare-6x4",
+  "host": {
+   "room": "bare-6x4",
+   "steps": 64,
+   "moved": 47,
+   "contacts": 0,
+   "min_dist": 2,
+   "median_dist": 3,
+   "escaped": 1,
+   "failure": "never_closes"
+  },
+  "engine": {
+   "moved": 47,
+   "contacts": 0,
+   "min_dist": 2,
+   "median_dist": 3,
+   "escaped": 1
+  }
+ },
+ {
+  "source": "01-bard-00023",
+  "room": "bare-12x6",
+  "host": {
+   "room": "bare-12x6",
+   "steps": 64,
+   "moved": 46,
+   "contacts": 0,
+   "min_dist": 2,
+   "median_dist": 5,
+   "escaped": 1,
+   "failure": "never_closes"
+  },
+  "engine": {
+   "moved": 46,
+   "contacts": 0,
+   "min_dist": 2,
+   "median_dist": 5,
+   "escaped": 1
+  }
+ },
+ {
+  "source": "01-bard-00023",
+  "room": "bare-20x8",
+  "host": {
+   "room": "bare-20x8",
+   "steps": 64,
+   "moved": 47,
+   "contacts": 0,
+   "min_dist": 3,
+   "median_dist": 7,
+   "escaped": 1,
+   "failure": "never_closes"
+  },
+  "engine": {
+   "moved": 47,
+   "contacts": 0,
+   "min_dist": 3,
+   "median_dist": 7,
+   "escaped": 1
+  }
+ },
+ {
+  "source": "02-bard-default-path-00007",
+  "room": "bare-6x4",
+  "host": {
+   "room": "bare-6x4",
+   "steps": 64,
+   "moved": 18,
+   "contacts": 0,
+   "min_dist": 3,
+   "median_dist": 3,
+   "escaped": 1,
+   "failure": "never_closes"
+  },
+  "engine": {
+   "moved": 18,
+   "contacts": 0,
+   "min_dist": 3,
+   "median_dist": 3,
+   "escaped": 1
+  }
+ },
+ {
+  "source": "02-bard-default-path-00007",
+  "room": "bare-12x6",
+  "host": {
+   "room": "bare-12x6",
+   "steps": 64,
+   "moved": 41,
+   "contacts": 0,
+   "min_dist": 3,
+   "median_dist": 4,
+   "escaped": 1,
+   "failure": "never_closes"
+  },
+  "engine": {
+   "moved": 41,
+   "contacts": 0,
+   "min_dist": 3,
+   "median_dist": 4,
+   "escaped": 1
+  }
+ },
+ {
+  "source": "02-bard-default-path-00007",
+  "room": "bare-20x8",
+  "host": {
+   "room": "bare-20x8",
+   "steps": 64,
+   "moved": 50,
+   "contacts": 0,
+   "min_dist": 3,
+   "median_dist": 5,
+   "escaped": 1,
+   "failure": "never_closes"
+  },
+  "engine": {
+   "moved": 50,
+   "contacts": 0,
+   "min_dist": 3,
+   "median_dist": 5,
+   "escaped": 1
+  }
+ },
+ {
+  "source": "03-bard-default-path-00023",
+  "room": "bare-6x4",
+  "host": {
+   "room": "bare-6x4",
+   "steps": 64,
+   "moved": 35,
+   "contacts": 0,
+   "min_dist": 2,
+   "median_dist": 3,
+   "escaped": 1,
+   "failure": "never_closes"
+  },
+  "engine": {
+   "moved": 35,
+   "contacts": 0,
+   "min_dist": 2,
+   "median_dist": 3,
+   "escaped": 1
+  }
+ },
+ {
+  "source": "03-bard-default-path-00023",
+  "room": "bare-12x6",
+  "host": {
+   "room": "bare-12x6",
+   "steps": 64,
+   "moved": 40,
+   "contacts": 0,
+   "min_dist": 2,
+   "median_dist": 5,
+   "escaped": 1,
+   "failure": "never_closes"
+  },
+  "engine": {
+   "moved": 40,
+   "contacts": 0,
+   "min_dist": 2,
+   "median_dist": 5,
+   "escaped": 1
+  }
+ },
+ {
+  "source": "03-bard-default-path-00023",
+  "room": "bare-20x8",
+  "host": {
+   "room": "bare-20x8",
+   "steps": 64,
+   "moved": 41,
+   "contacts": 0,
+   "min_dist": 4,
+   "median_dist": 8,
+   "escaped": 1,
+   "failure": "never_closes"
+  },
+  "engine": {
+   "moved": 41,
+   "contacts": 0,
+   "min_dist": 4,
+   "median_dist": 8,
+   "escaped": 1
+  }
+ },
+ {
+  "source": "04-bard-default-path-00041",
+  "room": "bare-6x4",
+  "host": {
+   "room": "bare-6x4",
+   "steps": 64,
+   "moved": 28,
+   "contacts": 0,
+   "min_dist": 2,
+   "median_dist": 3,
+   "escaped": 1,
+   "failure": "never_closes"
+  },
+  "engine": {
+   "moved": 28,
+   "contacts": 0,
+   "min_dist": 2,
+   "median_dist": 3,
+   "escaped": 1
+  }
+ },
+ {
+  "source": "04-bard-default-path-00041",
+  "room": "bare-12x6",
+  "host": {
+   "room": "bare-12x6",
+   "steps": 64,
+   "moved": 40,
+   "contacts": 0,
+   "min_dist": 2,
+   "median_dist": 5,
+   "escaped": 1,
+   "failure": "never_closes"
+  },
+  "engine": {
+   "moved": 40,
+   "contacts": 0,
+   "min_dist": 2,
+   "median_dist": 5,
+   "escaped": 1
+  }
+ },
+ {
+  "source": "04-bard-default-path-00041",
+  "room": "bare-20x8",
+  "host": {
+   "room": "bare-20x8",
+   "steps": 64,
+   "moved": 42,
+   "contacts": 0,
+   "min_dist": 3,
+   "median_dist": 6,
+   "escaped": 1,
+   "failure": "never_closes"
+  },
+  "engine": {
+   "moved": 42,
+   "contacts": 0,
+   "min_dist": 3,
+   "median_dist": 6,
+   "escaped": 1
+  }
+ },
+ {
+  "source": "05-bard-inherited-00007",
+  "room": "bare-6x4",
+  "host": {
+   "room": "bare-6x4",
+   "steps": 64,
+   "moved": 64,
+   "contacts": 0,
+   "min_dist": 2,
+   "median_dist": 3,
+   "escaped": 1,
+   "failure": "never_closes"
+  },
+  "engine": {
+   "moved": 64,
+   "contacts": 0,
+   "min_dist": 2,
+   "median_dist": 3,
+   "escaped": 1
+  }
+ },
+ {
+  "source": "05-bard-inherited-00007",
+  "room": "bare-12x6",
+  "host": {
+   "room": "bare-12x6",
+   "steps": 64,
+   "moved": 56,
+   "contacts": 0,
+   "min_dist": 2,
+   "median_dist": 3,
+   "escaped": 1,
+   "failure": "never_closes"
+  },
+  "engine": {
+   "moved": 56,
+   "contacts": 0,
+   "min_dist": 2,
+   "median_dist": 3,
+   "escaped": 1
+  }
+ },
+ {
+  "source": "05-bard-inherited-00007",
+  "room": "bare-20x8",
+  "host": {
+   "room": "bare-20x8",
+   "steps": 64,
+   "moved": 48,
+   "contacts": 0,
+   "min_dist": 3,
+   "median_dist": 6,
+   "escaped": 1,
+   "failure": "never_closes"
+  },
+  "engine": {
+   "moved": 48,
+   "contacts": 0,
+   "min_dist": 3,
+   "median_dist": 6,
+   "escaped": 1
+  }
+ },
+ {
+  "source": "06-bard-inherited-00023",
+  "room": "bare-6x4",
+  "host": {
+   "room": "bare-6x4",
+   "steps": 64,
+   "moved": 33,
+   "contacts": 0,
+   "min_dist": 4,
+   "median_dist": 5,
+   "escaped": 1,
+   "failure": "never_closes"
+  },
+  "engine": {
+   "moved": 33,
+   "contacts": 0,
+   "min_dist": 4,
+   "median_dist": 5,
+   "escaped": 1
+  }
+ },
+ {
+  "source": "06-bard-inherited-00023",
+  "room": "bare-12x6",
+  "host": {
+   "room": "bare-12x6",
+   "steps": 64,
+   "moved": 42,
+   "contacts": 0,
+   "min_dist": 6,
+   "median_dist": 11,
+   "escaped": 1,
+   "failure": "never_closes"
+  },
+  "engine": {
+   "moved": 42,
+   "contacts": 0,
+   "min_dist": 6,
+   "median_dist": 11,
+   "escaped": 1
+  }
+ },
+ {
+  "source": "06-bard-inherited-00023",
+  "room": "bare-20x8",
+  "host": {
+   "room": "bare-20x8",
+   "steps": 64,
+   "moved": 42,
+   "contacts": 0,
+   "min_dist": 6,
+   "median_dist": 13,
+   "escaped": 1,
+   "failure": "never_closes"
+  },
+  "engine": {
+   "moved": 42,
+   "contacts": 0,
+   "min_dist": 6,
+   "median_dist": 13,
+   "escaped": 1
+  }
+ },
+ {
+  "source": "08-broad-restore-capture",
+  "room": "bare-6x4",
+  "host": {
+   "room": "bare-6x4",
+   "steps": 64,
+   "moved": 47,
+   "contacts": 0,
+   "min_dist": 3,
+   "median_dist": 3,
+   "escaped": 1,
+   "failure": "never_closes"
+  },
+  "engine": {
+   "moved": 47,
+   "contacts": 0,
+   "min_dist": 3,
+   "median_dist": 3,
+   "escaped": 1
+  }
+ },
+ {
+  "source": "08-broad-restore-capture",
+  "room": "bare-12x6",
+  "host": {
+   "room": "bare-12x6",
+   "steps": 64,
+   "moved": 46,
+   "contacts": 0,
+   "min_dist": 3,
+   "median_dist": 5,
+   "escaped": 1,
+   "failure": "never_closes"
+  },
+  "engine": {
+   "moved": 46,
+   "contacts": 0,
+   "min_dist": 3,
+   "median_dist": 5,
+   "escaped": 1
+  }
+ },
+ {
+  "source": "08-broad-restore-capture",
+  "room": "bare-20x8",
+  "host": {
+   "room": "bare-20x8",
+   "steps": 64,
+   "moved": 48,
+   "contacts": 0,
+   "min_dist": 3,
+   "median_dist": 3,
+   "escaped": 1,
+   "failure": "never_closes"
+  },
+  "engine": {
+   "moved": 48,
+   "contacts": 0,
+   "min_dist": 3,
+   "median_dist": 3,
+   "escaped": 1
+  }
+ },
+ {
+  "source": "09-door-reluctance-capture",
+  "room": "bare-6x4",
+  "host": {
+   "room": "bare-6x4",
+   "steps": 64,
+   "moved": 42,
+   "contacts": 0,
+   "min_dist": 3,
+   "median_dist": 4,
+   "escaped": 1,
+   "failure": "never_closes"
+  },
+  "engine": {
+   "moved": 42,
+   "contacts": 0,
+   "min_dist": 3,
+   "median_dist": 4,
+   "escaped": 1
+  }
+ },
+ {
+  "source": "09-door-reluctance-capture",
+  "room": "bare-12x6",
+  "host": {
+   "room": "bare-12x6",
+   "steps": 64,
+   "moved": 46,
+   "contacts": 0,
+   "min_dist": 4,
+   "median_dist": 6,
+   "escaped": 1,
+   "failure": "never_closes"
+  },
+  "engine": {
+   "moved": 46,
+   "contacts": 0,
+   "min_dist": 4,
+   "median_dist": 6,
+   "escaped": 1
+  }
+ },
+ {
+  "source": "09-door-reluctance-capture",
+  "room": "bare-20x8",
+  "host": {
+   "room": "bare-20x8",
+   "steps": 64,
+   "moved": 47,
+   "contacts": 0,
+   "min_dist": 6,
+   "median_dist": 7,
+   "escaped": 1,
+   "failure": "never_closes"
+  },
+  "engine": {
+   "moved": 47,
+   "contacts": 0,
+   "min_dist": 6,
+   "median_dist": 7,
+   "escaped": 1
+  }
+ },
+ {
+  "source": "10-madman-00007",
+  "room": "bare-6x4",
+  "host": {
+   "room": "bare-6x4",
+   "steps": 64,
+   "moved": 43,
+   "contacts": 5,
+   "min_dist": 1,
+   "median_dist": 3,
+   "escaped": 1,
+   "failure": null
+  },
+  "engine": {
+   "moved": 43,
+   "contacts": 5,
+   "min_dist": 1,
+   "median_dist": 3,
+   "escaped": 1
+  }
+ },
+ {
+  "source": "10-madman-00007",
+  "room": "bare-12x6",
+  "host": {
+   "room": "bare-12x6",
+   "steps": 64,
+   "moved": 42,
+   "contacts": 3,
+   "min_dist": 1,
+   "median_dist": 5,
+   "escaped": 1,
+   "failure": null
+  },
+  "engine": {
+   "moved": 42,
+   "contacts": 3,
+   "min_dist": 1,
+   "median_dist": 5,
+   "escaped": 1
+  }
+ },
+ {
+  "source": "10-madman-00007",
+  "room": "bare-20x8",
+  "host": {
+   "room": "bare-20x8",
+   "steps": 64,
+   "moved": 42,
+   "contacts": 0,
+   "min_dist": 2,
+   "median_dist": 7,
+   "escaped": 1,
+   "failure": "never_closes"
+  },
+  "engine": {
+   "moved": 42,
+   "contacts": 0,
+   "min_dist": 2,
+   "median_dist": 7,
+   "escaped": 1
+  }
+ },
+ {
+  "source": "11-madman-00023",
+  "room": "bare-6x4",
+  "host": {
+   "room": "bare-6x4",
+   "steps": 64,
+   "moved": 63,
+   "contacts": 0,
+   "min_dist": 2,
+   "median_dist": 4,
+   "escaped": 1,
+   "failure": "never_closes"
+  },
+  "engine": {
+   "moved": 63,
+   "contacts": 0,
+   "min_dist": 2,
+   "median_dist": 4,
+   "escaped": 1
+  }
+ },
+ {
+  "source": "11-madman-00023",
+  "room": "bare-12x6",
+  "host": {
+   "room": "bare-12x6",
+   "steps": 64,
+   "moved": 64,
+   "contacts": 0,
+   "min_dist": 5,
+   "median_dist": 7,
+   "escaped": 1,
+   "failure": "never_closes"
+  },
+  "engine": {
+   "moved": 64,
+   "contacts": 0,
+   "min_dist": 5,
+   "median_dist": 7,
+   "escaped": 1
+  }
+ },
+ {
+  "source": "11-madman-00023",
+  "room": "bare-20x8",
+  "host": {
+   "room": "bare-20x8",
+   "steps": 64,
+   "moved": 64,
+   "contacts": 0,
+   "min_dist": 5,
+   "median_dist": 8,
+   "escaped": 1,
+   "failure": "never_closes"
+  },
+  "engine": {
+   "moved": 64,
+   "contacts": 0,
+   "min_dist": 5,
+   "median_dist": 8,
+   "escaped": 1
+  }
+ },
+ {
+  "source": "13-wizard-default-path-00007",
+  "room": "bare-6x4",
+  "host": {
+   "room": "bare-6x4",
+   "steps": 64,
+   "moved": 41,
+   "contacts": 4,
+   "min_dist": 1,
+   "median_dist": 3,
+   "escaped": 1,
+   "failure": null
+  },
+  "engine": {
+   "moved": 41,
+   "contacts": 4,
+   "min_dist": 1,
+   "median_dist": 3,
+   "escaped": 1
+  }
+ },
+ {
+  "source": "13-wizard-default-path-00007",
+  "room": "bare-12x6",
+  "host": {
+   "room": "bare-12x6",
+   "steps": 64,
+   "moved": 43,
+   "contacts": 0,
+   "min_dist": 2,
+   "median_dist": 5,
+   "escaped": 1,
+   "failure": "never_closes"
+  },
+  "engine": {
+   "moved": 43,
+   "contacts": 0,
+   "min_dist": 2,
+   "median_dist": 5,
+   "escaped": 1
+  }
+ },
+ {
+  "source": "13-wizard-default-path-00007",
+  "room": "bare-20x8",
+  "host": {
+   "room": "bare-20x8",
+   "steps": 64,
+   "moved": 45,
+   "contacts": 1,
+   "min_dist": 1,
+   "median_dist": 5,
+   "escaped": 1,
+   "failure": null
+  },
+  "engine": {
+   "moved": 45,
+   "contacts": 1,
+   "min_dist": 1,
+   "median_dist": 5,
+   "escaped": 1
+  }
+ },
+ {
+  "source": "14-wizard-default-path-00023",
+  "room": "bare-6x4",
+  "host": {
+   "room": "bare-6x4",
+   "steps": 64,
+   "moved": 21,
+   "contacts": 0,
+   "min_dist": 3,
+   "median_dist": 4,
+   "escaped": 1,
+   "failure": "never_closes"
+  },
+  "engine": {
+   "moved": 21,
+   "contacts": 0,
+   "min_dist": 3,
+   "median_dist": 4,
+   "escaped": 1
+  }
+ },
+ {
+  "source": "14-wizard-default-path-00023",
+  "room": "bare-12x6",
+  "host": {
+   "room": "bare-12x6",
+   "steps": 64,
+   "moved": 21,
+   "contacts": 0,
+   "min_dist": 5,
+   "median_dist": 8,
+   "escaped": 1,
+   "failure": "never_closes"
+  },
+  "engine": {
+   "moved": 21,
+   "contacts": 0,
+   "min_dist": 5,
+   "median_dist": 8,
+   "escaped": 1
+  }
+ },
+ {
+  "source": "14-wizard-default-path-00023",
+  "room": "bare-20x8",
+  "host": {
+   "room": "bare-20x8",
+   "steps": 64,
+   "moved": 22,
+   "contacts": 0,
+   "min_dist": 5,
+   "median_dist": 11,
+   "escaped": 1,
+   "failure": "never_closes"
+  },
+  "engine": {
+   "moved": 22,
+   "contacts": 0,
+   "min_dist": 5,
+   "median_dist": 11,
+   "escaped": 1
+  }
+ },
+ {
+  "source": "15-wizard-default-path-00041",
+  "room": "bare-6x4",
+  "host": {
+   "room": "bare-6x4",
+   "steps": 64,
+   "moved": 3,
+   "contacts": 0,
+   "min_dist": 4,
+   "median_dist": 5,
+   "escaped": 1,
+   "failure": "barely_moves"
+  },
+  "engine": {
+   "moved": 3,
+   "contacts": 0,
+   "min_dist": 4,
+   "median_dist": 5,
+   "escaped": 1
+  }
+ },
+ {
+  "source": "15-wizard-default-path-00041",
+  "room": "bare-12x6",
+  "host": {
+   "room": "bare-12x6",
+   "steps": 64,
+   "moved": 9,
+   "contacts": 0,
+   "min_dist": 6,
+   "median_dist": 11,
+   "escaped": 1,
+   "failure": "barely_moves"
+  },
+  "engine": {
+   "moved": 9,
+   "contacts": 0,
+   "min_dist": 6,
+   "median_dist": 11,
+   "escaped": 1
+  }
+ },
+ {
+  "source": "15-wizard-default-path-00041",
+  "room": "bare-20x8",
+  "host": {
+   "room": "bare-20x8",
+   "steps": 64,
+   "moved": 11,
+   "contacts": 0,
+   "min_dist": 6,
+   "median_dist": 14,
+   "escaped": 1,
+   "failure": "barely_moves"
+  },
+  "engine": {
+   "moved": 11,
+   "contacts": 0,
+   "min_dist": 6,
+   "median_dist": 14,
+   "escaped": 1
+  }
+ },
+ {
+  "source": "16-bard-00007",
+  "room": "bare-6x4",
+  "host": {
+   "room": "bare-6x4",
+   "steps": 64,
+   "moved": 64,
+   "contacts": 0,
+   "min_dist": 2,
+   "median_dist": 3,
+   "escaped": 1,
+   "failure": "never_closes"
+  },
+  "engine": {
+   "moved": 64,
+   "contacts": 0,
+   "min_dist": 2,
+   "median_dist": 3,
+   "escaped": 1
+  }
+ },
+ {
+  "source": "16-bard-00007",
+  "room": "bare-12x6",
+  "host": {
+   "room": "bare-12x6",
+   "steps": 64,
+   "moved": 64,
+   "contacts": 0,
+   "min_dist": 2,
+   "median_dist": 5,
+   "escaped": 1,
+   "failure": "never_closes"
+  },
+  "engine": {
+   "moved": 64,
+   "contacts": 0,
+   "min_dist": 2,
+   "median_dist": 5,
+   "escaped": 1
+  }
+ },
+ {
+  "source": "16-bard-00007",
+  "room": "bare-20x8",
+  "host": {
+   "room": "bare-20x8",
+   "steps": 64,
+   "moved": 64,
+   "contacts": 0,
+   "min_dist": 2,
+   "median_dist": 4,
+   "escaped": 1,
+   "failure": "never_closes"
+  },
+  "engine": {
+   "moved": 64,
+   "contacts": 0,
+   "min_dist": 2,
+   "median_dist": 4,
+   "escaped": 1
+  }
+ },
+ {
+  "source": "17-bard-00023",
+  "room": "bare-6x4",
+  "host": {
+   "room": "bare-6x4",
+   "steps": 64,
+   "moved": 8,
+   "contacts": 0,
+   "min_dist": 3,
+   "median_dist": 5,
+   "escaped": 1,
+   "failure": "barely_moves"
+  },
+  "engine": {
+   "moved": 8,
+   "contacts": 0,
+   "min_dist": 3,
+   "median_dist": 5,
+   "escaped": 1
+  }
+ },
+ {
+  "source": "17-bard-00023",
+  "room": "bare-12x6",
+  "host": {
+   "room": "bare-12x6",
+   "steps": 64,
+   "moved": 32,
+   "contacts": 0,
+   "min_dist": 5,
+   "median_dist": 11,
+   "escaped": 1,
+   "failure": "never_closes"
+  },
+  "engine": {
+   "moved": 32,
+   "contacts": 0,
+   "min_dist": 5,
+   "median_dist": 11,
+   "escaped": 1
+  }
+ },
+ {
+  "source": "17-bard-00023",
+  "room": "bare-20x8",
+  "host": {
+   "room": "bare-20x8",
+   "steps": 64,
+   "moved": 59,
+   "contacts": 0,
+   "min_dist": 5,
+   "median_dist": 10,
+   "escaped": 1,
+   "failure": "never_closes"
+  },
+  "engine": {
+   "moved": 59,
+   "contacts": 0,
+   "min_dist": 5,
+   "median_dist": 10,
+   "escaped": 1
+  }
+ },
+ {
+  "source": "18-bard-default-path-00007",
+  "room": "bare-6x4",
+  "host": {
+   "room": "bare-6x4",
+   "steps": 64,
+   "moved": 30,
+   "contacts": 0,
+   "min_dist": 2,
+   "median_dist": 4,
+   "escaped": 1,
+   "failure": "never_closes"
+  },
+  "engine": {
+   "moved": 30,
+   "contacts": 0,
+   "min_dist": 2,
+   "median_dist": 4,
+   "escaped": 1
+  }
+ },
+ {
+  "source": "18-bard-default-path-00007",
+  "room": "bare-12x6",
+  "host": {
+   "room": "bare-12x6",
+   "steps": 64,
+   "moved": 31,
+   "contacts": 0,
+   "min_dist": 4,
+   "median_dist": 6,
+   "escaped": 1,
+   "failure": "never_closes"
+  },
+  "engine": {
+   "moved": 31,
+   "contacts": 0,
+   "min_dist": 4,
+   "median_dist": 6,
+   "escaped": 1
+  }
+ },
+ {
+  "source": "18-bard-default-path-00007",
+  "room": "bare-20x8",
+  "host": {
+   "room": "bare-20x8",
+   "steps": 64,
+   "moved": 31,
+   "contacts": 0,
+   "min_dist": 5,
+   "median_dist": 7,
+   "escaped": 1,
+   "failure": "never_closes"
+  },
+  "engine": {
+   "moved": 31,
+   "contacts": 0,
+   "min_dist": 5,
+   "median_dist": 7,
+   "escaped": 1
+  }
+ },
+ {
+  "source": "19-bard-default-path-00023",
+  "room": "bare-6x4",
+  "host": {
+   "room": "bare-6x4",
+   "steps": 64,
+   "moved": 6,
+   "contacts": 0,
+   "min_dist": 2,
+   "median_dist": 5,
+   "escaped": 1,
+   "failure": "barely_moves"
+  },
+  "engine": {
+   "moved": 6,
+   "contacts": 0,
+   "min_dist": 2,
+   "median_dist": 5,
+   "escaped": 1
+  }
+ },
+ {
+  "source": "19-bard-default-path-00023",
+  "room": "bare-12x6",
+  "host": {
+   "room": "bare-12x6",
+   "steps": 64,
+   "moved": 51,
+   "contacts": 0,
+   "min_dist": 2,
+   "median_dist": 4,
+   "escaped": 1,
+   "failure": "never_closes"
+  },
+  "engine": {
+   "moved": 51,
+   "contacts": 0,
+   "min_dist": 2,
+   "median_dist": 4,
+   "escaped": 1
+  }
+ },
+ {
+  "source": "19-bard-default-path-00023",
+  "room": "bare-20x8",
+  "host": {
+   "room": "bare-20x8",
+   "steps": 64,
+   "moved": 48,
+   "contacts": 0,
+   "min_dist": 3,
+   "median_dist": 6,
+   "escaped": 1,
+   "failure": "never_closes"
+  },
+  "engine": {
+   "moved": 48,
+   "contacts": 0,
+   "min_dist": 3,
+   "median_dist": 6,
+   "escaped": 1
+  }
+ }
+]

@@ -1,0 +1,31 @@
+{
+  "provider": "xai-oauth",
+  "model": "grok-4.7",
+  "surface": "haunt",
+  "deadline_s": 480,
+  "regenerate": [
+    "envelope_rejected",
+    "native_rejected"
+  ],
+  "floor": {
+    "rooms": [
+      "bare-6x4",
+      "bare-12x6",
+      "bare-20x8"
+    ],
+    "steps": 64,
+    "min_moved": 16,
+    "contact": 1,
+    "escape": 3
+  },
+  "validator_sha256": "199b29adbd779a5c680c9e5407f054b85b56f143a5e0a56ed41d5ad6477a4961",
+  "prompt_sha256": "ca1af8e288ed0dfc395b4bbd41153a6464355ba7b6c94e48576928550edb0aa6",
+  "run": "hunt-202610071555",
+  "rev": "cc615cc5d1d238dc0db9b4e2cdaa7d435ffba845",
+  "clean": true,
+  "jobs": 20,
+  "workers": 4,
+  "fake": false,
+  "started": "2026-10-07T15:55:13Z",
+  "finished": "2026-10-07T16:19:51Z"
+}

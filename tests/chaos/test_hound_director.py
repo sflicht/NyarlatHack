@@ -33,6 +33,30 @@ SOURCE = (
     "end\n"
 )
 FOOTSTEPS = DEFAULT_PACK.read_bytes()
+# Pressure-floor fixtures (HoundValidatorTests).
+HOVER = (
+    b"return function(c) local p=c.history[#c.history] local dx,dy=0,0 "
+    b"if p.x>c.mx+2 then dx=1 elseif p.x<c.mx-2 then dx=-1 end "
+    b"if p.y>c.my+2 then dy=1 elseif p.y<c.my-2 then dy=-1 end "
+    b"if dx==0 and dy==0 then if p.x>=c.mx then dx=-1 else dx=1 end end "
+    b"return {dx=dx,dy=dy,state=0} end"
+)
+RARE = (
+    b"return function(c) local s=(c.state+1)%8 local dx=0 "
+    b"if s==0 then dx=1 end return {dx=dx,dy=0,state=s} end"
+)
+NEWEST = (
+    b"return function(c) local p=c.history[#c.history] local dx,dy=0,0 "
+    b"if p.x>c.mx then dx=1 elseif p.x<c.mx then dx=-1 end "
+    b"if p.y>c.my then dy=1 elseif p.y<c.my then dy=-1 end "
+    b"return {dx=dx,dy=dy,state=0} end"
+)
+FAR_ERROR = (
+    b"return function(c) if c.mx>=37 then return nil end local p=c.history[1] "
+    b"local dx,dy=0,0 if p.x>c.mx then dx=1 elseif p.x<c.mx then dx=-1 end "
+    b"if p.y>c.my then dy=1 elseif p.y<c.my then dy=-1 end "
+    b"return {dx=dx,dy=dy,state=0} end"
+)
 
 
 def envelope(source=SOURCE):
@@ -45,18 +69,23 @@ class FakePrecheck:
     library_sha256 = "0" * 64
 
     def __init__(self, admitted=True):
+        # admitted: one verdict for every call, or a list consumed in order.
         self.admitted = admitted
         self.calls = []
 
     def validate(self, source):
         self.calls.append(source)
+        verdict = self.admitted
+        if isinstance(verdict, list):
+            verdict = verdict[len(self.calls) - 1]
         return dict(
-            admitted=self.admitted,
-            failure=None if self.admitted else "native_step",
+            admitted=verdict,
+            failure=None if verdict else "never_closes",
             grid_calls=120,
-            grid_failures=0 if self.admitted else 120,
-            grid_moves=100 if self.admitted else 0,
-            distinct_steps=5 if self.admitted else 0,
+            grid_failures=0,
+            grid_moves=100,
+            distinct_steps=5,
+            rehearsal=[],
             library_sha256=self.library_sha256,
         )
 
@@ -257,10 +286,56 @@ class FallbackTests(HoundBase):
         )
         self.assertTrue((self.rundir / "haunt-evidence-2" / "receipt.json").exists())
 
-    def test_regeneration_only_for_envelope(self):
-        self.assert_fallback(
-            self.lane(validator=FakePrecheck(admitted=False)), "native_rejected", 1
+    def test_precheck_rejection_regenerates_once_then_falls_back(self):
+        # Hounds that hunt: a pre-check refusal (e.g. the pressure floor)
+        # earns the one regeneration, then footsteps.lua.
+        precheck = FakePrecheck(admitted=False)
+        self.assert_fallback(self.lane(validator=precheck), "native_rejected", 2)
+        self.assertEqual(len(precheck.calls), 2)
+        self.assertTrue((self.rundir / "haunt-evidence-2" / "receipt.json").exists())
+
+    def test_precheck_regeneration_can_succeed(self):
+        precheck = FakePrecheck(admitted=[False, True])
+        self.backtracked()
+        self.assertEqual(self.drive(self.lane(validator=precheck)), "published")
+        self.assertEqual(self.record()["evidence"], "haunt-evidence-2")
+        self.assertEqual(self.candidate(), SOURCE.encode())
+        self.assertEqual(self.sends(), 2)
+
+    def test_regeneration_only_for_envelope_and_precheck(self):
+        self.assertEqual(
+            lane_mod.HoundLane.REGENERATE, ("envelope_rejected", "native_rejected")
         )
+        # The curio lane is unchanged: only an envelope rejection regenerates.
+        self.assertEqual(shared.AuthoringLane.REGENERATE, ("envelope_rejected",))
+        for outcome, sends in (("deadline", 1), ("transport_failed", 1)):
+            with self.subTest(outcome):
+                self.assertNotIn(outcome, lane_mod.HoundLane.REGENERATE)
+
+    def test_precheck_regeneration_stays_inside_the_lane_deadline(self):
+        clock = FakeClock()
+        precheck = FakePrecheck(admitted=False)
+        seen = []
+        client = FakeClient(envelope())
+        original = client.create
+
+        def create(**kwargs):
+            seen.append(clock())
+            clock.advance(400 if len(seen) == 1 else 100)
+            return original(**kwargs)
+
+        self.backtracked()
+        lane = self.lane(self.backend(create=create), validator=precheck, clock=clock)
+        self.assertEqual(self.drive(lane), "fallback")
+        self.assertEqual(self.candidate(), FOOTSTEPS)
+        second = json.loads(
+            (self.rundir / "haunt-evidence-2" / "receipt.json").read_text()
+        )
+        # The regeneration got only the remainder of the 480 s, and its late
+        # answer is the lane's deadline, never published.
+        self.assertEqual(second["deadline_s"], hound_author.DEADLINE_S - 400)
+        self.assertEqual(second["outcome"], "deadline")
+        self.assertEqual(self.sends(), 2)
 
     def test_regeneration_can_succeed(self):
         replies = iter(["not json", envelope()])
@@ -589,6 +664,66 @@ class HoundValidatorTests(unittest.TestCase):
         r = self.v.validate(FOOTSTEPS)
         self.assertEqual((r["admitted"], r["grid_failures"]), (True, 0), r)
         self.assertEqual(r["grid_calls"], len(hound_author.GRID))
+
+    def test_footsteps_passes_the_pressure_floor_in_every_room(self):
+        r = self.v.validate(FOOTSTEPS)
+        self.assertEqual(
+            [x["room"] for x in r["rehearsal"]],
+            [room[0] for room in hound_author.REHEARSAL_ROOMS],
+        )
+        for x in r["rehearsal"]:
+            self.assertIsNone(x["failure"], x)
+            self.assertGreaterEqual(x["moved"], hound_author.MIN_MOVED, x)
+            self.assertEqual(x["min_dist"], 1, x)
+            self.assertEqual(x["escaped"], 1, x)
+
+    def test_pressure_floor_refuses_passive_and_unsafe_hounds(self):
+        root = Path(__file__).resolve().parents[2]
+        shadower = (
+            root
+            / "docs/measurements/hound-free-pilot/run/jobs/16-bard-00007/a/source.lua"
+        ).read_bytes()
+        for name, source, failure in (
+            # #251's 16-bard-00007: moves every step, stays 2 squares away.
+            ("shadower-251", shadower, "never_closes"),
+            ("keeps-distance-2", HOVER, "never_closes"),
+            (
+                "walks-into-a-wall",
+                b"return function(c) return {dx=1,dy=0,state=0} end",
+                "barely_moves",
+            ),
+            ("one-step-in-eight", RARE, "barely_moves"),
+            ("presses-the-newest-square", NEWEST, "cornered"),
+            ("errors-far-east", FAR_ERROR, "script_error"),
+        ):
+            with self.subTest(name):
+                r = self.v.validate(source)
+                self.assertEqual((r["admitted"], r["failure"]), (False, failure), r)
+                # The grid alone admits every one of them.
+                self.assertEqual(r["grid_failures"], 0, r)
+
+    def test_rehearsal_matches_the_engine_trial(self):
+        # docs/measurements/hound-hunting/fidelity.json: the engine's own
+        # shadow reports for the 19 baseline sources; the rehearsal must
+        # reproduce every one.
+        root = Path(__file__).resolve().parents[2]
+        rows = json.loads(
+            (root / "docs/measurements/hound-hunting/fidelity.json").read_text()
+        )
+        sources = {"footsteps": FOOTSTEPS}
+        for job in sorted(
+            (root / "docs/measurements/hound-free-pilot/run/jobs").iterdir()
+        ):
+            final = sorted(p for p in job.iterdir() if (p / "receipt.json").exists())[
+                -1
+            ]
+            if (final / "source.lua").exists():
+                sources[job.name] = (final / "source.lua").read_bytes()
+        rooms = {room[0]: room for room in hound_author.REHEARSAL_ROOMS}
+        self.assertEqual(len(rows), 57)
+        for row in rows:
+            got = self.v.rehearse(sources[row["source"]], rooms[row["room"]])
+            self.assertEqual({k: got[k] for k in row["engine"]}, row["engine"], row)
 
     def test_obviously_failing_programs_are_caught(self):
         for name, source, failure in (

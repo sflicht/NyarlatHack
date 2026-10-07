@@ -202,6 +202,9 @@ class AuthoringLane:
     EVIDENCE = ()
     STEPS = ()
     LABEL = None
+    # Outcomes that earn the one regeneration (inside the same lane-clock
+    # deadline). A surface may widen it; see HoundLane.
+    REGENERATE = REGENERATE
 
     def __init__(self, directory, backend, *, validator, deadline_s, clock):
         """Follows the run's lane record. No record: authoring was never
@@ -304,8 +307,8 @@ class AuthoringLane:
                 receipt = dict(outcome="lane_error", error_type=type(exc).__name__)
             receipt["evidence"] = name
             self.receipts.append(receipt)
-            if receipt["outcome"] not in REGENERATE:
-                break  # at most one regeneration, and only for 3.8's row
+            if receipt["outcome"] not in self.REGENERATE:
+                break  # at most one regeneration, only for this lane's rows
 
     def _gate(self, outcome, fields, write):
         """Called by the surface's author function for its final receipt, on
