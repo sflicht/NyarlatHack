@@ -818,6 +818,11 @@
     ],
     "src/mon.c": [
       {
+        "symbol": "mondead",
+        "start": ["mondead", "(", "mtmp", ")", "register", "struct", "monst", "*", "mtmp", ";", "{"],
+        "end": ["STATIC_DCL", "int", "mon_expl_color", "(", "mdat", ",", "adtyp", ")"]
+      },
+      {
         "symbol": "xkilled",
         "start": [
           "xkilled",
@@ -6108,6 +6113,31 @@
         ",",
         "\"\"",
         ")"
+      ],
+      "guards": [
+        "ifdef OVLB"
+      ],
+      "count": 1,
+      "chaos0": "No-op macro; arguments are not evaluated."
+    },
+    {
+      "id": "hook-0415",
+      "file": "src/mon.c",
+      "symbol": "mondead",
+      "kind": "call-or-declaration",
+      "purpose": "mondead: after life-saving is ruled out, end the admitted haunt with a 'killed' event (#201)",
+      "signature": [
+        "deadmonster",
+        "|",
+        "=",
+        "DEADMONSTER_DEAD",
+        ";",
+        "chaos_haunt_died",
+        "(",
+        "mtmp",
+        ")",
+        ";",
+        "mtmp"
       ],
       "guards": [
         "ifdef OVLB"

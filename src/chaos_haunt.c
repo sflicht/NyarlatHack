@@ -246,6 +246,16 @@ static int candidate_look(int dir) {
  if(due && !fstatat(dir,"haunting.lua",&st,AT_SYMLINK_NOFOLLOW))return 1;
  empty_turn=moves;empty_seq=u.chaos.seq;return 0;
 }
+/* #201: the hunt also ends when the admitted hound dies (in practice the
+ * player's pet, or the player, kills it). Called from the engine's own death
+ * path (mondead, after life-saving is ruled out), so the event carries the
+ * turn of the death the player saw. Logs only; no RNG, nothing new saved:
+ * the one existing active flag ends the hunt, as expiry does. A game whose
+ * hound never dies logs nothing new. The shadow trial's child logs nothing. */
+void chaos_haunt_died(struct monst *m) {
+ if(!u.haunt.active || m->m_id!=u.haunt.target || chaos_shadow_active())return;
+ u.haunt.active=0;chaos_event("haunting","result","killed");
+}
 void chaos_haunt_tick(int dir) {
  struct chaos_haunt_state *h=&u.haunt;int i,x,y,fd,found=0,back=0,look;ssize_t n;
  struct trial_input where={0,0};struct chaos_shadow_report report;char receipt[512];
@@ -254,15 +264,6 @@ void chaos_haunt_tick(int dir) {
  if(h->active && (moves>=h->until || h->dnum!=u.uz.dnum || h->dlevel!=u.uz.dlevel)) {
   /* #165: the lifecycle end is logged; the event carries no game state. */
   h->active=0;chaos_event("haunting","result","expired");
- }
- /* The hunt also ends when the hound dies (in practice the player's pet
-  * kills it, #201): it is no longer anywhere, not on this level's monster
-  * list, not migrating, not following the player. Checked at the same tick,
-  * after the expiry above, so a level change still reads "expired". Derived
-  * from the native monster lists only: nothing new saved, no RNG, no hook in
-  * upstream code. A game whose hound never dies logs nothing new. */
- if(h->active && !find_mid(h->target,FM_EVERYWHERE)) {
-  h->active=0;chaos_event("haunting","result","killed");
  }
  if(h->last_turn!=moves) {
   if(h->dnum!=u.uz.dnum || h->dlevel!=u.uz.dlevel)h->count=0;
