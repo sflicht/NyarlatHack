@@ -145,7 +145,13 @@ class MatrixOracleTests(unittest.TestCase):
                         "--artifacts",
                         str(out),
                     ]
-                    command = [sys.executable, *flags]
+                    # -S: no site hooks. Each child is meant to die with an
+                    # uncaught RuntimeError, and Ubuntu's sitecustomize turns
+                    # that into an apport crash report (about 1.5 s of imports
+                    # per child), which pushed this method past its parent's
+                    # timeout. The driver needs only the stdlib and its own
+                    # directory, which stay on sys.path.
+                    command = [sys.executable, "-S", *flags]
                     if imported:
                         command += [
                             "-c",
