@@ -687,8 +687,11 @@ class HoundValidatorTests(unittest.TestCase):
             # #251's 16-bard-00007: moves every step, stays 2 squares away.
             ("shadower-251", shadower, "never_closes"),
             ("keeps-distance-2", HOVER, "never_closes"),
-            ("walks-into-a-wall", b"return function(c) return {dx=1,dy=0,state=0} end",
-             "barely_moves"),
+            (
+                "walks-into-a-wall",
+                b"return function(c) return {dx=1,dy=0,state=0} end",
+                "barely_moves",
+            ),
             ("one-step-in-eight", RARE, "barely_moves"),
             ("presses-the-newest-square", NEWEST, "cornered"),
             ("errors-far-east", FAR_ERROR, "script_error"),
@@ -708,8 +711,12 @@ class HoundValidatorTests(unittest.TestCase):
             (root / "docs/measurements/hound-hunting/fidelity.json").read_text()
         )
         sources = {"footsteps": FOOTSTEPS}
-        for job in sorted((root / "docs/measurements/hound-free-pilot/run/jobs").iterdir()):
-            final = sorted(p for p in job.iterdir() if (p / "receipt.json").exists())[-1]
+        for job in sorted(
+            (root / "docs/measurements/hound-free-pilot/run/jobs").iterdir()
+        ):
+            final = sorted(p for p in job.iterdir() if (p / "receipt.json").exists())[
+                -1
+            ]
             if (final / "source.lua").exists():
                 sources[job.name] = (final / "source.lua").read_bytes()
         rooms = {room[0]: room for room in hound_author.REHEARSAL_ROOMS}
