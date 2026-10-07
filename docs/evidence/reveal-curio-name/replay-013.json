@@ -1,0 +1,93 @@
+{
+  "what": "Model-free replay of live attempt 013 (docs/evidence/curio-live-capture/attempt-013) on head c86ebb0af, transport and authoring patched to raise",
+  "head": "c86ebb0af664e88ac375924e1e8b00bd04848a33",
+  "inputs_checked_before_send": [
+    964,
+    964
+  ],
+  "byte_identical_to_live": {
+    "inputs.json": true,
+    "run/events.jsonl": true,
+    "run/curio-used.lua": true,
+    "xlogfile": true,
+    "run/whispers.jsonl": true
+  },
+  "admission": {
+    "live": {
+      "safe": 2,
+      "source_sha256": "ccb359b3b09ba15b5d79f0e512e3ca7542a315c63235a4b0b80246c3116157de"
+    },
+    "replay": {
+      "safe": 2,
+      "source_sha256": "ccb359b3b09ba15b5d79f0e512e3ca7542a315c63235a4b0b80246c3116157de"
+    }
+  },
+  "rule6_public_history_equal": true,
+  "ledger_unchanged": true,
+  "reveal_json": {
+    "fields_other_than_lines_equal": {
+      "reveal_v": true,
+      "final_turn": true,
+      "admitted": true,
+      "delivered": true,
+      "spent": true,
+      "rejected": true
+    },
+    "line_count_live_replay": [
+      24,
+      24
+    ],
+    "only_changed_line": {
+      "live": "    Effect: a curio whistle was placed on a new level on turn 707.",
+      "replay": "    Effect: \"glass reed locket\" was placed on a new level on turn 707."
+    },
+    "curio_name_in_source": "glass reed locket"
+  },
+  "engine_binary_sha256": {
+    "dnethack": {
+      "live": "f19f2011b563a8ab0d65e6c34f2c64e20a36cfc2663249311e2f414a791f566b",
+      "replay": "48198280aa55f9303e2121b08ca8e70d6c3e21a3a0c4c5e6351cb35676868ac8"
+    },
+    "nhdat": {
+      "live": "b7fc1a3aff42f759d4ee3d4db40e1d553ce753bc72c7dc75995a349c24719a96",
+      "replay": "b7fc1a3aff42f759d4ee3d4db40e1d553ce753bc72c7dc75995a349c24719a96"
+    }
+  },
+  "save_after_turn_700": {
+    "bytes": 320439,
+    "differences_after_hackpid_and_pointer_exclusion": 1,
+    "the_difference": {
+      "offset": 48132,
+      "live": "438dc1c28ab4d50e",
+      "replay": "10ba53d84d2dd043",
+      "replay_next_use_owner": "NUO1:43d02d4dd853ba10",
+      "note": "the per-game next-use transport token from /dev/urandom, little-endian; not game state"
+    }
+  },
+  "replay_reveal_lines": [
+    "The Crawling Chaos remembers.",
+    "  Turn 1, as you arrived on a level: whisper 1 (ambient) was admitted.",
+    "    Telegraph: \"A distant whisper brushes against your thoughts.\"",
+    "    Effect: an omen only; no rule changed.",
+    "    Delivered: yes, \"The shadows lean closer.\" was shown with the telegraph.",
+    "    Spent at once.",
+    "  Turn 52, after you doubled back: a haunting was admitted.",
+    "    Telegraph: \"Something has learned the rhythm of your footsteps.\"",
+    "    Effect: an echo hound was set to follow your trail.",
+    "    Delivered: yes, you saw it follow your trail 1 time.",
+    "    Ended: its hunt ended on turn 112.",
+    "  Turn 356: a curio was admitted.",
+    "    Telegraph: \"An uncanny curio may appear on a later floor.\"",
+    "    Effect: \"glass reed locket\" was placed on a new level on turn 707.",
+    "    Delivered: yes, you applied it 1 time (Sanity -1 in total).",
+    "    Ended: 2 uses left when the game ended.",
+    "  Turn 835, as your Sanity crossed a threshold: whisper 2 (door_reluctance) was admitted.",
+    "    Telegraph: \"The doors of this place seem to lean against you.\"",
+    "    Effect: closed doors resisted you more often, for 62 turns.",
+    "    Delivered: no; a rule change has no separate manifestation.",
+    "    Ended: expired on turn 897.",
+    "  Admitted 4, delivered 3; cruelty spent 4.",
+    "  2 other candidates were refused; none took effect.",
+    ""
+  ]
+}
