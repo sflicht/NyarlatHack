@@ -531,19 +531,33 @@ class AuthoringTests(Base):
             curio_author.read_evidence(evidence)
 
     def test_validation_cannot_finish_after_the_authoring_deadline(self):
+        # The authoring clock is injected: it stands still until validation
+        # runs, and validation moves it past the deadline. Validation finishes
+        # late by construction, not by wall time, so host load cannot turn
+        # this into an early transport timeout. The 60 s deadline only has to
+        # cover the fake send on the real clock the transport checks.
+        import time
+
+        now = [time.monotonic()]
         validator = FakeValidator()
         validate = validator.validate
 
-        def slow(*args):
-            import time
-
-            time.sleep(0.15)
+        def late(*args):
+            now[0] += 61
             return validate(*args)
 
-        validator.validate = slow
-        receipt = self.author(validator=validator, deadline_s=0.1)
+        validator.validate = late
+        evidence_before = set(self.root.glob("evidence-*"))
+        with patch.object(curio_author, "time", NS(monotonic=lambda: now[0])):
+            receipt = self.author(validator=validator, deadline_s=60)
+        self.assertEqual(len(validator.calls), 1)
+        self.assertTrue(receipt["native"]["admitted"])
         self.assertEqual(receipt["outcome"], "deadline")
         self.assertEqual(receipt["error_type"], "LateValidation")
+        # A late validation is never ready: the evidence cannot be read back.
+        (evidence,) = set(self.root.glob("evidence-*")) - evidence_before
+        with self.assertRaisesRegex(ValueError, "only a ready curio"):
+            curio_author.read_evidence(evidence)
 
     def test_rejections_are_recorded_and_never_ready(self):
         cases = (

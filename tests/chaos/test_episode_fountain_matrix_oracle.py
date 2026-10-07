@@ -128,6 +128,17 @@ class MatrixOracleTests(unittest.TestCase):
 
     def test_optimization_rejected_before_work(self):
         script = Path(matrix.__file__).resolve()
+        # Optimized interpreters need opt-1/opt-2 bytecode, which the
+        # root-owned stdlib cache does not ship, and with bytecode writes off
+        # every child recompiled argparse, subprocess and the rest from
+        # source. One writable cache shared by the children keeps that to one
+        # compile per optimization level. It holds only bytecode.
+        cache = tempfile.TemporaryDirectory()
+        self.addCleanup(cache.cleanup)
+        child_env = {
+            k: v for k, v in os.environ.items() if k != "PYTHONDONTWRITEBYTECODE"
+        }
+        child_env["PYTHONPYCACHEPREFIX"] = cache.name
         for flags, optimize in ((["-O"], ""), (["-OO"], ""), ([], "1"), ([], "2")):
             for imported in (False, True):
                 with (
@@ -145,7 +156,13 @@ class MatrixOracleTests(unittest.TestCase):
                         "--artifacts",
                         str(out),
                     ]
-                    command = [sys.executable, *flags]
+                    # -S: no site hooks. Each child is meant to die with an
+                    # uncaught RuntimeError, and Ubuntu's sitecustomize turns
+                    # that into an apport crash report (about 1.5 s of imports
+                    # per child), which pushed this method past its parent's
+                    # timeout. The driver needs only the stdlib and its own
+                    # directory, which stay on sys.path.
+                    command = [sys.executable, "-S", *flags]
                     if imported:
                         command += [
                             "-c",
@@ -155,7 +172,7 @@ class MatrixOracleTests(unittest.TestCase):
                         command += [str(script)]
                     result = subprocess.run(
                         command + args,
-                        env=dict(os.environ, PYTHONOPTIMIZE=optimize),
+                        env=dict(child_env, PYTHONOPTIMIZE=optimize),
                         capture_output=True,
                         timeout=10,
                     )
