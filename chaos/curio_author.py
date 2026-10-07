@@ -131,11 +131,17 @@ def author_curio(
     validator,
     role=None,
     deadline_s=DEADLINE_S,
+    gate=None,
 ):
     """One authoring request; up to three ledgered sends within one deadline.
 
     Backends without an explicit retry hint are never retried. All known send
     receipts are retained in transport_attempts; no ledger cap is reset.
+
+    gate, when given, is called as gate(outcome, fields, write) for the final
+    receipt: the caller (the director's lane) decides under its own lock
+    whether the outcome still stands, so a result its clock already gave up
+    on is never written as ready.
     """
     if type(deadline_s) not in (int, float) or not 0 < deadline_s <= DEADLINE_S:
         raise ValueError("authoring deadline outside 0..480 seconds")
@@ -168,10 +174,15 @@ def author_curio(
     with store._directory(evidence) as d:
         store._publish(d, "prompt.json", _encode(prepared))
 
-        def finish(outcome, **fields):
+        def write(outcome, fields):
             receipt.update(fields, outcome=outcome)
             store._publish(d, "receipt.json", _encode(receipt))
             return dict(receipt)
+
+        def finish(outcome, **fields):
+            if gate is None:
+                return write(outcome, fields)
+            return gate(outcome, fields, write)
 
         backend.deadline = started + deadline_s
         attempts = []
