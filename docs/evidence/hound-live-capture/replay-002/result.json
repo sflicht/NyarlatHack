@@ -1,0 +1,150 @@
+{
+  "outcome": "turn_limit",
+  "error": null,
+  "final_status": {
+    "dlvl": 2,
+    "hp": 17,
+    "hp_max": 17,
+    "turn": 2004,
+    "hunger": "Hungry"
+  },
+  "exit_code": 0,
+  "guarded_inputs": 1176,
+  "expected_inputs": 1176,
+  "equality": {
+    "inputs.json": true,
+    "run/events.jsonl": true,
+    "run/whispers.jsonl": true,
+    "run/haunting-used.lua": true,
+    "run/dreamlands.json": true,
+    "run/reveal.json": true,
+    "xlogfile": true,
+    "run/curio-used.lua": true
+  },
+  "saves": {
+    "0001/1001ChaosReview": {
+      "bytes": 316875,
+      "replay_bytes": 316875,
+      "live_sha256": "84a39f542d0ebe10735a4ec7e75f59f89f2bf040d8b1ae2e6ca2a3302888d6aa",
+      "replay_sha256": "f1cdf0993fa18cc4ddf39104e082c44b910b9aef6684ee014ace4932b8a6b25d",
+      "byte_identical": false,
+      "raw_differing_bytes": 3082,
+      "raw_differing_offsets": [
+        32,
+        33,
+        23169,
+        23170,
+        23171,
+        23172,
+        23181,
+        23182,
+        23183,
+        23184,
+        23189,
+        23190,
+        23191,
+        23192,
+        23713,
+        23714,
+        23715,
+        23716,
+        23721,
+        23722,
+        23723,
+        23724,
+        24245,
+        24246,
+        24247,
+        24248,
+        24253,
+        24254,
+        24255,
+        24256,
+        24777,
+        24778,
+        24779,
+        24780,
+        24785,
+        24786,
+        24787,
+        24788,
+        25309,
+        25310,
+        25311,
+        25312,
+        25317,
+        25318,
+        25319,
+        25320,
+        25841,
+        25842,
+        25843,
+        25844,
+        25849,
+        25850,
+        25851,
+        25852,
+        26373,
+        26374,
+        26375,
+        26376,
+        26381,
+        26382,
+        26383,
+        26384,
+        26905,
+        26906
+      ],
+      "state_differences": 1,
+      "first": [
+        [
+          45360,
+          "2f1a8f80ab50b926",
+          "7508f796fc52eb50"
+        ]
+      ],
+      "pids": [
+        3893972,
+        3910271
+      ]
+    }
+  },
+  "replay_window": {
+    "turn": 52,
+    "seq": 10,
+    "detail": "pre_admitted",
+    "source_sha256": "29322c2b7c612cd71064e8d153d3cd015f907f9391376a7246e8684fee14a3e3"
+  },
+  "replay_curio": {
+    "safe": 2,
+    "source_sha256": "ace2baf98a98ae743017a8acfa40afb51ff3b1e199e21fb7b0a4a5851ddcabff"
+  },
+  "staged": {
+    "restore": true,
+    "hound": {
+      "detail": "pre_admitted",
+      "evidence": "haunt-evidence",
+      "seq": 10,
+      "source_sha256": "29322c2b7c612cd71064e8d153d3cd015f907f9391376a7246e8684fee14a3e3",
+      "turn": 52,
+      "v": 1
+    },
+    "curio": true
+  },
+  "ledger_unchanged": true,
+  "prefix_sha256_equal": true,
+  "public_history_equal": true,
+  "evidence_chain_verified": true,
+  "live_admission": {
+    "v": 1,
+    "turn": 52,
+    "seq": 10,
+    "detail": "pre_admitted",
+    "source_sha256": "29322c2b7c612cd71064e8d153d3cd015f907f9391376a7246e8684fee14a3e3",
+    "evidence": "haunt-evidence"
+  },
+  "curio_live_admission": {
+    "safe": 2,
+    "source_sha256": "ace2baf98a98ae743017a8acfa40afb51ff3b1e199e21fb7b0a4a5851ddcabff"
+  }
+}

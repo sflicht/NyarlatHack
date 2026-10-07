@@ -1,0 +1,61 @@
+{
+  "revision": "a439ad1fc103ccf5398b76711005d1ee09f99793",
+  "attempt": 2,
+  "seed": 12,
+  "policy": "curio-capture-v1",
+  "params": {
+    "version": 2,
+    "max_turns": 2000,
+    "max_dlvl": 5,
+    "max_commands": 8000,
+    "stall_commands": 200,
+    "no_food_retry_turns": 200,
+    "p_whistle": 0.03,
+    "p_fountain": 0.25,
+    "fountain_quaffs_per_level": 2,
+    "min_turns_per_level": 300,
+    "p_search": 0.05,
+    "p_travel_explore": 0.8,
+    "prayer_gap_turns": 1000,
+    "save_restore_turn": 700,
+    "min_prayer_turn": 100,
+    "flee_in_trouble": true,
+    "rest_below": 0.67,
+    "rest_command": "20s",
+    "p_seek_tool": 0.5,
+    "p_fountain_no_whistle": 1.0,
+    "travel_retries": 3,
+    "settle_pages": 400,
+    "whistle_only_visible_pet": true
+  },
+  "seed_choice": "Seed 12 (public seed-sweep-v2-179 row; the #247 attempt 013 record of the same seed shows the first public backtrack at turn 46 and the footsteps hound accepted at turn 52 and expired at turn 112), chosen because that public outcome shows the real trigger early. Attempt 001 (same seed) stopped before the game: hermes_play.py found no Hermes checkout under the game HOME; no request.",
+  "transport_wait_s": 0.12,
+  "author_wait_bound_s": 900,
+  "author_wait_on_expiry": "continue play",
+  "authorization_approx_utc": "2026-10-05T10:59:00Z",
+  "entry_point": "scripts/hermes_play.py play (Sam's command)",
+  "source_sha256": {
+    "tests/chaos/curio_capture_player.py": "626908255e3add1d933b6501465526f3ded9e1309434376119ff8b852545099c",
+    "tests/chaos/sweep_player.py": "c8e0ff37aa36f9ddf22e24ec017caec3c348fc53eb66963d0ae5e4b395889405",
+    "tests/chaos/gameplay_support.py": "f426720738d8946b7bf26d41fc341aae4064578f93168c4b87e588efb6588949",
+    "tests/chaos/sweep_clock.c": "19795c57db9c74ad35584ca152d47b50102fc01fcddd4734beeec5671b67d58b",
+    "scripts/hermes_play.py": "4a0500dc3087028e0cc2b12e3cc1825b3d399361eaf74019b60fe2c520c8bcf3"
+  },
+  "harness_sha256": {
+    "capture.py": "1f988d1452389e08a33967e3ad379242bc520b6409256956808fc56617ba5771",
+    "hermes-chaos.sh": "b2e852fedefd60d804e0b035c6f31e3c9bc73a4fc518ce90c1d30baf20cb78d4",
+    "launch.py": "51c60dba53f08cdb6a5bb4c6b2c806ae855defe67991913e1f12834404c0463a"
+  },
+  "validator_sha256": "199b29adbd779a5c680c9e5407f054b85b56f143a5e0a56ed41d5ad6477a4961",
+  "launcher": [
+    "--ordinary",
+    "--max-runtime",
+    "86400",
+    "--author-provider",
+    "xai-oauth",
+    "--author-model",
+    "grok-4.7",
+    "--curio-validator",
+    "<export>/dnethackdir/curio-validator.so"
+  ]
+}

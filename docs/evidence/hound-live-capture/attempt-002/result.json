@@ -1,0 +1,186 @@
+{
+  "outcome": "turn_limit",
+  "error": null,
+  "commands": 1052,
+  "final_status": {
+    "dlvl": 2,
+    "hp": 17,
+    "hp_max": 17,
+    "turn": 2004,
+    "hunger": "Hungry"
+  },
+  "exit_code": 0,
+  "elapsed_s": 635.754,
+  "dlvl_timeline": [
+    [
+      1,
+      1
+    ],
+    [
+      353,
+      2
+    ]
+  ],
+  "save_restore": {
+    "attempted": true,
+    "session_detail": "restore"
+  },
+  "sync_timeouts": 0,
+  "author_wait_expired": false,
+  "new_ledger_rows": [
+    {
+      "attempt": "c242c9b73c1248e3b820b2a7b4adc07c",
+      "day": "2026-10-07",
+      "error_type": null,
+      "http_status": null,
+      "latency_s": null,
+      "model": "grok-4.7",
+      "prompt_sha256": "a70e82f30c931e9c3ededccfbc4d5df33d61cfe52cdf789c2d8dc2c7a2baedee",
+      "provider": "xai-oauth",
+      "response_sha256": null,
+      "route": "hermes-xai-oauth",
+      "run_id": "26f6f21f880b59bd5812a19d5b071930",
+      "status": "reserved",
+      "surface": "haunt",
+      "time": 1791369325.801,
+      "usage": null,
+      "v": 1
+    },
+    {
+      "attempt": "c242c9b73c1248e3b820b2a7b4adc07c",
+      "day": "2026-10-07",
+      "error_type": null,
+      "http_status": 200,
+      "latency_s": 293.188,
+      "model": "grok-4.7",
+      "prompt_sha256": "a70e82f30c931e9c3ededccfbc4d5df33d61cfe52cdf789c2d8dc2c7a2baedee",
+      "provider": "xai-oauth",
+      "response_sha256": "fb210c9f279e482212948e7534049a13349e4553661ce7157c302d1d1d79c458",
+      "route": "hermes-xai-oauth",
+      "run_id": "26f6f21f880b59bd5812a19d5b071930",
+      "status": "completed",
+      "surface": "haunt",
+      "time": 1791369618.991,
+      "usage": {
+        "completion_tokens": 23660,
+        "prompt_tokens": 2350,
+        "total_tokens": 26010
+      },
+      "v": 1
+    },
+    {
+      "attempt": "bfa3f6247003457cb6254ee74e0ffbc9",
+      "day": "2026-10-07",
+      "error_type": null,
+      "http_status": null,
+      "latency_s": null,
+      "model": "grok-4.7",
+      "prompt_sha256": "9af1befe149eb7a6af04c583b88c708e8088db4177a84893dc6adeb99656dd05",
+      "provider": "xai-oauth",
+      "response_sha256": null,
+      "route": "hermes-xai-oauth",
+      "run_id": "26f6f21f880b59bd5812a19d5b071930",
+      "status": "reserved",
+      "surface": "curio",
+      "time": 1791369636.735,
+      "usage": null,
+      "v": 1
+    },
+    {
+      "attempt": "bfa3f6247003457cb6254ee74e0ffbc9",
+      "day": "2026-10-07",
+      "error_type": null,
+      "http_status": 200,
+      "latency_s": 192.65,
+      "model": "grok-4.7",
+      "prompt_sha256": "9af1befe149eb7a6af04c583b88c708e8088db4177a84893dc6adeb99656dd05",
+      "provider": "xai-oauth",
+      "response_sha256": "7990b7a555c81ad0081051ef92e18f893e9ec1b9f29ea9542141c8db338ef129",
+      "route": "hermes-xai-oauth",
+      "run_id": "26f6f21f880b59bd5812a19d5b071930",
+      "status": "completed",
+      "surface": "curio",
+      "time": 1791369829.387,
+      "usage": {
+        "completion_tokens": 19758,
+        "prompt_tokens": 3818,
+        "total_tokens": 23576
+      },
+      "v": 1
+    }
+  ],
+  "haunt_rows": [
+    [
+      1,
+      5,
+      "telegraph",
+      "ambient"
+    ],
+    [
+      52,
+      10,
+      "haunting",
+      "pre_admitted"
+    ],
+    [
+      52,
+      11,
+      "haunting",
+      "accepted"
+    ],
+    [
+      82,
+      22,
+      "haunt_step",
+      ""
+    ],
+    [
+      84,
+      27,
+      "haunt_step",
+      ""
+    ],
+    [
+      87,
+      28,
+      "haunt_step",
+      ""
+    ],
+    [
+      112,
+      31,
+      "haunting",
+      "expired"
+    ]
+  ],
+  "curio_rows": [
+    [
+      348,
+      2,
+      "pre_admitted"
+    ],
+    [
+      348,
+      2,
+      "admitted"
+    ]
+  ],
+  "haunt-lane.json": {
+    "evidence": "haunt-evidence",
+    "game": "26f6f21f880b59bd5812a19d5b071930",
+    "outcome": "ready",
+    "safe": 1,
+    "seed": 8513290665783184118,
+    "step": "published",
+    "v": 1
+  },
+  "curio-lane.json": {
+    "evidence": "curio-evidence",
+    "game": "26f6f21f880b59bd5812a19d5b071930",
+    "outcome": "ready",
+    "safe": 1,
+    "seed": 3497302502749095462,
+    "step": "published",
+    "v": 1
+  }
+}
