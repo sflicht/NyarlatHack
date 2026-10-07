@@ -6,6 +6,7 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import re
 import shutil
 import subprocess
 import sys
@@ -277,6 +278,76 @@ class TruthTests(unittest.TestCase):
                         "item_gain", {h["rule"] for h in curio_truth.check([text])}
                     )
         self.assertEqual(curio_truth.check(["It gives the key a turn."]), [])
+
+    # Attempt 008's rejected inspect text, verbatim (a false positive).
+    ATTEMPT_008 = (
+        "A faint ring of wear circles the bore, as if something thin passed "
+        "through from a distance you cannot name."
+    )
+
+    def test_item_named_needs_a_real_item_name(self):
+        self.assertEqual(curio_truth.check([self.ATTEMPT_008]), [])
+        for text in (
+            "A ring of wear circles the rim.",
+            "Rings of salt dry on the cord.",
+            "A scroll of bark curls at one end.",
+            "The amulet of a stranger, scratched blank.",
+            "A wand of driftwood, nothing more.",
+            "Potions of shadow are not in it.",
+        ):
+            with self.subTest(text=text):
+                self.assertEqual(curio_truth.check([text]), [])
+        for text in (
+            "It holds a ring of conflict.",
+            "A wand of digging hums inside.",
+            "A potion of healing sloshes somewhere.",
+            "Two scrolls of teleportation unroll.",
+            "An amulet of life saving glints.",
+            "Rings of protection from shape changers.",
+            "Twelve gold pieces.",
+        ):
+            with self.subTest(text=text):
+                self.assertIn(
+                    "item_named", {h["rule"] for h in curio_truth.check([text])}
+                )
+
+    def test_item_named_suffixes_are_the_games_object_names(self):
+        """The rule lists exactly the real object-name suffixes in
+        src/objects.c, so it cannot drift from the game."""
+        source = (ROOT / "src/objects.c").read_text(encoding="latin-1")
+
+        def names(macro):
+            return re.findall(r"^\s*" + macro + r'\(\("([^"]*)"', source, re.M)
+
+        expected = dict(
+            ring=set(names("RING")),
+            wand=set(names("WAND")),
+            potion=set(names("POTION")),
+            scroll={n for n in names("SCROLL") if not n.startswith("Gold Scroll")},
+            amulet={
+                n[len("amulet of ") :]
+                for n in names("AMULET")
+                if n.startswith("amulet of ")
+            }
+            | {"Yendor"},
+        )
+        data = json.loads(curio_truth.RULES_FILE.read_text())
+        (pattern,) = [r["pattern"] for r in data["rules"] if r["id"] == "item_named"]
+        found = {
+            cls: set(group.replace("\\", "").split("|"))
+            for cls, group in re.findall(r"(\w+)s\? of \(([^)]*)\)", pattern)
+        }
+        self.assertEqual(found, expected)
+        for cls, suffixes in expected.items():
+            for suffix in suffixes:
+                with self.subTest(cls=cls, suffix=suffix):
+                    self.assertIn(
+                        "item_named",
+                        {
+                            h["rule"]
+                            for h in curio_truth.check([f"a {cls} of {suffix}"])
+                        },
+                    )
 
     def test_frozen_pilot_and_rerun_have_no_new_truth_rejections(self):
         base = ROOT / "docs/measurements"
