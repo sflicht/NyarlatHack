@@ -25,12 +25,15 @@ CHAOS ?= 1
 ifeq ($(CHAOS),1)
 CPPFLAGS += -DCHAOS $(shell $(PKG_CONFIG) --cflags lua5.4)
 GAMELIBS += $(shell $(PKG_CONFIG) --libs lua5.4)
-# The native curio validator the launcher loads from the game root: the
-# engine's own parser and Lua sandbox as one shared library (same command as
-# docs/measurements/model-authoring-pilot/build_validator.sh).
-CURIO_VALIDATOR = curio-validator.so
 else ifneq ($(CHAOS),0)
 $(error CHAOS must be 0 or 1)
+endif
+
+# The native curio validator the launcher loads from the game root: the
+# engine's own parser and Lua sandbox as one shared library (same command as
+# docs/measurements/model-authoring-pilot/build_validator.sh). CHAOS=1 only.
+ifeq ($(CHAOS),1)
+CURIO_VALIDATOR = curio-validator.so
 endif
 
 CPPFLAGS += -Wno-knr-promoted-parameter
