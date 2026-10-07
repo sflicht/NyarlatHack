@@ -1,0 +1,95 @@
+{
+ "footsteps": {
+  "sources": 1,
+  "trials": 3,
+  "moved": {
+   "min": 64,
+   "median": 64,
+   "max": 64
+  },
+  "contacts": {
+   "min": 3,
+   "median": 3,
+   "max": 12
+  },
+  "min_dist": {
+   "min": 1,
+   "median": 1,
+   "max": 1
+  },
+  "median_dist": {
+   "min": 3,
+   "median": 3,
+   "max": 3
+  },
+  "escaped": {
+   "min": 1,
+   "median": 1,
+   "max": 1
+  },
+  "reached_within_1": 3,
+  "contact_trials": 3
+ },
+ "old251": {
+  "sources": 18,
+  "trials": 54,
+  "moved": {
+   "min": 3,
+   "median": 42.5,
+   "max": 64
+  },
+  "contacts": {
+   "min": 0,
+   "median": 0.0,
+   "max": 5
+  },
+  "min_dist": {
+   "min": 1,
+   "median": 3.0,
+   "max": 6
+  },
+  "median_dist": {
+   "min": 3,
+   "median": 5.0,
+   "max": 14
+  },
+  "escaped": {
+   "min": 1,
+   "median": 1.0,
+   "max": 1
+  },
+  "reached_within_1": 4,
+  "contact_trials": 4
+ },
+ "v2ready": {
+  "sources": 18,
+  "trials": 54,
+  "moved": {
+   "min": 31,
+   "median": 41.0,
+   "max": 51
+  },
+  "contacts": {
+   "min": 1,
+   "median": 16.0,
+   "max": 54
+  },
+  "min_dist": {
+   "min": 1,
+   "median": 1.0,
+   "max": 1
+  },
+  "median_dist": {
+   "min": 1,
+   "median": 3.0,
+   "max": 5
+  },
+  "escaped": {
+   "min": 1,
+   "median": 1.0,
+   "max": 1
+  },
+  "reached_within_1": 54,
+  "contact_trials": 54
+ }
+}

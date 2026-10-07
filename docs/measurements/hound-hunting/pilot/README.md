@@ -52,3 +52,34 @@ heavy run lands.
 
 For the hound pilot: v1 17 + v2-probe 4 + v2 27 = **48 requests**. Today's
 ledger total, counting all surfaces and Sam's play, is **70 of 200**.
+
+## Bare-room rehearsal distributions (`rehearsal-distributions.json`)
+
+The engine shadow trial in the 4 rooms × 3 seeds was deferred by the heavy
+job queue. Until it lands, these numbers come from the host rehearsal
+(`HoundValidator.rehearse`), which matched the engine's own reports in 57 of
+57 bare-room cases (`../fidelity.json`). Each source runs once in each of the
+three bare rooms.
+
+| Group | Trials | Moved (median, range) | Contacts (median, range) | Trials within 1 square | Median distance (median) | Escaped |
+|---|---|---|---|---|---|---|
+| footsteps | 3 | 64 (64–64) | 3 (3–12) | 3 of 3 | 3 | 3 of 3 |
+| #251 pilot, 18 sources | 54 | 42.5 (3–64) | 0 (0–5) | 4 of 54 | 5 | 54 of 54 |
+| v2 ready, 18 sources | 54 | 41 (31–51) | 16 (1–54) | **54 of 54** | 3 | 54 of 54 |
+
+Every v2 ready source passes the floor by construction, because the
+pre-check admitted it. The comparison that matters is with #251: those
+hounds kept a median distance of 5 and bit in 4 of 54 trials. The new
+hounds keep a median distance of 3 and bite in every trial, and the player
+still escapes every time.
+
+Three v2 sources:
+- **02-bard-default-path-00007** (607 bytes): rests every 4th step. Otherwise
+  it heads for the player's newest square, but on two beats of every eight it
+  aims one or two positions back in the trail.
+- **06-bard-inherited-00023** (1259 bytes): a 16-step cycle that runs 13
+  steps at the player, with one or two of them aimed at the previous square,
+  and then stops for 3. That pause is its learnable gap.
+- **12-madman-00041** (646 bytes): moves 5 beats out of 8 and rests 3. On
+  two of the moving beats it lags one or two squares behind the player. Its
+  first version was refused as never_closes; this is the regeneration.
