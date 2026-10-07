@@ -1,0 +1,156 @@
+{
+  "attempt": 13,
+  "seed": 12,
+  "policy": "curio-capture-v1",
+  "revision": "476c74b10bf93f5d71da90781bf9aad1c213d7ca",
+  "launcher": [
+    "--ordinary",
+    "--max-runtime",
+    "7200",
+    "--author-provider",
+    "xai-oauth",
+    "--author-model",
+    "grok-4.7",
+    "--curio-validator",
+    "VALIDATOR"
+  ],
+  "validator_sha256": "199b29adbd779a5c680c9e5407f054b85b56f143a5e0a56ed41d5ad6477a4961",
+  "player_source_sha256": {
+    "tests/chaos/curio_capture_player.py": "626908255e3add1d933b6501465526f3ded9e1309434376119ff8b852545099c",
+    "tests/chaos/sweep_player.py": "c8e0ff37aa36f9ddf22e24ec017caec3c348fc53eb66963d0ae5e4b395889405",
+    "tests/chaos/gameplay_support.py": "f426720738d8946b7bf26d41fc341aae4064578f93168c4b87e588efb6588949",
+    "tests/chaos/sweep_clock.c": "19795c57db9c74ad35584ca152d47b50102fc01fcddd4734beeec5671b67d58b"
+  },
+  "harness_sha256": {
+    "capture.py": "59f9fe3ea0a477cf46a35f6a06c0cc8fa8e16816d27eef0592896e8c3e15f41d",
+    "hermes-chaos.sh": "a7dee18f3a7bf05a6994d8ce7d1bffd9f4486fda5aaf741814d29b94ecdf9222",
+    "launch.py": "6a107e62eaac5d8aca69bc50b7accd6e3daba49ea69651b37f38abaa863df9b5"
+  },
+  "transport_wait_s": 0.12,
+  "author_wait_bound_s": 900,
+  "outcome": "died",
+  "commands": 813,
+  "dlvl_timeline": [
+    [
+      1,
+      1
+    ],
+    [
+      361,
+      2
+    ],
+    [
+      715,
+      3
+    ]
+  ],
+  "elapsed_s": 253.018,
+  "save_restore": {
+    "attempted": true,
+    "session_detail": "restore"
+  },
+  "curio_rows": [
+    {
+      "seq": 63,
+      "turn": 356,
+      "safe": 2,
+      "detail": "pre_admitted",
+      "sanity": 100
+    },
+    {
+      "seq": 64,
+      "turn": 356,
+      "safe": 2,
+      "detail": "admitted",
+      "sanity": 100
+    },
+    {
+      "seq": 138,
+      "turn": 707,
+      "safe": 2,
+      "detail": "placed",
+      "sanity": 100
+    },
+    {
+      "seq": 146,
+      "turn": 835,
+      "safe": 3,
+      "detail": "applied requested=-1 actual=-1",
+      "sanity": 99
+    }
+  ],
+  "author": {
+    "outcome": "ready",
+    "latency_s": 138.458,
+    "deadline_s": 480,
+    "provider": "xai-oauth",
+    "model": "grok-4.7",
+    "transport_attempts": [
+      {
+        "model": "grok-4.7",
+        "provider": "xai-oauth",
+        "record": {
+          "attempt": "42afe577968541f885213e5655d2b6b0",
+          "day": "2026-10-06",
+          "error_type": null,
+          "http_status": 200,
+          "latency_s": 138.445,
+          "model": "grok-4.7",
+          "prompt_sha256": "919399faa404bc07f43621c4e8c4ce746f0d33caa748b171fb23c2f47eeba6e3",
+          "provider": "xai-oauth",
+          "response_sha256": "2c5747f35c47db728961d1c88578f8a5c40c8beaf4550de32706a08d626e5891",
+          "route": "hermes-xai-oauth",
+          "run_id": "d36af28fc90a6c9f58a9bec174a2f6ae",
+          "status": "completed",
+          "surface": "curio",
+          "time": 1791329638.528,
+          "usage": {
+            "completion_tokens": 14048,
+            "prompt_tokens": 3809,
+            "total_tokens": 17857
+          },
+          "v": 1
+        },
+        "route": "hermes-xai-oauth"
+      }
+    ],
+    "lua_source_sha256": "ccb359b3b09ba15b5d79f0e512e3ca7542a315c63235a4b0b80246c3116157de",
+    "truth_hits": []
+  },
+  "requests_this_game": 1,
+  "rule6": {
+    "prefix_bytes": 12557,
+    "prefix_sha256_verified": true,
+    "public_history_equals_public_context": true
+  },
+  "engine_admission": {
+    "safe": 2,
+    "source_sha256": "ccb359b3b09ba15b5d79f0e512e3ca7542a315c63235a4b0b80246c3116157de",
+    "v": 1
+  },
+  "fork": {
+    "backend_built_in_launcher": true,
+    "launcher_threads_before_fork": [
+      "MainThread"
+    ],
+    "authored_in_forked_director": true,
+    "lane_states": [
+      "idle",
+      "requested",
+      "ready",
+      "published"
+    ]
+  },
+  "placement": {
+    "turn": 707,
+    "level": "main dungeon DL3 (new level on descent; engine places only at dnum 0, DL2-3)"
+  },
+  "player_visible": {
+    "telegraph_turn": 356,
+    "pickup_turn": 835,
+    "inspect_turn": 835,
+    "apply_turn": 835,
+    "sanity_change": -1,
+    "reveal_menu_opened": true
+  }
+}

@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Live curio capture: slice 3b</title>
+<style>body{font:17px/1.6 system-ui,sans-serif;color:#182635;background:#f5f7fa;margin:0}main{max-width:900px;margin:40px auto;padding:36px;background:white;border-radius:12px}h1{line-height:1.2}h2{margin-top:2em}table{border-collapse:collapse;width:100%}td,th{text-align:left;border-bottom:1px solid #dae1e7;padding:8px;vertical-align:top}code{font-size:.9em;overflow-wrap:anywhere}pre{background:#f1f4f7;padding:14px;overflow-x:auto;font-size:.85em}.status{background:#e5f4e8;padding:16px;border-left:5px solid #2e8b4a}a{color:#175da6}</style>
+<main><p>NyarlatHack · slice 3b · 6 October 2026</p>
+<h1>A model-authored curio, from trigger to reveal, in ordinary play</h1>
+<p class="status"><strong>Tier A.</strong> In live attempt 013, a real trigger led to one Grok 4.7 request. The engine admitted the curio, placed it on a fresh main-dungeon level, and the player picked it up, inspected it and applied it (Sanity −1). The on-screen reveal reported it. A model-free replay reproduced every input, every native event, the admission index and source checksum, the reveal and the game log byte for byte. The copied save matched apart from the per-game transport token.</p>
+<p>A <em>curio</em> is an object whose Lua source a model writes. The engine validates and runs that source. The <em>director</em> is the separate process that proposes it. A <em>safe point</em> is an engine-controlled moment at which a proposal can be admitted.</p>
+
+<h2>What ran</h2>
+<p>A nonwizard ordinary Bard game on seed 12, launched as <code>chaos play --ordinary --author-provider xai-oauth --author-model grok-4.7 --curio-validator VALIDATOR</code> under Hermes's runtime. The default hound and next-use lanes were on. The separately named screen-reading player <code>curio-capture-v1</code> drove the game; the gate policy <code>baseline-v2</code> was not changed. Between actions the harness paused 0.12 s for transport, and it paused wall time while the author request was pending. It never forced the trigger and never advanced game time. Engine, launcher and validator were built from <code>ff4adf393</code>. Every later commit changes only the test player and evidence.</p>
+<p><strong>How the seed was chosen.</strong> I used only the public <code>seed-sweep-v2-179</code> report: <code>bard-default-path</code> rows with outcome <code>turn_limit</code> and a recorded DL3 arrival, ordered by earliest DL3 turn, excluding seed 1 (attempt 001). Attempt 002 took the first row, seed 12; attempt 003 took seed 89. On seed 12 the trigger fired at a stable public turn (356), so attempts 004–013 deliberately repeated it while the player was fixed. No hidden map state was read.</p>
+
+<h2>What the player saw</h2>
+<pre>T:356   An uncanny curio may appear on a later floor.
+T:707   You fall down the stairs.            (new main-dungeon DL3; engine: curio placed)
+T:833   You see here a glass reed locket.
+T:835   l - a glass reed locket.
+        a glass reed locket
+        A cracked locket holds a hair-thin glass reed. One edge is cooler, as if a
+        breath stopped short.
+        The curio requests a Sanity change of -1; native limits may reduce it. This
+        spends one use.
+        You breathe across the reed. A high thin tone starts, then stops one step short
+        of closing.
+end     Do you want to know what watched you? [ynq] (n) y
+          Turn 356: a curio was admitted.
+            Telegraph: "An uncanny curio may appear on a later floor."
+            Effect: a curio whistle was placed on a new level on turn 707.
+            Delivered: yes, you applied it 1 time (Sanity -1 in total).
+            Ended: 2 uses left when the game ended.</pre>
+<p>Native events: <code>pre_admitted</code> and <code>admitted</code> (turn 356, safe point 2), <code>placed</code> (turn 707) and <code>applied requested=-1 actual=-1</code> (turn 835). The engine places a curio only on a freshly generated main-dungeon DL2–3. Here the admission came on arrival at DL2, so the placement was on DL3.</p>
+
+<h2>Requested checks</h2>
+<table><tr><th>Check</th><th>Result</th></tr>
+<tr><td>Latency</td><td>138.458 s against the 480 s deadline: one request, HTTP 200, 17,857 tokens, accepted at once with no truth-check hits</td></tr>
+<tr><td>Backend built in the launcher, used in the forked director</td><td>Yes. Before the fork the launcher process held <code>XaiBackend provider=xai-oauth model=grok-4.7</code> with only the main thread alive. The forked director then began authoring and received the response. Lane states were idle → requested → ready → published. The HTTP client is created lazily inside the child, so this does not claim a connection survived the fork.</td></tr>
+<tr><td>Rule 6</td><td>The prompt's <code>public_history</code> equals <code>public_context(HistoryState(prefix))</code>. The 12,557-byte native-event prefix reproduces its recorded SHA-256.</td></tr>
+<tr><td>Exact model-free replay</td><td>All 964 input chunks were checked against the live tape before sending. These were byte-identical: <code>events.jsonl</code>, <code>whispers.jsonl</code>, <code>curio-used.lua</code>, <code>reveal.json</code>, <code>xlogfile</code>. Engine admission was safe point 2 with source <code>ccb359b3…157de</code> in both games. The model ledger was unchanged.</td></tr>
+<tr><td>Save comparison</td><td>The turn-700 save was copied before restore consumed it. Of its 320,439 bytes, after excluding hackpid and raw pointers, one 8-byte run differs: the per-game next-use transport token, which the engine draws from <code>/dev/urandom</code> (equal to each run's <code>next_use-owner</code>). No game-state difference remains.</td></tr>
+</table>
+<p>The replay launcher patched <code>XaiBackend.__init__</code>, <code>XaiBackend.generate</code>, <code>curio_author.build_backend</code> and <code>curio_author.author_curio</code> to raise, and did not import Hermes. It staged the logged source at the engine-logged index through the shared <code>stage_replay</code> primitive. The first replay (001) instead fed the whisper journal back through a <code>ScheduleBackend</code>. That published request 2 early and dropped three live <code>ack duplicate</code> rows. Replay 002 keeps the launcher's own model-free ordinary backend, as live play did, and compares the journal afterwards. Replay 001 is retained and disclosed.</p>
+
+<h2>Every live attempt</h2>
+<p>Twelve requests were reserved across attempts 002–013, at most two in any game. All were within the caps of 3 per surface per game and 200 per day.</p>
+<table><tr><th>#</th><th>Seed</th><th>Outcome</th><th>Requests</th></tr>
+<tr><td>002</td><td>12</td><td>Admitted at t356; player went down the Gnomish Mines branch</td><td>1 (136 s)</td></tr>
+<tr><td>003</td><td>89</td><td>Reached DL3 before the trigger; native expiry</td><td>0</td></tr>
+<tr><td>004</td><td>12</td><td>Admitted; Mines again (a branch stair is only named after use)</td><td>1 (339 s)</td></tr>
+<tr><td>005</td><td>12</td><td>Harness killed by the agent's own tool timeout mid-request</td><td>1 reserved, no completion</td></tr>
+<tr><td>006</td><td>12</td><td>First response <code>envelope_rejected</code> at 462 s; the regeneration then outlived the harness's 500 s wait</td><td>2 reserved, 1 completed</td></tr>
+<tr><td>007</td><td>12</td><td>Admitted; fell down the Mines stairs while Burdened</td><td>1 (113 s)</td></tr>
+<tr><td>008</td><td>12</td><td>Host truth check refused the response (<code>item_named</code> on "ring of wear", a false positive); reached main DL3</td><td>1 (221 s)</td></tr>
+<tr><td>009</td><td>12</td><td>Admitted; pet hid the up stair after a fall into the Mines</td><td>1 (225 s)</td></tr>
+<tr><td>010</td><td>12</td><td>Request had not settled within the harness's 600 s bound; no receipt</td><td>1 reserved</td></tr>
+<tr><td>011–012</td><td>12</td><td>Admitted; climbed back from the Mines, then stuck on DL2 (hidden corridor)</td><td>1 each (135 s, 153 s)</td></tr>
+<tr><td><strong>013</strong></td><td>12</td><td><strong>Qualifying</strong></td><td>1 (138 s)</td></tr></table>
+<p>Before 013, the player fixes were tried on model-free rehearsals that staged 012's recorded curio. Rehearsals are development runs, never evidence. Attempt 010 shows that the 480 s authoring deadline does not bound the authoring thread's wall time; I report this as a finding.</p>
+
+<h2>Earlier checkpoint (5 October, condensed)</h2>
+<p>Attempt 001 (seed 1, <code>baseline-v2</code> player): a real trigger at turn 150; one request authored "Unclosed Square" in 289.7 s; the engine admitted it at safe point 2. The player never left DL2, so there was no placement. Its replay exposed a replay-parser bug with ordinary observation records, which this PR fixes (six regression tests). The replay was then exact, but the live save had not been copied. Details: <a href="attempt-001/checks.json">attempt 001 checks</a>, <a href="replay-002/checks.json">its replay</a>, <a href="replay-002/verification.json">fast suite at that point</a>, <a href="artifacts.json">its artifact inventory</a>.</p>
+
+<h2>Evidence</h2>
+<p><a href="attempt-013/checks.json">Live checks</a> · <a href="attempt-013/player-saw.txt">Verbatim player text</a> · <a href="attempt-013/run/events.jsonl">events.jsonl</a> · <a href="attempt-013/run/curio-lane.json">curio-lane.json</a> · evidence directory: <a href="attempt-013/run/curio-evidence/prompt.json">prompt</a>, <a href="attempt-013/run/curio-evidence/raw-response.txt">raw response</a>, <a href="attempt-013/run/curio-evidence/source.lua">source</a>, <a href="attempt-013/run/curio-evidence/receipt.json">receipt</a>, <a href="attempt-013/run/curio-evidence/admission.json">admission</a> · <a href="attempt-013/ledger-rows.json">ledger rows</a> · <a href="attempt-013/fork-lane.jsonl">fork diagnostics</a> · <a href="replay-013/checks.json">replay checks</a> · <a href="attempts-q3.json">all attempts</a> · <a href="artifacts-q3.json">retained-artifact checksums</a></p>
+<p>The ledger rows and receipts hold provider, model, latency, status and token counts only. They contain no credentials or headers. Raw terminal bytes, save snapshots and the executed harnesses are retained outside the repository; <code>artifacts-q3.json</code> lists their checksums.</p>
+</main></html>

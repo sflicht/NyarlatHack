@@ -1,0 +1,34 @@
+{
+  "fast_invocations": {
+    "fast-after-replay-fix.log": {
+      "tests": 1501,
+      "seconds": 196.515,
+      "outcome": "FAILED (errors=22, skipped=238)",
+      "sha256": "f604fb170762a96fc3996a42bd7fe7d1b11ab4f8c4c9301786af013e7bb57855",
+      "durable_path": "/home/hermes/.hermes/reports/nyarlathack-3b/fast-after-replay-fix.log"
+    },
+    "fast-clean-env.log": {
+      "tests": 1770,
+      "seconds": 203.634,
+      "outcome": "OK (skipped=238)",
+      "sha256": "a807b383ea67fba4f50267ac4151db228bfbc8803ddc2a2a1bbd08e563350c7f",
+      "durable_path": "/home/hermes/.hermes/reports/nyarlathack-3b/fast-clean-env.log"
+    }
+  },
+  "lint": "ruff 0.15.10 check and format --check chaos tests/chaos scripts: passed; 235 files already formatted",
+  "full_native": "pending on new PR head",
+  "mode_builds": "capture CHAOS=1 warning-clean; new-head CI pending",
+  "skip_reasons": {
+    "real game opt-in": 207,
+    "requires chown privilege": 1,
+    "native opt-in": 5,
+    "explicit native evidence required": 4,
+    "opt-in real turn-loop driver": 1,
+    "native artifacts required": 4,
+    "historical evidence not configured; set NYARLATHACK_TURNLOOP_STOCK_TUPLE, NYARLATHACK_TURNLOOP_STOCK_RECEIPT, NYARLATHACK_TURNLOOP_STOCK_REVISION": 1,
+    "foreign ownership requires chown privilege": 1,
+    "opt-in actual game tests: NYARLATHACK_GAME_TESTS=1": 12,
+    "unconfigured common native-build profile": 1,
+    "ownership fixture needs chown": 1
+  }
+}

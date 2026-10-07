@@ -1,0 +1,181 @@
+{
+  "artifact_root": "/home/hermes/.hermes/reports/nyarlathack-3b",
+  "files": {
+    "attempt-001/dumplog/1700000000": {
+      "sha256": "66b0b1b8e2bb2710c1d090f12deed4be4a15bcff4bce06bea7fdb5303594bfc4",
+      "bytes": 4260
+    },
+    "attempt-001/fork-lane.jsonl": {
+      "sha256": "4092bd6bd006ca0192027450f291b405c8a73fe644efe3a4a29c682d17df0684",
+      "bytes": 1726
+    },
+    "attempt-001/inputs.json": {
+      "sha256": "3ef6f641a5f87f0e3d225901757de3e7ef284f1154f321553fc27203e5fde391",
+      "bytes": 8414
+    },
+    "attempt-001/ledger-after.json": {
+      "sha256": "e381af7334d34b8c1b5572bcc38fa78aa81bf41d5046aae4719aecac8a96d553",
+      "bytes": 1200
+    },
+    "attempt-001/ledger-before.json": {
+      "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "bytes": 2
+    },
+    "attempt-001/manifest.json": {
+      "sha256": "a7bfc13b8a23d70c6643dad859645181bb6e7dd3651b21641dacba7d8ea89690",
+      "bytes": 1307
+    },
+    "attempt-001/policy-inputs.json": {
+      "sha256": "88676961333c2c1cb063a61c55b9bc19e042a5825e8e9e2f45d718eda9ae320d",
+      "bytes": 3794
+    },
+    "attempt-001/preflight.json": {
+      "sha256": "6a8edcf9b99dccd0d263138b8b0fceedccf3d7cf89cdf484eabe1bc4ac566e6a",
+      "bytes": 1720
+    },
+    "attempt-001/result.json": {
+      "sha256": "bc49fb6e2b2c045734b2139b4aac34e973f767a1919ce6f63b3ebe6dc3da6f5b",
+      "bytes": 43020
+    },
+    "attempt-001/run/.director.lock": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "attempt-001/run/curio-evidence/install.json": {
+      "sha256": "f89507139e58e65760b949171584f40a59d83f6c9a89b5ad5f78ece4c8b7fa72",
+      "bytes": 100
+    },
+    "attempt-001/run/curio-evidence/prompt.json": {
+      "sha256": "b87a922839d3d524f49a72a9ebd300988e18ee1bcd4749ad03504e84c7d00e0d",
+      "bytes": 10866
+    },
+    "attempt-001/run/curio-evidence/raw-response.txt": {
+      "sha256": "ea6705dc68156ae89a566dae55ad619b89025f56ec6f7279431fe287ba9fe050",
+      "bytes": 2762
+    },
+    "attempt-001/run/curio-evidence/receipt.json": {
+      "sha256": "bfd1a7d53f0d6799e11665877acf21f49c29ef83c085da247bc8ed7803e8799f",
+      "bytes": 3773
+    },
+    "attempt-001/run/curio-evidence/source.lua": {
+      "sha256": "fcbb97db5434501f2d9f7e15a5087fcfe448f1db1d37ae01eed9b9306a8713d7",
+      "bytes": 2452
+    },
+    "attempt-001/run/curio-lane.json": {
+      "sha256": "ab8ff7f137e62ccc261916cd49a2c3549c573265d39aa5b26e894699c513deb3",
+      "bytes": 150
+    },
+    "attempt-001/run/curio-used.lua": {
+      "sha256": "fcbb97db5434501f2d9f7e15a5087fcfe448f1db1d37ae01eed9b9306a8713d7",
+      "bytes": 2452
+    },
+    "attempt-001/run/curio.lua": {
+      "sha256": "fcbb97db5434501f2d9f7e15a5087fcfe448f1db1d37ae01eed9b9306a8713d7",
+      "bytes": 2452
+    },
+    "attempt-001/run/director.log": {
+      "sha256": "4a789238956c215bbe52d49906792a3c81661818fd1676299effd47c70962bea",
+      "bytes": 420
+    },
+    "attempt-001/run/dreamlands.json": {
+      "sha256": "9a901ee0ddf5ac1a781dfa3b6f9b9f08511c245033346bb6548eef4fce8f1f5a",
+      "bytes": 130
+    },
+    "attempt-001/run/events.jsonl": {
+      "sha256": "a4a0759bba04507d2de9f2204c2a4eca259d25b7a8adfc826ae628c68d6af961",
+      "bytes": 74236
+    },
+    "attempt-001/run/haunting-used.lua": {
+      "sha256": "4e4f0154dc8830c753f13af25b592ef255ba97e1be6cf81e019d4568f6cfa9e9",
+      "bytes": 440
+    },
+    "attempt-001/run/haunting.lua": {
+      "sha256": "4e4f0154dc8830c753f13af25b592ef255ba97e1be6cf81e019d4568f6cfa9e9",
+      "bytes": 440
+    },
+    "attempt-001/run/next_use-envelope.2.json": {
+      "sha256": "7545358d2bc5400b26617577d2db53c3c40829bdec45e0d06418e357c6a7d112",
+      "bytes": 552
+    },
+    "attempt-001/run/next_use-envelope.3.json": {
+      "sha256": "e38c548d7bd396790ce006e10b1fc7e15b37109adb1e56af3821ef6fe16836f9",
+      "bytes": 572
+    },
+    "attempt-001/run/next_use-envelope.json": {
+      "sha256": "078839ee87ce7e1f60c3b2a4b72e5b3c061a181bdac84b4e4b82a0c736dd61ce",
+      "bytes": 567
+    },
+    "attempt-001/run/next_use-lifecycle.jsonl": {
+      "sha256": "45773faf960c39c5b79419dd9de240fb6f34caba315cd9a7fe597e7b76ebe193",
+      "bytes": 247
+    },
+    "attempt-001/run/next_use-owner": {
+      "sha256": "4da937c0a8d43dee9b2ac5563bcd1bcfda8ff39294b8d7535d400d16a153c8df",
+      "bytes": 22
+    },
+    "attempt-001/run/next_use-receipt.jsonl": {
+      "sha256": "2fc3fc16dda5260f961be5459bda93a317ca6dbadbe880df4b7327a94d0228f9",
+      "bytes": 288
+    },
+    "attempt-001/run/next_use-schedule.jsonl": {
+      "sha256": "74174c1792369273820985a5b655ce4817daa35571f9a04a9a7f0b97f710b366",
+      "bytes": 2457
+    },
+    "attempt-001/run/ordinary-choice.json": {
+      "sha256": "aac8994a08b2b1612d9524e1d866f86c7b8696ae765c69ff5f16d1b5f241ba3b",
+      "bytes": 457
+    },
+    "attempt-001/run/reveal.json": {
+      "sha256": "ef0c50a777be2c1652e7681679b0e4e80709eaf53e7f13d7758d7e9f3251261d",
+      "bytes": 1040
+    },
+    "attempt-001/run/whisper.json": {
+      "sha256": "4b0cd99b961d9fbae63990bfde6a16731e40c5435f00e136bb7e83e97ce6e4a1",
+      "bytes": 79
+    },
+    "attempt-001/run/whispers.jsonl": {
+      "sha256": "cc606c8a4c4c3e146588a2d2a98ef2e721a425bbf2729513167552dcfa5e244c",
+      "bytes": 168
+    },
+    "attempt-001/terminal.raw": {
+      "sha256": "764a2714526b5c6d7f23b86d0c42bf349e387bd4a7ee93d45ce3dd9a0d71c426",
+      "bytes": 607433
+    },
+    "attempt-001/terminal.txt": {
+      "sha256": "7767fa797d084a46cd7815931bd485c16303772823dc023b1bd3599217b0d581",
+      "bytes": 254233
+    },
+    "attempt-001/xlogfile": {
+      "sha256": "8404b319b0897d7a38aa34451259781f0c5f775d7137e731b5a47f90555f760e",
+      "bytes": 396
+    },
+    "capture-tools/capture.py": {
+      "sha256": "ca01ed170464cc7bcbaec39e3b0da7894b32ceeca3e39ee574b1f951a22c78fd",
+      "bytes": 4682
+    },
+    "capture-tools/hermes-chaos.sh": {
+      "sha256": "cbe3c2d7cc255e18677fcf6e3699b3b10939982c46537698b0888a468a91985e",
+      "bytes": 222
+    },
+    "capture-tools/launch.py": {
+      "sha256": "6a107e62eaac5d8aca69bc50b7accd6e3daba49ea69651b37f38abaa863df9b5",
+      "bytes": 2826
+    },
+    "capture-tools/replay-chaos.sh": {
+      "sha256": "1fbcc33ea3450b4446ff7861340de0b473facd17c210bf051f536320b76b0b14",
+      "bytes": 229
+    },
+    "capture-tools/replay-launch.py": {
+      "sha256": "1dbebc2c34ca2a155a6a3a96b89f30402e9a41699d5afc2f2aee7e9b3b093f54",
+      "bytes": 1485
+    },
+    "capture-tools/replay.py": {
+      "sha256": "7f6b08aa35c80c0572ca911afe0f065b8e4bc0224b78ede7ce77f28f7eb04bea",
+      "bytes": 3593
+    },
+    "attempt-001/run/curio-evidence/admission.json": {
+      "bytes": 99,
+      "sha256": "6d5233f00b7e8a681082232e79c254bf9e7e7d711908b462a773c78c70473f4b"
+    }
+  }
+}

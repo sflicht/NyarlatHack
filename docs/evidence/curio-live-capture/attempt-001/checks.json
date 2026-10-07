@@ -1,0 +1,50 @@
+{
+  "outcome": "turn_limit",
+  "error": null,
+  "commands": 738,
+  "final_status": {
+    "dlvl": 2,
+    "hp": 13,
+    "hp_max": 13,
+    "turn": 2025,
+    "hunger": "Fainting"
+  },
+  "exit_code": 0,
+  "elapsed_s": 412.435,
+  "dlvl_timeline": [
+    [
+      1,
+      1
+    ],
+    [
+      338,
+      2
+    ]
+  ],
+  "save_restore": {
+    "attempted": true,
+    "session_detail": "restore"
+  },
+  "sync_timeouts": 0,
+  "verification_tier": "A (incomplete)",
+  "revision": "a2f2eac06475fdf7f08b527aa9e0432641a75f27",
+  "authorization_approx_utc": "2026-10-05T10:59:00Z",
+  "author_outcome": "ready",
+  "author_latency_s": 289.692,
+  "author_deadline_s": 480,
+  "requests": 1,
+  "trigger_turn": 150,
+  "engine_admission_safe": 2,
+  "public_history_verified": true,
+  "prompt_hash_verified": true,
+  "history_prefix_hash_verified": true,
+  "placement": false,
+  "inspection": false,
+  "application": false,
+  "replay": "deferred: hermes-heavy exit 75; not executed",
+  "save_comparison": "not available: live save was not copied before restore",
+  "fast_suite": "not run",
+  "native_suite": "not run",
+  "chaos_on_build": "exit 0; 0 warnings at capture revision",
+  "chaos_off_build": "not run"
+}

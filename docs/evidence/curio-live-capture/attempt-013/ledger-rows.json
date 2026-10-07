@@ -1,0 +1,42 @@
+[
+  {
+    "attempt": "42afe577968541f885213e5655d2b6b0",
+    "day": "2026-10-06",
+    "error_type": null,
+    "http_status": null,
+    "latency_s": null,
+    "model": "grok-4.7",
+    "prompt_sha256": "919399faa404bc07f43621c4e8c4ce746f0d33caa748b171fb23c2f47eeba6e3",
+    "provider": "xai-oauth",
+    "response_sha256": null,
+    "route": "hermes-xai-oauth",
+    "run_id": "d36af28fc90a6c9f58a9bec174a2f6ae",
+    "status": "reserved",
+    "surface": "curio",
+    "time": 1791329500.082,
+    "usage": null,
+    "v": 1
+  },
+  {
+    "attempt": "42afe577968541f885213e5655d2b6b0",
+    "day": "2026-10-06",
+    "error_type": null,
+    "http_status": 200,
+    "latency_s": 138.445,
+    "model": "grok-4.7",
+    "prompt_sha256": "919399faa404bc07f43621c4e8c4ce746f0d33caa748b171fb23c2f47eeba6e3",
+    "provider": "xai-oauth",
+    "response_sha256": "2c5747f35c47db728961d1c88578f8a5c40c8beaf4550de32706a08d626e5891",
+    "route": "hermes-xai-oauth",
+    "run_id": "d36af28fc90a6c9f58a9bec174a2f6ae",
+    "status": "completed",
+    "surface": "curio",
+    "time": 1791329638.528,
+    "usage": {
+      "completion_tokens": 14048,
+      "prompt_tokens": 3809,
+      "total_tokens": 17857
+    },
+    "v": 1
+  }
+]

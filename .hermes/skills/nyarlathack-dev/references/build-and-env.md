@@ -38,6 +38,12 @@ native-acceptance builds are done only by `scripts/prepare_native_ci.py` (see
   also `PKG_CONFIG_PATH=/usr/lib/x86_64-linux-gnu/pkgconfig`. When Lua setup
   fails, check `pkg-config --cflags --libs lua5.4` before treating errors as
   skips.
+- For test commands launched under tmux, use an explicit clean environment
+  (`env -i` plus HOME, PATH=/usr/bin:/bin, TMPDIR and the system pkg-config
+  settings). The tmux server may retain a different compiler/pkg-config PATH
+  from the current terminal. Merely setting PKG_CONFIG does not fix tests that
+  invoke the literal `pkg-config` command; preserve setup-failure logs and rerun
+  the unchanged suite with the corrected environment.
 - For an A/B build of another revision (`git archive` into a scratch root), run
   it under `env -i HOME=... PATH=/usr/bin:/bin ...`. Conda variables inherited
   by background shells break the `lua.h` include.
@@ -55,7 +61,12 @@ native-acceptance builds are done only by `scripts/prepare_native_ci.py` (see
   assignments in a scratch makefile; even `make -n` on the full makefile may
   regenerate dependency includes.
 - Don't regenerate `include/macromagic.h` unless its inputs changed (AGENTS.md).
-- Generated headers stay git-ignored.
+- Generated headers stay git-ignored. After `make clean`, even the fast suite
+  needs native headers for its compiled unit fixtures. A full development
+  install regenerates them under heavy admission. Preparing only `pm.h`,
+  `onames.h`, `gnames.h` and `verinfo.h` is insufficient: the save-layout reporter
+  also includes `date.h`, whose make target depends on the engine objects.
+  Retain missing-header failures; do not convert their setup errors into skips.
 
 ## Pitfalls
 

@@ -1,0 +1,113 @@
+{
+  "durable_root": "/home/hermes/.hermes/reports/nyarlathack-3b/replay-002",
+  "files": {
+    "terminal.txt": {
+      "bytes": 254231,
+      "sha256": "ba87485ed09a88b1a077656252fbfdf8cb1cb5d0f30e2cd91061b0843a15a6ce"
+    },
+    "terminal.raw": {
+      "bytes": 607431,
+      "sha256": "6df1f10c7253c473d4613628ab38f8121e106f4f7a13026ae37454fca745e1fb"
+    },
+    "xlogfile": {
+      "bytes": 396,
+      "sha256": "8404b319b0897d7a38aa34451259781f0c5f775d7137e731b5a47f90555f760e"
+    },
+    "result.json": {
+      "bytes": 793,
+      "sha256": "5ed494afbbbc655f7ff2d1ae282ef6027d454f8fb2c2c1374bae9d6a6194e0af"
+    },
+    "manifest.json": {
+      "bytes": 1307,
+      "sha256": "a7bfc13b8a23d70c6643dad859645181bb6e7dd3651b21641dacba7d8ea89690"
+    },
+    "inputs.json": {
+      "bytes": 8414,
+      "sha256": "3ef6f641a5f87f0e3d225901757de3e7ef284f1154f321553fc27203e5fde391"
+    },
+    "run/next_use-schedule.jsonl": {
+      "bytes": 2457,
+      "sha256": "74174c1792369273820985a5b655ce4817daa35571f9a04a9a7f0b97f710b366"
+    },
+    "run/curio.lua": {
+      "bytes": 2452,
+      "sha256": "fcbb97db5434501f2d9f7e15a5087fcfe448f1db1d37ae01eed9b9306a8713d7"
+    },
+    "run/next_use-owner": {
+      "bytes": 22,
+      "sha256": "86ba6d724d43da7692b293f68a0c6c405ce8b90f3ee3173bc93651a07615b833"
+    },
+    "run/curio-safe": {
+      "bytes": 2,
+      "sha256": "53c234e5e8472b6ac51c1ae1cab3fe06fad053beb8ebfd8977b010655bfdd3c3"
+    },
+    "run/curio-used.lua": {
+      "bytes": 2452,
+      "sha256": "fcbb97db5434501f2d9f7e15a5087fcfe448f1db1d37ae01eed9b9306a8713d7"
+    },
+    "run/events.jsonl": {
+      "bytes": 74236,
+      "sha256": "a4a0759bba04507d2de9f2204c2a4eca259d25b7a8adfc826ae628c68d6af961"
+    },
+    "run/dreamlands.json": {
+      "bytes": 130,
+      "sha256": "9a901ee0ddf5ac1a781dfa3b6f9b9f08511c245033346bb6548eef4fce8f1f5a"
+    },
+    "run/haunting-used.lua": {
+      "bytes": 440,
+      "sha256": "4e4f0154dc8830c753f13af25b592ef255ba97e1be6cf81e019d4568f6cfa9e9"
+    },
+    "run/next_use-envelope.3.json": {
+      "bytes": 572,
+      "sha256": "e75e7ab35c7d2ab88ef8262604bf75ffeb7fb18c5de4110f9db3e162372cb68f"
+    },
+    "run/director.log": {
+      "bytes": 420,
+      "sha256": "4a789238956c215bbe52d49906792a3c81661818fd1676299effd47c70962bea"
+    },
+    "run/ordinary-choice.json": {
+      "bytes": 361,
+      "sha256": "8f297d4c2d9b9513d4648fc2e8f7afca1b1fe1ea3823111eae1b5203908cf573"
+    },
+    "run/next_use-envelope.2.json": {
+      "bytes": 552,
+      "sha256": "6480b326e423a3effa3b30dff205574f864290ad655b0ff2d4564455040b916f"
+    },
+    "run/haunting.lua": {
+      "bytes": 440,
+      "sha256": "4e4f0154dc8830c753f13af25b592ef255ba97e1be6cf81e019d4568f6cfa9e9"
+    },
+    "run/next_use-lifecycle.jsonl": {
+      "bytes": 247,
+      "sha256": "45773faf960c39c5b79419dd9de240fb6f34caba315cd9a7fe597e7b76ebe193"
+    },
+    "run/reveal.json": {
+      "bytes": 1040,
+      "sha256": "ef0c50a777be2c1652e7681679b0e4e80709eaf53e7f13d7758d7e9f3251261d"
+    },
+    "run/.director.lock": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "run/next_use-envelope.json": {
+      "bytes": 567,
+      "sha256": "79f59fe66ea629bd663f4ce11cb00f6c9b924f2ff89cf965e480dba18818037d"
+    },
+    "run/whisper.json": {
+      "bytes": 79,
+      "sha256": "4b0cd99b961d9fbae63990bfde6a16731e40c5435f00e136bb7e83e97ce6e4a1"
+    },
+    "run/next_use-receipt.jsonl": {
+      "bytes": 288,
+      "sha256": "2fc3fc16dda5260f961be5459bda93a317ca6dbadbe880df4b7327a94d0228f9"
+    },
+    "run/whispers.jsonl": {
+      "bytes": 168,
+      "sha256": "cc606c8a4c4c3e146588a2d2a98ef2e721a425bbf2729513167552dcfa5e244c"
+    },
+    "dumplog/1700000000": {
+      "bytes": 4260,
+      "sha256": "66b0b1b8e2bb2710c1d090f12deed4be4a15bcff4bce06bea7fdb5303594bfc4"
+    }
+  }
+}

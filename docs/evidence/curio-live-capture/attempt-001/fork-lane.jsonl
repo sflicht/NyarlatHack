@@ -1,0 +1,9 @@
+{"backend": "<XaiBackend provider=xai-oauth model=grok-4.7 surface=curio>", "lane_state": "idle", "pid": 3192114, "t": 1791204395.017, "threads": ["MainThread"], "where": "launcher_before_fork"}
+{"pid": 3192124, "t": 1791204395.022, "threads": ["MainThread"], "where": "child_after_fork"}
+{"pid": 3192124, "record": {"evidence": null, "game": "2516b0149861c42f298374dba1b1a9f6", "outcome": null, "safe": 1, "seed": 8651954456802723314, "step": "requested", "v": 1}, "t": 1791204413.915, "threads": ["MainThread"], "where": "lane_transition"}
+{"backend": "<XaiBackend provider=xai-oauth model=grok-4.7 surface=curio>", "pid": 3192124, "t": 1791204413.916, "threads": ["MainThread", "Thread-1 (_author_logged)"], "where": "author_start"}
+{"latency_s": [289.692], "outcomes": ["ready"], "pid": 3192124, "t": 1791204703.648, "threads": ["MainThread", "Thread-1 (_author_logged)"], "where": "author_end"}
+{"pid": 3192124, "record": {"evidence": "curio-evidence", "game": "2516b0149861c42f298374dba1b1a9f6", "outcome": "ready", "safe": 1, "seed": 8651954456802723314, "step": "ready", "v": 1}, "t": 1791204703.807, "threads": ["MainThread"], "where": "lane_transition"}
+{"pid": 3192124, "record": {"evidence": "curio-evidence", "game": "2516b0149861c42f298374dba1b1a9f6", "outcome": "ready", "safe": 1, "seed": 8651954456802723314, "step": "published", "v": 1}, "t": 1791204703.815, "threads": ["MainThread"], "where": "lane_transition"}
+{"backend": "<XaiBackend provider=xai-oauth model=grok-4.7 surface=curio>", "lane_state": "published", "pid": 3192409, "t": 1791204734.441, "threads": ["MainThread"], "where": "launcher_before_fork"}
+{"pid": 3192421, "t": 1791204734.443, "threads": ["MainThread"], "where": "child_after_fork"}

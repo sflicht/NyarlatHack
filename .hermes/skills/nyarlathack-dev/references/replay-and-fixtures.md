@@ -16,6 +16,14 @@ controlled replay and ordinary (nonwizard) experiments. Deeper topic notes:
   restart policy; a fixture with per-effect resets is not ordinary replay.
 - Inherited external inputs (for example `MAIL`) can break replay even under
   fixed clock/entropy. Use an owned empty private mailbox (0700 dir, 0600 file).
+- Keep the deterministic native clock out of the Python model transport: launch
+  Python without `LD_PRELOAD`, then restore it only in the game child's environment,
+  so certificate checks, ledger dates and deadlines use real wall time.
+- Preserve the real model-ledger location when a PTY harness replaces `HOME`;
+  explicitly set the existing `XDG_DATA_HOME` and `HERMES_HOME`, without copying
+  credentials. Otherwise each private game home can silently get a fresh ledger.
+- Snapshot each native save immediately after its successful process exit and
+  before restore consumes it; a save/restore event alone cannot prove byte equality.
 
 ## Driving the game
 
@@ -74,6 +82,33 @@ controlled replay and ordinary (nonwizard) experiments. Deeper topic notes:
    its own identified child.
 8. Label synthetic history-removal experiments; never feed fabricated history into
    a positive native run. Automated wall time is not human pacing.
+
+## Separate ordinary capture players
+
+Keep lifecycle-capture policies separately named and out of the sweep gate's
+policy registry. Inject a specialized game driver through an optional factory;
+leave the default factory and the hash-pinned `gameplay_support.py` untouched.
+Use only public terminal glyphs, colors, inventory letters and menus to choose
+inputs. Enable native pet highlighting before excluding tame glyphs from combat.
+Do not use an authored item's private source/name as an inventory-selection oracle.
+
+Copy and hash completed native save files **before** invoking restore, which
+consumes the originals. A matching event stream is not save-byte equivalence.
+Accept the exact native question, `Do you want to know what watched you?`,
+then page its output; default
+harnesses can decline it even when the reveal file exists. Screen/IO unit fixtures
+validate driver contracts, not native pickup, application or printed Sanity effects;
+retain a separate real nonwizard smoke and exact input-tape replay before claiming
+that lifecycle. Bound unknown-menu handling and fail without inventing evidence.
+
+Intercept the native `Pick up what?` menu before the generic prompt handler
+cancels it. During a tool pickup, the public `(` group selector chooses tools
+across menu pages; Enter commits the selection. Keep that handler scoped to
+pickup, page preceding messages with a bound, and verify an inventory change
+before marking the square successful. Bound unsuccessful retries separately.
+Exercise the native menu with a controlled nonwizard fixture that drops an
+owned tool and a non-tool, then verifies only the tool returns; label this as
+menu-driver evidence, not natural discovery or a generated-curio encounter.
 
 ## Comparing dumplogs
 

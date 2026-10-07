@@ -1,0 +1,496 @@
+[
+  {
+    "attempt": 2,
+    "seed": 12,
+    "revision": "ff4adf393",
+    "outcome": "depth_limit",
+    "error": null,
+    "dlvl_timeline": [
+      [
+        1,
+        1
+      ],
+      [
+        357,
+        2
+      ],
+      [
+        771,
+        3
+      ]
+    ],
+    "curio_rows": [
+      [
+        356,
+        2,
+        "pre_admitted"
+      ],
+      [
+        356,
+        2,
+        "admitted"
+      ]
+    ],
+    "ledger": [
+      {
+        "status": "reserved",
+        "latency_s": null,
+        "http_status": null
+      },
+      {
+        "status": "completed",
+        "latency_s": 136.056,
+        "http_status": 200
+      }
+    ],
+    "seed_choice": "public seed-sweep-v2-179 bard-default-path rows (report fa61c7b66a830b94...): outcome turn_limit and a recorded DL3 arrival, ordered by earliest DL3 turn; seed 1 excluded (attempt 001)",
+    "game": "0ed309159886ab977a4a7a51cb602c32",
+    "note": ""
+  },
+  {
+    "attempt": 3,
+    "seed": 89,
+    "revision": "35cc2018e",
+    "outcome": "turn_limit",
+    "error": null,
+    "dlvl_timeline": [
+      [
+        1,
+        1
+      ],
+      [
+        3,
+        2
+      ],
+      [
+        322,
+        3
+      ]
+    ],
+    "curio_rows": [
+      [
+        321,
+        3,
+        "expired"
+      ]
+    ],
+    "ledger": [],
+    "seed_choice": "public seed-sweep-v2-179 bard-default-path rows (report fa61c7b66a830b94...): outcome turn_limit and a recorded DL3 arrival, ordered by earliest DL3 turn; seed 1 excluded (attempt 001); engine built from ff4adf39, C-identical to this head",
+    "game": "c2f295667fffb49d7136f3d40399b21f",
+    "note": "no request: trigger never fired before main DL3 (native expiry at turn 321)"
+  },
+  {
+    "attempt": 4,
+    "seed": 12,
+    "revision": "35cc2018e",
+    "outcome": "depth_limit",
+    "error": null,
+    "dlvl_timeline": [
+      [
+        1,
+        1
+      ],
+      [
+        357,
+        2
+      ],
+      [
+        771,
+        3
+      ]
+    ],
+    "curio_rows": [
+      [
+        356,
+        2,
+        "pre_admitted"
+      ],
+      [
+        356,
+        2,
+        "admitted"
+      ]
+    ],
+    "ledger": [
+      {
+        "status": "reserved",
+        "latency_s": null,
+        "http_status": null
+      },
+      {
+        "status": "completed",
+        "latency_s": 339.386,
+        "http_status": 200
+      }
+    ],
+    "seed_choice": "Seed 12 repeated: attempt 002 (seed 12, public sweep row turn_limit, DL3 at 636) recorded a real trigger and DL2 admission at turn 356 but the player took the Gnomish Mines branch staircase (public end screen); player now refuses branch staircases. Deviation from the declared earliest-DL3 order (next would be 25), disclosed.",
+    "game": "b1270886718dafb0ce5e283ad2a63add",
+    "note": ""
+  },
+  {
+    "attempt": 5,
+    "seed": 12,
+    "revision": "3dda60811",
+    "outcome": "harness_killed",
+    "error": null,
+    "dlvl_timeline": null,
+    "curio_rows": null,
+    "ledger": [
+      {
+        "status": "reserved",
+        "latency_s": null,
+        "http_status": null
+      }
+    ],
+    "seed_choice": "Seed 12 again after attempts 002 and 004 (same seed; both real triggers and DL2 admissions at turn 356, both then entered the Gnomish Mines because the game names a branch staircase only after it is used; 004's look-before-descend fix therefore missed it). The player now looks on arrival and climbs back. Seed from public seed-sweep-v2-179 data; disclosed deviation from the earliest-DL3 order.",
+    "game": "150115604fa7a08c358311a9045e53aa",
+    "note": "agent tool timeout killed the harness mid-request; reservation only, no completion recorded"
+  },
+  {
+    "attempt": 6,
+    "seed": 12,
+    "revision": "3dda60811",
+    "outcome": "harness_error",
+    "error": "RuntimeError: curio author did not settle within 500 seconds",
+    "dlvl_timeline": [
+      [
+        1,
+        1
+      ]
+    ],
+    "curio_rows": [],
+    "ledger": [
+      {
+        "status": "reserved",
+        "latency_s": null,
+        "http_status": null
+      },
+      {
+        "status": "completed",
+        "latency_s": 462.461,
+        "http_status": 200
+      },
+      {
+        "status": "reserved",
+        "latency_s": null,
+        "http_status": null
+      }
+    ],
+    "seed_choice": "Seed 12, repeat of attempt 005 (killed by the agent's own tool timeout mid-request; one reserved ledger row, no completion). Seed history: public seed-sweep-v2-179 row (turn_limit, DL3 at 636); attempts 002/004 on this seed had real triggers and DL2 admission at turn 356 then entered the Gnomish Mines; player now climbs back on arriving by a branch staircase.",
+    "game": "6cfd573940b8c7afb0080d21c4daf94b",
+    "note": "first response envelope_rejected (not JSON/over size) after 462 s; regeneration reserved, then harness 500 s wait bound expired"
+  },
+  {
+    "attempt": 7,
+    "seed": 12,
+    "revision": "3dda60811",
+    "outcome": "depth_limit",
+    "error": null,
+    "dlvl_timeline": [
+      [
+        1,
+        1
+      ],
+      [
+        357,
+        2
+      ],
+      [
+        771,
+        3
+      ]
+    ],
+    "curio_rows": [
+      [
+        356,
+        2,
+        "pre_admitted"
+      ],
+      [
+        356,
+        2,
+        "admitted"
+      ]
+    ],
+    "ledger": [
+      {
+        "status": "reserved",
+        "latency_s": null,
+        "http_status": null
+      },
+      {
+        "status": "completed",
+        "latency_s": 112.574,
+        "http_status": 200
+      }
+    ],
+    "seed_choice": "Seed 12 again (public seed-sweep-v2-179 row turn_limit, DL3 at 636). 006 ended in a harness error: its wait bound (500 s) expired during the lane's single regeneration after an envelope_rejected first response; bound raised to 600 s (harness pacing only).",
+    "game": "984274b6336925adb828e0ed599e1641",
+    "note": ""
+  },
+  {
+    "attempt": 8,
+    "seed": 12,
+    "revision": "c10130cc4",
+    "outcome": "died",
+    "error": null,
+    "dlvl_timeline": [
+      [
+        1,
+        1
+      ],
+      [
+        357,
+        2
+      ],
+      [
+        834,
+        3
+      ],
+      [
+        1150,
+        4
+      ]
+    ],
+    "curio_rows": [
+      [
+        833,
+        6,
+        "expired"
+      ]
+    ],
+    "ledger": [
+      {
+        "status": "reserved",
+        "latency_s": null,
+        "http_status": null
+      },
+      {
+        "status": "completed",
+        "latency_s": 221.29,
+        "http_status": 200
+      }
+    ],
+    "seed_choice": "Seed 12 again (public seed-sweep-v2-179 row turn_limit, DL3 at 636). 007 fell down the Mines branch stairs while Burdened and landed beside the up stair, so its arrival look missed the branch; the player now walks to the visible up staircase before looking.",
+    "game": "4edb003abfa68c102488ba14b44d5c2b",
+    "note": ""
+  },
+  {
+    "attempt": 9,
+    "seed": 12,
+    "revision": "c10130cc4",
+    "outcome": "depth_limit",
+    "error": null,
+    "dlvl_timeline": [
+      [
+        1,
+        1
+      ],
+      [
+        357,
+        2
+      ],
+      [
+        771,
+        3
+      ]
+    ],
+    "curio_rows": [
+      [
+        356,
+        2,
+        "pre_admitted"
+      ],
+      [
+        356,
+        2,
+        "admitted"
+      ]
+    ],
+    "ledger": [
+      {
+        "status": "reserved",
+        "latency_s": null,
+        "http_status": null
+      },
+      {
+        "status": "completed",
+        "latency_s": 225.109,
+        "http_status": 200
+      }
+    ],
+    "seed_choice": "Seed 12 again (public seed-sweep-v2-179 row turn_limit, DL3 at 636). 008 stayed in the main dungeon (DL3 at 834) but its single response was refused by the host truth check (item_named matched 'ring of' in 'A faint ring of wear'; a false positive, disclosed, gate unchanged).",
+    "game": "d7078644c8704c862c9a10a9bdb4049b",
+    "note": ""
+  },
+  {
+    "attempt": 10,
+    "seed": 12,
+    "revision": "bdecc5c84",
+    "outcome": "harness_error",
+    "error": "RuntimeError: curio author did not settle within 600 seconds",
+    "dlvl_timeline": [
+      [
+        1,
+        1
+      ]
+    ],
+    "curio_rows": [],
+    "ledger": [
+      {
+        "status": "reserved",
+        "latency_s": null,
+        "http_status": null
+      }
+    ],
+    "seed_choice": "Seed 12 again (public seed-sweep-v2-179 row turn_limit, DL3 at 636). 009 fell down the Mines branch stairs with the pet covering the up staircase, so no '<' was visible; the player now searches up to 3 turns for a visible '<' before walking to it and looking.",
+    "game": "dac6031a036db6fe0b5ee50512800979",
+    "note": "single request did not settle within the harness 600 s bound; no receipt"
+  },
+  {
+    "attempt": 11,
+    "seed": 12,
+    "revision": "bdecc5c84",
+    "outcome": "turn_limit",
+    "error": null,
+    "dlvl_timeline": [
+      [
+        1,
+        1
+      ],
+      [
+        361,
+        2
+      ]
+    ],
+    "curio_rows": [
+      [
+        356,
+        2,
+        "pre_admitted"
+      ],
+      [
+        356,
+        2,
+        "admitted"
+      ]
+    ],
+    "ledger": [
+      {
+        "status": "reserved",
+        "latency_s": null,
+        "http_status": null
+      },
+      {
+        "status": "completed",
+        "latency_s": 134.59,
+        "http_status": 200
+      }
+    ],
+    "seed_choice": "Seed 12 again (public seed-sweep-v2-179 row turn_limit, DL3 at 636). 010's single request did not settle within the harness's 600 s bound (no receipt; the 480 s authoring deadline did not bound the thread). Harness now waits up to 900 s and then plays on instead of erroring.",
+    "game": "6e5d77139895ddb358121a58922c0d7a",
+    "note": ""
+  },
+  {
+    "attempt": 12,
+    "seed": 12,
+    "revision": "2ab61ecdc",
+    "outcome": "turn_limit",
+    "error": null,
+    "dlvl_timeline": [
+      [
+        1,
+        1
+      ],
+      [
+        361,
+        2
+      ]
+    ],
+    "curio_rows": [
+      [
+        356,
+        2,
+        "pre_admitted"
+      ],
+      [
+        356,
+        2,
+        "admitted"
+      ]
+    ],
+    "ledger": [
+      {
+        "status": "reserved",
+        "latency_s": null,
+        "http_status": null
+      },
+      {
+        "status": "completed",
+        "latency_s": 152.807,
+        "http_status": 200
+      }
+    ],
+    "seed_choice": "Seed 12 again (public seed-sweep-v2-179 row turn_limit, DL3 at 636). 011 recognised the Mines branch and climbed back, then could not route to the main '>' seen across a dark DL2 room; the player now uses native travel to a remembered '>' once three edge searches are exhausted.",
+    "game": "e45d8fa02c03582aa3f41654926d1012",
+    "note": ""
+  },
+  {
+    "attempt": 13,
+    "seed": 12,
+    "revision": "476c74b10",
+    "outcome": "died",
+    "error": null,
+    "dlvl_timeline": [
+      [
+        1,
+        1
+      ],
+      [
+        361,
+        2
+      ],
+      [
+        715,
+        3
+      ]
+    ],
+    "curio_rows": [
+      [
+        356,
+        2,
+        "pre_admitted"
+      ],
+      [
+        356,
+        2,
+        "admitted"
+      ],
+      [
+        707,
+        2,
+        "placed"
+      ],
+      [
+        835,
+        3,
+        "applied requested=-1 actual=-1"
+      ]
+    ],
+    "ledger": [
+      {
+        "status": "reserved",
+        "latency_s": null,
+        "http_status": null
+      },
+      {
+        "status": "completed",
+        "latency_s": 138.445,
+        "http_status": 200
+      }
+    ],
+    "seed_choice": "Seed 12 again (public seed-sweep-v2-179 row turn_limit, DL3 at 636). 012 could not find DL2's main '>' (hidden corridor) and missed inventory rows overlaying the map; player now searches cardinal corridor dead ends first, explores enclosed dark room floor, and parses overlaid inventory rows. Player fixes were exercised on model-free rehearsals that staged 012's recorded curio (not evidence).",
+    "game": "d36af28fc90a6c9f58a9bec174a2f6ae",
+    "note": "QUALIFYING: placed on new main-dungeon DL3 at t707, pickup t835, inspect + apply t835 (Sanity -1), reveal opened on screen"
+  }
+]
