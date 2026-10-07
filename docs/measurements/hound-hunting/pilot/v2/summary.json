@@ -1,0 +1,764 @@
+{
+ "jobs": 20,
+ "requests": 27,
+ "outcomes": {
+  "deadline": 2,
+  "native_rejected": 7,
+  "ready": 18
+ },
+ "final_outcomes": {
+  "deadline": 2,
+  "ready": 18
+ },
+ "regenerations": 7,
+ "regenerated_then_ready": 6,
+ "precheck_failures": {
+  "cornered": 5,
+  "never_closes": 2
+ },
+ "latency_s": {
+  "n": 27,
+  "min": 80.381,
+  "p25": 122.1,
+  "median": 160.607,
+  "p75": 234.012,
+  "max": 540.195
+ },
+ "hunting_end_to_end": 18,
+ "distributions": {
+  "new_ready": {
+   "moved": {
+    "n": 216,
+    "min": 31,
+    "p25": 37,
+    "median": 40.0,
+    "p75": 45,
+    "max": 51
+   },
+   "contacts": {
+    "n": 216,
+    "min": 1,
+    "p25": 10,
+    "median": 17.0,
+    "p75": 26,
+    "max": 54
+   },
+   "min_dist": {
+    "n": 216,
+    "min": 1,
+    "p25": 1,
+    "median": 1.0,
+    "p75": 1,
+    "max": 1
+   },
+   "median_dist": {
+    "n": 216,
+    "min": 1,
+    "p25": 2,
+    "median": 2.0,
+    "p75": 3,
+    "max": 5
+   },
+   "max_damage": {
+    "n": 216,
+    "min": 0,
+    "p25": 1,
+    "median": 2.0,
+    "p75": 2,
+    "max": 2
+   },
+   "escaped": {
+    "n": 216,
+    "min": 1,
+    "p25": 1,
+    "median": 1.0,
+    "p75": 1,
+    "max": 1
+   },
+   "trials": 216,
+   "accepted": 216,
+   "contact_trials": 216,
+   "reached_within_1": 216
+  },
+  "new_all_sources": {
+   "moved": {
+    "n": 216,
+    "min": 31,
+    "p25": 37,
+    "median": 40.0,
+    "p75": 45,
+    "max": 51
+   },
+   "contacts": {
+    "n": 216,
+    "min": 1,
+    "p25": 10,
+    "median": 17.0,
+    "p75": 26,
+    "max": 54
+   },
+   "min_dist": {
+    "n": 216,
+    "min": 1,
+    "p25": 1,
+    "median": 1.0,
+    "p75": 1,
+    "max": 1
+   },
+   "median_dist": {
+    "n": 216,
+    "min": 1,
+    "p25": 2,
+    "median": 2.0,
+    "p75": 3,
+    "max": 5
+   },
+   "max_damage": {
+    "n": 216,
+    "min": 0,
+    "p25": 1,
+    "median": 2.0,
+    "p75": 2,
+    "max": 2
+   },
+   "escaped": {
+    "n": 216,
+    "min": 1,
+    "p25": 1,
+    "median": 1.0,
+    "p75": 1,
+    "max": 1
+   },
+   "trials": 216,
+   "accepted": 216,
+   "contact_trials": 216,
+   "reached_within_1": 216
+  },
+  "old_pilot": {
+   "moved": {
+    "n": 216,
+    "min": 2,
+    "p25": 25,
+    "median": 42.0,
+    "p75": 47,
+    "max": 64
+   },
+   "contacts": {
+    "n": 216,
+    "min": 0,
+    "p25": 0,
+    "median": 0.0,
+    "p75": 0,
+    "max": 5
+   },
+   "min_dist": {
+    "n": 216,
+    "min": 1,
+    "p25": 2,
+    "median": 3.0,
+    "p75": 4,
+    "max": 6
+   },
+   "median_dist": {
+    "n": 216,
+    "min": 2,
+    "p25": 3,
+    "median": 5.0,
+    "p75": 6,
+    "max": 14
+   },
+   "max_damage": {
+    "n": 216,
+    "min": 0,
+    "p25": 0,
+    "median": 0.0,
+    "p75": 0,
+    "max": 2
+   },
+   "escaped": {
+    "n": 216,
+    "min": 0,
+    "p25": 1,
+    "median": 1.0,
+    "p75": 1,
+    "max": 1
+   },
+   "trials": 216,
+   "accepted": 210,
+   "contact_trials": 12,
+   "reached_within_1": 12
+  },
+  "footsteps": {
+   "moved": {
+    "n": 12,
+    "min": 54,
+    "p25": 64,
+    "median": 64.0,
+    "p75": 64,
+    "max": 64
+   },
+   "contacts": {
+    "n": 12,
+    "min": 3,
+    "p25": 3,
+    "median": 7.5,
+    "p75": 12,
+    "max": 12
+   },
+   "min_dist": {
+    "n": 12,
+    "min": 1,
+    "p25": 1,
+    "median": 1.0,
+    "p75": 1,
+    "max": 1
+   },
+   "median_dist": {
+    "n": 12,
+    "min": 2,
+    "p25": 3,
+    "median": 3.0,
+    "p75": 3,
+    "max": 3
+   },
+   "max_damage": {
+    "n": 12,
+    "min": 0,
+    "p25": 0,
+    "median": 2.0,
+    "p75": 2,
+    "max": 2
+   },
+   "escaped": {
+    "n": 12,
+    "min": 1,
+    "p25": 1,
+    "median": 1.0,
+    "p75": 1,
+    "max": 1
+   },
+   "trials": 12,
+   "accepted": 12,
+   "contact_trials": 12,
+   "reached_within_1": 12
+  }
+ },
+ "rows": [
+  {
+   "job": "00-bard-00007",
+   "attempts": 2,
+   "outcomes": [
+    "native_rejected",
+    "ready"
+   ],
+   "precheck": [
+    "cornered",
+    null
+   ],
+   "latency_s": [
+    158.256,
+    171.655
+   ],
+   "final": "ready",
+   "engine_accepted": 12,
+   "hunting": true,
+   "tokens": [
+    {
+     "completion_tokens": 9008,
+     "prompt_tokens": 2873,
+     "total_tokens": 11881
+    },
+    {
+     "completion_tokens": 10037,
+     "prompt_tokens": 2873,
+     "total_tokens": 12910
+    }
+   ]
+  },
+  {
+   "job": "01-bard-00023",
+   "attempts": 1,
+   "outcomes": [
+    "ready"
+   ],
+   "precheck": [
+    null
+   ],
+   "latency_s": [
+    156.286
+   ],
+   "final": "ready",
+   "engine_accepted": 12,
+   "hunting": true,
+   "tokens": [
+    {
+     "completion_tokens": 9684,
+     "prompt_tokens": 2833,
+     "total_tokens": 12517
+    }
+   ]
+  },
+  {
+   "job": "02-bard-default-path-00007",
+   "attempts": 1,
+   "outcomes": [
+    "ready"
+   ],
+   "precheck": [
+    null
+   ],
+   "latency_s": [
+    112.628
+   ],
+   "final": "ready",
+   "engine_accepted": 12,
+   "hunting": true,
+   "tokens": [
+    {
+     "completion_tokens": 11197,
+     "prompt_tokens": 2977,
+     "total_tokens": 14174
+    }
+   ]
+  },
+  {
+   "job": "03-bard-default-path-00023",
+   "attempts": 2,
+   "outcomes": [
+    "native_rejected",
+    "ready"
+   ],
+   "precheck": [
+    "cornered",
+    null
+   ],
+   "latency_s": [
+    101.27,
+    196.048
+   ],
+   "final": "ready",
+   "engine_accepted": 12,
+   "hunting": true,
+   "tokens": [
+    {
+     "completion_tokens": 7400,
+     "prompt_tokens": 2833,
+     "total_tokens": 10233
+    },
+    {
+     "completion_tokens": 14056,
+     "prompt_tokens": 2833,
+     "total_tokens": 16889
+    }
+   ]
+  },
+  {
+   "job": "04-bard-default-path-00041",
+   "attempts": 1,
+   "outcomes": [
+    "ready"
+   ],
+   "precheck": [
+    null
+   ],
+   "latency_s": [
+    137.507
+   ],
+   "final": "ready",
+   "engine_accepted": 12,
+   "hunting": true,
+   "tokens": [
+    {
+     "completion_tokens": 15233,
+     "prompt_tokens": 2870,
+     "total_tokens": 18103
+    }
+   ]
+  },
+  {
+   "job": "05-bard-inherited-00007",
+   "attempts": 2,
+   "outcomes": [
+    "native_rejected",
+    "ready"
+   ],
+   "precheck": [
+    "cornered",
+    null
+   ],
+   "latency_s": [
+    132.981,
+    105.291
+   ],
+   "final": "ready",
+   "engine_accepted": 12,
+   "hunting": true,
+   "tokens": [
+    {
+     "completion_tokens": 7979,
+     "prompt_tokens": 2827,
+     "total_tokens": 10806
+    },
+    {
+     "completion_tokens": 5923,
+     "prompt_tokens": 2827,
+     "total_tokens": 8750
+    }
+   ]
+  },
+  {
+   "job": "06-bard-inherited-00023",
+   "attempts": 1,
+   "outcomes": [
+    "ready"
+   ],
+   "precheck": [
+    null
+   ],
+   "latency_s": [
+    324.218
+   ],
+   "final": "ready",
+   "engine_accepted": 12,
+   "hunting": true,
+   "tokens": [
+    {
+     "completion_tokens": 20063,
+     "prompt_tokens": 2824,
+     "total_tokens": 22887
+    }
+   ]
+  },
+  {
+   "job": "07-bard-inherited-00041",
+   "attempts": 2,
+   "outcomes": [
+    "native_rejected",
+    "ready"
+   ],
+   "precheck": [
+    "cornered",
+    null
+   ],
+   "latency_s": [
+    167.774,
+    93.32
+   ],
+   "final": "ready",
+   "engine_accepted": 12,
+   "hunting": true,
+   "tokens": [
+    {
+     "completion_tokens": 10025,
+     "prompt_tokens": 2688,
+     "total_tokens": 12713
+    },
+    {
+     "completion_tokens": 5979,
+     "prompt_tokens": 2688,
+     "total_tokens": 8667
+    }
+   ]
+  },
+  {
+   "job": "08-broad-restore-capture",
+   "attempts": 1,
+   "outcomes": [
+    "ready"
+   ],
+   "precheck": [
+    null
+   ],
+   "latency_s": [
+    80.381
+   ],
+   "final": "ready",
+   "engine_accepted": 12,
+   "hunting": true,
+   "tokens": [
+    {
+     "completion_tokens": 6682,
+     "prompt_tokens": 2880,
+     "total_tokens": 9562
+    }
+   ]
+  },
+  {
+   "job": "09-door-reluctance-capture",
+   "attempts": 1,
+   "outcomes": [
+    "ready"
+   ],
+   "precheck": [
+    null
+   ],
+   "latency_s": [
+    160.607
+   ],
+   "final": "ready",
+   "engine_accepted": 12,
+   "hunting": true,
+   "tokens": [
+    {
+     "completion_tokens": 9115,
+     "prompt_tokens": 2891,
+     "total_tokens": 12006
+    }
+   ]
+  },
+  {
+   "job": "10-madman-00007",
+   "attempts": 1,
+   "outcomes": [
+    "ready"
+   ],
+   "precheck": [
+    null
+   ],
+   "latency_s": [
+    143.528
+   ],
+   "final": "ready",
+   "engine_accepted": 12,
+   "hunting": true,
+   "tokens": [
+    {
+     "completion_tokens": 10775,
+     "prompt_tokens": 2694,
+     "total_tokens": 13469
+    }
+   ]
+  },
+  {
+   "job": "11-madman-00023",
+   "attempts": 1,
+   "outcomes": [
+    "ready"
+   ],
+   "precheck": [
+    null
+   ],
+   "latency_s": [
+    147.39
+   ],
+   "final": "ready",
+   "engine_accepted": 12,
+   "hunting": true,
+   "tokens": [
+    {
+     "completion_tokens": 9288,
+     "prompt_tokens": 2647,
+     "total_tokens": 11935
+    }
+   ]
+  },
+  {
+   "job": "12-madman-00041",
+   "attempts": 2,
+   "outcomes": [
+    "native_rejected",
+    "ready"
+   ],
+   "precheck": [
+    "never_closes",
+    null
+   ],
+   "latency_s": [
+    211.277,
+    122.1
+   ],
+   "final": "ready",
+   "engine_accepted": 12,
+   "hunting": true,
+   "tokens": [
+    {
+     "completion_tokens": 12190,
+     "prompt_tokens": 2645,
+     "total_tokens": 14835
+    },
+    {
+     "completion_tokens": 8688,
+     "prompt_tokens": 2645,
+     "total_tokens": 11333
+    }
+   ]
+  },
+  {
+   "job": "13-wizard-default-path-00007",
+   "attempts": 1,
+   "outcomes": [
+    "deadline"
+   ],
+   "precheck": [
+    null
+   ],
+   "latency_s": [
+    540.195
+   ],
+   "final": "deadline",
+   "engine_accepted": null,
+   "hunting": false,
+   "tokens": [
+    {
+     "completion_tokens": 12861,
+     "prompt_tokens": 2660,
+     "total_tokens": 15521
+    }
+   ]
+  },
+  {
+   "job": "14-wizard-default-path-00023",
+   "attempts": 1,
+   "outcomes": [
+    "ready"
+   ],
+   "precheck": [
+    null
+   ],
+   "latency_s": [
+    244.105
+   ],
+   "final": "ready",
+   "engine_accepted": 12,
+   "hunting": true,
+   "tokens": [
+    {
+     "completion_tokens": 13637,
+     "prompt_tokens": 2773,
+     "total_tokens": 16410
+    }
+   ]
+  },
+  {
+   "job": "15-wizard-default-path-00041",
+   "attempts": 1,
+   "outcomes": [
+    "ready"
+   ],
+   "precheck": [
+    null
+   ],
+   "latency_s": [
+    429.583
+   ],
+   "final": "ready",
+   "engine_accepted": 12,
+   "hunting": true,
+   "tokens": [
+    {
+     "completion_tokens": 10375,
+     "prompt_tokens": 2987,
+     "total_tokens": 13362
+    }
+   ]
+  },
+  {
+   "job": "16-bard-00007",
+   "attempts": 2,
+   "outcomes": [
+    "native_rejected",
+    "deadline"
+   ],
+   "precheck": [
+    "cornered",
+    null
+   ],
+   "latency_s": [
+    315.26,
+    279.024
+   ],
+   "final": "deadline",
+   "engine_accepted": null,
+   "hunting": false,
+   "tokens": [
+    {
+     "completion_tokens": 9377,
+     "prompt_tokens": 2872,
+     "total_tokens": 12249
+    },
+    {
+     "completion_tokens": 24059,
+     "prompt_tokens": 2872,
+     "total_tokens": 26931
+    }
+   ]
+  },
+  {
+   "job": "17-bard-00023",
+   "attempts": 1,
+   "outcomes": [
+    "ready"
+   ],
+   "precheck": [
+    null
+   ],
+   "latency_s": [
+    164.573
+   ],
+   "final": "ready",
+   "engine_accepted": 12,
+   "hunting": true,
+   "tokens": [
+    {
+     "completion_tokens": 10466,
+     "prompt_tokens": 2832,
+     "total_tokens": 13298
+    }
+   ]
+  },
+  {
+   "job": "18-bard-default-path-00007",
+   "attempts": 2,
+   "outcomes": [
+    "native_rejected",
+    "ready"
+   ],
+   "precheck": [
+    "never_closes",
+    null
+   ],
+   "latency_s": [
+    190.035,
+    234.012
+   ],
+   "final": "ready",
+   "engine_accepted": 12,
+   "hunting": true,
+   "tokens": [
+    {
+     "completion_tokens": 13972,
+     "prompt_tokens": 2978,
+     "total_tokens": 16950
+    },
+    {
+     "completion_tokens": 14578,
+     "prompt_tokens": 2978,
+     "total_tokens": 17556
+    }
+   ]
+  },
+  {
+   "job": "19-bard-default-path-00023",
+   "attempts": 1,
+   "outcomes": [
+    "ready"
+   ],
+   "precheck": [
+    null
+   ],
+   "latency_s": [
+    90.66
+   ],
+   "final": "ready",
+   "engine_accepted": 12,
+   "hunting": true,
+   "tokens": [
+    {
+     "completion_tokens": 7492,
+     "prompt_tokens": 2830,
+     "total_tokens": 10322
+    }
+   ]
+  }
+ ]
+}

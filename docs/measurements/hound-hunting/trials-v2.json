@@ -1,0 +1,4657 @@
+{
+ "00-bard-00007": {
+  "source_sha256": "40005c163de2a07d2a85653427f10c40e76d712091650e0ee1f38e1c7744c4b9",
+  "trials": [
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 9,
+     "contacts": 39,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 1,
+     "min_dist": 1,
+     "moved": 42,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-6x4",
+    "seed": 1
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 9,
+     "contacts": 39,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 1,
+     "min_dist": 1,
+     "moved": 42,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-6x4",
+    "seed": 2
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 9,
+     "contacts": 39,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 1,
+     "min_dist": 1,
+     "moved": 42,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-6x4",
+    "seed": 3
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 4,
+     "contacts": 15,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 3,
+     "min_dist": 1,
+     "moved": 45,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-12x6",
+    "seed": 1
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 4,
+     "contacts": 15,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 3,
+     "min_dist": 1,
+     "moved": 45,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-12x6",
+    "seed": 2
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 4,
+     "contacts": 15,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 0,
+     "median_dist": 3,
+     "min_dist": 1,
+     "moved": 45,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-12x6",
+    "seed": 3
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 6,
+     "contacts": 22,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 3,
+     "min_dist": 1,
+     "moved": 43,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-20x8",
+    "seed": 1
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 6,
+     "contacts": 22,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 3,
+     "min_dist": 1,
+     "moved": 43,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-20x8",
+    "seed": 2
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 6,
+     "contacts": 22,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 3,
+     "min_dist": 1,
+     "moved": 43,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-20x8",
+    "seed": 3
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 11,
+     "contacts": 17,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 0,
+     "median_dist": 2,
+     "min_dist": 1,
+     "moved": 40,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "cornered-194",
+    "seed": 1
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 11,
+     "contacts": 17,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 2,
+     "min_dist": 1,
+     "moved": 40,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "cornered-194",
+    "seed": 2
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 11,
+     "contacts": 17,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 2,
+     "min_dist": 1,
+     "moved": 40,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "cornered-194",
+    "seed": 3
+   }
+  ]
+ },
+ "01-bard-00023": {
+  "source_sha256": "c4e5d27e0cb663293522392610c820f0df3ed7746033e2f202e7ccf8dbc87573",
+  "trials": [
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 12,
+     "contacts": 37,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 1,
+     "min_dist": 1,
+     "moved": 32,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-6x4",
+    "seed": 1
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 12,
+     "contacts": 37,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 1,
+     "min_dist": 1,
+     "moved": 32,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-6x4",
+    "seed": 2
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 12,
+     "contacts": 37,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 1,
+     "min_dist": 1,
+     "moved": 32,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-6x4",
+    "seed": 3
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 3,
+     "contacts": 17,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 1,
+     "median_dist": 3,
+     "min_dist": 1,
+     "moved": 40,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-12x6",
+    "seed": 1
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 3,
+     "contacts": 17,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 3,
+     "min_dist": 1,
+     "moved": 40,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-12x6",
+    "seed": 2
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 3,
+     "contacts": 17,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 3,
+     "min_dist": 1,
+     "moved": 40,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-12x6",
+    "seed": 3
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 1,
+     "contacts": 5,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 0,
+     "median_dist": 4,
+     "min_dist": 1,
+     "moved": 40,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-20x8",
+    "seed": 1
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 1,
+     "contacts": 5,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 4,
+     "min_dist": 1,
+     "moved": 40,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-20x8",
+    "seed": 2
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 1,
+     "contacts": 5,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 4,
+     "min_dist": 1,
+     "moved": 40,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-20x8",
+    "seed": 3
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 8,
+     "contacts": 19,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 2,
+     "min_dist": 1,
+     "moved": 34,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "cornered-194",
+    "seed": 1
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 8,
+     "contacts": 19,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 2,
+     "min_dist": 1,
+     "moved": 34,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "cornered-194",
+    "seed": 2
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 8,
+     "contacts": 19,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 1,
+     "median_dist": 2,
+     "min_dist": 1,
+     "moved": 34,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "cornered-194",
+    "seed": 3
+   }
+  ]
+ },
+ "02-bard-default-path-00007": {
+  "source_sha256": "9bf38f0efc3f851f2a2b989d356bb62a2ba293c281512aa706e8df0a9d498903",
+  "trials": [
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 6,
+     "contacts": 34,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 1,
+     "min_dist": 1,
+     "moved": 44,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-6x4",
+    "seed": 1
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 6,
+     "contacts": 34,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 1,
+     "min_dist": 1,
+     "moved": 44,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-6x4",
+    "seed": 2
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 6,
+     "contacts": 34,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 1,
+     "min_dist": 1,
+     "moved": 44,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-6x4",
+    "seed": 3
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 4,
+     "contacts": 17,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 2,
+     "min_dist": 1,
+     "moved": 45,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-12x6",
+    "seed": 1
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 4,
+     "contacts": 17,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 2,
+     "min_dist": 1,
+     "moved": 45,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-12x6",
+    "seed": 2
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 4,
+     "contacts": 17,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 2,
+     "min_dist": 1,
+     "moved": 45,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-12x6",
+    "seed": 3
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 1,
+     "contacts": 4,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 0,
+     "median_dist": 4,
+     "min_dist": 1,
+     "moved": 48,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-20x8",
+    "seed": 1
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 1,
+     "contacts": 4,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 1,
+     "median_dist": 4,
+     "min_dist": 1,
+     "moved": 48,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-20x8",
+    "seed": 2
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 1,
+     "contacts": 4,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 1,
+     "median_dist": 4,
+     "min_dist": 1,
+     "moved": 48,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-20x8",
+    "seed": 3
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 15,
+     "contacts": 28,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 2,
+     "min_dist": 1,
+     "moved": 37,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "cornered-194",
+    "seed": 1
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 15,
+     "contacts": 28,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 2,
+     "min_dist": 1,
+     "moved": 37,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "cornered-194",
+    "seed": 2
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 15,
+     "contacts": 28,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 2,
+     "min_dist": 1,
+     "moved": 37,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "cornered-194",
+    "seed": 3
+   }
+  ]
+ },
+ "03-bard-default-path-00023": {
+  "source_sha256": "28b9b8891bb095dee65813181561d249864b3e74aa6f869f65389ee2ebfd22ab",
+  "trials": [
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 23,
+     "contacts": 54,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 1,
+     "min_dist": 1,
+     "moved": 35,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-6x4",
+    "seed": 1
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 23,
+     "contacts": 54,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 1,
+     "min_dist": 1,
+     "moved": 35,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-6x4",
+    "seed": 2
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 23,
+     "contacts": 54,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 1,
+     "min_dist": 1,
+     "moved": 35,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-6x4",
+    "seed": 3
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 7,
+     "contacts": 41,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 1,
+     "min_dist": 1,
+     "moved": 48,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-12x6",
+    "seed": 1
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 7,
+     "contacts": 41,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 1,
+     "min_dist": 1,
+     "moved": 48,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-12x6",
+    "seed": 2
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 7,
+     "contacts": 41,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 1,
+     "min_dist": 1,
+     "moved": 48,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-12x6",
+    "seed": 3
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 4,
+     "contacts": 24,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 1,
+     "median_dist": 3,
+     "min_dist": 1,
+     "moved": 51,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-20x8",
+    "seed": 1
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 4,
+     "contacts": 24,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 3,
+     "min_dist": 1,
+     "moved": 51,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-20x8",
+    "seed": 2
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 4,
+     "contacts": 24,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 3,
+     "min_dist": 1,
+     "moved": 51,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-20x8",
+    "seed": 3
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 19,
+     "contacts": 31,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 2,
+     "min_dist": 1,
+     "moved": 39,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "cornered-194",
+    "seed": 1
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 19,
+     "contacts": 31,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 2,
+     "min_dist": 1,
+     "moved": 39,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "cornered-194",
+    "seed": 2
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 19,
+     "contacts": 31,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 1,
+     "median_dist": 2,
+     "min_dist": 1,
+     "moved": 39,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "cornered-194",
+    "seed": 3
+   }
+  ]
+ },
+ "04-bard-default-path-00041": {
+  "source_sha256": "f64cb7fb686d032d8d20b0c588e0ed88991baaf83a6ee619a820264841679dae",
+  "trials": [
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 10,
+     "contacts": 34,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 1,
+     "min_dist": 1,
+     "moved": 41,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-6x4",
+    "seed": 1
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 10,
+     "contacts": 34,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 1,
+     "min_dist": 1,
+     "moved": 41,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-6x4",
+    "seed": 2
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 10,
+     "contacts": 34,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 1,
+     "median_dist": 1,
+     "min_dist": 1,
+     "moved": 41,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-6x4",
+    "seed": 3
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 2,
+     "contacts": 20,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 0,
+     "median_dist": 2,
+     "min_dist": 1,
+     "moved": 47,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-12x6",
+    "seed": 1
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 2,
+     "contacts": 20,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 2,
+     "min_dist": 1,
+     "moved": 47,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-12x6",
+    "seed": 2
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 2,
+     "contacts": 20,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 2,
+     "min_dist": 1,
+     "moved": 47,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-12x6",
+    "seed": 3
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 0,
+     "contacts": 1,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 0,
+     "median_dist": 4,
+     "min_dist": 1,
+     "moved": 48,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-20x8",
+    "seed": 1
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 0,
+     "contacts": 1,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 0,
+     "median_dist": 4,
+     "min_dist": 1,
+     "moved": 48,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-20x8",
+    "seed": 2
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 0,
+     "contacts": 1,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 0,
+     "median_dist": 4,
+     "min_dist": 1,
+     "moved": 48,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-20x8",
+    "seed": 3
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 20,
+     "contacts": 19,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 2,
+     "min_dist": 1,
+     "moved": 33,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "cornered-194",
+    "seed": 1
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 20,
+     "contacts": 19,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 2,
+     "min_dist": 1,
+     "moved": 33,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "cornered-194",
+    "seed": 2
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 20,
+     "contacts": 19,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 2,
+     "min_dist": 1,
+     "moved": 33,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "cornered-194",
+    "seed": 3
+   }
+  ]
+ },
+ "05-bard-inherited-00007": {
+  "source_sha256": "52646404cb1dbf55b4c5d2078c502c59f0136abf664c3609117016e4fcdf9dd3",
+  "trials": [
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 4,
+     "contacts": 25,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 1,
+     "median_dist": 2,
+     "min_dist": 1,
+     "moved": 38,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-6x4",
+    "seed": 1
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 4,
+     "contacts": 25,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 2,
+     "min_dist": 1,
+     "moved": 38,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-6x4",
+    "seed": 2
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 4,
+     "contacts": 25,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 2,
+     "min_dist": 1,
+     "moved": 38,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-6x4",
+    "seed": 3
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 4,
+     "contacts": 10,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 3,
+     "min_dist": 1,
+     "moved": 42,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-12x6",
+    "seed": 1
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 4,
+     "contacts": 10,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 1,
+     "median_dist": 3,
+     "min_dist": 1,
+     "moved": 42,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-12x6",
+    "seed": 2
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 4,
+     "contacts": 10,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 3,
+     "min_dist": 1,
+     "moved": 42,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-12x6",
+    "seed": 3
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 0,
+     "contacts": 2,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 0,
+     "median_dist": 4,
+     "min_dist": 1,
+     "moved": 47,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-20x8",
+    "seed": 1
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 0,
+     "contacts": 2,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 0,
+     "median_dist": 4,
+     "min_dist": 1,
+     "moved": 47,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-20x8",
+    "seed": 2
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 0,
+     "contacts": 2,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 1,
+     "median_dist": 4,
+     "min_dist": 1,
+     "moved": 47,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-20x8",
+    "seed": 3
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 10,
+     "contacts": 16,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 1,
+     "median_dist": 2,
+     "min_dist": 1,
+     "moved": 39,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "cornered-194",
+    "seed": 1
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 10,
+     "contacts": 16,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 2,
+     "min_dist": 1,
+     "moved": 39,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "cornered-194",
+    "seed": 2
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 10,
+     "contacts": 16,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 1,
+     "median_dist": 2,
+     "min_dist": 1,
+     "moved": 39,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "cornered-194",
+    "seed": 3
+   }
+  ]
+ },
+ "06-bard-inherited-00023": {
+  "source_sha256": "e6e9f6850a16e2c87ffe171bd50a65aa7e859ca727e69a641e65eca186bd4dce",
+  "trials": [
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 21,
+     "contacts": 53,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 1,
+     "median_dist": 1,
+     "min_dist": 1,
+     "moved": 37,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-6x4",
+    "seed": 1
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 21,
+     "contacts": 53,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 1,
+     "min_dist": 1,
+     "moved": 37,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-6x4",
+    "seed": 2
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 21,
+     "contacts": 53,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 1,
+     "min_dist": 1,
+     "moved": 37,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-6x4",
+    "seed": 3
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 10,
+     "contacts": 32,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 1,
+     "min_dist": 1,
+     "moved": 45,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-12x6",
+    "seed": 1
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 10,
+     "contacts": 32,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 1,
+     "min_dist": 1,
+     "moved": 45,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-12x6",
+    "seed": 2
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 10,
+     "contacts": 32,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 1,
+     "min_dist": 1,
+     "moved": 45,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-12x6",
+    "seed": 3
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 1,
+     "contacts": 16,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 3,
+     "min_dist": 1,
+     "moved": 51,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-20x8",
+    "seed": 1
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 1,
+     "contacts": 16,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 3,
+     "min_dist": 1,
+     "moved": 51,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-20x8",
+    "seed": 2
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 1,
+     "contacts": 16,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 3,
+     "min_dist": 1,
+     "moved": 51,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-20x8",
+    "seed": 3
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 22,
+     "contacts": 27,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 1,
+     "median_dist": 2,
+     "min_dist": 1,
+     "moved": 36,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "cornered-194",
+    "seed": 1
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 22,
+     "contacts": 27,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 2,
+     "min_dist": 1,
+     "moved": 36,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "cornered-194",
+    "seed": 2
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 22,
+     "contacts": 27,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 2,
+     "min_dist": 1,
+     "moved": 36,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "cornered-194",
+    "seed": 3
+   }
+  ]
+ },
+ "07-bard-inherited-00041": {
+  "source_sha256": "6d6e73b2ca901229efc460ab001504244e390644d7ffcec3c4fddbd52d96fcc2",
+  "trials": [
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 3,
+     "contacts": 26,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 2,
+     "min_dist": 1,
+     "moved": 46,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-6x4",
+    "seed": 1
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 3,
+     "contacts": 26,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 1,
+     "median_dist": 2,
+     "min_dist": 1,
+     "moved": 46,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-6x4",
+    "seed": 2
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 3,
+     "contacts": 26,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 2,
+     "min_dist": 1,
+     "moved": 46,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-6x4",
+    "seed": 3
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 2,
+     "contacts": 9,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 0,
+     "median_dist": 3,
+     "min_dist": 1,
+     "moved": 47,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-12x6",
+    "seed": 1
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 2,
+     "contacts": 9,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 3,
+     "min_dist": 1,
+     "moved": 47,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-12x6",
+    "seed": 2
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 2,
+     "contacts": 9,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 0,
+     "median_dist": 3,
+     "min_dist": 1,
+     "moved": 47,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-12x6",
+    "seed": 3
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 0,
+     "contacts": 2,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 0,
+     "median_dist": 4,
+     "min_dist": 1,
+     "moved": 48,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-20x8",
+    "seed": 1
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 0,
+     "contacts": 2,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 0,
+     "median_dist": 4,
+     "min_dist": 1,
+     "moved": 48,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-20x8",
+    "seed": 2
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 0,
+     "contacts": 2,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 0,
+     "median_dist": 4,
+     "min_dist": 1,
+     "moved": 48,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-20x8",
+    "seed": 3
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 10,
+     "contacts": 16,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 2,
+     "min_dist": 1,
+     "moved": 41,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "cornered-194",
+    "seed": 1
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 10,
+     "contacts": 16,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 2,
+     "min_dist": 1,
+     "moved": 41,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "cornered-194",
+    "seed": 2
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 10,
+     "contacts": 16,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 2,
+     "min_dist": 1,
+     "moved": 41,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "cornered-194",
+    "seed": 3
+   }
+  ]
+ },
+ "08-broad-restore-capture": {
+  "source_sha256": "accf5f7f328d20a367c1eb2187087f64a013a4ed96fc5a0fb67554e99c210424",
+  "trials": [
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 5,
+     "contacts": 30,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 2,
+     "min_dist": 1,
+     "moved": 41,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-6x4",
+    "seed": 1
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 5,
+     "contacts": 30,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 2,
+     "min_dist": 1,
+     "moved": 41,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-6x4",
+    "seed": 2
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 5,
+     "contacts": 30,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 2,
+     "min_dist": 1,
+     "moved": 41,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-6x4",
+    "seed": 3
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 2,
+     "contacts": 9,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 0,
+     "median_dist": 3,
+     "min_dist": 1,
+     "moved": 47,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-12x6",
+    "seed": 1
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 2,
+     "contacts": 9,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 3,
+     "min_dist": 1,
+     "moved": 47,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-12x6",
+    "seed": 2
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 2,
+     "contacts": 9,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 0,
+     "median_dist": 3,
+     "min_dist": 1,
+     "moved": 47,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-12x6",
+    "seed": 3
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 0,
+     "contacts": 2,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 0,
+     "median_dist": 4,
+     "min_dist": 1,
+     "moved": 48,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-20x8",
+    "seed": 1
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 0,
+     "contacts": 2,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 0,
+     "median_dist": 4,
+     "min_dist": 1,
+     "moved": 48,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-20x8",
+    "seed": 2
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 0,
+     "contacts": 2,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 0,
+     "median_dist": 4,
+     "min_dist": 1,
+     "moved": 48,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-20x8",
+    "seed": 3
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 8,
+     "contacts": 19,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 2,
+     "min_dist": 1,
+     "moved": 39,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "cornered-194",
+    "seed": 1
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 8,
+     "contacts": 19,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 1,
+     "median_dist": 2,
+     "min_dist": 1,
+     "moved": 39,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "cornered-194",
+    "seed": 2
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 8,
+     "contacts": 19,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 2,
+     "min_dist": 1,
+     "moved": 39,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "cornered-194",
+    "seed": 3
+   }
+  ]
+ },
+ "09-door-reluctance-capture": {
+  "source_sha256": "f17ac839c975a3427474b40af6c259818b425b2578ac6d76bbc3a215fc41a0ca",
+  "trials": [
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 15,
+     "contacts": 30,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 2,
+     "min_dist": 1,
+     "moved": 37,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-6x4",
+    "seed": 1
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 15,
+     "contacts": 30,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 2,
+     "min_dist": 1,
+     "moved": 37,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-6x4",
+    "seed": 2
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 15,
+     "contacts": 30,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 2,
+     "min_dist": 1,
+     "moved": 37,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-6x4",
+    "seed": 3
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 10,
+     "contacts": 18,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 2,
+     "min_dist": 1,
+     "moved": 41,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-12x6",
+    "seed": 1
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 10,
+     "contacts": 18,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 1,
+     "median_dist": 2,
+     "min_dist": 1,
+     "moved": 41,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-12x6",
+    "seed": 2
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 10,
+     "contacts": 18,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 2,
+     "min_dist": 1,
+     "moved": 41,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-12x6",
+    "seed": 3
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 1,
+     "contacts": 4,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 0,
+     "median_dist": 4,
+     "min_dist": 1,
+     "moved": 48,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-20x8",
+    "seed": 1
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 1,
+     "contacts": 4,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 0,
+     "median_dist": 4,
+     "min_dist": 1,
+     "moved": 48,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-20x8",
+    "seed": 2
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 1,
+     "contacts": 4,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 0,
+     "median_dist": 4,
+     "min_dist": 1,
+     "moved": 48,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-20x8",
+    "seed": 3
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 12,
+     "contacts": 29,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 2,
+     "min_dist": 1,
+     "moved": 39,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "cornered-194",
+    "seed": 1
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 12,
+     "contacts": 29,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 2,
+     "min_dist": 1,
+     "moved": 39,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "cornered-194",
+    "seed": 2
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 12,
+     "contacts": 29,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 1,
+     "median_dist": 2,
+     "min_dist": 1,
+     "moved": 39,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "cornered-194",
+    "seed": 3
+   }
+  ]
+ },
+ "10-madman-00007": {
+  "source_sha256": "0b86679fa62b9326aaedb1bf76106b1ce1bc7f23f081647416ad71c8cad754bd",
+  "trials": [
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 2,
+     "contacts": 28,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 2,
+     "min_dist": 1,
+     "moved": 40,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-6x4",
+    "seed": 1
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 2,
+     "contacts": 28,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 2,
+     "min_dist": 1,
+     "moved": 40,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-6x4",
+    "seed": 2
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 2,
+     "contacts": 28,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 2,
+     "min_dist": 1,
+     "moved": 40,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-6x4",
+    "seed": 3
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 7,
+     "contacts": 15,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 0,
+     "median_dist": 3,
+     "min_dist": 1,
+     "moved": 39,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-12x6",
+    "seed": 1
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 7,
+     "contacts": 15,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 1,
+     "median_dist": 3,
+     "min_dist": 1,
+     "moved": 39,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-12x6",
+    "seed": 2
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 7,
+     "contacts": 15,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 3,
+     "min_dist": 1,
+     "moved": 39,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-12x6",
+    "seed": 3
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 0,
+     "contacts": 4,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 5,
+     "min_dist": 1,
+     "moved": 43,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-20x8",
+    "seed": 1
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 0,
+     "contacts": 4,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 1,
+     "median_dist": 5,
+     "min_dist": 1,
+     "moved": 43,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-20x8",
+    "seed": 2
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 0,
+     "contacts": 4,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 5,
+     "min_dist": 1,
+     "moved": 43,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-20x8",
+    "seed": 3
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 9,
+     "contacts": 19,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 2,
+     "min_dist": 1,
+     "moved": 37,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "cornered-194",
+    "seed": 1
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 9,
+     "contacts": 19,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 2,
+     "min_dist": 1,
+     "moved": 37,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "cornered-194",
+    "seed": 2
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 9,
+     "contacts": 19,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 2,
+     "min_dist": 1,
+     "moved": 37,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "cornered-194",
+    "seed": 3
+   }
+  ]
+ },
+ "11-madman-00023": {
+  "source_sha256": "0037528b927c9bb6bed966d5993c42e745ea9b72b67304754a36f05784fa261b",
+  "trials": [
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 0,
+     "contacts": 20,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 2,
+     "min_dist": 1,
+     "moved": 40,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-6x4",
+    "seed": 1
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 0,
+     "contacts": 20,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 2,
+     "min_dist": 1,
+     "moved": 40,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-6x4",
+    "seed": 2
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 0,
+     "contacts": 20,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 1,
+     "median_dist": 2,
+     "min_dist": 1,
+     "moved": 40,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-6x4",
+    "seed": 3
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 0,
+     "contacts": 15,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 3,
+     "min_dist": 1,
+     "moved": 40,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-12x6",
+    "seed": 1
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 0,
+     "contacts": 15,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 3,
+     "min_dist": 1,
+     "moved": 40,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-12x6",
+    "seed": 2
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 0,
+     "contacts": 15,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 3,
+     "min_dist": 1,
+     "moved": 40,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-12x6",
+    "seed": 3
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 2,
+     "contacts": 8,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 4,
+     "min_dist": 1,
+     "moved": 40,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-20x8",
+    "seed": 1
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 2,
+     "contacts": 8,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 4,
+     "min_dist": 1,
+     "moved": 40,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-20x8",
+    "seed": 2
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 2,
+     "contacts": 8,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 4,
+     "min_dist": 1,
+     "moved": 40,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-20x8",
+    "seed": 3
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 6,
+     "contacts": 12,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 3,
+     "min_dist": 1,
+     "moved": 37,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "cornered-194",
+    "seed": 1
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 6,
+     "contacts": 12,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 3,
+     "min_dist": 1,
+     "moved": 37,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "cornered-194",
+    "seed": 2
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 6,
+     "contacts": 12,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 3,
+     "min_dist": 1,
+     "moved": 37,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "cornered-194",
+    "seed": 3
+   }
+  ]
+ },
+ "12-madman-00041": {
+  "source_sha256": "d48152c2c362177d79ef9249a4d98c5e069760043e1047e75133f2838996ae2a",
+  "trials": [
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 1,
+     "contacts": 20,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 2,
+     "min_dist": 1,
+     "moved": 39,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-6x4",
+    "seed": 1
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 1,
+     "contacts": 20,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 2,
+     "min_dist": 1,
+     "moved": 39,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-6x4",
+    "seed": 2
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 1,
+     "contacts": 20,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 1,
+     "median_dist": 2,
+     "min_dist": 1,
+     "moved": 39,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-6x4",
+    "seed": 3
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 1,
+     "contacts": 16,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 3,
+     "min_dist": 1,
+     "moved": 39,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-12x6",
+    "seed": 1
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 1,
+     "contacts": 16,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 3,
+     "min_dist": 1,
+     "moved": 39,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-12x6",
+    "seed": 2
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 1,
+     "contacts": 16,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 3,
+     "min_dist": 1,
+     "moved": 39,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-12x6",
+    "seed": 3
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 0,
+     "contacts": 3,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 5,
+     "min_dist": 1,
+     "moved": 40,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-20x8",
+    "seed": 1
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 0,
+     "contacts": 3,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 0,
+     "median_dist": 5,
+     "min_dist": 1,
+     "moved": 40,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-20x8",
+    "seed": 2
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 0,
+     "contacts": 3,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 0,
+     "median_dist": 5,
+     "min_dist": 1,
+     "moved": 40,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-20x8",
+    "seed": 3
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 12,
+     "contacts": 22,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 1,
+     "median_dist": 2,
+     "min_dist": 1,
+     "moved": 34,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "cornered-194",
+    "seed": 1
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 12,
+     "contacts": 22,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 2,
+     "min_dist": 1,
+     "moved": 34,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "cornered-194",
+    "seed": 2
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 12,
+     "contacts": 22,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 2,
+     "min_dist": 1,
+     "moved": 34,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "cornered-194",
+    "seed": 3
+   }
+  ]
+ },
+ "14-wizard-default-path-00023": {
+  "source_sha256": "b68a5a423cbf7909de0f47be061f988097b50ba22ed73861d27cbcfd10506330",
+  "trials": [
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 1,
+     "contacts": 19,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 1,
+     "median_dist": 2,
+     "min_dist": 1,
+     "moved": 48,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-6x4",
+    "seed": 1
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 1,
+     "contacts": 19,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 2,
+     "min_dist": 1,
+     "moved": 48,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-6x4",
+    "seed": 2
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 1,
+     "contacts": 19,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 1,
+     "median_dist": 2,
+     "min_dist": 1,
+     "moved": 48,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-6x4",
+    "seed": 3
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 2,
+     "contacts": 12,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 1,
+     "median_dist": 3,
+     "min_dist": 1,
+     "moved": 47,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-12x6",
+    "seed": 1
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 2,
+     "contacts": 12,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 3,
+     "min_dist": 1,
+     "moved": 47,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-12x6",
+    "seed": 2
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 2,
+     "contacts": 12,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 3,
+     "min_dist": 1,
+     "moved": 47,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-12x6",
+    "seed": 3
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 2,
+     "contacts": 7,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 1,
+     "median_dist": 4,
+     "min_dist": 1,
+     "moved": 47,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-20x8",
+    "seed": 1
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 2,
+     "contacts": 7,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 4,
+     "min_dist": 1,
+     "moved": 47,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-20x8",
+    "seed": 2
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 2,
+     "contacts": 7,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 4,
+     "min_dist": 1,
+     "moved": 47,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-20x8",
+    "seed": 3
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 9,
+     "contacts": 17,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 2,
+     "min_dist": 1,
+     "moved": 42,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "cornered-194",
+    "seed": 1
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 9,
+     "contacts": 17,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 1,
+     "median_dist": 2,
+     "min_dist": 1,
+     "moved": 42,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "cornered-194",
+    "seed": 2
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 9,
+     "contacts": 17,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 2,
+     "min_dist": 1,
+     "moved": 42,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "cornered-194",
+    "seed": 3
+   }
+  ]
+ },
+ "15-wizard-default-path-00041": {
+  "source_sha256": "74ca5f21070386cd13a66525f6803a290fe5ed5a00ff854c89ab8ee4a303a769",
+  "trials": [
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 11,
+     "contacts": 32,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 1,
+     "min_dist": 1,
+     "moved": 35,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-6x4",
+    "seed": 1
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 11,
+     "contacts": 32,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 1,
+     "min_dist": 1,
+     "moved": 35,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-6x4",
+    "seed": 2
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 11,
+     "contacts": 32,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 1,
+     "min_dist": 1,
+     "moved": 35,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-6x4",
+    "seed": 3
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 6,
+     "contacts": 20,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 2,
+     "min_dist": 1,
+     "moved": 40,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-12x6",
+    "seed": 1
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 6,
+     "contacts": 20,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 2,
+     "min_dist": 1,
+     "moved": 40,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-12x6",
+    "seed": 2
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 6,
+     "contacts": 20,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 2,
+     "min_dist": 1,
+     "moved": 40,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-12x6",
+    "seed": 3
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 7,
+     "contacts": 11,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 1,
+     "median_dist": 4,
+     "min_dist": 1,
+     "moved": 40,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-20x8",
+    "seed": 1
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 7,
+     "contacts": 11,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 0,
+     "median_dist": 4,
+     "min_dist": 1,
+     "moved": 40,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-20x8",
+    "seed": 2
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 7,
+     "contacts": 11,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 1,
+     "median_dist": 4,
+     "min_dist": 1,
+     "moved": 40,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-20x8",
+    "seed": 3
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 11,
+     "contacts": 15,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 2,
+     "min_dist": 1,
+     "moved": 35,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "cornered-194",
+    "seed": 1
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 11,
+     "contacts": 15,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 2,
+     "min_dist": 1,
+     "moved": 35,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "cornered-194",
+    "seed": 2
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 11,
+     "contacts": 15,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 2,
+     "min_dist": 1,
+     "moved": 35,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "cornered-194",
+    "seed": 3
+   }
+  ]
+ },
+ "17-bard-00023": {
+  "source_sha256": "6795f1b45fa510ec9b3234db58f4c55fca85d48bab02383cdbdd05ff1d251c5d",
+  "trials": [
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 9,
+     "contacts": 29,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 1,
+     "median_dist": 2,
+     "min_dist": 1,
+     "moved": 31,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-6x4",
+    "seed": 1
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 9,
+     "contacts": 29,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 2,
+     "min_dist": 1,
+     "moved": 31,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-6x4",
+    "seed": 2
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 9,
+     "contacts": 29,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 2,
+     "min_dist": 1,
+     "moved": 31,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-6x4",
+    "seed": 3
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 3,
+     "contacts": 12,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 3,
+     "min_dist": 1,
+     "moved": 35,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-12x6",
+    "seed": 1
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 3,
+     "contacts": 12,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 1,
+     "median_dist": 3,
+     "min_dist": 1,
+     "moved": 35,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-12x6",
+    "seed": 2
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 3,
+     "contacts": 12,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 0,
+     "median_dist": 3,
+     "min_dist": 1,
+     "moved": 35,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-12x6",
+    "seed": 3
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 1,
+     "contacts": 5,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 1,
+     "median_dist": 4,
+     "min_dist": 1,
+     "moved": 39,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-20x8",
+    "seed": 1
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 1,
+     "contacts": 5,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 4,
+     "min_dist": 1,
+     "moved": 39,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-20x8",
+    "seed": 2
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 1,
+     "contacts": 5,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 0,
+     "median_dist": 4,
+     "min_dist": 1,
+     "moved": 39,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-20x8",
+    "seed": 3
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 9,
+     "contacts": 18,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 2,
+     "min_dist": 1,
+     "moved": 32,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "cornered-194",
+    "seed": 1
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 9,
+     "contacts": 18,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 2,
+     "min_dist": 1,
+     "moved": 32,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "cornered-194",
+    "seed": 2
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 9,
+     "contacts": 18,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 2,
+     "min_dist": 1,
+     "moved": 32,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "cornered-194",
+    "seed": 3
+   }
+  ]
+ },
+ "18-bard-default-path-00007": {
+  "source_sha256": "586fc76829857bb207cf5bf06155c5c83ac0188cb8b8d749762c3c90dbe2eb55",
+  "trials": [
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 0,
+     "contacts": 15,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 2,
+     "min_dist": 1,
+     "moved": 37,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-6x4",
+    "seed": 1
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 0,
+     "contacts": 15,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 1,
+     "median_dist": 2,
+     "min_dist": 1,
+     "moved": 37,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-6x4",
+    "seed": 2
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 0,
+     "contacts": 15,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 1,
+     "median_dist": 2,
+     "min_dist": 1,
+     "moved": 37,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-6x4",
+    "seed": 3
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 0,
+     "contacts": 5,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 4,
+     "min_dist": 1,
+     "moved": 37,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-12x6",
+    "seed": 1
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 0,
+     "contacts": 5,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 1,
+     "median_dist": 4,
+     "min_dist": 1,
+     "moved": 37,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-12x6",
+    "seed": 2
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 0,
+     "contacts": 5,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 0,
+     "median_dist": 4,
+     "min_dist": 1,
+     "moved": 37,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-12x6",
+    "seed": 3
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 1,
+     "contacts": 8,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 0,
+     "median_dist": 5,
+     "min_dist": 1,
+     "moved": 38,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-20x8",
+    "seed": 1
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 1,
+     "contacts": 8,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 5,
+     "min_dist": 1,
+     "moved": 38,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-20x8",
+    "seed": 2
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 1,
+     "contacts": 8,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 5,
+     "min_dist": 1,
+     "moved": 38,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-20x8",
+    "seed": 3
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 7,
+     "contacts": 17,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 2,
+     "min_dist": 1,
+     "moved": 33,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "cornered-194",
+    "seed": 1
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 7,
+     "contacts": 17,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 2,
+     "min_dist": 1,
+     "moved": 33,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "cornered-194",
+    "seed": 2
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 7,
+     "contacts": 17,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 2,
+     "min_dist": 1,
+     "moved": 33,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "cornered-194",
+    "seed": 3
+   }
+  ]
+ },
+ "19-bard-default-path-00023": {
+  "source_sha256": "a5d2a190fda76929dab05d55c8b2750d5452a39ffff4eed6d85447c22fc17b95",
+  "trials": [
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 3,
+     "contacts": 17,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 2,
+     "min_dist": 1,
+     "moved": 41,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-6x4",
+    "seed": 1
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 3,
+     "contacts": 17,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 2,
+     "min_dist": 1,
+     "moved": 41,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-6x4",
+    "seed": 2
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 3,
+     "contacts": 17,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 2,
+     "min_dist": 1,
+     "moved": 41,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-6x4",
+    "seed": 3
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 0,
+     "contacts": 3,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 0,
+     "median_dist": 3,
+     "min_dist": 1,
+     "moved": 47,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-12x6",
+    "seed": 1
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 0,
+     "contacts": 3,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 0,
+     "median_dist": 3,
+     "min_dist": 1,
+     "moved": 47,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-12x6",
+    "seed": 2
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 0,
+     "contacts": 3,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 3,
+     "min_dist": 1,
+     "moved": 47,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-12x6",
+    "seed": 3
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 2,
+     "contacts": 6,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 0,
+     "median_dist": 4,
+     "min_dist": 1,
+     "moved": 45,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-20x8",
+    "seed": 1
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 2,
+     "contacts": 6,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 0,
+     "median_dist": 4,
+     "min_dist": 1,
+     "moved": 45,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-20x8",
+    "seed": 2
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 2,
+     "contacts": 6,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 1,
+     "median_dist": 4,
+     "min_dist": 1,
+     "moved": 45,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-20x8",
+    "seed": 3
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 8,
+     "contacts": 13,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 2,
+     "min_dist": 1,
+     "moved": 39,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "cornered-194",
+    "seed": 1
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 8,
+     "contacts": 13,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 2,
+     "min_dist": 1,
+     "moved": 39,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "cornered-194",
+    "seed": 2
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 8,
+     "contacts": 13,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 2,
+     "min_dist": 1,
+     "moved": 39,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "cornered-194",
+    "seed": 3
+   }
+  ]
+ },
+ "footsteps": {
+  "source_sha256": "4e4f0154dc8830c753f13af25b592ef255ba97e1be6cf81e019d4568f6cfa9e9",
+  "trials": [
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 0,
+     "contacts": 12,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 3,
+     "min_dist": 1,
+     "moved": 64,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-6x4",
+    "seed": 1
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 0,
+     "contacts": 12,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 3,
+     "min_dist": 1,
+     "moved": 64,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-6x4",
+    "seed": 2
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 0,
+     "contacts": 12,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 3,
+     "min_dist": 1,
+     "moved": 64,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-6x4",
+    "seed": 3
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 0,
+     "contacts": 3,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 0,
+     "median_dist": 3,
+     "min_dist": 1,
+     "moved": 64,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-12x6",
+    "seed": 1
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 0,
+     "contacts": 3,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 3,
+     "min_dist": 1,
+     "moved": 64,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-12x6",
+    "seed": 2
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 0,
+     "contacts": 3,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 0,
+     "median_dist": 3,
+     "min_dist": 1,
+     "moved": 64,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-12x6",
+    "seed": 3
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 0,
+     "contacts": 3,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 0,
+     "median_dist": 3,
+     "min_dist": 1,
+     "moved": 64,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-20x8",
+    "seed": 1
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 0,
+     "contacts": 3,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 3,
+     "min_dist": 1,
+     "moved": 64,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-20x8",
+    "seed": 2
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 0,
+     "contacts": 3,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 0,
+     "median_dist": 3,
+     "min_dist": 1,
+     "moved": 64,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "bare-20x8",
+    "seed": 3
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 9,
+     "contacts": 12,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 1,
+     "median_dist": 2,
+     "min_dist": 1,
+     "moved": 54,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "cornered-194",
+    "seed": 1
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 9,
+     "contacts": 12,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 2,
+     "min_dist": 1,
+     "moved": 54,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "cornered-194",
+    "seed": 2
+   },
+   {
+    "exit": 0,
+    "reason": null,
+    "report": {
+     "accepted": 1,
+     "blocked": 9,
+     "contacts": 12,
+     "died": 0,
+     "escaped": 1,
+     "max_damage": 2,
+     "median_dist": 2,
+     "min_dist": 1,
+     "moved": 54,
+     "sandboxed": 1,
+     "script_errors": 0,
+     "steps": 64
+    },
+    "room": "cornered-194",
+    "seed": 3
+   }
+  ]
+ }
+}

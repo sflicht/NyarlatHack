@@ -83,3 +83,21 @@ Three v2 sources:
 - **12-madman-00041** (646 bytes): moves 5 beats out of 8 and rests 3. On
   two of the moving beats it lags one or two squares behind the player. Its
   first version was refused as never_closes; this is the regeneration.
+
+## Engine shadow trial (`../trials-v2.json`, `v2/summary.json`)
+
+The engine itself, at cc615cc5 plus `instrument.patch`, built CHAOS=1 with 0
+warnings. It runs 4 rooms × 3 seeds per source, the same as the baseline.
+`analyze.py` produced the summary.
+
+| Group | Trials | Accepted | Contact trials | Moved (median, range) | Contacts (median, range) | Median distance (median, range) | Max damage (max) |
+|---|---|---|---|---|---|---|---|
+| footsteps | 12 | 12 | 12 | 64 (54–64) | 7.5 (3–12) | 3 (2–3) | 2 |
+| #251 pilot, 18 sources | 216 | 210 | 12 | 42 (2–64) | 0 (0–5) | 5 (2–14) | 2 |
+| v2 ready, 18 sources | 216 | **216** | **216** | 40 (31–51) | 17 (1–54) | 2 (1–5) | 2 |
+
+**End-to-end hunting hounds: 18 of 20** jobs. To count, a job must end ready
+within 480 s, pass the pre-check, and be accepted by the engine in all 12 of
+its trials. For #251 by the same rule it is 0 of 20, since no #251 source
+passes the floor. The six #251 refusals were cornered trials on the #194 map.
+No v2 trial was refused, and none exceeded 2 damage.
