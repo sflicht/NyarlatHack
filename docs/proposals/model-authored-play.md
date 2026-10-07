@@ -583,3 +583,8 @@ with no hard-coded pin (§5.1), as Sam directed.
 2. **Measurement:** "I don't have a pool of players to AB test. I am just
    goung to play test imformally myself" (about 00:52Z). There is no formal
    people A/B; §6 and slice 4 are Sam's informal solo playtests.
+3. **Model hound default:** "On by default (Recommended)" (about 10:18Z).
+   With an xAI author configured, the model-designed hound replaces
+   footsteps.lua by default; `--haunt PACK` and `--no-haunt` still opt out,
+   and footsteps.lua stays the fallback when the hound lane fails (§4,
+   slice 5a).
