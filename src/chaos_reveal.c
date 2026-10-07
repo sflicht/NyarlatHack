@@ -242,11 +242,12 @@ static void haunting(struct chaos_reveal *r, const char *line, long turn)
             r->haunt_budget_seen = 1;
             ++r->rejected;
         }
-    } else if (is_str(line, "detail", "expired")) {
-        /* #165: the engine's lifecycle end (timeout or leaving the level)
-         * closes the latest still-open admitted haunt; nothing else. */
+    } else if (is_str(line, "detail", "expired") || is_str(line, "detail", "killed")) {
+        /* #165: the engine's lifecycle end (timeout or leaving the level, or
+         * the hound's death) closes the latest still-open admitted haunt;
+         * nothing else. */
         if ((e = latest(r, CHAOS_REVEAL_HAUNT)) && !e->ended) {
-            e->ended = 1;
+            e->ended = is_str(line, "detail", "killed") ? 2 : 1;
             e->end_turn = turn;
         }
     }
@@ -583,7 +584,9 @@ static void haunt_entry(const struct chaos_reveal_entry *e, const struct chaos_r
             e->steps, e->steps == 1 ? "" : "s");
     else
         out(emit, arg, "    Delivered: no; you never saw it follow your trail.");
-    if (e->ended)
+    if (e->ended == 2)
+        out(emit, arg, "    Ended: it was killed on turn %ld.", e->end_turn);
+    else if (e->ended)
         out(emit, arg, "    Ended: its hunt ended on turn %ld.", e->end_turn);
     else if (h->haunt_active && r->final_turn < h->haunt_until)
         out(emit, arg, "    Ended: still hunting when the game ended.");

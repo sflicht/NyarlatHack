@@ -255,6 +255,15 @@ void chaos_haunt_tick(int dir) {
   /* #165: the lifecycle end is logged; the event carries no game state. */
   h->active=0;chaos_event("haunting","result","expired");
  }
+ /* The hunt also ends when the hound dies (in practice the player's pet
+  * kills it, #201): it is no longer anywhere, not on this level's monster
+  * list, not migrating, not following the player. Checked at the same tick,
+  * after the expiry above, so a level change still reads "expired". Derived
+  * from the native monster lists only: nothing new saved, no RNG, no hook in
+  * upstream code. A game whose hound never dies logs nothing new. */
+ if(h->active && !find_mid(h->target,FM_EVERYWHERE)) {
+  h->active=0;chaos_event("haunting","result","killed");
+ }
  if(h->last_turn!=moves) {
   if(h->dnum!=u.uz.dnum || h->dlevel!=u.uz.dlevel)h->count=0;
   if(h->count && (h->history[h->count-1].x!=u.ux || h->history[h->count-1].y!=u.uy))

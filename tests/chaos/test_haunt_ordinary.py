@@ -75,7 +75,7 @@ class OrdinaryHauntTests(RetainOnFailure):
     def decided(self, game):
         return any(d in ("accepted", "rejected") for d in self.haunting(game))
 
-    def test_ordinary_haunt_trial_telegraph_hound_control_restore_expiry(self):
+    def test_ordinary_haunt_trial_telegraph_hound_control_restore_killed(self):
         # #198: next-use is default-on; this test is the hound alone.
         options = ["--ordinary", "--haunt", "--no-next-use", "--max-runtime", "300"]
         game = self.game("haunt", options)
@@ -150,15 +150,18 @@ class OrdinaryHauntTests(RetainOnFailure):
         self.assertEqual(len(restored), 1)
         self.assertEqual(restored[0]["spent"], 2)
 
-        # 7. Expiry: the admitted haunt ends 60 moves after admission.
+        # 7. The hunt ends. On this replay-clock map the pet kills the hound
+        # before the 60-move expiry (#201): the engine logs "killed" at the
+        # first tick after the game's own kill message, and nothing after.
         for _ in range(90):
-            if "expired" in self.haunting(game):
+            if {"expired", "killed"} & set(self.haunting(game)):
                 break
             player.step("s")
             self.assertNotIn("You die", player.screen.line(0))
-        self.assertEqual(self.haunting(game), ["pre_admitted", "accepted", "expired"])
-        expired = [e for e in game.events() if e["detail"] == "expired"][0]
-        self.assertGreaterEqual(expired["turn"], accepted["turn"] + 60)
+        self.assertEqual(self.haunting(game), ["pre_admitted", "accepted", "killed"])
+        self.assertIn(b"echo hound is killed", bytes(game.raw).lower())
+        ended = [e for e in game.events() if e["detail"] == "killed"][0]
+        self.assertLess(ended["turn"], accepted["turn"] + 60)
         steps = self.count(game, "haunt_step")
         for _ in range(3):
             player.step("s")
@@ -171,7 +174,8 @@ class OrdinaryHauntTests(RetainOnFailure):
         )
         section = dump[dump.index("The Crawling Chaos remembers.") :]
         self.assertIn("a haunting was admitted.", section)
-        self.assertIn(f"Ended: its hunt ended on turn {expired['turn']}.", section)
+        self.assertIn(f"Ended: it was killed on turn {ended['turn']}.", section)
+        self.assertNotIn("its hunt ended", section)
         # 9. #188: the engine's reveal record holds exactly the dumplog lines.
         record = json.loads((game.run / "reveal.json").read_text())
         lines = section.split("\n")[: len(record["lines"])]
@@ -220,7 +224,7 @@ class OrdinaryHauntTests(RetainOnFailure):
         self.assertEqual(accepted["spent"], 2)
         player.pace(lambda: False, limit=20)
         self.assertEqual(
-            [d for d in self.haunting(game) if d != "expired"],
+            [d for d in self.haunting(game) if d not in ("expired", "killed")],
             ["pre_admitted", "accepted"],
         )
         self.assertEqual(json.loads((game.run / "dreamlands.json").read_text()), report)
