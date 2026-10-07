@@ -1,0 +1,4 @@
+Screen excerpts (ANSI stripped; full stream in the report root).
+
+[status turn before: 52] Something has learned the rhythm of your footsteps.
+[status turn before: 2000] Something has learned the rhythm of your footsteps.

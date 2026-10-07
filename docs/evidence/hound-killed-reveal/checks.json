@@ -1,0 +1,109 @@
+{
+  "seed-7-replay": {
+    "byte_identical": {
+      "inputs.json": true,
+      "run/events.jsonl": true,
+      "run/whispers.jsonl": true,
+      "run/haunting-used.lua": true,
+      "run/dreamlands.json": true,
+      "run/reveal.json": true,
+      "xlogfile": true
+    },
+    "guarded_inputs": 1233,
+    "expected_inputs": 1233
+  },
+  "seed-4-replay": {
+    "byte_identical": {
+      "inputs.json": true,
+      "run/events.jsonl": true,
+      "run/whispers.jsonl": true,
+      "run/haunting-used.lua": true,
+      "run/dreamlands.json": true,
+      "run/reveal.json": true,
+      "xlogfile": true
+    },
+    "guarded_inputs": 728,
+    "expected_inputs": 728
+  },
+  "no_death_identity_vs_main": {
+    "seed-1": {
+      "main_revision": "6cccef246228392f199224c8b46199230e52a874",
+      "head_revision": "8a605ea0cb76d3209f237f7ad6eb4cf21139424e",
+      "byte_identical": {
+        "inputs.json": true,
+        "run/events.jsonl": true,
+        "run/whispers.jsonl": true,
+        "run/haunting-used.lua": true,
+        "run/dreamlands.json": true,
+        "run/reveal.json": true,
+        "xlogfile": true
+      },
+      "haunting": [
+        [
+          167,
+          "rejected"
+        ]
+      ]
+    },
+    "seed-2": {
+      "main_revision": "6cccef246228392f199224c8b46199230e52a874",
+      "head_revision": "8a605ea0cb76d3209f237f7ad6eb4cf21139424e",
+      "byte_identical": {
+        "inputs.json": true,
+        "run/events.jsonl": true,
+        "run/whispers.jsonl": true,
+        "run/haunting-used.lua": true,
+        "run/dreamlands.json": true,
+        "run/reveal.json": true,
+        "xlogfile": true
+      },
+      "haunting": [
+        [
+          51,
+          "pre_admitted"
+        ],
+        [
+          51,
+          "accepted"
+        ],
+        [
+          111,
+          "expired"
+        ]
+      ]
+    },
+    "seed-6": {
+      "main_revision": "6cccef246228392f199224c8b46199230e52a874",
+      "head_revision": "8a605ea0cb76d3209f237f7ad6eb4cf21139424e",
+      "byte_identical": {
+        "inputs.json": true,
+        "run/events.jsonl": true,
+        "run/whispers.jsonl": true,
+        "run/haunting-used.lua": true,
+        "run/dreamlands.json": true,
+        "run/reveal.json": true,
+        "xlogfile": true
+      },
+      "haunting": []
+    },
+    "seed-8": {
+      "main_revision": "6cccef246228392f199224c8b46199230e52a874",
+      "head_revision": "8a605ea0cb76d3209f237f7ad6eb4cf21139424e",
+      "byte_identical": {
+        "inputs.json": true,
+        "run/events.jsonl": true,
+        "run/whispers.jsonl": true,
+        "run/haunting-used.lua": true,
+        "run/dreamlands.json": true,
+        "run/reveal.json": true,
+        "xlogfile": true
+      },
+      "haunting": [
+        [
+          14,
+          "rejected"
+        ]
+      ]
+    }
+  }
+}

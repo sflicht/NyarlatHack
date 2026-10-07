@@ -62,7 +62,8 @@ enum chaos_reveal_slot_f {
 struct chaos_reveal_entry {
     int kind, id, mutation, value, duration, telegraph, cost;
     long turn, expires, end_turn;
-    int ended;                   /* an engine expiry/expired row exists */
+    int ended;                   /* an engine expiry/expired row exists;
+                                    haunt: 2 when it ended as "killed" */
     char why[24];                /* safe-point reason (whispers) */
     int steps;                   /* haunt: scripted steps committed in view */
     int uses, actual;            /* curio: application receipts, Sanity sum */

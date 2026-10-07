@@ -588,3 +588,14 @@ with no hard-coded pin (§5.1), as Sam directed.
    footsteps.lua by default; `--haunt PACK` and `--no-haunt` still opt out,
    and footsteps.lua stays the fallback when the hound lane fails (§4,
    slice 5a).
+4. **Hounds that hunt:** "Make hounds hunt (Recommended)" (about 11:39Z),
+   after the slice 5b capture showed the model hound is harmless (it steps
+   away whenever its next square would be adjacent to the player; shadow
+   receipt moved 3, blocked 60 of 64, contacts 0). The option Sam chose:
+   - revise the prompt to ask for a hound that presses and threatens but
+     stays escapable;
+   - make the trial refuse a hound that barely moves (regenerate or fall
+     back);
+   - make the reveal say when the hound was killed;
+   - then a fresh pilot of 20, comparing movement and closeness against
+     footsteps.

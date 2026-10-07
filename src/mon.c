@@ -5141,6 +5141,7 @@ register struct monst *mtmp;
 	}
 	/* we did not lifesave */
 	mtmp->deadmonster |= DEADMONSTER_DEAD;
+	chaos_haunt_died(mtmp);
 	mtmp->mbdrown = 0;
 	mtmp->mprobed = 0;
 	//Special messages (Nyarlathotep)

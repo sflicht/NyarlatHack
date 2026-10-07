@@ -1,0 +1,11 @@
+{
+  "revision": "8a605ea0cb76d3209f237f7ad6eb4cf21139424e",
+  "seed": 7,
+  "policy": "curio-capture-v1",
+  "launcher": [
+    "--ordinary",
+    "--max-runtime",
+    "86400"
+  ],
+  "replay_of": null
+}

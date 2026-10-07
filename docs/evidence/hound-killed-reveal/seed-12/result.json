@@ -1,0 +1,58 @@
+{
+  "outcome": "turn_limit",
+  "error": null,
+  "commands": 817,
+  "final_status": {
+    "dlvl": 3,
+    "hp": 13,
+    "hp_max": 13,
+    "turn": 2000,
+    "hunger": null
+  },
+  "exit_code": 0,
+  "elapsed_s": 117.759,
+  "save_restore": {
+    "attempted": true,
+    "session_detail": "restore"
+  },
+  "guarded_inputs": null,
+  "expected_inputs": null,
+  "haunt_rows": [
+    [
+      1,
+      5,
+      "telegraph",
+      "ambient"
+    ],
+    [
+      52,
+      10,
+      "haunting",
+      "pre_admitted"
+    ],
+    [
+      52,
+      11,
+      "haunting",
+      "accepted"
+    ],
+    [
+      53,
+      12,
+      "haunt_step",
+      ""
+    ],
+    [
+      55,
+      13,
+      "haunting",
+      "killed"
+    ],
+    [
+      667,
+      117,
+      "telegraph",
+      "door_reluctance"
+    ]
+  ]
+}

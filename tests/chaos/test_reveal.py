@@ -407,6 +407,31 @@ class RevealTests(unittest.TestCase):
         self.assertNotIn("refused", section)
         self.assertEqual(xlog, ":chaos_admitted=1:chaos_delivered=1:chaos_spent=3")
 
+    def test_haunt_killed_row_says_killed_on_its_turn(self):
+        self.append(
+            event_row(1, 5, "session", "new")
+            + event_row(2, 52, "haunting", "pre_admitted")
+            + event_row(3, 52, "haunting", "accepted")
+            + event_row(4, 82, "haunt_step", "")
+            + event_row(5, 88, "haunting", "killed")
+            # A later expiry row (it cannot follow a kill in the engine) must
+            # not overwrite the first end.
+            + event_row(6, 112, "haunting", "expired")
+        )
+        section, xlog = self.reveal_of("haunt_active")
+        self.assertEqual(len(self.entries(section)), 1, section)
+        self.assertIn("    Ended: it was killed on turn 88.", section)
+        self.assertNotIn("its hunt ended", section)
+        self.assertNotIn("still hunting", section)
+        self.assertNotIn("refused", section)
+        self.assertEqual(xlog, ":chaos_admitted=1:chaos_delivered=1:chaos_spent=3")
+
+    def test_haunt_killed_without_admission_is_ignored(self):
+        self.append(
+            event_row(1, 5, "session", "new") + event_row(2, 88, "haunting", "killed")
+        )
+        self.assertEqual(self.reveal_of(), ("", ""))
+
     def test_haunt_expired_without_admission_is_ignored(self):
         # An expired row with no admitted haunt narrates and counts nothing.
         self.append(

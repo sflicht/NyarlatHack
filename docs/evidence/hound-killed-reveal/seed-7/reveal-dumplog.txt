@@ -1,0 +1,40 @@
+The Crawling Chaos remembers.
+  Turn 1, as you arrived on a level: whisper 1 (ambient) was admitted.
+    Telegraph: "A distant whisper brushes against your thoughts."
+    Effect: an omen only; no rule changed.
+    Delivered: yes, "The shadows lean closer." was shown with the telegraph.
+    Spent at once.
+  Turn 10, after you doubled back: a haunting was admitted.
+    Telegraph: "Something has learned the rhythm of your footsteps."
+    Effect: an echo hound was set to follow your trail.
+    Delivered: yes, you saw it follow your trail 1 time.
+    Ended: it was killed on turn 13.
+  Motif: the whistle, 1 program, felt 1 time.
+  Turn 385: next-use program 1 was admitted.
+    Origin: you whistled on DL2 on turn 385.
+    Rebound: first written about an earlier one (turn 5).
+    Telegraph: "For a while, your whistles may ring on after you stop."
+    Effect: for a while, any whistle could answer it, at most 2 times.
+    Delivered: yes, 2 times; the note rang on in your head and confused you.
+    Ended: its uses ran out or it expired before the game ended.
+  Turn 1065, as you prayed: whisper 2 (door_reluctance) was admitted.
+    Telegraph: "The doors of this place seem to lean against you."
+    Effect: closed doors resisted you more often, for 192 turns.
+    Delivered: no; a rule change has no separate manifestation.
+    Ended: expired on turn 1257.
+  Admitted 4, delivered 3; cruelty spent 4.
+  1 other candidate was refused; none took effect.
+
+Goodbye ChaosReview the Troubadour...
+You died in The Dungeons of Doom on dungeon level 3 with 236 points,
+and 0 pieces of gold, after 1356 moves.
+Killer: kobold, while fainted from lack of food
+You were level 2 with a maximum of 19 hit points when you died.
+
+You made the top ten list!
+
+ No  Points     Name                                                   Hp [max]
+* 1        236  ChaosRevie-Brd-Hum-Mal-Neu died in The Dungeons of             
+*               Doom on level 3.  Killed by a kobold, while fainted            
+                from lack of food.                                      -  [19]
+

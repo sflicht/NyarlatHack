@@ -246,6 +246,16 @@ static int candidate_look(int dir) {
  if(due && !fstatat(dir,"haunting.lua",&st,AT_SYMLINK_NOFOLLOW))return 1;
  empty_turn=moves;empty_seq=u.chaos.seq;return 0;
 }
+/* #201: the hunt also ends when the admitted hound dies (in practice the
+ * player's pet, or the player, kills it). Called from the engine's own death
+ * path (mondead, after life-saving is ruled out), so the event carries the
+ * turn of the death the player saw. Logs only; no RNG, nothing new saved:
+ * the one existing active flag ends the hunt, as expiry does. A game whose
+ * hound never dies logs nothing new. The shadow trial's child logs nothing. */
+void chaos_haunt_died(struct monst *m) {
+ if(!u.haunt.active || m->m_id!=u.haunt.target || chaos_shadow_active())return;
+ u.haunt.active=0;chaos_event("haunting","result","killed");
+}
 void chaos_haunt_tick(int dir) {
  struct chaos_haunt_state *h=&u.haunt;int i,x,y,fd,found=0,back=0,look;ssize_t n;
  struct trial_input where={0,0};struct chaos_shadow_report report;char receipt[512];
