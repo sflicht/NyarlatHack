@@ -1,0 +1,33 @@
+The Crawling Chaos remembers.
+  Turn 1, as you arrived on a level: whisper 1 (ambient) was admitted.
+    Telegraph: "A distant whisper brushes against your thoughts."
+    Effect: an omen only; no rule changed.
+    Delivered: yes, "The shadows lean closer." was shown with the telegraph.
+    Spent at once.
+  Turn 24, after you doubled back: a haunting was admitted.
+    Telegraph: "Something has learned the rhythm of your footsteps."
+    Effect: an echo hound was set to follow your trail.
+    Delivered: yes, you saw it follow your trail 3 times.
+    Ended: it was killed on turn 27.
+  Turn 364: a next-use program was admitted.
+    Origin: you whistled on DL2 on turn 354.
+    Rebound: first written about an earlier one (turn 36).
+    Telegraph: "For a while, your whistles may ring on after you stop."
+    Effect: for a while, any whistle could answer it, at most 2 times.
+    Delivered: no; no manifestation reached you.
+    Ended: its uses ran out or it expired before the game ended.
+  Admitted 3, delivered 2; cruelty spent 3.
+  1 other candidate was refused; none took effect.
+
+Goodbye ChaosReview the Troubadour...
+You died in The Dungeons of Doom on dungeon level 2 with 102 points,
+and 0 pieces of gold, after 644 moves.
+Killer: jackal
+You were level 1 with a maximum of 17 hit points when you died.
+
+You made the top ten list!
+
+ No  Points     Name                                                   Hp [max]
+* 1        102  ChaosRevie-Brd-Hum-Mal-Neu died in The Dungeons of             
+                Doom on level 2.  Killed by a jackal.                   -  [17]
+

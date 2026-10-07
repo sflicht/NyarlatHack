@@ -1,0 +1,58 @@
+{
+  "outcome": "died",
+  "error": null,
+  "commands": 661,
+  "final_status": null,
+  "exit_code": 0,
+  "elapsed_s": 88.792,
+  "save_restore": {
+    "attempted": false,
+    "session_detail": null
+  },
+  "guarded_inputs": 728,
+  "expected_inputs": 728,
+  "haunt_rows": [
+    [
+      1,
+      5,
+      "telegraph",
+      "ambient"
+    ],
+    [
+      24,
+      13,
+      "haunting",
+      "pre_admitted"
+    ],
+    [
+      24,
+      14,
+      "haunting",
+      "accepted"
+    ],
+    [
+      25,
+      15,
+      "haunt_step",
+      ""
+    ],
+    [
+      26,
+      17,
+      "haunt_step",
+      ""
+    ],
+    [
+      27,
+      19,
+      "haunt_step",
+      ""
+    ],
+    [
+      27,
+      20,
+      "haunting",
+      "killed"
+    ]
+  ]
+}

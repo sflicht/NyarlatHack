@@ -1,0 +1,5 @@
+Screen excerpts (ANSI stripped; full stream in the report root).
+
+[status turn before: 10] Something has learned the rhythm of your footsteps.
+[status turn before: 1356] Something has learned the rhythm of your footsteps.
+[status turn before: 13]  Br:3 AC:7  DR:2  Exp:1 T:13Echo hound bites the little dog!The little dog bites echo hound!--More--Echo hound is killed!

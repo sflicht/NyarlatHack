@@ -151,8 +151,8 @@ class OrdinaryHauntTests(RetainOnFailure):
         self.assertEqual(restored[0]["spent"], 2)
 
         # 7. The hunt ends. On this replay-clock map the pet kills the hound
-        # before the 60-move expiry (#201): the engine logs "killed" at the
-        # first tick after the game's own kill message, and nothing after.
+        # before the 60-move expiry (#201): the engine logs "killed" from its
+        # own death path (mondead), on the turn of the kill, and nothing after.
         for _ in range(90):
             if {"expired", "killed"} & set(self.haunting(game)):
                 break

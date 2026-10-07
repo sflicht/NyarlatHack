@@ -1,0 +1,2 @@
+{"v":1,"policy":2,"turn":1,"safe":1,"id":1,"status":"admitted","mutation":"ambient","value":1,"duration":0,"telegraph":1,"at":1,"cost":0,"cosmetic_cost":1,"expires":0}
+{"v":1,"policy":2,"turn":667,"safe":3,"id":2,"status":"admitted","mutation":"door_reluctance","value":50,"duration":192,"telegraph":4,"at":3,"cost":1,"cosmetic_cost":0,"expires":859}
