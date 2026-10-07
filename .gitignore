@@ -8,6 +8,7 @@ util/dlb
 util/dgn_comp
 util/lev_comp
 util/tilemap
+/curio-validator.so
 
 *.o
 *.d

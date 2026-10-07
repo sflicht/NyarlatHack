@@ -13175,6 +13175,28 @@
       "chaos_next_use_io.o: src/chaos_next_use_io.c include/chaos_next_use_io.h",
       "chaos_next_use_safe.o: src/chaos_next_use_safe.c include/chaos_next_use_safe.h",
       "endif"
+    ],
+    [
+      "ifeq ($(CHAOS),1)",
+      "CURIO_VALIDATOR = curio-validator.so",
+      "endif"
+    ],
+    [
+      "ifeq ($(CHAOS),1)",
+      "CURIO_VALIDATOR_C = src/chaos_next_use.c src/chaos_lua.c",
+      "$(CURIO_VALIDATOR): $(CURIO_VALIDATOR_C) $(wildcard include/chaos*.h)",
+      "$(CC) -shared -fPIC -O1 -Wall -Wextra -Werror -Wno-misleading-indentation -std=c99 \\",
+      "-Wl,-z,defs -Iinclude $(CURIO_VALIDATOR_C) \\",
+      "$(shell $(PKG_CONFIG) --cflags --libs lua5.4) -o $@",
+      "AUTO_BIN += $(CURIO_VALIDATOR)",
+      "endif"
+    ],
+    [
+      "ifeq ($(CHAOS),1)",
+      "install -m 755 $(CURIO_VALIDATOR) $(GAMEDIR)",
+      "else",
+      "rm -f $(GAMEDIR)/curio-validator.so",
+      "endif"
     ]
   ]
 }

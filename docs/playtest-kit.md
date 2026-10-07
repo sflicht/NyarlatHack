@@ -1,193 +1,142 @@
-# Playtest kit (#44), build `788499dfd`
+# Solo playtest kit
 
-A small human pilot. The question is whether a player notices what the Chaos
-does **without being told it exists**, and whether they connect it to what
-they did. No model, network or account is needed.
+For Sam, playing informally on this VPS. Spoilers are fine. There is no A/B
+and no form; the notes template at the end is enough.
 
-The kit has two parts. **Give the player only Part 1.** Part 2 is for the
-facilitator and contains spoilers. The one-page
-[report form](playtest-report-form.md) is filled in after each session.
+No feedback yet.
 
-This kit contains no results. No playtest has been run with it yet.
+## Build
 
----
-
-## Part 1: Player brief (spoiler-free)
-
-You are playing dNetHack, a hard roguelike, in a lightly modified build. Play
-the way you normally would. There is nothing special you need to do or look
-for.
-
-### Build (once)
-
-On Debian or Ubuntu:
+From a checkout of `main`:
 
 ```sh
-sudo apt-get install bison flex build-essential libncursesw5-dev pkg-config liblua5.4-dev
-git clone https://github.com/sflicht/NyarlatHack.git
-cd NyarlatHack
-git checkout 788499dfd
 make install
 ```
 
-Then send the facilitator the output of this line:
+`make install` builds the game and the native curio validator, and installs
+both into `dnethackdir/`. Without `dnethackdir/curio-validator.so` the
+launcher prints `chaos: model authoring unavailable (no_validator)` and the
+game has no curio. A `CHAOS=0` build installs neither the Chaos engine nor
+the validator.
+
+Note the build:
 
 ```sh
-git rev-parse --short=9 HEAD; git status --porcelain | wc -l; sha256sum dnethackdir/dnethack | cut -c1-16
+git rev-parse --short=9 HEAD; git status --porcelain | wc -l
 ```
 
-### Start a session
+## Play
 
-From the `NyarlatHack` directory:
+The model is Grok 4.7 through the xAI OAuth login Hermes holds, so the
+launcher runs under Hermes's runtime via `scripts/hermes_play.py`:
 
 ```sh
-python3 -m chaos play --ordinary --max-runtime 86400
+python3 scripts/hermes_play.py play --ordinary --max-runtime 86400 \
+  --author-provider xai-oauth --author-model grok-4.7
 ```
 
-- You play a human Bard with a dog.
-- When asked about inheritance, answer `n`.
-- The first line printed names a **run directory**. Copy it down; the
-  facilitator needs it afterwards.
-
-### How long
-
-About **20–30 minutes**, or until your character dies, whichever comes
-first. When time is up, end the game with `#quit` (type `#quit`, then Enter,
-then `y`), unless you and the facilitator plan to continue later. In that case,
-save with `S` and resume later with
-`python3 -m chaos play --reuse-run-dir <run directory> --max-runtime 86400`.
-
-**When the game ends it asks several questions. Answer `n` to all of them.**
-You will go through them with the facilitator.
-
-### During the session
-
-- Play normally. Don't try to test or break anything.
-- Keep a few short notes as you go: anything that surprised you, and the turn
-  number (`T:` on the bottom line) if you can.
-- The facilitator will not answer questions about the game while you play.
-
----
-
-## Part 2: Facilitator notes (spoilers)
-
-**Do not show this part to a player before their session and report form are
-done.** The pilot measures unprompted notice. Do not hint, point at the
-screen, or explain what happened during the session.
-
-### What `--max-runtime 86400` is for
-
-It keeps the offline director running for up to a day. Without it, the
-director stops after 300 seconds and no new next-use program is scheduled for
-the rest of the session. The gate sweep used the same setting.
-
-### What can happen in a default game today
-
-All of these come from the ordinary default (`--ordinary`, with the hound,
-next-use and pacing on). Most games see only some of them. Exact on-screen
-lines are quoted.
-
-- **The omen** (every game, turn 1):
-  "A distant whisper brushes against your thoughts." then
-  "The shadows lean closer." No rule changes.
-- **The echo hound** (decided early; admitted in 88 of 100 default-path sweep
-  games):
-  - Telegraph: "Something has learned the rhythm of your footsteps."
-  - A jackal-bodied hound hunts where the player stood a few moves ago. It
-    appears only more than four squares from the pet, after one hidden trial
-    showing the player could escape.
-  - It can be killed. It gives up after about 60 turns or when the player
-    leaves the level.
-- **Door reluctance** (possible after the player first leaves Dlvl 1):
-  - Telegraph: "The doors of this place seem to lean against you."
-  - Closed doors resist the player's own attempts to open them more often
-    ("The door resists!"), for up to 300 turns.
-- **Hunger** (possible after leaving Dlvl 1, once Sanity has fallen to 90 or
-  below):
-  - Telegraph: "An unnatural hunger coils in your stomach."
-  - The player gets hungry twice as fast, for up to 50 turns.
-- **Thin wards** are also on that menu (Sanity 80 or below): "The lines of
-  your wards seem thin and uncertain." The sweeps do not measure them.
-- **Ring** (a whistle program; the Bard starts with a tin whistle in most
-  games, and sometimes a bell instead):
-  - Admitted at a later safe moment, such as a prayer or arriving on a level,
-    after the player has used the whistle. Telegraph, first program:
-    "For a while, your whistles may ring on after you stop."
-    Later programs (up to 3 per game): "Again, a whistle may ring on after
-    you stop."
-  - On a later whistle: "Your whistle's note goes on ringing inside your
-    head." The status line shows `Conf` for 5 moves, then the normal
-    "You feel less confused now."
-  - Each program rings at most twice. It lasts 100 moves (the first program)
-    or 300 (later ones), across levels.
-  - Nothing happens on a whistle while the player is confused, stunned,
-    hallucinating or engulfed, at a third of max HP or less, or next to a
-    monster they can see, or to water or lava. The program keeps waiting.
-- **The fountain effect** (a fountain program):
-  - Telegraph: "For a while, fountain water you drink may not run true."
-    Later: "Again, the fountain's water may not run true."
-  - A fountain drink is turned into a refreshing one: "The cool draught
-    refreshes you." Like ring, at most twice per program. Dipping does
-    nothing.
-  - No sweep has ever recorded this effect being felt. Expect it to be rare.
-- **The reveal** (at the end of every game, because the omen is always
-  admitted): "Do you want to know what watched you? [ynq] (n)". The player
-  brief tells players to answer `n`, so the report form comes first. The same
-  list is written to the game's dumplog either way.
-
-### After the session
-
-1. Fill in the [report form](playtest-report-form.md), asking questions 1–3
-   **before** any explanation.
-2. Then show the reveal. It is in the game's dumplog
-   (`dnethackdir/dumplog/`, the newest file, section "The Crawling Chaos
-   remembers"), or as a page:
-
-   ```sh
-   python3 -m chaos chronicle <run directory> --format md --out chronicle.md
-   ```
-
-   The reveal is written only when the game ends. A session that ended in a
-   save has none until the game is finished.
-3. Ask questions 4–6.
-
-**What the engine recorded** (optional, read-only):
+The two variables do the same as the flags:
 
 ```sh
-pilot=$(mktemp -d) && ln -s <run directory> "$pilot/run"
-PYTHONPATH=tests/chaos python3 -c 'import json, sys, sweep_funnel; a = sweep_funnel.analyse(sys.argv[1], felt=True); print(json.dumps({k: a[k] for k in ("counts", "loss", "qualifying_actions", "last_turn", "first_felt", "haunt", "haunt_steps")}, indent=1))' "$pilot"
+export NYARLATHACK_AUTHOR_PROVIDER=xai-oauth NYARLATHACK_AUTHOR_MODEL=grok-4.7
+python3 scripts/hermes_play.py play --ordinary --max-runtime 86400
 ```
 
-`first_felt` gives the turn and kind (`hound`, `next_use_W`, `next_use_F`,
-`door` or `hunger`) of the first on-screen consequence, or `null`. A
-displayed line is not proof of notice. Notice, attribution and changed
-decisions come only from the player's answers.
+- You play a human Bard with a dog. Answer `n` to the inheritance question.
+- The first line on stderr names the **run directory**:
+  `chaos: run directory "<path>" (preserved on exit)`. Note it.
+- `--max-runtime 86400` keeps the whisper director scheduling for a day;
+  the default stops it after 300 s. The curio lane has its own clock.
+- `scripts/hermes_play.py` looks for Hermes in `~/.hermes/hermes-agent`;
+  set `HERMES_AGENT_DIR` to use another checkout. Plain
+  `python3 -m chaos play ...` with the same flags runs the same game but
+  cannot reach the OAuth login, so it prints
+  `model authoring unavailable (no_model_reachable)` and has no curio.
+- Requests are capped by the xAI ledger: 3 per surface per game, 200 per
+  day. A normal game makes one.
 
-### Collecting the run directory
+## Save and resume
 
-Copy the whole run directory the launcher printed, plus the session's dumplog
-file and its last line of `dnethackdir/xlogfile`. The files that matter:
+Save with `S` (then `y`). Resume the same game from the same run directory:
 
-- `events.jsonl`: what the engine recorded the player did, with turns;
-- `whispers.jsonl`, `whisper.json`: the whispers offered and their results;
-- `reveal.json`: the engine's own end-of-game record (only after the game
-  ends);
-- `next_use-*` files: the whistle and fountain programs, if any;
-- `ordinary-choice.json`, `director.log`, `haunting.lua`: what was switched
-  on, the director's status lines, and the hound's script.
+```sh
+python3 scripts/hermes_play.py play --reuse-run-dir <run directory> --max-runtime 86400
+```
 
-None of them holds a secret: there are no keys, tokens or credentials, and
-no model is called. **One holds a path:** `ordinary-choice.json` records the
-absolute path of the hound pack (`haunt_pack`), which includes where the player
-cloned the repository and may include their user name. Redact that value
-before sharing the files. The dumplog and xlogfile line hold the numeric
-user id and the fixed character name `ChaosReview`.
+Restore follows what the run recorded (`ordinary-choice.json`), including
+the provider and model, so the author flags are not needed again; if given,
+they must match. Starting a fresh game while a save exists is refused, with
+the resume command printed.
 
-### What this kit does not claim
+## What to expect
 
-- A pilot of a few sessions is a qualitative check, not a rate. Do not quote
-  percentages from it.
-- Do not tune cruelty, add effects or change the build during a pilot. A fix
-  suggested by a session gets its own reviewed change, and the next pilot uses
-  the new build.
-- #44's human-execution items stay open until real reports exist.
+- **Turn 1, the omen:** "A distant whisper brushes against your thoughts."
+  then "The shadows lean closer." No rule changes.
+- **The hound** (most games, early): "Something has learned the rhythm of
+  your footsteps." A jackal-bodied hound then hunts where you stood a few
+  moves ago. It can be killed, and gives up after about 60 turns or when you
+  leave the level.
+- **The curio request.** At the first safe point after at least 150 turns,
+  with some history (2 completed episodes or 1 whisper you saw), while you
+  are on DL1–2, the director sends one request with your public history.
+  Grok usually answers in 2–6 minutes of real time; the lane gives up at
+  480 s. Nothing is shown while it waits.
+- **The telegraph:** if the curio passes the native checks and is admitted,
+  you see "An uncanny curio may appear on a later floor."
+- **Placement:** the curio is placed when a new main-dungeon level DL2 or
+  DL3 is generated after the admission. It is an ordinary-looking tool with
+  a model-written name ("a glass reed locket" in the live capture). If you
+  reach DL3 before it is ready or placed, the chance closes and nothing is
+  shown. Lingering on DL1–2 gives it time.
+- **Using it:** `I` (Describe) shows its inspect text; apply prints the
+  requested Sanity change before applying it ("The curio requests a Sanity
+  change of -1; native limits may reduce it. This spends one use."), then
+  the model's text. Three uses, then it is inert.
+- **Other effects** you may meet: door reluctance ("The doors of this place
+  seem to lean against you."), hunger, thin wards, a whistle that rings on
+  after you stop, fountain water that may not run true.
+- **The reveal:** at the end, "Do you want to know what watched you? [ynq]
+  (n)". Answer `y` to see what was admitted and delivered, with turns, and
+  the curio by the name you saw. The same list goes into the dumplog either
+  way.
+
+## Where things land
+
+In the run directory:
+
+- `curio-lane.json`: the curio lane's state (`idle`, `requested`, `ready`,
+  `failed`, `no_model`, with its outcome);
+- `curio-evidence/`: `prompt.json`, `raw-response.txt`, `source.lua`,
+  `receipt.json` (and `curio-evidence-2/` if a regeneration ran);
+- `curio-used.lua`: the source the engine admitted;
+- `events.jsonl`, `whispers.jsonl`: what the engine recorded, with turns;
+- `reveal.json`: the end-of-game reveal (only after the game ends);
+- `ordinary-choice.json`, `director.log`.
+
+Elsewhere: the dumplog in `dnethackdir/dumplog/` (newest file, section "The
+Crawling Chaos remembers"), the game's line in `dnethackdir/xlogfile`, and
+the ledger row in `~/.local/share/nyarlathack/xai-ledger.jsonl`. None of
+these holds a credential.
+
+A readable page of the game:
+
+```sh
+python3 -m chaos chronicle <run directory> --format md --out chronicle.md
+```
+
+## Notes template
+
+One block per game; a line per moment worth keeping.
+
+```text
+Build: <short rev> / <uncommitted count>     Date:
+Run directory:
+Ended: <died / quit / saved>, last turn T:<n>, deepest Dlvl <n>
+
+T:<turn>  What happened:
+          Did it seem to know what I'd done?  yes / no / unsure — why:
+          Fun or not:
+
+Overall, fun or not:
+Anything broken:
+```
