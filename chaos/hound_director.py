@@ -83,6 +83,11 @@ class HoundLane(shared.AuthoringLane):
     EVIDENCE = EVIDENCE
     STEPS = _STEPS
     LABEL = "hound"
+    # Hounds that hunt (Sam, 2026-10-07; orchestrator option A): a source the
+    # host pre-check refuses (including the pressure floor: it barely moves or
+    # never closes) earns the one regeneration, inside the same lane-clock
+    # deadline; a second refusal, or no time left, publishes footsteps.lua.
+    REGENERATE = (*shared.REGENERATE, "native_rejected")
 
     def __init__(
         self,
