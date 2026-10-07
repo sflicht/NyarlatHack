@@ -62,6 +62,13 @@ int main(int argc, char **argv)
         } else if (!strcmp(argv[i], "curio_placed")) {
             r.host.curio_placed = 1;
             r.host.curio_charges = 2;
+        } else if (!strncmp(argv[i], "curio_name=", 11)) {
+            /* The engine-held u.curio.name, through the same filter. */
+            char name[49];
+            memset(name, 0, sizeof name);
+            strncpy(name, argv[i] + 11, sizeof name - 1);
+            if (strlen(argv[i] + 11) > 48) name[48] = 'x'; /* unterminated: refused */
+            chaos_reveal_curio_name(&r.host, name, sizeof name);
         } else {
             return 2;
         }

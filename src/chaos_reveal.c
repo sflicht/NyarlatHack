@@ -518,6 +518,22 @@ static void whisper(const struct chaos_reveal_entry *e, chaos_reveal_emit emit, 
             e->expires);
 }
 
+void chaos_reveal_curio_name(struct chaos_reveal_host *h, const char *name, size_t cap)
+{
+    size_t i;
+    int nonblank = 0;
+    memset(h->curio_name, 0, sizeof h->curio_name);
+    if (!name) return;
+    for (i = 0; i < cap && i < sizeof h->curio_name; ++i) {
+        unsigned char c = (unsigned char)name[i];
+        if (!c) break;
+        if (c < 32 || c > 126) return;
+        if (c != ' ') nonblank = 1;
+    }
+    if (i == cap || i == sizeof h->curio_name || !nonblank) return;
+    memcpy(h->curio_name, name, i);
+}
+
 static void curio_entry(const struct chaos_reveal_entry *e, const struct chaos_reveal_host *h,
                         chaos_reveal_emit emit, void *arg)
 {
@@ -525,8 +541,12 @@ static void curio_entry(const struct chaos_reveal_entry *e, const struct chaos_r
     out(emit, arg, "    Telegraph: \"An uncanny curio may appear on a later floor.\"");
     switch (e->placement) {
     case CHAOS_REVEAL_PLACED:
-        out(emit, arg, "    Effect: a curio whistle was placed on a new level on turn %ld.",
-            e->placed_turn);
+        if (h->curio_name[0])
+            out(emit, arg, "    Effect: \"%s\" was placed on a new level on turn %ld.",
+                h->curio_name, e->placed_turn);
+        else  /* no engine-held name (e.g. an older save): the generic form */
+            out(emit, arg, "    Effect: a curio whistle was placed on a new level on turn %ld.",
+                e->placed_turn);
         break;
     case CHAOS_REVEAL_NO_ROOM:
         out(emit, arg, "    Effect: no level had room for it.");
