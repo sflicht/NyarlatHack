@@ -279,8 +279,8 @@ it is what the pilot measured.
 
 **Continuity (decided).** There is one curio per game. Cross-game notes
 from the existing journal stay **off at launch**: a note is earlier model
-free text, the one channel that could carry stale claims. Revisit after the
-A/B.
+free text, the one channel that could carry stale claims. Revisit after
+Sam's solo playtests (§6).
 
 ### 3.3 Literary layer
 
@@ -324,8 +324,8 @@ backend publishes the logged source at the logged safe point, reusing
 
 ### 3.6 No model configured or reachable
 
-The fallback is **no curio** (decided). A canned curio would blur the A/B's
-no-curio arm.
+The fallback is **no curio** (decided). A canned curio would blur what a
+playtest shows about model content.
 
 - With no provider configured (§5.1), or a configured provider whose
   credential is missing, the director never asks, and the player sees
@@ -357,7 +357,7 @@ no-curio arm.
 | Prose promises a false effect | Reject before install | Nothing |
 | Reached DL3 first | Native expiry | Nothing |
 | Admitted, no square on DL2–3 | Native `placement_unavailable`, then expiry | The admission line; cost already paid (today's rule) |
-| "Boring" | Shipped; judged by people in the A/B | A dull, valid curio |
+| "Boring" | Shipped; judged in Sam's playtests | A dull, valid curio |
 
 ## 4. The other surfaces
 
@@ -411,7 +411,9 @@ unset.
   `agent.auxiliary_client._build_xai_oauth_aux_client(model)`, the same
   pattern as today's `_build_codex_client` (`chaos/oauth.py:24-28`).
   Hermes owns the credential pool and refresh. NyarlatHack never reads,
-  copies or logs a token. Development and the A/B use this value.
+  copies or logs a token. Development and Sam's playtests use this value,
+  launched through `scripts/hermes_play.py`, which runs the launcher under
+  Hermes's runtime.
 - `xai`: the xAI API with a key from the user's environment (below), for
   shipped software without Hermes.
 - `openai-codex`: the existing Codex OAuth adapter through Hermes, kept as a
@@ -513,15 +515,16 @@ What goes where:
 
 ## 6. Measurement
 
-**Primary: people.** Run an A/B with `docs/playtest-report-form.md`.
+**Primary: Sam's informal solo playtests** (decided 2026-10-07, §8). There
+is no pool of players, so there is no people A/B, no arms and no seed
+parity.
 
-- Arm A has no curio, as today. Arm B gets a model curio.
-- Assignment is by game seed parity, blind to the player.
-- The form already asks whether the player noticed, attributed, changed a
-  decision and had fun. Add one item: "Did anything in this game seem to
-  know what you had done?"
-- Collect about 10 games per arm from at least 3 players. Report counts and
-  verbatim answers, without significance claims.
+- Sam plays default games on the VPS with the model configured, following
+  `docs/playtest-kit.md`.
+- He keeps short notes per game with the kit's template: the turn, what
+  happened, whether it seemed to know what he had done, and whether it was
+  fun.
+- Report his notes verbatim, without counts or significance claims.
 
 **Secondary:**
 
@@ -546,7 +549,9 @@ What goes where:
 3. Curios default-on in ordinary play: the trigger, the director task and
    the launcher default. Evidence is a real nonwizard `--ordinary` capture
    showing a model curio admitted, found and used.
-4. The people A/B.
+4. The solo playtest setup: `make install` builds and installs the curio
+   validator, and `docs/playtest-kit.md` is a short kit for Sam's informal
+   solo play (replaces the people A/B, 2026-10-07).
 5. The free-design hound (decided as next).
 6. Then, each by Sam's decision: model-written telegraph and reveal
    wording, and narration.
@@ -571,3 +576,10 @@ Sam accepted all proposals.
 
 Provider and model are both configured by flag or environment variable,
 with no hard-coded pin (§5.1), as Sam directed.
+
+### Decisions (Sam, 2026-10-07)
+
+1. **Order:** "Hound first, A/B later" (about 00:48Z).
+2. **Measurement:** "I don't have a pool of players to AB test. I am just
+   goung to play test imformally myself" (about 00:52Z). There is no formal
+   people A/B; §6 and slice 4 are Sam's informal solo playtests.

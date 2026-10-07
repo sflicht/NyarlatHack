@@ -25,6 +25,10 @@ CHAOS ?= 1
 ifeq ($(CHAOS),1)
 CPPFLAGS += -DCHAOS $(shell $(PKG_CONFIG) --cflags lua5.4)
 GAMELIBS += $(shell $(PKG_CONFIG) --libs lua5.4)
+# The native curio validator the launcher loads from the game root: the
+# engine's own parser and Lua sandbox as one shared library (same command as
+# docs/measurements/model-authoring-pilot/build_validator.sh).
+CURIO_VALIDATOR = curio-validator.so
 else ifneq ($(CHAOS),0)
 $(error CHAOS must be 0 or 1)
 endif
@@ -47,7 +51,7 @@ CPPFLAGS += -std=gnu17
 .DELETE_ON_ERROR:
 
 .PHONY: all
-all: src/dnethack util/recover dat/nhdat dat/license
+all: src/dnethack util/recover dat/nhdat dat/license $(CURIO_VALIDATOR)
 
 ATOMIC_LN = ln $(1) $(2).new && mv $(2).new $(2)
 
@@ -57,6 +61,11 @@ install: all
 	install src/dnethack $(GAMEDIR)
 	install util/recover $(GAMEDIR)
 	install -m 644 dat/nhdat dat/license $(GAMEDIR)
+ifeq ($(CHAOS),1)
+	install -m 755 $(CURIO_VALIDATOR) $(GAMEDIR)
+else
+	rm -f $(GAMEDIR)/curio-validator.so
+endif
 	touch $(GAMEDIR)/perm
 	touch $(GAMEDIR)/record
 	touch $(GAMEDIR)/logfile
@@ -136,6 +145,15 @@ LEV_COMP_O = util/lev_main.o util/lev_lex.o util/lev_yacc.o	\
 util/lev_comp: $(LEV_COMP_O)
 	$(CC) $(LDFLAGS) $^ $(LDLIBS) -o $@
 AUTO_BIN += util/lev_comp
+
+ifeq ($(CHAOS),1)
+CURIO_VALIDATOR_C = src/chaos_next_use.c src/chaos_lua.c
+$(CURIO_VALIDATOR): $(CURIO_VALIDATOR_C) $(wildcard include/chaos*.h)
+	$(CC) -shared -fPIC -O1 -Wall -Wextra -Werror -Wno-misleading-indentation -std=c99 \
+	  -Wl,-z,defs -Iinclude $(CURIO_VALIDATOR_C) \
+	  $(shell $(PKG_CONFIG) --cflags --libs lua5.4) -o $@
+AUTO_BIN += $(CURIO_VALIDATOR)
+endif
 
 TILEMAP_O = win/share/tilemap.o
 util/tilemap: $(TILEMAP_O)
