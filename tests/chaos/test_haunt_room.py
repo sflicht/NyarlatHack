@@ -74,13 +74,16 @@ class HauntRoomTests(RetainOnFailure):
         (cls.root / "link.json").write_text(json.dumps(command))
         subprocess.run(command, check=True, timeout=60)
 
-    def run_room(self, name, args, **env):
+    def run_room(self, name, args, *, candidate="haunting.lua", files=(), **env):
         case = self.root / name
         run = case / "run"
         (run / "diag").mkdir(parents=True)
         run.chmod(0o700)
-        shutil.copy(PACK, run / "haunting.lua")
-        (run / "haunting.lua").chmod(0o600)
+        shutil.copy(PACK, run / candidate)
+        (run / candidate).chmod(0o600)
+        for file, raw in dict(files).items():
+            (run / file).write_bytes(raw)
+            (run / file).chmod(0o600)
         environ = dict(os.environ, NYARLATHACK_ECHOES="0", NYARLATHACK_RUN_DIR=str(run))
         environ.update(env)
         p = subprocess.run(
@@ -323,6 +326,105 @@ class HauntRoomTests(RetainOnFailure):
             with self.subTest(room=room, player=player):
                 _, report, _ = self.run_room("bare-%dx%d" % room, [*room, *player, 1])
                 self.assertEqual(report["accepted"], 1, report)
+
+    # --- slice 5a: a candidate published while the game runs -----------------
+    # The room is the 12x6 bare room whose trial passes. With
+    # HAUNT_ROOM_ADVANCE=1 tick k (1-based) runs at turn 9+k; nothing emits an
+    # event before the candidate is read, so each tick is its own window.
+    def haunting(self, run):
+        lines = (run / "events.jsonl").read_text().splitlines()
+        events = [json.loads(line) for line in lines]
+        return [
+            (e["turn"], e["seq"], e["detail"])
+            for e in events
+            if e["event"] == "haunting"
+        ]
+
+    def published_at(self, name, publish, **env):
+        return self.run_room(
+            name,
+            [12, 6, 5, 3, 1, 5],
+            candidate=".staged.lua",
+            HAUNT_ROOM_ADVANCE="1",
+            HAUNT_ROOM_PUBLISH=str(publish),
+            **env,
+        )
+
+    def test_published_candidate_is_read_at_the_next_tick(self):
+        # Published before tick 3 (turn 12): the engine reads it there.
+        fields, report, run = self.published_at("publish-3", 3)
+        first = self.haunting(run)[0]
+        self.assertEqual((first[0], first[2]), (12, "pre_admitted"), first)
+        self.assertEqual((report["accepted"], fields["active"]), (1, "1"))
+
+    def test_one_look_per_window(self):
+        # Tick 2 repeats tick 1's window (same turn, no event between): the
+        # candidate published just before it counts as absent there, so the
+        # engine first reads it at tick 3 (turn 11). Replay can then stage it
+        # from the start: the window of the first read names one tick.
+        fields, report, run = self.published_at("hold-2", 2, HAUNT_ROOM_HOLD="2")
+        self.assertEqual(self.haunting(run)[0][0], 11, self.haunting(run))
+        self.assertEqual(report["accepted"], 1, report)
+
+    def test_replay_admits_at_exactly_the_recorded_window(self):
+        _, live_report, live = self.published_at("live", 3)
+        turn, seq, _ = self.haunting(live)[0]
+        due = b"%d %d\n" % (turn, seq)
+        # Not yet: present from the start, the staged candidate waits for
+        # the recorded window instead of being read at turn 10.
+        fields, report, run = self.run_room(
+            "replay",
+            [12, 6, 5, 3, 1, 5],
+            files={"haunting-due": due},
+            HAUNT_ROOM_ADVANCE="1",
+        )
+        self.assertEqual(self.haunting(run), self.haunting(live))
+        self.assertEqual(report, live_report)
+        self.assertEqual(
+            (run / "events.jsonl").read_bytes(), (live / "events.jsonl").read_bytes()
+        )
+        # Without the binding the same staging is read at once (turn 10):
+        # the binding, not the file's arrival, decides the replay's point.
+        _, _, early = self.run_room(
+            "replay-unbound", [12, 6, 5, 3, 1, 5], HAUNT_ROOM_ADVANCE="1"
+        )
+        self.assertEqual(self.haunting(early)[0][0], 10, self.haunting(early))
+
+    def test_binding_decides_the_point_not_the_file(self):
+        # Bound to a later window (turn 13) than the file's arrival (turn 10),
+        # the engine first reads it there: not yet, then exactly then.
+        fields, report, run = self.run_room(
+            "replay-later",
+            [12, 6, 5, 3, 1, 5],
+            files={"haunting-due": b"13 1\n"},
+            HAUNT_ROOM_ADVANCE="1",
+        )
+        self.assertEqual(
+            [(t, d) for t, _, d in self.haunting(run)][:1], [(13, "pre_admitted")]
+        )
+        self.assertEqual(report["accepted"], 1, report)
+
+    def test_bad_binding_fails_closed(self):
+        for name, raw in (
+            ("empty", b""),
+            ("one-field", b"12\n"),
+            ("zero", b"0 5\n"),
+            ("leading-zero", b"012 5\n"),
+            ("sign", b"-12 5\n"),
+            ("trailing", b"12 5 7\n"),
+        ):
+            with self.subTest(binding=name):
+                fields, report, run = self.run_room(
+                    "bad-" + name,
+                    [12, 6, 5, 3, 1, 2],
+                    files={"haunting-due": raw},
+                    HAUNT_ROOM_ADVANCE="1",
+                )
+                self.assertEqual(
+                    [d for _, _, d in self.haunting(run)], ["source_rejected"]
+                )
+                self.assertIsNone(report)
+                self.assertEqual(fields["spent"], "0")
 
 
 if __name__ == "__main__":

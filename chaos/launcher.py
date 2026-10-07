@@ -708,7 +708,14 @@ def _offline_loop(box, backend, reader, state, args, ready):
             ring=getattr(args, "next_use_ring", False),
         )
     lane = getattr(args, "curio_lane", None)
-    while time.monotonic() < deadline or first or (lane is not None and lane.active):
+    hound = getattr(args, "hound_lane", None)
+
+    def lanes_active():
+        return (lane is not None and lane.active) or (
+            hound is not None and hound.active
+        )
+
+    while time.monotonic() < deadline or first or lanes_active():
         # Past the director runtime only the curio lane runs (its own 480 s
         # authoring deadline); whisper scheduling keeps today's timing.
         whispers = time.monotonic() < deadline or first
@@ -718,6 +725,8 @@ def _offline_loop(box, backend, reader, state, args, ready):
             state.ingest(event)
             if lane is not None:
                 lane.note(event)
+            if hound is not None:
+                hound.note(event)
         if next_use is not None:
             result = next_use.poll(box)
             status = result["status"]
@@ -737,6 +746,8 @@ def _offline_loop(box, backend, reader, state, args, ready):
             # A planned (published, unacknowledged) whisper keeps its unit.
             planned = REGISTRY[pending["mutation"]][0] if pending else 0
             lane.poll(planned_cost=planned, safe=state.safe, latest=state.latest)
+        if hound is not None and state.latest is not None:
+            hound.poll(safe=state.safe)
         done = False
         if not whispers:
             pass
@@ -765,13 +776,13 @@ def _offline_loop(box, backend, reader, state, args, ready):
             os.write(ready, b"R")  # Ready means valid state + initial pack publication.
             os.close(ready)
             first = False
-        if done and (lane is None or not lane.active):
+        if done and not lanes_active():
             return
         if done:
             whispers = False
         time.sleep(
             args.poll
-            if lane is not None and lane.active
+            if lanes_active()
             else min(args.poll, max(0, deadline - time.monotonic()))
         )
 
@@ -950,7 +961,48 @@ def _authoring_startup(args, choice, root, restore_dir):
         choice["authoring"] = "live" if backend is not None else "no_model"
         if backend is None:
             return None
-    return dict(backend=backend, validator=validator, game=game, reason=reason)
+    model_hound = _model_hound(args, restore_dir)
+    hound = None
+    if backend is not None and model_hound:
+        # Slice 5a: the hound's own backend (ledger surface "haunt"), built
+        # here too, before any run state.
+        from . import hound_author
+
+        try:
+            hound = hound_author.build_backend(args.author, ledger=ledger, run_id=game)
+        except NoModelReachable:
+            hound = None
+    if restore_dir is None and hound is None:
+        model_hound = False  # footsteps.lua at start, exactly as without a model
+    return dict(
+        backend=backend,
+        validator=validator,
+        game=game,
+        reason=reason,
+        hound=hound,
+        model_hound=model_hound,
+    )
+
+
+def _model_hound(args, restore_dir):
+    """Slice 5a: whether this game's hound is model-designed.
+
+    Fresh: an xAI provider is live and the hound is the default pack (the
+    model replaces footsteps.lua, which stays the fallback); an explicit
+    --haunt PACK keeps that pack. Restore follows the run: a hound lane record
+    exists exactly when the fresh game chose a model hound."""
+    if restore_dir is not None:
+        from .hound_director import LANE
+
+        return (Path(restore_dir) / LANE).exists()
+    from .hound_author import PROVIDERS
+
+    return (
+        args.author is not None
+        and args.author.provider in PROVIDERS
+        and args.haunt is not None
+        and Path(args.haunt).resolve() == HAUNT_DEFAULT
+    )
 
 
 def _curio_lane(directory, authoring, *, fresh):
@@ -964,6 +1016,23 @@ def _curio_lane(directory, authoring, *, fresh):
     if authoring["backend"] is None and authoring["reason"]:
         lane.mark_no_model(authoring["reason"])
     return lane
+
+
+def _hound_lane(directory, authoring, *, fresh):
+    """The run's hound lane, or None (then footsteps.lua was installed at
+    start). A restored lane runs even when its backend cannot be rebuilt: it
+    then falls back to footsteps.lua and never asks."""
+    if authoring is None or not authoring["model_hound"]:
+        return None
+    from .hound_author import HoundValidator
+    from .hound_director import HoundLane, new_lane
+
+    if fresh:
+        new_lane(directory, game=authoring["game"])
+    validator = authoring["validator"]
+    if validator is not None:
+        validator = HoundValidator(Path(validator.library).absolute())
+    return HoundLane(directory, authoring["hound"], validator=validator)
 
 
 def play(args):
@@ -1021,9 +1090,15 @@ def play(args):
                 )
             if choice is not None:
                 _write_choice(directory, choice)
-            if haunt is not None:
+            model_hound = authoring is not None and authoring["model_hound"]
+            if haunt is not None and not model_hound:
                 _haunt_install(box, haunt, restore=args.reuse_run_dir is not None)
             args.curio_lane = _curio_lane(
+                directory, authoring, fresh=args.reuse_run_dir is None
+            )
+            # A model hound: the lane publishes haunting.lua (model or
+            # footsteps fallback) while the game runs; nothing at start.
+            args.hound_lane = _hound_lane(
                 directory, authoring, fresh=args.reuse_run_dir is None
             )
             log = secure_open(

@@ -42,6 +42,7 @@ class CurioValidator:
         path = Path(library)
         if not path.is_absolute():
             raise ValueError("explicit absolute trusted native library required")
+        self.library = path
         self.library_sha256 = hashlib.sha256(path.read_bytes()).hexdigest()
         lib = ctypes.CDLL(str(path))
         self._load = lib.chaos_lua_curio_load
