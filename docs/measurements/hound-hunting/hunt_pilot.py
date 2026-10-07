@@ -47,8 +47,20 @@ def generate(args):
     os.chmod(out / "jobs", 0o700)
     ledger = xai.XaiLedger(out / "fake-ledger.jsonl") if args.fake else xai.XaiLedger()
     validator = hound_author.HoundValidator(Path(args.lib).absolute())
+    import subprocess
+
+    rev = subprocess.run(
+        ["git", "rev-parse", "HEAD"], cwd=ROOT, capture_output=True, text=True, check=True
+    ).stdout.strip()
+    dirty = subprocess.run(
+        ["git", "status", "--porcelain"], cwd=ROOT, capture_output=True, text=True, check=True
+    ).stdout
+    if dirty and not args.fake:
+        raise SystemExit("refusing a live pilot from an uncommitted tree")
     hist = pilot.histories()
     jobs = pilot.plan(sorted(hist))
+    if args.only:
+        jobs = [j for j in jobs if j["job"] in args.only]
     run = "hunt-" + time.strftime("%Y%m%d%H%M", time.gmtime())
     meta = dict(
         provider=config.provider,
@@ -68,6 +80,8 @@ def generate(args):
             (ROOT / "chaos/prompts/haunting.txt").read_bytes()
         ).hexdigest(),
         run=run,
+        rev=rev,
+        clean=not dirty,
         jobs=len(jobs),
         workers=args.workers,
         fake=args.fake,
@@ -151,6 +165,7 @@ def main(argv=None):
     g.add_argument("--model", required=True)
     g.add_argument("--workers", type=int, default=4)
     g.add_argument("--fake", action="store_true", help="plumbing check: no model")
+    g.add_argument("--only", nargs="*", help="run only these job names (latency probe)")
     args = parser.parse_args(argv)
     generate(args)
 
