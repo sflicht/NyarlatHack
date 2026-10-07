@@ -1,0 +1,33 @@
+Excerpts of the live terminal (ANSI stripped; full stream in the report root).
+
+T:52Something has learned the rhythm of your footsteps.
+
+----
+
+Echo hound misses the little dog.The little dog bites echo hound!--More--Echo hound is killed!
+
+----
+
+The little dog eats a jackal corpse named echo hound.
+
+----
+
+Do you want to know what watched you? [ynq] (n) yThe Crawling Chaos remembers.
+  Turn 1, as you arrived on a level: whisper 1 (ambient) was admitted.
+    Telegraph: "A distant whisper brushes against your thoughts."
+    Effect: an omen only; no rule changed.
+    Delivered: yes, "The shadows lean closer." was shown with the telegraph.
+    Spent at once.
+  Turn 52, after you doubled back: a haunting was admitted.
+    Telegraph: "Something has learned the rhythm of your footsteps."
+    Effect: an echo hound was set to follow your trail.
+    Delivered: yes, you saw it follow your trail 3 times.
+    Ended: its hunt ended on turn 112.
+  Turn 348: a curio was admitted.
+    Telegraph: "An uncanny curio may appear on a later floor."
+    Effect: it was never placed.
+    Delivered: no; you never applied it.
+    Ended: still pending when the game ended.
+  Admitted 3, delivered 2; cruelty spent 3.
+  2 other candidates were refused; none took effect.
+--More--

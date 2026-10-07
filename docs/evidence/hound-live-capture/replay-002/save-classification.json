@@ -1,0 +1,20 @@
+{
+  "size": 316875,
+  "equal_length": true,
+  "differing_runs": 772,
+  "differing_bytes": 3082,
+  "by_category_bytes": {
+    "hackpid": 4,
+    "pointer": 3070,
+    "next_use_token": 8
+  },
+  "unexplained": [],
+  "pids": [
+    3893972,
+    3910271
+  ],
+  "next_use_tokens": [
+    "26b950ab808f1a2f",
+    "50eb52fc96f70875"
+  ]
+}
