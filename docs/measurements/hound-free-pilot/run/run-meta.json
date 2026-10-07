@@ -1,0 +1,14 @@
+{
+  "provider": "xai-oauth",
+  "model": "grok-4.7",
+  "surface": "haunt",
+  "deadline_s": 480,
+  "validator_sha256": "199b29adbd779a5c680c9e5407f054b85b56f143a5e0a56ed41d5ad6477a4961",
+  "prompt_sha256": "b6d4b784b12db91eb650d7bc62495900e7d281b30af506b233956e07fa4fe0ef",
+  "run": "pilot5a-202610070501",
+  "jobs": 20,
+  "workers": 4,
+  "fake": false,
+  "started": "2026-10-07T05:01:23Z",
+  "finished": "2026-10-07T05:26:26Z"
+}

@@ -4,6 +4,7 @@
 #include "chaos.h"
 #include "chaos_haunt.h"
 #include "chaos_shadow.h"
+#include <errno.h>
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -201,8 +202,52 @@ static boolean near_pet(int x,int y) {
   if(!DEADMONSTER(m) && m->mtame && m!=u.usteed && distmin(m->mx,m->my,x,y)<=CHAOS_HAUNT_PET_CLEARANCE)return TRUE;
  return FALSE;
 }
+/* Slice 5a: a model-authored candidate is published while the game runs, so
+ * the engine's first look at haunting.lua must be a point a replay can find
+ * again. A "window" is one (turn, next event seq) pair. The engine looks for
+ * the candidate at most once per window: once a look in a window has found
+ * nothing, later ticks of that window treat it as absent. Both looks (the
+ * budget refusal and the read) go through here, so the window of the first
+ * haunting event that concerns the candidate (budget, pre_admitted,
+ * rejected, shadow_failed or source_rejected) names the first tick that saw
+ * it. A candidate installed before play (footsteps.lua) is seen at the first
+ * look, exactly as before. Not saved: a restore's session event starts a new
+ * window. No RNG. */
+static long empty_turn=-1,empty_seq=-1;
+/* Replay binding (like curio-safe): haunting-due holds "<turn> <seq>", the
+ * recorded window of that first event. 1: the window has come (at or after
+ * it); 0: not yet, the candidate counts as absent; -1: invalid binding.
+ * Absent means live play: 1. "At or after", not "exactly": when the first
+ * look logged "budget", the read itself comes in a later window. A faithful
+ * replay first looks exactly in the recorded window; the host checks that
+ * after the game (chaos/hound_director.py verify_replay). */
+static int haunt_due(int dir) {
+ char buf[32];ssize_t n;long v[2]={0,0};int fd,i,k=0,digits=0;struct stat st;
+ fd=openat(dir,"haunting-due",O_RDONLY|O_NOFOLLOW|O_NONBLOCK);
+ if(fd<0)return errno==ENOENT?1:-1;
+ if(fstat(fd,&st) || !S_ISREG(st.st_mode) || st.st_uid!=getuid() || st.st_nlink!=1 || (st.st_mode&077)){close(fd);return -1;}
+ n=read(fd,buf,sizeof buf);close(fd);
+ if(n<3 || n>=(ssize_t)sizeof buf)return -1;
+ if(buf[n-1]=='\n')--n;
+ for(i=0;i<n;++i) {
+  if(buf[i]==' ' && k==0 && digits){k=1;digits=0;continue;}
+  if(buf[i]<'0' || buf[i]>'9' || digits>=10 || (digits && v[k]==0))return -1;
+  v[k]=v[k]*10+(buf[i]-'0');++digits;
+ }
+ if(k!=1 || !digits || v[0]<1 || v[1]<1 || v[1]>CHAOS_MAX_COUNTER)return -1;
+ return moves>v[0] || (moves==v[0] && u.chaos.seq+1>=v[1]);
+}
+/* 1: look at the candidate now; 0: absent for this window; -1: bad binding. */
+static int candidate_look(int dir) {
+ struct stat st;int due;
+ if(moves==empty_turn && u.chaos.seq==empty_seq)return 0;
+ due=haunt_due(dir);
+ if(due<0)return -1;
+ if(due && !fstatat(dir,"haunting.lua",&st,AT_SYMLINK_NOFOLLOW))return 1;
+ empty_turn=moves;empty_seq=u.chaos.seq;return 0;
+}
 void chaos_haunt_tick(int dir) {
- struct chaos_haunt_state *h=&u.haunt;int i,x,y,fd,found=0,back=0;ssize_t n;
+ struct chaos_haunt_state *h=&u.haunt;int i,x,y,fd,found=0,back=0,look;ssize_t n;
  struct trial_input where={0,0};struct chaos_shadow_report report;char receipt[512];
  if(chaos_shadow_active())return;
  /* Admitted behavior and its lifecycle must not depend on transport health. */
@@ -224,8 +269,7 @@ void chaos_haunt_tick(int dir) {
   /* #165 first come, first served: another spender got the budget first.
    * Log the existing reason once per session, only for an installed
    * candidate; nothing is consumed, so a later budget may still admit it. */
-  struct stat st;
-  if(!budget_logged && !fstatat(dir,"haunting.lua",&st,AT_SYMLINK_NOFOLLOW)) {
+  if(!budget_logged && candidate_look(dir)==1) {
    budget_logged=1;chaos_event("haunting","result","budget");
   }
   return;
@@ -234,6 +278,9 @@ void chaos_haunt_tick(int dir) {
   if(simple_floor(x,y) && cansee(x,y) && !m_at(x,y) && distmin(x,y,u.ux,u.uy)>=3 &&
      !near_pet(x,y) && goodpos(x,y,NULL,0)){where.x=x;where.y=y;found=1;break;}
  if(!found)return;
+ look=candidate_look(dir);
+ if(look<0){h->checked=1;chaos_event("haunting","result","source_rejected");return;}
+ if(!look)return;
  fd=private_file(dir,"haunting.lua",O_RDONLY);if(fd<0)return;
  n=read(fd,h->source,CHAOS_LUA_SOURCE+1);close(fd);
  if(n<1 || n>CHAOS_LUA_SOURCE || memchr(h->source,0,n)){

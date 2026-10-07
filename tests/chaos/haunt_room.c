@@ -3,6 +3,12 @@
  *
  *   haunt_room W H PX PY SEED [TICKS]
  *
+ * Slice 5a (a candidate published while the game runs): HAUNT_ROOM_ADVANCE=1
+ * advances the turn before every tick except tick HAUNT_ROOM_HOLD (1-based),
+ * which keeps the previous tick's turn. HAUNT_ROOM_PUBLISH=K renames
+ * NYARLATHACK_RUN_DIR/.staged.lua to haunting.lua just before tick K. The
+ * events (turn, seq) are in the run directory's events.jsonl.
+ *
  * PX,PY are the player's 0-based offsets inside the room. SEED seeds the
  * native RNG the forked trial inherits. The tick is called TICKS times (default
  * 1). Prints one line: the room, whether the trial was spent (checked) and the
@@ -76,7 +82,7 @@ static int mapped(const char *path,int *px,int *py,int *qx,int *qy) {
  assert(*px>0);return 1;
 }
 int main(int argc,char **argv) {
- int w,h,px,py,seed,ticks=1,dir,i,count,qx=-1,qy=-1,away_tick=0,away_x=0,away_y=0,checked_before=-1;long seq;const char *map=getenv("HAUNT_ROOM_MAP");
+ int w,h,px,py,seed,ticks=1,dir,i,count,qx=-1,qy=-1,away_tick=0,away_x=0,away_y=0,checked_before=-1,advance,hold,publish;long seq;const char *map=getenv("HAUNT_ROOM_MAP");
  if(argc!=6 && argc!=7){fprintf(stderr,"usage: haunt_room W H PX PY SEED [TICKS]\n");return 2;}
  w=atoi(argv[1]);h=atoi(argv[2]);px=atoi(argv[3]);py=atoi(argv[4]);seed=atoi(argv[5]);
  if(argc==7)ticks=atoi(argv[6]);
@@ -155,7 +161,11 @@ int main(int argc,char **argv) {
  dir=open(getenv("NYARLATHACK_RUN_DIR"),O_RDONLY|O_DIRECTORY);assert(dir>=0);
  reseed_period=INT_MAX;reseed_count=0;srandom((unsigned)seed);
  seq=u.chaos.seq;
+ {const char *a=getenv("HAUNT_ROOM_ADVANCE"),*k=getenv("HAUNT_ROOM_HOLD"),*p=getenv("HAUNT_ROOM_PUBLISH");
+  advance=a && *a=='1';hold=k?atoi(k):0;publish=p?atoi(p):0;}
  for(i=0;i<ticks;++i) {
+  if(advance && i>0 && i+1!=hold){++moves;++monstermoves;}
+  if(i+1==publish)assert(!renameat(dir,".staged.lua",dir,"haunting.lua"));
   if(i+1==away_tick) {
    struct monst *pet;
    checked_before=u.haunt.checked;

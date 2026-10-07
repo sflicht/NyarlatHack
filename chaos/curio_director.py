@@ -30,7 +30,9 @@ second model request: an in-flight generation is abandoned on restore (its
 reservation still counts in the ledger), and a ready-but-unpublished curio is
 published from its verified evidence with no model call.
 
-The authoring deadline (480 s, regeneration included) is the lane's own: it
+The lane mechanics (record, deadline, regeneration) are shared with the hound
+lane in chaos/lane.py. The authoring deadline (480 s, regeneration included)
+is the lane's own: it
 is measured on the lane's monotonic clock from the request, independent of
 the transport. A hung or trickling request cannot keep the lane requested.
 Once the deadline passes with no settled result, poll() records failed with
@@ -41,12 +43,11 @@ replay can take it as ready. The thread may still finish its ledger row.
 """
 
 import json
-import os
-import threading
 import time
 from pathlib import Path
 
-from . import curio_author, curio_store as store
+from . import curio_author, curio_store as store, lane as shared
+from .lane import LANE_DEADLINE  # noqa: F401  (re-exported for callers)
 
 TRIGGER_TURNS = 150
 TRIGGER_EPISODES = 2
@@ -55,11 +56,6 @@ DUE = "curio-safe"
 EVIDENCE = ("curio-evidence", "curio-evidence-2")
 ADMISSION = "admission.json"
 _STEPS = ("idle", "requested", "ready", "failed", "published", "no_model")
-_KEYS = {"v", "game", "seed", "step", "safe", "outcome", "evidence"}
-# Optional: only the lane-clock deadline failure names its error type.
-_ERROR_TYPES = ("LaneDeadline",)
-LANE_DEADLINE = "LaneDeadline"
-_REGENERATE = ("envelope_rejected",)  # 3.8: not JSON, or over size
 _PHASES = {
     "pre_admitted": "ADMITTED",
     "admitted": "ADMITTED",
@@ -70,112 +66,38 @@ _PHASES = {
     "expired": "EXPIRED",
 }
 
-
-def _encode(value):
-    return json.dumps(value, sort_keys=True, separators=(",", ":")).encode()
-
-
-def _sync_directory(path):
-    fd = os.open(path, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
-    try:
-        os.fsync(fd)
-    finally:
-        os.close(fd)
-
-
-def _read_path(path, cap=store.MAX_SOURCE_BYTES):
-    path = Path(path)
-    with store._directory(path.parent) as d:
-        return store._read(d, path.name, cap)
-
-
-def _rename_publish(directory, name, raw, *, replace):
-    """Write a private temporary, fsync, rename(2). The final name never has a
-    second link and never holds a partial file."""
-    path = Path(directory)
-    temporary = path / (".publish-" + os.urandom(8).hex())
-    fd = os.open(temporary, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o600)
-    try:
-        view = memoryview(raw)
-        while view:
-            view = view[os.write(fd, view) :]
-        os.fsync(fd)
-    finally:
-        os.close(fd)
-    try:
-        if not replace:
-            with store._directory(path) as d:
-                if store._exists(d, name):
-                    raise FileExistsError(name + " already published")
-        # The director is the run directory's single writer (it shares the
-        # supervisor's .director.lock), so check-then-rename cannot race.
-        os.rename(temporary, path / name)
-    except BaseException:
-        temporary.unlink(missing_ok=True)
-        raise
-    _sync_directory(path)
+# The lane mechanics live in chaos/lane.py (shared with the hound lane).
+_encode = shared.encode
+_sync_directory = shared.sync_directory
+_read_path = shared.read_path
+_rename_publish = shared.rename_publish
 
 
 def publish_source(directory, raw, *, name="curio.lua"):
     """Publish once; an identical existing file is an earlier completed
     publish (crash before the lane record), anything else is a conflict."""
-    try:
-        _rename_publish(directory, name, raw, replace=False)
-    except FileExistsError:
-        if _read_path(Path(directory) / name) != raw:
-            raise ValueError(name + " conflicts with the evidence") from None
+    shared.publish_source(directory, raw, name=name)
 
 
 def read_lane(directory):
     """The last durable lane record, or None when this game never asked."""
-    with store._directory(directory) as d:
-        if not store._exists(d, LANE):
-            return None
-        raw = store._read(d, LANE, 4096)
-    record = json.loads(raw)
-    if (
-        type(record) is not dict
-        or set(record) - {"error_type"} != _KEYS
-        or record.get("error_type", _ERROR_TYPES[0]) not in _ERROR_TYPES
-        or ("error_type" in record and record["step"] != "failed")
-        or record["v"] != 1
-        or record["step"] not in _STEPS
-        or record["evidence"] not in (None, *EVIDENCE)
-        or type(record["game"]) is not str
-        or not 1 <= len(record["game"]) <= 64
-        or not set(record["game"]) <= set("0123456789abcdef")
-        or type(record["seed"]) is not int
-        or not 0 <= record["seed"] < 2**63
-    ):
-        raise ValueError("invalid curio lane record")
-    return record
+    return shared.read_record(
+        directory, LANE, steps=_STEPS, evidence=EVIDENCE, label="curio"
+    )
 
 
 def _write_lane(
     directory, record, step, safe, outcome=None, evidence=None, error_type=None
 ):
-    record = dict(record, step=step, safe=safe, outcome=outcome, evidence=evidence)
-    record.pop("error_type", None)
-    if error_type is not None:
-        record["error_type"] = error_type
-    _rename_publish(directory, LANE, _encode(record), replace=True)
-    return record
+    return shared.write_record(
+        directory, LANE, record, step, safe, outcome, evidence, error_type
+    )
 
 
 def new_lane(directory, *, game=None, seed=None):
     """Fresh game with authoring configured: the per-game identity (ledger
     run id) and the literary-layer seed, durable before anything else."""
-    record = dict(
-        v=1,
-        game=game or os.urandom(16).hex(),
-        seed=int.from_bytes(os.urandom(8), "big") >> 1 if seed is None else seed,
-        step="idle",
-        safe=None,
-        outcome=None,
-        evidence=None,
-    )
-    _rename_publish(directory, LANE, _encode(record), replace=False)
-    return record
+    return shared.new_record(directory, LANE, game=game, seed=seed)
 
 
 def curio_phase(directory):
@@ -210,8 +132,13 @@ def trigger_ready(history, *, planned_cost=0):
     )
 
 
-class CurioLane:
+class CurioLane(shared.AuthoringLane):
     """One background authoring request per game; poll() never blocks."""
+
+    LANE = LANE
+    EVIDENCE = EVIDENCE
+    STEPS = _STEPS
+    LABEL = "curio"
 
     def __init__(
         self,
@@ -228,20 +155,10 @@ class CurioLane:
         """Follows the run's lane record (new_lane() writes it for a fresh
         game). No record: authoring was never configured, the lane is off.
         clock is the lane's monotonic clock; the deadline is measured on it."""
-        self.directory = Path(directory)
-        self.backend = backend
-        self.validator = validator
         self.role = role
-        self.deadline_s = deadline_s
-        self.clock = clock
-        # Shared with the authoring thread: _started, _expired, _settled.
-        self._lock = threading.Lock()
-        self._started = None
-        self._expired = False  # the lane's clock gave up; results are void
-        self._settled = False  # a ready receipt was written in time
         # The engine's curio phase: read once, then kept current by note()
         # from the events the director loop already ingests.
-        self._phase = curio_phase(self.directory)
+        self._phase = curio_phase(directory)
         self.phase = phase or (lambda: self._phase)
         self._last_safe = None
         if snapshot is None:
@@ -249,48 +166,24 @@ class CurioLane:
 
             snapshot = snapshot_history
         self._snapshot = snapshot
-        self.thread = None
-        self.receipts = []
-        self.record = read_lane(self.directory)
-        self.state = self.record["step"] if self.record else "off"
-        if self.record is not None:
-            self.game_seed = self.record["seed"]
-            if backend is not None and hasattr(backend, "run_id"):
-                backend.run_id = self.record["game"]  # the ledger's game
-        if self.state == "requested":
-            self._restore_in_flight()
-        if self.state == "idle" and (backend is None or validator is None):
-            self.mark_no_model("no_backend" if backend is None else "no_validator")
-
-    def _restore_in_flight(self):
-        """Never ask again. Keep a completed ready answer; abandon the rest."""
-        for name in reversed(EVIDENCE):
-            try:
-                receipt = curio_author.read_evidence(self.directory / name)
-            except (OSError, ValueError):
-                continue
-            self.record = _write_lane(
-                self.directory, self.record, "ready", self.record["safe"], "ready", name
-            )
-            self.state = "ready"
-            self.receipts.append(receipt)
-            return
-        self.record = _write_lane(
-            self.directory,
-            self.record,
-            "failed",
-            self.record["safe"],
-            "abandoned_on_restore",
+        super().__init__(
+            directory, backend, validator=validator, deadline_s=deadline_s, clock=clock
         )
-        self.state = "failed"
 
-    def mark_no_model(self, reason):
-        """A configured provider proved unusable: no model content this game."""
-        if self.state == "idle":
-            self.record = _write_lane(
-                self.directory, self.record, "no_model", None, reason
-            )
-            self.state = "no_model"
+    def _read_evidence(self, evidence_dir):
+        return curio_author.read_evidence(evidence_dir)
+
+    def _author_once(self, evidence_dir, remaining):
+        return curio_author.author_curio(
+            self.backend,
+            events_dir=self.directory,
+            evidence_dir=evidence_dir,
+            game_seed=self.game_seed,
+            validator=self.validator,
+            role=self.role,
+            deadline_s=remaining,
+            gate=self._gate,
+        )
 
     def note(self, event):
         """Feed one ingested event; keeps the curio phase current."""
@@ -313,10 +206,7 @@ class CurioLane:
         if self.state == "idle" and self._worth_checking(latest, planned_cost):
             self._maybe_request(planned_cost)
         elif self.state == "requested":
-            if not self.thread.is_alive():
-                self._finished(safe)
-            else:
-                self._check_deadline(safe)
+            self._advance(safe)
         if self.state == "ready":
             self._publish(safe)
         return self.state
@@ -344,107 +234,15 @@ class CurioLane:
             return  # incomplete tail; the next poll sees it whole
         if not trigger_ready(history, planned_cost=planned_cost):
             return
-        # Durable BEFORE any send: a restore after this never asks again.
-        self.record = _write_lane(
-            self.directory, self.record, "requested", history.safe
-        )
-        self.state = "requested"
-        self._started = self.clock()  # the deadline runs from the request
-        self.thread = threading.Thread(target=self._author, daemon=True)
-        self.thread.start()
-
-    def _remaining(self):
-        return self.deadline_s - (self.clock() - self._started)
-
-    def _author(self):
-        for name in EVIDENCE:
-            # One total deadline: a regeneration gets only what is left.
-            remaining = self._remaining()
-            if remaining <= 0 or self._expired:
-                break
-            try:
-                receipt = curio_author.author_curio(
-                    self.backend,
-                    events_dir=self.directory,
-                    evidence_dir=self.directory / name,
-                    game_seed=self.game_seed,
-                    validator=self.validator,
-                    role=self.role,
-                    deadline_s=remaining,
-                    gate=self._gate,
-                )
-            except Exception as exc:  # recorded, never raised into the loop
-                receipt = dict(outcome="lane_error", error_type=type(exc).__name__)
-            receipt["evidence"] = name
-            self.receipts.append(receipt)
-            if receipt["outcome"] not in _REGENERATE:
-                break  # at most one regeneration, and only for 3.8's row
-
-    def _gate(self, outcome, fields, write):
-        """Called by author_curio for its final receipt, on the authoring
-        thread. Past the lane's deadline the receipt is written as the lane's
-        deadline failure, never as ready; in time, a ready receipt settles
-        the request so poll() no longer expires it."""
-        with self._lock:
-            if self._expired or self._remaining() <= 0:
-                self._expired = True
-                # What the late thread would have reported, kept for the
-                # record only; the outcome is the lane's deadline.
-                late = dict(fields, error_type=LANE_DEADLINE, late_outcome=outcome)
-                return write("deadline", late)
-            if outcome == "ready":
-                self._settled = True
-            return write(outcome, fields)
-
-    def _check_deadline(self, safe):
-        """The thread is still running: fail durably once the lane's own
-        clock passes the deadline, whatever the transport is doing."""
-        with self._lock:
-            if self._settled or self._remaining() > 0:
-                return
-            self._expired = True
-        self.record = _write_lane(
-            self.directory,
-            self.record,
-            "failed",
-            safe,
-            "deadline",
-            error_type=LANE_DEADLINE,
-        )
-        self.state = "failed"
-        # The daemon thread is left to finish its own ledger row; its result
-        # is void (see _gate) and nothing reads self.receipts any more.
-
-    def _finished(self, safe):
-        last = self.receipts[-1] if self.receipts else dict(outcome="lane_error")
-        ready = last["outcome"] == "ready"
-        self.record = _write_lane(
-            self.directory,
-            self.record,
-            "ready" if ready else "failed",
-            safe,
-            last["outcome"],
-            last.get("evidence") if ready else None,
-            error_type=(
-                LANE_DEADLINE if last.get("error_type") == LANE_DEADLINE else None
-            ),
-        )
-        self.state = self.record["step"]
-        self.thread = None
+        self._start(history.safe)
 
     def _publish(self, safe):
         if self.phase() != "VIRGIN":
             # DL3 (native expiry) or another admission came first: nothing
             # is published and the player sees nothing.
-            self.record = _write_lane(
-                self.directory,
-                self.record,
-                "failed",
-                safe,
-                "closed_before_publish",
-                self.record["evidence"],
+            self._write(
+                "failed", safe, "closed_before_publish", self.record["evidence"]
             )
-            self.state = "failed"
             return
         evidence = self.directory / self.record["evidence"]
         curio_author.read_evidence(evidence)  # re-verify the chain before use
@@ -464,19 +262,7 @@ class CurioLane:
                         )
                     ),
                 )
-        self.record = _write_lane(
-            self.directory,
-            self.record,
-            "published",
-            safe,
-            "ready",
-            self.record["evidence"],
-        )
-        self.state = "published"
-
-    def wait(self, timeout=None):
-        if self.thread is not None:
-            self.thread.join(timeout)
+        self._write("published", safe, "ready", self.record["evidence"])
 
 
 def engine_admission(directory):

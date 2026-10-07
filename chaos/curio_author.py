@@ -31,7 +31,7 @@ import os
 from pathlib import Path
 import time
 
-from . import curio, curio_store as store, curio_truth
+from . import curio, curio_store as store, curio_truth, lane
 from .history import public_context, snapshot_history
 
 DEADLINE_S = 480  # Sam: raised to 8 minutes after the 368/391 s rerun responses
@@ -184,40 +184,16 @@ def author_curio(
                 return write(outcome, fields)
             return gate(outcome, fields, write)
 
-        backend.deadline = started + deadline_s
-        attempts = []
-        for attempt in range(3):
-            # A backend must opt in after a known-durable transport failure;
-            # never retry arbitrary validation, credential or ledger errors.
-            backend.retry_delay = None
-            try:
-                raw, transport = backend.generate(
-                    prepared["instructions"], prepared["prompt"], return_receipt=True
-                )
-                attempts.append(transport)
-                break
-            except Exception as exc:
-                transport = getattr(backend, "last_receipt", None)
-                attempts.append(transport)
-                delay = getattr(backend, "retry_delay", None)
-                remaining = backend.deadline - time.monotonic()
-                timed_out = isinstance(exc, TimeoutError) or remaining <= 0
-                if (
-                    not timed_out
-                    and attempt < 2
-                    and delay is not None
-                    and delay >= 0
-                    and delay < remaining
-                ):
-                    time.sleep(delay)
-                    continue
-                return finish(
-                    "deadline" if timed_out else "transport_failed",
-                    error_type=type(exc).__name__[:80],
-                    latency_s=round(time.monotonic() - started, 3),
-                    transport=transport,
-                    transport_attempts=attempts,
-                )
+        try:
+            raw, transport, attempts = lane.send(
+                backend,
+                prepared["instructions"],
+                prepared["prompt"],
+                started=started,
+                deadline_s=deadline_s,
+            )
+        except lane.SendFailed as failed:
+            return finish(failed.outcome, **failed.fields)
         receipt["transport_attempts"] = attempts
         arrived = time.monotonic()
         raw_bytes = raw.encode("utf-8")

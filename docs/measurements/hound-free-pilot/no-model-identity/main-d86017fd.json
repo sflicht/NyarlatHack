@@ -1,0 +1,27 @@
+{
+ "quit": 0,
+ "installed_sha256": "4e4f0154dc8830c753f13af25b592ef255ba97e1be6cf81e019d4568f6cfa9e9",
+ "haunting": [
+  "pre_admitted",
+  "accepted"
+ ],
+ "backtracks": 29,
+ "events_sha256": "eb8a78478806239a8d05359b0388fb7cbada3f2902f61b3c476cfbfa71f51566",
+ "raw_sha256": "d612fb302e7f8c06a70962c7a4d5da5335dbab78f588f839836d455a5cdea367",
+ "inputs_sha256": "3d4cac4e68b1e08abfdf4017309112692e47bb45b9e27fd10b56832fe80830d7",
+ "xlogfile_sha256": "e1c4f99a47d6db64e9c2001bd615136e43b5df996cd2e4e703a147d5d905829c",
+ "haunting_used_sha256": "4e4f0154dc8830c753f13af25b592ef255ba97e1be6cf81e019d4568f6cfa9e9",
+ "dreamlands_sha256": "f20c6a581a6f09b15d522170035ace50f684e020b39fecf85b91b2deee16c16a",
+ "run_files": [
+  ".director.lock",
+  "director.log",
+  "dreamlands.json",
+  "events.jsonl",
+  "haunting-used.lua",
+  "haunting.lua",
+  "ordinary-choice.json",
+  "reveal.json",
+  "whisper.json",
+  "whispers.jsonl"
+ ]
+}

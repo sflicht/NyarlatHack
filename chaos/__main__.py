@@ -259,6 +259,13 @@ def main(argv=None):
                 help="recorded curio evidence with admission.json: staged before "
                 "the schedule runs; the engine admits it at the logged index",
             )
+            p.add_argument(
+                "--haunt-evidence",
+                type=Path,
+                help="recorded run directory with haunt-admission.json: its exact "
+                "hound source and the engine's logged window are staged before "
+                "the schedule runs; the engine reads it only in that window",
+            )
         if name == "model":
             p.add_argument(
                 "--endpoint",
@@ -314,6 +321,10 @@ def main(argv=None):
                 from .curio_director import stage_replay
 
                 stage_replay(args.run_dir, args.curio_evidence)
+            if args.haunt_evidence is not None:
+                from .hound_director import stage_replay as stage_hound
+
+                stage_hound(args.run_dir, args.haunt_evidence)
         elif args.command == "oauth":
             from .oauth import OAuthBackend
 
