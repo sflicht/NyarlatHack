@@ -7,11 +7,10 @@ the #251 pilot's: bare 6×4, 12×6 and 20×8, plus the recorded #194 cornered
 map, each with native RNG seeds 1, 2 and 3 (12 trials per source).
 `measure.py` reuses the pilot's `link`, `shadow` and `reason`.
 
-Instrument: the trial now also reports `min_dist` and `median_dist`. These
+Instrument (`instrument.patch`, applied only for this measurement; the engine on this branch is unchanged): the trial reports `min_dist` and `median_dist`. These
 are the Chebyshev distance from hound to player after each hound action,
-taken as the minimum and the lower median over the steps. They are new fields
-in `dreamlands.json`, and the acceptance rule is unchanged. Engine revision:
-6cccef24 plus that change, CHAOS=1, 0 warnings.
+taken as the minimum and the lower median over the steps. The acceptance rule was not touched. Engine revision:
+6cccef24 plus that patch, CHAOS=1, 0 warnings.
 
 Files: `baseline/trials.json` (every report), `baseline/table.md`
 (per-source medians).

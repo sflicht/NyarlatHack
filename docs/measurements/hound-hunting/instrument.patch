@@ -1,0 +1,57 @@
+diff --git a/include/chaos_shadow.h b/include/chaos_shadow.h
+index fb3f76aaf..b990ae7b7 100644
+--- a/include/chaos_shadow.h
++++ b/include/chaos_shadow.h
+@@ -1,7 +1,9 @@
+ /* NetHack General Public License. Fixed-size shadow report; no script callbacks. */
+ #ifndef CHAOS_SHADOW_H
+ #define CHAOS_SHADOW_H
+-struct chaos_shadow_report { int ok,steps,blocked,contacts,died,script_errors,sandboxed,moved,escaped,max_damage; };
++/* min_dist/median_dist: Chebyshev distance hound-player after each hound
++ * action (median: lower median over the steps taken); -1 when no step ran. */
++struct chaos_shadow_report { int ok,steps,blocked,contacts,died,script_errors,sandboxed,moved,escaped,max_damage,min_dist,median_dist; };
+ int chaos_shadow_run(void (*)(void *,struct chaos_shadow_report *),void *,struct chaos_shadow_report *);
+ int chaos_shadow_active(void);
+ void chaos_shadow_end(int);
+diff --git a/src/chaos_haunt.c b/src/chaos_haunt.c
+index d9ccb15ec..52f2d422a 100644
+--- a/src/chaos_haunt.c
++++ b/src/chaos_haunt.c
+@@ -135,7 +135,8 @@ static struct monst *spawn_hound(int x,int y) {
+  return m;
+ }
+ static void trial(void *arg,struct chaos_shadow_report *r) {
+- struct trial_input *a=arg;struct monst *m;int i,j,before,ox,oy,dx,dy,bx,by,best,score;
++ struct trial_input *a=arg;struct monst *m;int i,j,before,ox,oy,dx,dy,bx,by,best,score,d,seen,hist[16]={0};
++ r->min_dist=r->median_dist=-1;
+  headless();m=spawn_hound(a->x,a->y);
+  if(!m || m->mtyp!=PM_JACKAL || m->mtame || m->mpeaceful)return;
+  u.haunt.active=1;u.haunt.target=m->m_id;u.haunt.until=moves+65;
+@@ -158,12 +159,15 @@ static void trial(void *arg,struct chaos_shadow_report *r) {
+   before=u.uhp;ox=m->mx;oy=m->my;
+   (void)m_move(m,0);
+   if(m->mx!=ox || m->my!=oy)++r->moved;
+-  if(distmin(u.ux,u.uy,m->mx,m->my)<=1){++r->contacts;(void)mattacku(m);}
++  d=distmin(u.ux,u.uy,m->mx,m->my);++hist[d<15?d:15];
++  if(r->min_dist<0 || d<r->min_dist)r->min_dist=d;
++  if(d<=1){++r->contacts;(void)mattacku(m);}
+   if(before-u.uhp>r->max_damage)r->max_damage=before-u.uhp;
+   ++r->steps;r->blocked=blocked_move;r->script_errors=script_error;
+   if(script_error)break;
+   if(i>8 && distmin(u.ux,u.uy,m->mx,m->my)>=3)r->escaped=1;
+  }
++ for(d=0,seen=0;d<16 && r->steps;++d)if((seen+=hist[d])*2>=r->steps){r->median_dist=d;break;}
+  r->ok=(r->steps==64 && r->moved>0 && r->escaped && !r->script_errors && r->max_damage<=4 && !r->died);
+ }
+ static int private_file(int dir,const char *name,int flags) {
+@@ -302,8 +306,8 @@ void chaos_haunt_tick(int dir) {
+  if(fd<0)return;
+  if(write(fd,h->source,n)!=n || fsync(fd)){close(fd);return;}close(fd);
+  if(!chaos_shadow_run(trial,&where,&report)){chaos_event("haunting","result","shadow_failed");return;}
+- snprintf(receipt,sizeof receipt,"{\"accepted\":%d,\"sandboxed\":%d,\"steps\":%d,\"moved\":%d,\"blocked\":%d,\"contacts\":%d,\"died\":%d,\"script_errors\":%d,\"escaped\":%d,\"max_damage\":%d}\n",
+-  report.ok,report.sandboxed,report.steps,report.moved,report.blocked,report.contacts,report.died,report.script_errors,report.escaped,report.max_damage);
++ snprintf(receipt,sizeof receipt,"{\"accepted\":%d,\"sandboxed\":%d,\"steps\":%d,\"moved\":%d,\"blocked\":%d,\"contacts\":%d,\"died\":%d,\"script_errors\":%d,\"escaped\":%d,\"max_damage\":%d,\"min_dist\":%d,\"median_dist\":%d}\n",
++  report.ok,report.sandboxed,report.steps,report.moved,report.blocked,report.contacts,report.died,report.script_errors,report.escaped,report.max_damage,report.min_dist,report.median_dist);
+  fd=private_file(dir,"dreamlands.json",O_WRONLY|O_CREAT|O_EXCL);
+  if(fd<0)return;
+  n=strlen(receipt);if(write(fd,receipt,n)!=n || fsync(fd)){close(fd);return;}close(fd);
