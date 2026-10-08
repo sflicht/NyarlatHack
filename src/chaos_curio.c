@@ -145,6 +145,25 @@ inert:
     return 1;
 }
 
+/* Main dungeon (dungeon zero) or the Gnomish Mines; never Sokoban or any
+ * other branch. Depth is absolute, so the two share one scale. */
+static int curio_mines(void)
+{
+    return u.uz.dnum != 0 && In_mines(&u.uz);
+}
+
+static int curio_branch(void)
+{
+    return u.uz.dnum == 0 || curio_mines();
+}
+
+static int curio_place_depth(void)
+{
+    int d = depth(&u.uz);
+    return curio_branch() && d >= CHAOS_CURIO_PLACE_MIN_DEPTH
+        && d <= CHAOS_CURIO_PLACE_MAX_DEPTH;
+}
+
 /* Not saved: a capability for this one mklev invocation, never for restore.
  * Nested/duplicate begin or prepare invalidates the outer capability too. */
 static struct {
@@ -167,7 +186,7 @@ void chaos_curio_begin(void)
     placement.eligible = placement.prepared && !placement.active
         && placement.eligible && on_level(&placement.level, &u.uz)
         && !chaos_shadow_active() && u.curio.phase == CHAOS_CURIO_ADMITTED
-        && u.uz.dnum == 0 && u.uz.dlevel >= 2 && u.uz.dlevel <= 3;
+        && curio_place_depth();
     placement.prepared = 0;
     placement.active = 1;
     placement.ordinary = 0;
@@ -196,13 +215,17 @@ static int curio_room_cell(struct mkroom *r, int x, int y)
 
 void chaos_curio_finish(int generated)
 {
-    int eligible = placement.active && placement.eligible && placement.ordinary
+    /* Mines filler (makemaz "minefill", the only non-special Mines level)
+     * never reaches makelevel's ordinary mark; Is_special below keeps
+     * Minetown and Mines' End out. */
+    int eligible = placement.active && placement.eligible
+        && (placement.ordinary || curio_mines())
         && generated && on_level(&placement.level, &u.uz);
     int x, y, r, bestx = 0, besty = 0, best = COLNO * ROWNO * 4;
     struct obj *obj;
     memset(&placement, 0, sizeof placement); /* consume even bones/failure */
     if (!eligible || chaos_shadow_active() || u.curio.phase != CHAOS_CURIO_ADMITTED
-        || u.uz.dnum != 0 || u.uz.dlevel < 2 || u.uz.dlevel > 3
+        || !curio_place_depth()
         || Is_special(&u.uz) || Is_rogue_level(&u.uz)
         || dungeons[u.uz.dnum].proto[0] || level.flags.is_maze_lev) return;
     /* One fixed-size scan; upstairs room first, then distance, stable ties.
@@ -310,8 +333,9 @@ void chaos_curio_safe(int dir)
     int fd, attempts = 0, closed, due = 1;
     static int busy;
     if (busy || chaos_shadow_active()) return;
-    /* Dungeon zero is the main dungeon; use local, not absolute depth. */
-    if (u.uz.dnum == 0 && u.uz.dlevel >= 3
+    /* Absolute depth on any branch: nothing at depth EXPIRE or deeper is
+     * reachable without passing it in the main dungeon or the Mines. */
+    if (depth(&u.uz) >= CHAOS_CURIO_EXPIRE_DEPTH
         && (u.curio.phase == CHAOS_CURIO_VIRGIN
             || u.curio.phase == CHAOS_CURIO_ADMITTED)) {
         u.curio.phase = CHAOS_CURIO_EXPIRED;
@@ -319,7 +343,8 @@ void chaos_curio_safe(int dir)
         chaos_event("curio", "result", "expired");
     }
     if (dir < 0 || u.curio.phase != CHAOS_CURIO_VIRGIN
-        || u.uz.dnum != 0 || u.uz.dlevel < 1 || u.uz.dlevel > 2
+        || !curio_branch() || depth(&u.uz) < 1
+        || depth(&u.uz) > CHAOS_CURIO_ADMIT_MAX_DEPTH
         || program_state.gameover || multi < 0 || u.usleep
         || (Upolyd ? u.mh : u.uhp) <= 0
         || !chaos_state_valid(&u.chaos)

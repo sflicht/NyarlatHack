@@ -301,7 +301,23 @@ class CurioAdmissionTests(unittest.TestCase):
             with self.subTest(mode=mode):
                 self.run_case(mode, 0)
         self.run_case("level2", 2)
-        self.run_case("level3", 4)
+
+    def test_window_by_absolute_depth(self):
+        # Main dungeon or the Gnomish Mines at depth 1..4 admits; depth 5
+        # neither admits nor expires; depth 6 expires (VIRGIN -> EXPIRED).
+        for mode, expected in (
+            ("level3", 2),
+            ("level4", 2),
+            ("level5", 0),
+            ("level6", 4),
+            ("mines3", 2),
+            ("mines4", 2),
+            ("mines5", 0),
+            ("mines6", 4),
+            ("sokoban4", 0),
+        ):
+            with self.subTest(mode=mode):
+                self.run_case(mode, expected)
 
     def test_unsafe_files(self):
         self.run_case("permissions", 1, setup=lambda r: (r / "curio.lua").chmod(0o644))

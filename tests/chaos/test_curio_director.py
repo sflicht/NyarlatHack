@@ -73,7 +73,7 @@ class LaneBase(unittest.TestCase):
             validator=FakeValidator() if validator is None else validator,
             **kwargs,
         )
-        # The fixture game later reached DL3 (native "expired"); these tests
+        # The fixture game later reached the expiry depth (native "expired"); these tests
         # replay the decision as of an earlier point where the curio was
         # VIRGIN. note() still moves it on, as in the director loop.
         lane._phase = "VIRGIN"
@@ -324,7 +324,7 @@ class FailureTableTests(LaneBase):
 
         lane = self.lane(self.backend(create=slow))
         self.assertEqual(lane.poll(safe=5), "requested")
-        # Native expiry on reaching DL3, observed while authoring runs.
+        # Native expiry at the expiry depth, observed while authoring runs.
         lane.note(dict(event="curio", detail="expired"))
         release.set()
         self.assertEqual(self.drive(lane), "failed")

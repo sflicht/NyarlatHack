@@ -5,6 +5,15 @@
 #define CHAOS_CURIO_VERSION 1
 #define CHAOS_CURIO_SOURCE 4096
 
+/* The curio window, in absolute depth (depth(&u.uz)), main dungeon or the
+ * Gnomish Mines only. Admission at a safe point at depth 1..ADMIT_MAX;
+ * placement on the next fresh level at depth PLACE_MIN..PLACE_MAX; a safe
+ * point at depth EXPIRE or deeper (any dungeon) retires VIRGIN or ADMITTED. */
+#define CHAOS_CURIO_ADMIT_MAX_DEPTH 4
+#define CHAOS_CURIO_PLACE_MIN_DEPTH 2
+#define CHAOS_CURIO_PLACE_MAX_DEPTH 5
+#define CHAOS_CURIO_EXPIRE_DEPTH 6
+
 enum chaos_curio_phase {
     CHAOS_CURIO_VIRGIN = 0,
     CHAOS_CURIO_REJECTED,
