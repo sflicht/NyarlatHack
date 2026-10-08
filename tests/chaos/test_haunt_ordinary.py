@@ -23,7 +23,7 @@ import unittest
 
 from gameplay_support import Game, ROOT
 from artifact_hygiene import RetainOnFailure
-from haunt_explorer import DELTA, Player
+from haunt_explorer import DELTA, KEYS, Player
 
 TELEGRAPH = "Something has learned the rhythm of your footsteps."
 PACK = ROOT / "chaos/packs/footsteps.lua"
@@ -150,16 +150,33 @@ class OrdinaryHauntTests(RetainOnFailure):
         self.assertEqual(len(restored), 1)
         self.assertEqual(restored[0]["spent"], 2)
 
-        # 7. The hunt ends. On this replay-clock map the pet kills the hound
-        # before the 60-move expiry (#201): the engine logs "killed" from its
-        # own death path (mondead), on the turn of the kill, and nothing after.
-        for _ in range(90):
+        # 7. The hunt ends. Pets never attack the echo hound (Sam, 2026-10-08),
+        # so the player kills it before the 60-move expiry: pace the same line
+        # as step 5 (walking into the hound attacks it) and fight it ('F')
+        # whenever the player's own look finds it adjacent. The engine logs
+        # "killed" from its own death path (mondead), on the turn of the kill,
+        # and nothing after.
+        _, lo, hi, back, forth = player.pace_line()
+        walk = ([forth] * hi + [back] * (lo + hi) + [forth] * lo) * 10
+        for step in walk[:90]:
             if {"expired", "killed"} & set(self.haunting(game)):
                 break
-            player.step("s")
+            me = player.me()
+            hound = [
+                d
+                for d in player.find("d")
+                if max(abs(d[0] - me[0]), abs(d[1] - me[1])) == 1
+                and "echo hound" in player.farlook(d)
+            ]
+            if hound:
+                key = KEYS[(hound[0][0] - me[0], hound[0][1] - me[1])]
+                game.more(game.send("F"))
+                player.step(key)
+            else:
+                player.step(step)
             self.assertNotIn("You die", player.screen.line(0))
         self.assertEqual(self.haunting(game), ["pre_admitted", "accepted", "killed"])
-        self.assertIn(b"echo hound is killed", bytes(game.raw).lower())
+        self.assertIn(b"you kill echo hound", bytes(game.raw).lower())
         ended = [e for e in game.events() if e["detail"] == "killed"][0]
         self.assertLess(ended["turn"], accepted["turn"] + 60)
         steps = self.count(game, "haunt_step")

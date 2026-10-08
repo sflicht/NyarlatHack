@@ -3746,6 +3746,9 @@ mm_aggression(magr, mdef)
 struct monst * magr;	/* monster that is currently deciding where to move */
 struct monst * mdef;	/* another monster which is next to it */
 {
+#ifdef CHAOS
+	if((magr->mtame && chaos_haunt_is_hound(mdef)) || (chaos_haunt_is_hound(magr) && mdef->mtame)) return 0L;
+#endif
 	long res = mm_grudge(magr, mdef, TRUE);
 
 	// must be able to see mdef -- note that this has a 1/8 chance when adjacent even when totally blind!

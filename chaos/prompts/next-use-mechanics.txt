@@ -1,5 +1,5 @@
 Next-use mechanics guide v1 (trusted instructions, not public history)
-SOURCE revision: 48a37eab1eca62a3a04d99aa3e240263f0d64076.
+SOURCE revision: 8288162be57ed3ab1c556b87f1812cff1d854da7.
 Exact referenced file hashes: next-use-mechanics-sources.json. The builder checks
 these before transport; source drift requires review, not a silently newer guide.
 LEGAL means representation bounds; SOURCE means native semantics; MEASURED and

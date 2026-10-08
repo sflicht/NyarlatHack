@@ -32,6 +32,16 @@ extern int n_dgns;
 static int telegraphs;
 void __wrap_pline(const char *fmt,...) {if(strstr(fmt,"learned the rhythm"))++telegraphs;}
 static void quietglyph(winid w,XCHAR_P x,XCHAR_P y,int g){(void)w;(void)x;(void)y;(void)g;}
+/* HAUNT_ROOM_PETFIGHT: every monster-on-monster attack passes through
+ * xattacky (mattackm calls it from another object, so --wrap sees it). */
+static struct monst *petfight_pet,*petfight_jackal;
+static int pet_attacks,jackal_attacks;
+int __real_xattacky(struct monst *,struct monst *,int,int,long);
+int __wrap_xattacky(struct monst *a,struct monst *d,int x,int y,long f) {
+ if(a && a==petfight_pet && d==petfight_jackal)++pet_attacks;
+ if(a && a==petfight_jackal && d==petfight_pet)++jackal_attacks;
+ return __real_xattacky(a,d,x,y,f);
+}
 static char visible[ROWNO][COLNO],*rows[ROWNO];
 
 /* Solid rock everywhere, one lit room of floor at (X0,Y0). */
@@ -129,6 +139,51 @@ int main(int argc,char **argv) {
  if(getenv("HAUNT_ROOM_PET_AWAY")) {
   /* #201: before tick K (1-based), the pet walks to room offset X,Y. */
   assert(sscanf(getenv("HAUNT_ROOM_PET_AWAY"),"%d,%d,%d",&away_tick,&away_x,&away_y)==3 && away_tick>=1);
+ }
+ if(getenv("HAUNT_ROOM_PETFIGHT")) {
+  /* Pets and the echo hound (Sam 2026-10-08). A tame little dog at room
+   * (2,2) next to a hostile jackal at (3,2); the player at the PX,PY given.
+   * Mode "hound": the jackal is the admitted hound (u.haunt active, its
+   * m_id). Mode "jackal": an ordinary jackal, no haunt. Then, over ROUNDS
+   * rounds with both restored each time: the pet's own turn (the real
+   * dog_move), and the jackal's fight with its neighbours (the real fightm,
+   * where the pet may return the attack, and the jackal may attack the
+   * pet). Also: whether mfndpos lets the jackal move onto the pet (ALLOW_M,
+   * m_move's attack-on-move). Counts every mattackm the pet
+   * makes against the jackal (wrapped; both callers are in other objects).
+   * Also prints the pure predicates and whether they drew RNG. */
+  const char *mode=getenv("HAUNT_ROOM_PETFIGHT");int r,rounds=40,draw;struct monst *pet,*jackal;
+  int hound=!strcmp(mode,"hound");long agg,ragg;int onto_pet=0;boolean ok_melee,ok_ranged;int is_hound;
+  assert(hound || !strcmp(mode,"jackal"));
+  test_rng_reset();
+  pet=makemon(&mons[PM_LITTLE_DOG],X0+2,Y0+2,MM_NOGROUP|MM_NOWAIT|NO_MINVENT|MM_EDOG);
+  assert(pet);initedog(pet);
+  jackal=makemon(&mons[PM_JACKAL],X0+3,Y0+2,MM_NOGROUP|MM_NOWAIT|NO_MINVENT);
+  assert(jackal && jackal->mx==X0+3 && jackal->my==Y0+2);setmangry(jackal);jackal->msleeping=0;
+  if(hound){u.haunt.active=1;u.haunt.target=jackal->m_id;u.haunt.until=moves+60;u.haunt.dnum=1;u.haunt.dlevel=1;}
+  /* Large pools so 40 rounds can run: the test RNG may roll a 1 HP pet. */
+  pet->mhp=pet->mhpmax=jackal->mhp=jackal->mhpmax=200;
+  petfight_pet=pet;petfight_jackal=jackal;
+  draw=test_rng_begin();
+  is_hound=chaos_haunt_is_hound(jackal);
+  test_rng_unchanged(draw);
+  agg=mm_aggression(pet,jackal);ragg=mm_aggression(jackal,pet);
+  {coord pp[9];long pi[9];int k,n=mfndpos(jackal,pp,pi,ALLOW_U);for(k=0;k<n;++k)if(pp[k].x==pet->mx && pp[k].y==pet->my)onto_pet=1;}
+  ok_melee=acceptable_pet_target(pet,jackal,FALSE);ok_ranged=acceptable_pet_target(pet,jackal,TRUE);
+  srandom(7u);reseed_period=INT_MAX;
+  for(r=0;r<rounds && !DEADMONSTER(jackal) && !DEADMONSTER(pet);++r) {
+   pet->mhp=pet->mhpmax;jackal->mhp=jackal->mhpmax;pet->movement=jackal->movement=NORMAL_SPEED;
+   if(pet->mx!=X0+2 || pet->my!=Y0+2){remove_monster(pet->mx,pet->my);place_monster(pet,X0+2,Y0+2);}
+   ++moves;++monstermoves;if(hound)u.haunt.until=moves+60;
+   (void)dog_move(pet,0,NULL);
+   if(DEADMONSTER(jackal) || DEADMONSTER(pet))break;
+   pet->mhp=pet->mhpmax;pet->movement=NORMAL_SPEED;
+   if(pet->mx!=X0+2 || pet->my!=Y0+2){remove_monster(pet->mx,pet->my);place_monster(pet,X0+2,Y0+2);}
+   (void)fightm(jackal);
+  }
+  printf("petfight mode=%s is_hound=%d aggression=%ld melee_ok=%d ranged_ok=%d rounds=%d pet_attacks=%d jackal_attacks=%d jackal_dead=%d pet_dead=%d hound_aggression=%d hound_onto_pet=%d\n",
+         mode,is_hound,agg?1L:0L,ok_melee?1:0,ok_ranged?1:0,r,pet_attacks,jackal_attacks,DEADMONSTER(jackal)?1:0,DEADMONSTER(pet)?1:0,ragg?1:0,onto_pet);
+  return 0;
  }
  if(getenv("HAUNT_ROOM_PICK")) {
   /* Direct handler check: an admitted hound at H, the footsteps trail aimed

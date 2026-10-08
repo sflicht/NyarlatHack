@@ -62,6 +62,7 @@ class HauntRoomTests(RetainOnFailure):
             str(ROOT / "tests/chaos/haunt_room.c"),
             *map(str, controlled_rng_objects(objects, cls.root)),
             "-Wl,--wrap=pline",
+            "-Wl,--wrap=xattacky",
             "-lncursesw",
             "-ltinfo",
             "-lm",
@@ -179,6 +180,43 @@ class HauntRoomTests(RetainOnFailure):
     def test_pick_free_request_unchanged(self):
         got = self.pick("pick-free", (4, 4), (1, 1), (3, 3))
         self.assertEqual(got["square"], "2,2", got)
+
+    # --- pets never attack the echo hound (Sam 2026-10-08) --------------------
+    def petfight(self, name, mode):
+        """A tame little dog next to a hostile jackal, 40 rounds of the real
+        dog_move and fightm; mode 'hound' makes the jackal the admitted hound."""
+        fields, _, _ = self.run_room(name, [5, 5, 0, 0, 1], HAUNT_ROOM_PETFIGHT=mode)
+        return fields
+
+    def test_pet_never_attacks_the_admitted_hound(self):
+        got = self.petfight("petfight-hound", "hound")
+        self.assertEqual(
+            (got["is_hound"], got["aggression"], got["melee_ok"], got["ranged_ok"]),
+            ("1", "0", "0", "0"),
+            got,
+        )
+        self.assertEqual(got["pet_attacks"], "0", got)
+        self.assertEqual((got["jackal_dead"], got["pet_dead"]), ("0", "0"), got)
+        # Two-way truce (Sam, 2026-10-08 14:51Z): the hound never attacks the
+        # pet either, neither in fightm nor by moving onto it (mfndpos ALLOW_M).
+        self.assertEqual(
+            (got["hound_aggression"], got["hound_onto_pet"], got["jackal_attacks"]),
+            ("0", "0", "0"),
+            got,
+        )
+        self.assertEqual(got["rounds"], "40", got)
+
+    def test_pet_still_attacks_an_ordinary_jackal(self):
+        got = self.petfight("petfight-jackal", "jackal")
+        self.assertEqual(
+            (got["is_hound"], got["aggression"], got["melee_ok"]), ("0", "1", "1"), got
+        )
+        self.assertGreater(int(got["pet_attacks"]), 0, got)
+        # An ordinary jackal still fights the pet and may move onto it.
+        self.assertEqual(
+            (got["hound_aggression"], got["hound_onto_pet"]), ("1", "1"), got
+        )
+        self.assertGreater(int(got["jackal_attacks"]), 0, got)
 
     # --- the whole trial -------------------------------------------------------
     # --- #201: never spawn within the pet's reach -------------------------------

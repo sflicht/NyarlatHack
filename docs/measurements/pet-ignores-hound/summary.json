@@ -1,0 +1,76 @@
+{
+ "main": {
+  "games": 50,
+  "errors": 0,
+  "hound_lane": 0,
+  "admitted": 44,
+  "rejected": 0,
+  "undecided": 6,
+  "steps_median": 2.0,
+  "steps_mean": 2.82,
+  "steps_mean_ci95": [
+   2.32,
+   3.43
+  ],
+  "steps_distribution": {
+   "1": 9,
+   "2": 17,
+   "3": 8,
+   "4": 3,
+   "5": 3,
+   "6": 1,
+   "7": 1,
+   "8": 1,
+   "9": 1
+  },
+  "lived_10_plus": 8,
+  "life_median": 5.0,
+  "who": {
+   "pet": 36,
+   "killed, unattributed": 2,
+   "player": 6
+  },
+  "pet_hits_hound": 14,
+  "hound_hits_pet": 5,
+  "hound_misses_pet": 3,
+  "you_hit_hound": 7,
+  "first_step_after_admission_median": 1.0,
+  "accepted_turn_median": 7.0
+ },
+ "head": {
+  "games": 50,
+  "errors": 1,
+  "hound_lane": 0,
+  "admitted": 35,
+  "rejected": 1,
+  "undecided": 13,
+  "steps_median": 3,
+  "steps_mean": 3,
+  "steps_mean_ci95": [
+   2.31,
+   3.8
+  ],
+  "steps_distribution": {
+   "0": 5,
+   "1": 4,
+   "2": 7,
+   "3": 5,
+   "4": 6,
+   "5": 5,
+   "6": 2,
+   "10+": 1
+  },
+  "lived_10_plus": 27,
+  "life_median": 17,
+  "who": {
+   "player": 31,
+   "expired alive": 4
+  },
+  "pet_hits_hound": 0,
+  "hound_hits_pet": 38,
+  "hound_misses_pet": 67,
+  "you_hit_hound": 40,
+  "first_step_after_admission_median": 1.0,
+  "accepted_turn_median": 9
+ }
+}

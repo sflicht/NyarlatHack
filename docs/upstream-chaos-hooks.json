@@ -48,6 +48,20 @@
     }
   },
   "windows": {
+    "src/xhity.c": [
+      {
+        "symbol": "xattacky",
+        "start": ["xattacky", "(", "struct", "monst", "*", "magr", ",", "struct", "monst", "*", "mdef", ",", "int", "tarx", ",", "int", "tary", ",", "long", "modifier_flags", ")", "{"],
+        "end": ["wildmiss", "(", "magr", ",", "attk", ",", "otmp", ",", "ranged", ")", "struct"]
+      }
+    ],
+    "src/dogmove.c": [
+      {
+        "symbol": "acceptable_pet_target",
+        "start": ["acceptable_pet_target", "(", "mtmp", ",", "mtmp2", ",", "ranged", ")", "register"],
+        "end": ["betrayed", "(", "mtmp", ")", "register"]
+      }
+    ],
     "src/files.c": [
       {
         "symbol": "restore_saved_game",
@@ -817,6 +831,11 @@
       }
     ],
     "src/mon.c": [
+      {
+        "symbol": "mm_aggression",
+        "start": ["mm_aggression", "(", "magr", ",", "mdef", ")", "struct"],
+        "end": ["long", "mm_grudge", "(", "magr", ",", "mdef", ",", "actual", ")"]
+      },
       {
         "symbol": "mondead",
         "start": ["mondead", "(", "mtmp", ")", "register", "struct", "monst", "*", "mtmp", ";", "{"],
@@ -6144,6 +6163,161 @@
       ],
       "count": 1,
       "chaos0": "No-op macro; arguments are not evaluated."
+    },
+    {
+      "id": "hook-0416",
+      "file": "src/dogmove.c",
+      "symbol": "acceptable_pet_target",
+      "kind": "directive",
+      "purpose": "acceptable_pet_target: guard the echo-hound exception",
+      "signature": [
+        "#",
+        "ifdef",
+        "CHAOS"
+      ],
+      "guards": [
+        "ifdef OVL0"
+      ],
+      "count": 1,
+      "chaos0": "Directive only; CHAOS undefined drops the guarded line."
+    },
+    {
+      "id": "hook-0417",
+      "file": "src/dogmove.c",
+      "symbol": "acceptable_pet_target",
+      "kind": "call-or-declaration",
+      "purpose": "acceptable_pet_target: a tame monster never takes the admitted echo hound as a target (Sam 2026-10-08)",
+      "signature": [
+        "-",
+        ">",
+        "mtame",
+        "&",
+        "&",
+        "chaos_haunt_is_hound",
+        "(",
+        "mtmp2",
+        ")",
+        ")",
+        "return"
+      ],
+      "guards": [
+        "ifdef OVL0",
+        "ifdef CHAOS"
+      ],
+      "count": 1,
+      "chaos0": "Compiled out: the enclosing #ifdef CHAOS is false, so the line is absent."
+    },
+    {
+      "id": "hook-0418",
+      "file": "src/mon.c",
+      "symbol": "mm_aggression",
+      "kind": "directive",
+      "purpose": "mm_aggression: guard the echo-hound exception",
+      "signature": [
+        "#",
+        "ifdef",
+        "CHAOS"
+      ],
+      "guards": [
+        "ifdef OVL1"
+      ],
+      "count": 1,
+      "chaos0": "Directive only; CHAOS undefined drops the guarded line."
+    },
+    {
+      "id": "hook-0419",
+      "file": "src/mon.c",
+      "symbol": "mm_aggression",
+      "kind": "call-or-declaration",
+      "purpose": "mm_aggression: a tame monster is never aggressive toward the admitted echo hound (Sam 2026-10-08)",
+      "signature": [
+        "-",
+        ">",
+        "mtame",
+        "&",
+        "&",
+        "chaos_haunt_is_hound",
+        "(",
+        "mdef",
+        ")",
+        ")",
+        "|"
+      ],
+      "guards": [
+        "ifdef OVL1",
+        "ifdef CHAOS"
+      ],
+      "count": 1,
+      "chaos0": "Compiled out: the enclosing #ifdef CHAOS is false, so the line is absent."
+    },
+    {
+      "id": "hook-0424",
+      "file": "src/mon.c",
+      "symbol": "mm_aggression",
+      "kind": "call-or-declaration",
+      "purpose": "mm_aggression: the admitted echo hound is never aggressive toward a tame monster, the steed included (Sam 2026-10-08 14:51Z, two-way truce)",
+      "signature": [
+        ")",
+        ")",
+        "|",
+        "|",
+        "(",
+        "chaos_haunt_is_hound",
+        "(",
+        "magr",
+        ")",
+        "&",
+        "&"
+      ],
+      "guards": [
+        "ifdef OVL1",
+        "ifdef CHAOS"
+      ],
+      "count": 1,
+      "chaos0": "Compiled out: the enclosing #ifdef CHAOS is false, so the line is absent."
+    },
+    {
+      "id": "hook-0422",
+      "file": "src/xhity.c",
+      "symbol": "xattacky",
+      "kind": "directive",
+      "purpose": "xattacky: guard the echo-hound exception",
+      "signature": [
+        "#",
+        "ifdef",
+        "CHAOS"
+      ],
+      "guards": [
+        "ifdef STEED"
+      ],
+      "count": 1,
+      "chaos0": "Directive only; CHAOS undefined drops the guarded line."
+    },
+    {
+      "id": "hook-0423",
+      "file": "src/xhity.c",
+      "symbol": "xattacky",
+      "kind": "call-or-declaration",
+      "purpose": "xattacky: the echo hound never turns its attack from the player to the player's steed (Sam 2026-10-08 14:51Z, two-way truce)",
+      "signature": [
+        "ifdef",
+        "CHAOS",
+        "&",
+        "&",
+        "!",
+        "chaos_haunt_is_hound",
+        "(",
+        "magr",
+        ")",
+        "#",
+        "endif"
+      ],
+      "guards": [
+        "ifdef STEED",
+        "ifdef CHAOS"
+      ],
+      "count": 1,
+      "chaos0": "Compiled out: the enclosing #ifdef CHAOS is false, so the line is absent."
     },
     {
       "id": "hook-0137",
