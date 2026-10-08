@@ -13,10 +13,10 @@
     "src/chaos_next_use_runtime.c": "96d950b7b87d397ea486ce3e20204841b5debd837611b4fbf2f7cdf9b0fb39b4",
     "src/chaos_next_use_safe.c": "1529f42c5254ea09666371ee1bb7ec1863fb107fb082edad81638c1b1b81122d",
     "src/chaos_presentation.c": "fa405cf41bb8852193b63e8f5c56d58dd7383129348f756bb16fb91ca2fda309",
-    "src/dogmove.c": "0616a245bbfcb37a76443064619d1832334d6867be13b5fa99a930c4b165f7cf",
+    "src/dogmove.c": "815fefe568ad8691b4477637270413e15aadfd90a4600acbb9308a0e386928b8",
     "src/fountain.c": "418d5bddeb8a22ad427e18b97b88560f08071dc0ddc051a00ba6e34e85f41f86",
     "src/u_init.c": "9c9a4788d2c3ceffc91d18ed9c7168556571781d99ea3fe44ed95fbd01e5db68",
     "win/tty/wintty.c": "814b162e0923c1d880f1c6ab1655c0d1df8796aa431a4dc660e2fbd0f50bab41"
   },
-  "revision": "48a37eab1eca62a3a04d99aa3e240263f0d64076"
+  "revision": "8288162be57ed3ab1c556b87f1812cff1d854da7"
 }
