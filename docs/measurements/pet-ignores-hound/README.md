@@ -43,5 +43,66 @@ up after about 60 turns. This measurement checks what that does in real play.
 
 ## Results
 
-Not run yet. The results and the evidence revision are added below once the
-runs are finished, whatever they show.
+- **Run:** 2026-10-08, 11:58Z to 12:00Z, under hermes-heavy. Trees: main
+  8715309f and head 807c7b79. The head tree is the engine change plus this
+  preregistered protocol; later commits change only tests and this directory.
+- **Per-game data:** `games.jsonl`. Summary: `summary.json`, from `analyze.py`.
+- **No model:** no hound lane appeared in any of the 100 games.
+
+| | main 8715309f | head 807c7b79 |
+|---|---|---|
+| games (driver errors) | 50 (0) | 50 (1) |
+| admitted | 44 | 35 |
+| undecided in 40 keys / rejected | 6 / 0 | 13 / 1 |
+| **killed by the pet** | **36** | **0** |
+| killed by the player | 6 | 31 |
+| killed, unattributed | 2 | 0 |
+| expired alive | 0 | 4 |
+| lived 10+ turns after admission | 8 | 27 |
+| life after admission, median (turns) | 5 | 17 |
+| live steps, median | 2 | 3 |
+| live steps, mean (bootstrap 95%) | 2.82 (2.32 to 3.43) | 3.00 (2.31 to 3.80) |
+| pet hits the hound (top-line messages) | 14 | 0 |
+| the hound bites the pet | 5 | 38 |
+
+Live steps, distribution (number of admitted hounds; 10+ pooled):
+
+| steps | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10+ |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| main | 0 | 9 | 17 | 8 | 3 | 3 | 1 | 1 | 1 | 1 | 0 |
+| head | 5 | 4 | 7 | 5 | 6 | 5 | 2 | 0 | 0 | 0 | 1 |
+
+### Against the stated expectations
+
+- **Primary, as expected:** the pet killed 36 of 44 admitted hounds on main
+  and 0 of 35 on the head. It never hit the hound on the head, although the
+  hound bit the pet 38 times.
+- **Secondary, mixed:** the hound now lives much longer (10+ turns in 27 of 35
+  hounds against 8 of 44; median life 17 turns against 5). Most hounds now die
+  to the player (31), and 4 expired alive. But **live steps barely moved**
+  (mean 2.82 to 3.00; the intervals overlap almost entirely), and 5 head
+  hounds were seen to step 0 times. `haunt_step` counts only the hound's
+  following moves that the player can see. Once the pet stops killing it, the
+  hound mostly spends its turns fighting the pet or the player beside it, which
+  are not steps. So "lives longer" did not become "is seen hunting longer".
+- **Admission, not expected to move, but it did:** 44 against 35 (Fisher
+  exact two-sided p = 0.048). The change cannot act before admission: the
+  predicate is false while no hunt is active and inside the shadow trial.
+  Each game draws a fresh random map, and the head draw had more small start
+  rooms (7 of 49 with 12 squares or fewer, against 3 of 50). #201's rule makes
+  the trial wait in a start room where every square is within 4 of the pet.
+  All 13 undecided head games were still waiting in the start room at the
+  driver's 40-key limit. The best reading is map-draw noise, but this design,
+  with unpaired maps, cannot prove that.
+
+### Post-run corrections (disclosed)
+
+- `analyze.py` first scored "the little dog eats a jackal corpse named echo
+  hound" as a pet kill even when the player had killed the hound the turn
+  before. That moved 6 head games and 1 main game from "player" to "pet". The
+  rule now counts a corpse-eating message as a pet kill only when the player
+  did not kill the hound. The uncorrected output said 6 pet kills on the head;
+  all 6 had "You kill echo hound" on the previous turn.
+- `measure.py`'s raw-stream hit counters read 0 for every game: the terminal
+  stream splits those messages with cursor moves. The table's hit counts come
+  from the per-key top-line messages in the trace instead.
