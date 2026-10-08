@@ -132,3 +132,89 @@ its turns should go into following the player's trail.
   differ, and is labelled as such.
 - **Added measure:** the per-hound median number of turns from admission to
   the first live step.
+
+### Run 2 results
+
+- **Run:** 2026-10-08, 14:59Z to 15:02Z, under hermes-heavy. Trees: `prev`
+  9a608714 and `head` 97ed5960 (the reverse truce plus the protocol above).
+  Later commits change only this directory and the PR text.
+- **Per-game data:** `games-run2.jsonl` (same fields and message filter as
+  `games.jsonl`). `python3 analyze.py games-run2.jsonl` reproduces
+  `summary-run2.json` byte for byte.
+- **No model:** no hound lane appeared in any of the 100 games; 0 driver errors.
+
+| | prev 9a608714 | head 97ed5960 |
+|---|---|---|
+| admitted | 44 | 38 |
+| undecided in 40 keys / rejected | 6 / 0 | 12 / 0 |
+| killed by the player | 39 | 35 |
+| killed by the pet (analyze.py) | 0 | 2, both misattributed (below) |
+| expired alive / alive at end | 4 / 1 | 0 / 1 |
+| lived 10+ turns after admission | 31 | 29 |
+| life after admission, median (turns) | 21 | 23 |
+| live steps, median | 3 | 3 |
+| live steps, mean (bootstrap 95%) | 3.05 (2.50 to 3.64) | 4.16 (2.97 to 5.68) |
+| turns from admission to first live step, median | 1 | 1 |
+| the hound bites the pet (top-line messages) | 44 | 0 |
+| the hound misses the pet (top-line messages) | 72 | 0 |
+| the pet hits the hound (top-line messages) | 0 | 1 (after expiry) |
+
+Live steps, distribution (admitted hounds; 10+ pooled):
+
+| steps | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10+ |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| prev | 4 | 5 | 7 | 12 | 9 | 4 | 1 | 1 | 0 | 0 | 1 |
+| head | 5 | 3 | 8 | 6 | 3 | 5 | 1 | 2 | 1 | 1 | 3 |
+
+**The two "pet" kills on head**, checked against the raw terminal stream and
+the engine's events (not a change to `analyze.py`, which stays as
+preregistered):
+- **Game 42:** the haunt expired at turn 65 (`haunting`/`expired`). The dog
+  killed the jackal at turn 66, when it was an ordinary jackal and no longer
+  the hound. The truce correctly no longer applied.
+- **Game 37:** the raw stream reads "The newt zombie bites echo hound! Echo hound
+  is killed!". A hostile newt zombie killed it; only the last top-line message
+  ("Echo hound is killed!") reached the trace, and #201's rule scores that
+  message as the pet.
+
+So no pet attacked the admitted hound on either tree, and the hound never
+attacked a pet on head. Over the whole raw terminal streams: hound attacks on
+the pet (hits plus misses) 127 on prev, 0 on head; the pet attacking the hound
+0 on prev, 1 on head (game 42, after expiry).
+
+### Against run 2's stated expectations
+
+- **Hound bites the pet falls to 0: as expected.** 44 bites and 72 misses on
+  prev, 0 and 0 on head.
+- **Pet kills stay 0: as expected,** once the two misattributions above are
+  read from the raw stream. As scored by the preregistered rule, head shows 2.
+- **Live steps rise: only partly.** The mean rose from 3.05 to 4.16, with more
+  long hunts (10+ steps: 1 to 3; 7+ steps: 2 to 8). The median stayed at 3,
+  and the 95% intervals overlap (2.50 to 3.64 against 2.97 to 5.68), so with
+  50 games the rise is suggestive, not established.
+- **First live step:** a median of 1 turn after admission on every tree, so
+  this measure does not separate them.
+- **Admission (no direction expected):** 44 against 38 (Fisher exact
+  two-sided p = 0.19). As in run 1, every undecided game was still waiting in
+  its start room at the 40-key limit.
+
+### Main against head, across separate runs
+
+Main 8715309f is from run 1 and head 97ed5960 from run 2, so map draws and
+host load differ. Read this as a rough before/after, not a paired test.
+
+| | main 8715309f (run 1) | head 97ed5960 (run 2) |
+|---|---|---|
+| admitted | 44 | 38 |
+| killed by the pet | 36 | 0 (2 scored, both misattributed) |
+| killed by the player | 6 | 35 |
+| lived 10+ turns after admission | 8 | 29 |
+| life after admission, median (turns) | 5 | 23 |
+| live steps, median / mean | 2 / 2.82 | 3 / 4.16 |
+| live steps, mean 95% interval | 2.32 to 3.43 | 2.97 to 5.68 |
+| the hound bites the pet | 5 | 0 |
+
+A caveat on run 1's main column: 17 of its 36 pet kills are scored from a
+bare "Echo hound is killed!" with no pet hit in the same message, as #201's
+rule does. Game 37 above shows such a line can come from another monster.
+Those 17 could not be rechecked: run 1's raw streams were not kept.
