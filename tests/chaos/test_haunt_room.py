@@ -185,9 +185,7 @@ class HauntRoomTests(RetainOnFailure):
     def petfight(self, name, mode):
         """A tame little dog next to a hostile jackal, 40 rounds of the real
         dog_move and fightm; mode 'hound' makes the jackal the admitted hound."""
-        fields, _, _ = self.run_room(
-            name, [5, 5, 0, 0, 1], HAUNT_ROOM_PETFIGHT=mode
-        )
+        fields, _, _ = self.run_room(name, [5, 5, 0, 0, 1], HAUNT_ROOM_PETFIGHT=mode)
         return fields
 
     def test_pet_never_attacks_the_admitted_hound(self):
