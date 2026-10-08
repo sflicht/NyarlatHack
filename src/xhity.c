@@ -574,7 +574,11 @@ xattacky(struct monst *magr, struct monst *mdef, int tarx, int tary, long modifi
 				if ((result & MM_DEF_DIED) || u.umoved)
 					return MM_AGR_STOP;
 				/* Let your steed maybe retaliate */
-				if (mdef->movement >= NORMAL_SPEED) {
+				if (mdef->movement >= NORMAL_SPEED
+#ifdef CHAOS
+					&& !chaos_haunt_is_hound(magr)
+#endif
+				) {
 					int res2 = xattacky(mdef, magr, x(magr), y(magr), 0L);
 					if (res2) {
 						if (res2 & MM_DEF_DIED)

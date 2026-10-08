@@ -1067,6 +1067,9 @@ register struct monst *mtmp2;
 boolean ranged;
 {
 	if(mtmp2->moccupation) return FALSE;
+#ifdef CHAOS
+	if(mtmp->mtame && chaos_haunt_is_hound(mtmp2)) return FALSE;
+#endif
 	
 	if(nonthreat(mtmp2)) return FALSE;
 	

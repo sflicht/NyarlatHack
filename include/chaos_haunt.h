@@ -14,11 +14,13 @@ struct chaos_haunt_state {
 void chaos_haunt_tick(int);
 int chaos_haunt_valid(const struct chaos_haunt_state *);
 int chaos_haunt_pick(struct monst *,const struct nhcoord *,int);
+int chaos_haunt_is_hound(const struct monst *);
 void chaos_haunt_commit(struct monst *);
 void tty_chaos_echo(const char *);
 #else
 #define chaos_haunt_tick(fd) ((void)0)
 #define chaos_haunt_pick(m,p,n) (-2)
+#define chaos_haunt_is_hound(m) (0)
 #define chaos_haunt_commit(m) ((void)0)
 #endif
 #endif

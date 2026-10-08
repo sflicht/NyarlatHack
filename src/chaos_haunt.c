@@ -59,6 +59,17 @@ int chaos_haunt_valid(const struct chaos_haunt_state *h) {
 static int legal_step(struct monst *m,int x,int y) {
  (void)m;return simple_floor(x,y) && !m_at(x,y) && (x!=u.ux || y!=u.uy);
 }
+/* Sam (2026-10-08): pets never attack the echo hound. True only for the
+ * admitted hound while its hunt runs, with the identity test the pick uses
+ * (same target, turn window and level; a hostile jackal). False with no
+ * haunt and in the shadow trial, whose child keeps the game's own rules.
+ * Reads state only: no RNG, no message, nothing saved. */
+int chaos_haunt_is_hound(const struct monst *m) {
+ const struct chaos_haunt_state *h=&u.haunt;
+ return m && h->active && m->m_id==h->target && moves<h->until &&
+        u.uz.dnum==h->dnum && u.uz.dlevel==h->dlevel &&
+        m->mtyp==PM_JACKAL && !m->mtame && !m->mpeaceful && !chaos_shadow_active();
+}
 int chaos_haunt_pick(struct monst *m,const struct nhcoord *poss,int count) {
  struct chaos_haunt_state *h=&u.haunt;
  struct chaos_lua_context c;struct chaos_lua_intent intent;int i,x,y;
