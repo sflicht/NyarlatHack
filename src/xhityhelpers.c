@@ -659,9 +659,6 @@ fightm(mtmp)		/* have monsters fight each other */
 		     */
 		    if ((result & MM_HIT) && !(result & MM_DEF_DIED) &&
 				rn2(4) && mon->movement >= NORMAL_SPEED
-#ifdef CHAOS
-				&& (conflict || !mon->mtame || !chaos_haunt_is_hound(mtmp))
-#endif
 			) {
 				mon->movement -= NORMAL_SPEED;
 				notonhead = 0;

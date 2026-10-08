@@ -564,7 +564,11 @@ xattacky(struct monst *magr, struct monst *mdef, int tarx, int tary, long modifi
 			return MM_MISS;
 		/* Orcs like to steal and eat horses and the like */
 		if (!rn2(is_orc(magr->data) ? 2 : 4) &&
-			distu(x(magr), y(magr)) <= 2) {
+			distu(x(magr), y(magr)) <= 2
+#ifdef CHAOS
+			&& !chaos_haunt_is_hound(magr)
+#endif
+		) {
 			/* Attack your steed instead */
 			mdef = u.usteed;
 			result = xattacky(magr, mdef, u.ux, u.uy, 0L);
@@ -574,11 +578,7 @@ xattacky(struct monst *magr, struct monst *mdef, int tarx, int tary, long modifi
 				if ((result & MM_DEF_DIED) || u.umoved)
 					return MM_AGR_STOP;
 				/* Let your steed maybe retaliate */
-				if (mdef->movement >= NORMAL_SPEED
-#ifdef CHAOS
-					&& !chaos_haunt_is_hound(magr)
-#endif
-				) {
+				if (mdef->movement >= NORMAL_SPEED) {
 					int res2 = xattacky(mdef, magr, x(magr), y(magr), 0L);
 					if (res2) {
 						if (res2 & MM_DEF_DIED)

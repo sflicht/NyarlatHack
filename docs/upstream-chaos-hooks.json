@@ -62,13 +62,6 @@
         "end": ["betrayed", "(", "mtmp", ")", "register"]
       }
     ],
-    "src/xhityhelpers.c": [
-      {
-        "symbol": "fightm",
-        "start": ["fightm", "(", "mtmp", ")", "register"],
-        "end": ["expels", "(", "mtmp", ",", "mdat", ",", "message", ")"]
-      }
-    ],
     "src/files.c": [
       {
         "symbol": "restore_saved_game",
@@ -6248,7 +6241,7 @@
         "mdef",
         ")",
         ")",
-        "return"
+        "|"
       ],
       "guards": [
         "ifdef OVL1",
@@ -6258,40 +6251,26 @@
       "chaos0": "Compiled out: the enclosing #ifdef CHAOS is false, so the line is absent."
     },
     {
-      "id": "hook-0420",
-      "file": "src/xhityhelpers.c",
-      "symbol": "fightm",
-      "kind": "directive",
-      "purpose": "fightm: guard the echo-hound exception",
-      "signature": [
-        "#",
-        "ifdef",
-        "CHAOS"
-      ],
-      "guards": [],
-      "count": 1,
-      "chaos0": "Directive only; CHAOS undefined drops the guarded line."
-    },
-    {
-      "id": "hook-0421",
-      "file": "src/xhityhelpers.c",
-      "symbol": "fightm",
+      "id": "hook-0424",
+      "file": "src/mon.c",
+      "symbol": "mm_aggression",
       "kind": "call-or-declaration",
-      "purpose": "fightm: without Conflict, a tame monster hit by the echo hound does not return the attack (Sam 2026-10-08)",
+      "purpose": "mm_aggression: the admitted echo hound is never aggressive toward a tame monster, the steed included (Sam 2026-10-08 14:51Z, two-way truce)",
       "signature": [
-        ">",
-        "mtame",
+        ")",
+        ")",
         "|",
         "|",
-        "!",
+        "(",
         "chaos_haunt_is_hound",
         "(",
-        "mtmp",
+        "magr",
         ")",
-        ")",
-        "#"
+        "&",
+        "&"
       ],
       "guards": [
+        "ifdef OVL1",
         "ifdef CHAOS"
       ],
       "count": 1,
@@ -6319,7 +6298,7 @@
       "file": "src/xhity.c",
       "symbol": "xattacky",
       "kind": "call-or-declaration",
-      "purpose": "xattacky: the player's steed, attacked by the echo hound, does not retaliate (Sam 2026-10-08)",
+      "purpose": "xattacky: the echo hound never turns its attack from the player to the player's steed (Sam 2026-10-08 14:51Z, two-way truce)",
       "signature": [
         "ifdef",
         "CHAOS",

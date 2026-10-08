@@ -147,11 +147,13 @@ int main(int argc,char **argv) {
    * m_id). Mode "jackal": an ordinary jackal, no haunt. Then, over ROUNDS
    * rounds with both restored each time: the pet's own turn (the real
    * dog_move), and the jackal's fight with its neighbours (the real fightm,
-   * where the pet may return the attack). Counts every mattackm the pet
+   * where the pet may return the attack, and the jackal may attack the
+   * pet). Also: whether mfndpos lets the jackal move onto the pet (ALLOW_M,
+   * m_move's attack-on-move). Counts every mattackm the pet
    * makes against the jackal (wrapped; both callers are in other objects).
    * Also prints the pure predicates and whether they drew RNG. */
   const char *mode=getenv("HAUNT_ROOM_PETFIGHT");int r,rounds=40,draw;struct monst *pet,*jackal;
-  int hound=!strcmp(mode,"hound");long agg;boolean ok_melee,ok_ranged;int is_hound;
+  int hound=!strcmp(mode,"hound");long agg,ragg;int onto_pet=0;boolean ok_melee,ok_ranged;int is_hound;
   assert(hound || !strcmp(mode,"jackal"));
   test_rng_reset();
   pet=makemon(&mons[PM_LITTLE_DOG],X0+2,Y0+2,MM_NOGROUP|MM_NOWAIT|NO_MINVENT|MM_EDOG);
@@ -165,7 +167,9 @@ int main(int argc,char **argv) {
   draw=test_rng_begin();
   is_hound=chaos_haunt_is_hound(jackal);
   test_rng_unchanged(draw);
-  agg=mm_aggression(pet,jackal);ok_melee=acceptable_pet_target(pet,jackal,FALSE);ok_ranged=acceptable_pet_target(pet,jackal,TRUE);
+  agg=mm_aggression(pet,jackal);ragg=mm_aggression(jackal,pet);
+  {coord pp[9];long pi[9];int k,n=mfndpos(jackal,pp,pi,ALLOW_U);for(k=0;k<n;++k)if(pp[k].x==pet->mx && pp[k].y==pet->my)onto_pet=1;}
+  ok_melee=acceptable_pet_target(pet,jackal,FALSE);ok_ranged=acceptable_pet_target(pet,jackal,TRUE);
   srandom(7u);reseed_period=INT_MAX;
   for(r=0;r<rounds && !DEADMONSTER(jackal) && !DEADMONSTER(pet);++r) {
    pet->mhp=pet->mhpmax;jackal->mhp=jackal->mhpmax;pet->movement=jackal->movement=NORMAL_SPEED;
@@ -177,8 +181,8 @@ int main(int argc,char **argv) {
    if(pet->mx!=X0+2 || pet->my!=Y0+2){remove_monster(pet->mx,pet->my);place_monster(pet,X0+2,Y0+2);}
    (void)fightm(jackal);
   }
-  printf("petfight mode=%s is_hound=%d aggression=%ld melee_ok=%d ranged_ok=%d rounds=%d pet_attacks=%d jackal_attacks=%d jackal_dead=%d pet_dead=%d\n",
-         mode,is_hound,agg?1L:0L,ok_melee?1:0,ok_ranged?1:0,r,pet_attacks,jackal_attacks,DEADMONSTER(jackal)?1:0,DEADMONSTER(pet)?1:0);
+  printf("petfight mode=%s is_hound=%d aggression=%ld melee_ok=%d ranged_ok=%d rounds=%d pet_attacks=%d jackal_attacks=%d jackal_dead=%d pet_dead=%d hound_aggression=%d hound_onto_pet=%d\n",
+         mode,is_hound,agg?1L:0L,ok_melee?1:0,ok_ranged?1:0,r,pet_attacks,jackal_attacks,DEADMONSTER(jackal)?1:0,DEADMONSTER(pet)?1:0,ragg?1:0,onto_pet);
   return 0;
  }
  if(getenv("HAUNT_ROOM_PICK")) {

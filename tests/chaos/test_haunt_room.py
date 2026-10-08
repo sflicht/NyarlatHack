@@ -197,8 +197,13 @@ class HauntRoomTests(RetainOnFailure):
         )
         self.assertEqual(got["pet_attacks"], "0", got)
         self.assertEqual((got["jackal_dead"], got["pet_dead"]), ("0", "0"), got)
-        # The hound still fights: the pet was attacked and did not answer.
-        self.assertGreater(int(got["jackal_attacks"]), 0, got)
+        # Two-way truce (Sam, 2026-10-08 14:51Z): the hound never attacks the
+        # pet either, neither in fightm nor by moving onto it (mfndpos ALLOW_M).
+        self.assertEqual(
+            (got["hound_aggression"], got["hound_onto_pet"], got["jackal_attacks"]),
+            ("0", "0", "0"),
+            got,
+        )
         self.assertEqual(got["rounds"], "40", got)
 
     def test_pet_still_attacks_an_ordinary_jackal(self):
@@ -207,6 +212,11 @@ class HauntRoomTests(RetainOnFailure):
             (got["is_hound"], got["aggression"], got["melee_ok"]), ("0", "1", "1"), got
         )
         self.assertGreater(int(got["pet_attacks"]), 0, got)
+        # An ordinary jackal still fights the pet and may move onto it.
+        self.assertEqual(
+            (got["hound_aggression"], got["hound_onto_pet"]), ("1", "1"), got
+        )
+        self.assertGreater(int(got["jackal_attacks"]), 0, got)
 
     # --- the whole trial -------------------------------------------------------
     # --- #201: never spawn within the pet's reach -------------------------------
