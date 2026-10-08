@@ -1,0 +1,145 @@
+{
+  "anomalies": [],
+  "cells": {
+    "after pace 1": {
+      "achieved_pace_median": 1.0,
+      "admitted": 12,
+      "admitted_at": {
+        "main 1": 8,
+        "main 2": 2,
+        "main 3": 1,
+        "mines 4": 1
+      },
+      "died": 3,
+      "entered_mines": 2,
+      "expired": 0,
+      "expired_at": {},
+      "games": 14,
+      "harness_errors": 0,
+      "name_on_screen": 2,
+      "outcomes": {
+        "after_placement": 2,
+        "died": 3,
+        "turn_limit": 9
+      },
+      "placed": 2,
+      "placed_at": {
+        "main 2": 1,
+        "main 3": 1
+      },
+      "ready": 14,
+      "requested": 14
+    },
+    "after pace 3": {
+      "achieved_pace_median": 3.0,
+      "admitted": 10,
+      "admitted_at": {
+        "main 1": 6,
+        "main 2": 1,
+        "main 3": 2,
+        "mines 4": 1
+      },
+      "died": 4,
+      "entered_mines": 2,
+      "expired": 0,
+      "expired_at": {},
+      "games": 14,
+      "harness_errors": 0,
+      "name_on_screen": 1,
+      "outcomes": {
+        "after_placement": 1,
+        "died": 4,
+        "turn_limit": 9
+      },
+      "placed": 1,
+      "placed_at": {
+        "main 4": 1
+      },
+      "ready": 13,
+      "requested": 14
+    },
+    "before pace 1": {
+      "achieved_pace_median": 1.0,
+      "admitted": 10,
+      "admitted_at": {
+        "main 1": 8,
+        "main 2": 2
+      },
+      "died": 2,
+      "entered_mines": 1,
+      "expired": 2,
+      "expired_at": {
+        "main 3": 2
+      },
+      "games": 14,
+      "harness_errors": 0,
+      "name_on_screen": 2,
+      "outcomes": {
+        "after_placement": 2,
+        "curio_expired": 2,
+        "died": 2,
+        "turn_limit": 8
+      },
+      "placed": 2,
+      "placed_at": {
+        "main 2": 1,
+        "main 3": 1
+      },
+      "ready": 14,
+      "requested": 14
+    },
+    "before pace 3": {
+      "achieved_pace_median": 3.0,
+      "admitted": 7,
+      "admitted_at": {
+        "main 1": 6,
+        "main 2": 1
+      },
+      "died": 3,
+      "entered_mines": 1,
+      "expired": 3,
+      "expired_at": {
+        "main 3": 3
+      },
+      "games": 14,
+      "harness_errors": 0,
+      "name_on_screen": 0,
+      "outcomes": {
+        "curio_expired": 3,
+        "died": 3,
+        "turn_limit": 8
+      },
+      "placed": 0,
+      "placed_at": {},
+      "ready": 12,
+      "requested": 14
+    }
+  },
+  "n_seeds": 14,
+  "paired": {
+    "pace 1": {
+      "both": 2,
+      "neither": 12
+    },
+    "pace 3": {
+      "after only": 1,
+      "neither": 13
+    }
+  },
+  "seeds": [
+    101,
+    102,
+    103,
+    104,
+    105,
+    106,
+    107,
+    108,
+    109,
+    110,
+    111,
+    112,
+    113,
+    114
+  ]
+}

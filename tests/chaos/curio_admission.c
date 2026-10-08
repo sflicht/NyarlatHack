@@ -11,6 +11,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include "native_rng.h"
+extern int n_dgns; /* src/dungeon.c, not in any header */
 
 static const char *mode;
 static int warned, evidence_fd=-1, evidence_synced, dir_synced, spend_calls, source_opens;
@@ -101,8 +102,22 @@ int main(int argc, char **argv) {
     u.umonnum=u.umonster=PM_HUMAN; youmonst.data=&mons[PM_HUMAN];
     u.usanity=100; u.ux=u.uy=5; u.ulevel=1; u.ualign.god=1;
     u.uz.dnum=0; u.uz.dlevel=1; moves=10;
+    /* Absolute depth: main from 1, Mines (dnum 1) from 3, Sokoban (dnum 2)
+     * from 2; this fixture's numbering, not dNAO's. */
+    n_dgns=3; dungeon_topology.d_mines_dnum=1; dungeon_topology.d_sokoban_dnum=2;
+    dungeons[0].depth_start=1; dungeons[0].num_dunlevs=25;
+    dungeons[1].depth_start=3; dungeons[1].num_dunlevs=10;
+    dungeons[2].depth_start=2; dungeons[2].num_dunlevs=4;
     u.uhp=7; u.uhpmax=20; u.uen=2; u.uenmax=10;
-    if (!strcmp(mode,"branch")) u.uz.dnum=1;
+    if (!strcmp(mode,"branch")) { u.uz.dnum=2; u.uz.dlevel=1; } /* Sokoban, depth 2 */
+    if (!strcmp(mode,"sokoban4")) { u.uz.dnum=2; u.uz.dlevel=3; } /* depth 4 */
+    if (!strcmp(mode,"mines3")) { u.uz.dnum=1; u.uz.dlevel=1; } /* depth 3 */
+    if (!strcmp(mode,"mines4")) { u.uz.dnum=1; u.uz.dlevel=2; } /* depth 4 */
+    if (!strcmp(mode,"mines5")) { u.uz.dnum=1; u.uz.dlevel=3; } /* depth 5 */
+    if (!strcmp(mode,"mines6")) { u.uz.dnum=1; u.uz.dlevel=4; } /* depth 6 */
+    if (!strcmp(mode,"level4")) u.uz.dlevel=4;
+    if (!strcmp(mode,"level5")) u.uz.dlevel=5;
+    if (!strcmp(mode,"level6")) u.uz.dlevel=6;
     if (!strcmp(mode,"level2")) u.uz.dlevel=2;
     if (!strcmp(mode,"level3")) u.uz.dlevel=3;
     if (!strcmp(mode,"asleep")) u.usleep=1;
@@ -165,7 +180,7 @@ int main(int argc, char **argv) {
         assert(u.chaos.spent==spent);
     }
     /* Transport-independent, no safe advance required to close the window. */
-    u.uz.dnum=0; u.uz.dlevel=3;
+    u.uz.dnum=0; u.uz.dlevel=CHAOS_CURIO_EXPIRE_DEPTH;
     if (!strcmp(mode,"transportfail") || !strcmp(mode,"noadvance")) chaos_safe("level_enter");
     else chaos_curio_safe(-1);
     if (expected==CHAOS_CURIO_VIRGIN || expected==CHAOS_CURIO_ADMITTED)

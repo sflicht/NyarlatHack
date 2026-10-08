@@ -77,17 +77,21 @@ the resume command printed.
   moves ago. It can be killed, and gives up after about 60 turns or when you
   leave the level.
 - **The curio request.** At the first safe point after at least 150 turns,
-  with some history (2 completed episodes or 1 whisper you saw), while you
-  are on DL1–2, the director sends one request with your public history.
+  with some history (2 completed episodes or 1 whisper you saw), the
+  director sends one request with your public history.
   Grok usually answers in 2–6 minutes of real time; the lane gives up at
   480 s. Nothing is shown while it waits.
 - **The telegraph:** if the curio passes the native checks and is admitted,
   you see "An uncanny curio may appear on a later floor."
-- **Placement:** the curio is placed when a new main-dungeon level DL2 or
-  DL3 is generated after the admission. It is an ordinary-looking tool with
-  a model-written name ("a glass reed locket" in the live capture). If you
-  reach DL3 before it is ready or placed, the chance closes and nothing is
-  shown. Lingering on DL1–2 gives it time.
+- **Admission:** the game takes the answer at the next level change,
+  prayer or sleep while you are at depth 1–4, in the main dungeon or the
+  Gnomish Mines.
+- **Placement:** the curio is placed on the next new level at depth 2–5 in
+  the main dungeon or the Mines (not Sokoban, Minetown, Mines' End or other
+  special levels). It is an ordinary-looking tool with a model-written name
+  ("a glass reed locket" in the live capture). The chance closes, with
+  nothing shown, at the first level change, prayer or sleep at depth 6 or
+  deeper before it is placed.
 - **Using it:** `I` (Describe) shows its inspect text; apply prints the
   requested Sanity change before applying it ("The curio requests a Sanity
   change of -1; native limits may reduce it. This spends one use."), then

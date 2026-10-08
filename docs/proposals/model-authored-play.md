@@ -92,7 +92,9 @@ Terms used below:
 
 - **Admission** is `chaos_curio_safe`, called at every safe point
   (`src/chaos_engine.c:259`).
-  - Gates: phase VIRGIN; Dungeons of Doom DL1–2; budget at least 1.
+  - Gates: phase VIRGIN; depth 1–4 in the Dungeons of Doom or the Gnomish
+    Mines (widened from DL1–2, Sam 2026-10-08: "Deeper, Mines too");
+    budget at least 1.
   - The source is a private `curio.lua` in the run directory. If it is
     absent, admission simply retries at the next safe point (:298).
   - It runs load, inspect and a discarded dry-run apply, then snapshots
@@ -100,9 +102,11 @@ Terms used below:
   - It debits **price 1** (`include/chaos_protocol.h:34-35`) and prints
     "An uncanny curio may appear on a later floor." (:328).
   - There are no refunds.
-- **Expiry**: an unplaced curio expires at DL3 or deeper (:283-289).
-- **Placement** happens on the first fresh, non-bones, ordinary-room level
-  at DL2–3.
+- **Expiry**: an unplaced curio expires at a safe point at depth 6 or
+  deeper (was DL3).
+- **Placement** happens on the first fresh, non-bones level at depth 2–5
+  in the main dungeon (ordinary rooms) or the Mines (filler levels); never
+  Sokoban, other branches or special levels (was main DL2–3).
   - The square is chosen deterministically: the upstairs room first, then
     the square nearest the upstair (:197-235).
   - Placement prints nothing.
@@ -231,7 +235,6 @@ point where all of these hold:
 
 - the public history shows at least 150 turns, and at least 2 completed
   episodes or 1 whisper the player saw;
-- the game is on DL1–2;
 - the budget is at least 1;
 - the curio phase is VIRGIN.
 
@@ -248,8 +251,9 @@ director (`chaos/director.py:595-657` already polls with a deadline).
 - On success the director runs the same native checks the engine will, then
   publishes `curio.lua` under the mailbox lock. The engine picks it up at the
   next safe point.
-- If the player reaches DL3 first, native expiry closes the chance, and
-  nothing is shown.
+- The engine, not the director, owns the depth window: admission at depth
+  1–4 (main or Mines). If the player reaches depth 6 first, native expiry
+  closes the chance, and nothing is shown.
 
 **Director runtime (decided).** Model authoring gets its own background
 deadline of 8 minutes. All other director timing is unchanged, including
@@ -355,8 +359,8 @@ playtest shows about model content.
 | Not JSON, or over size | Reject; at most 1 regeneration if time allows | Nothing |
 | Invalid Lua or grid failure | Reject before install | Nothing |
 | Prose promises a false effect | Reject before install | Nothing |
-| Reached DL3 first | Native expiry | Nothing |
-| Admitted, no square on DL2–3 | Native `placement_unavailable`, then expiry | The admission line; cost already paid (today's rule) |
+| Reached depth 6 first | Native expiry | Nothing |
+| Admitted, no square at depth 2–5 | Native `placement_unavailable`, then expiry | The admission line; cost already paid (today's rule) |
 | "Boring" | Shipped; judged in Sam's playtests | A dull, valid curio |
 
 ## 4. The other surfaces

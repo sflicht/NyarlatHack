@@ -2,8 +2,13 @@
 
 Proposal 3.1. One curio request per game, at the first safe point where the
 public history shows at least 150 turns and either 2 completed episodes or a
-whisper the player saw, the game is on DL1-2, the budget is at least 1 with no
-planned whisper needing the last unit, and the curio phase is VIRGIN.
+whisper the player saw, the budget is at least 1 with no planned whisper
+needing the last unit, and the curio phase is VIRGIN. The director does not
+check depth: the engine owns the window (include/chaos_curio.h). It admits at
+a safe point at depth 1-4 in the main dungeon or the Gnomish Mines, places on
+the next fresh level at depth 2-5 there, and expires the chance at the first
+safe point at depth 6 or deeper; VIRGIN in the engine's events means none of
+that has closed it yet.
 
 Timing is engine-authoritative, like whispers; there is no lock between the
 director and the engine.
@@ -103,8 +108,8 @@ def new_lane(directory, *, game=None, seed=None):
 def curio_phase(directory):
     """The engine's curio phase as its own events report it (VIRGIN if none).
 
-    Native expiry on DL3+ reports "expired", so VIRGIN also means the game has
-    not reached DL3 at a safe point. The engine re-checks everything anyway.
+    Native expiry at depth 6+ reports "expired", so VIRGIN also means the game
+    has not reached depth 6 at a safe point. The engine re-checks everything.
     """
     phase = "VIRGIN"
     path = Path(directory) / "events.jsonl"
@@ -238,7 +243,7 @@ class CurioLane(shared.AuthoringLane):
 
     def _publish(self, safe):
         if self.phase() != "VIRGIN":
-            # DL3 (native expiry) or another admission came first: nothing
+            # Depth 6 (native expiry) or another admission came first: nothing
             # is published and the player sees nothing.
             self._write(
                 "failed", safe, "closed_before_publish", self.record["evidence"]

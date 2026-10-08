@@ -6,6 +6,7 @@
 #include <assert.h>
 #include <stdio.h>
 #include "native_rng.h"
+extern int n_dgns; /* src/dungeon.c, not in any header */
 
 static int creates, fail_create, shadow;
 /* Controlled getbones early-return, explicitly not a real bones file. */
@@ -42,6 +43,12 @@ static void fixture(void) {
     memset(level.monsters,0,sizeof level.monsters);
     fobj=0; ftrap=0; nroom=2; creates=0; shadow=fail_create=0;
     u.uz.dnum=0; u.uz.dlevel=2;
+    /* Absolute depth: main dungeon from 1, Mines (dnum 1) from 3, Sokoban
+     * (dnum 2) from 2. The dungeon numbers are this fixture's, not dNAO's. */
+    n_dgns=3; dungeon_topology.d_mines_dnum=1; dungeon_topology.d_sokoban_dnum=2;
+    dungeons[0].depth_start=1; dungeons[0].num_dunlevs=25;
+    dungeons[1].depth_start=3; dungeons[1].num_dunlevs=10;
+    dungeons[2].depth_start=2; dungeons[2].num_dunlevs=4;
     rooms[0].lx=3; rooms[0].hx=7; rooms[0].ly=3; rooms[0].hy=7;
     rooms[1].lx=12; rooms[1].hx=16; rooms[1].ly=3; rooms[1].hy=7;
     for(x=3;x<=16;x++) for(y=3;y<=7;y++)
@@ -82,7 +89,48 @@ int main(int argc, char **argv) {
     fixture(); chaos_curio_prepare(0); mklev(); assert(!creates);
     chaos_curio_begin(); chaos_curio_ordinary(); chaos_curio_finish(1); assert(!creates);
     fixture(); generation(0,0,0); assert(!creates);
-    fixture(); u.uz.dnum=1; generation(0,1,0); assert(!creates);
+    fixture(); u.uz.dnum=1; generation(0,1,0); assert(creates==1); /* Mines */
+    /* The window by absolute depth (#item 2): main 2..5 places, 1 and 6 not. */
+    for(i=1;i<=7;i++) {
+        fixture(); u.uz.dlevel=i; generation(0,1,0);
+        assert(creates==(i>=CHAOS_CURIO_PLACE_MIN_DEPTH && i<=CHAOS_CURIO_PLACE_MAX_DEPTH));
+        assert(u.curio.phase==(creates?CHAOS_CURIO_PLACED:CHAOS_CURIO_ADMITTED));
+    }
+    assert(CHAOS_CURIO_PLACE_MIN_DEPTH==2 && CHAOS_CURIO_PLACE_MAX_DEPTH==5);
+    /* Mines filler: makemaz("minefill") never marks ordinary generation.
+     * Depth 3..5 places (dlevel 1..3), depth 6 does not. */
+    for(i=1;i<=4;i++) {
+        fixture(); u.uz.dnum=1; u.uz.dlevel=i; generation(0,0,0);
+        assert(creates==(depth(&u.uz)<=5) && depth(&u.uz)==i+2);
+    }
+    /* Minetown / Mines' End are special levels: refused. */
+    {
+        s_level special;
+        memset(&special,0,sizeof special); fixture(); u.uz.dnum=1; u.uz.dlevel=2;
+        special.dlevel=u.uz; sp_levchn=&special;
+        generation(0,0,0); assert(!creates); sp_levchn=0;
+    }
+    fixture(); u.uz.dnum=1; level.flags.is_maze_lev=1; generation(0,0,0); assert(!creates);
+    fixture(); u.uz.dnum=1; generation(LFILE_EXISTS|VISITED,0,0); assert(!creates);
+    /* Sokoban at depth 2..5, ordinary or not: never. */
+    for(i=1;i<=4;i++) {
+        fixture(); u.uz.dnum=2; u.uz.dlevel=i; generation(0,1,0); assert(!creates);
+        generation(0,0,0); assert(!creates && u.curio.phase==CHAOS_CURIO_ADMITTED);
+    }
+    /* Any other branch (here dnum 3, depth 3): never. */
+    fixture(); n_dgns=4; dungeons[3].depth_start=3; dungeons[3].num_dunlevs=5;
+    u.uz.dnum=3; u.uz.dlevel=1; generation(0,1,0); assert(!creates);
+    /* Expiry: a safe point at depth 6 or deeper, any branch; not at 5,
+     * not in Sokoban at depth 5 (dlevel 4). */
+    fixture(); u.uz.dlevel=5; chaos_curio_safe(-1); assert(u.curio.phase==CHAOS_CURIO_ADMITTED);
+    u.uz.dnum=2; u.uz.dlevel=4; chaos_curio_safe(-1); assert(u.curio.phase==CHAOS_CURIO_ADMITTED);
+    u.uz.dnum=1; u.uz.dlevel=3; chaos_curio_safe(-1); assert(u.curio.phase==CHAOS_CURIO_ADMITTED);
+    u.uz.dnum=1; u.uz.dlevel=4; chaos_curio_safe(-1); assert(u.curio.phase==CHAOS_CURIO_EXPIRED);
+    fixture(); u.uz.dlevel=6; chaos_curio_safe(-1); assert(u.curio.phase==CHAOS_CURIO_EXPIRED);
+    generation(0,1,0); assert(!creates);
+    fixture(); u.uz.dnum=3; u.uz.dlevel=4; n_dgns=4;
+    dungeons[3].depth_start=3; chaos_curio_safe(-1); assert(u.curio.phase==CHAOS_CURIO_EXPIRED);
+    assert(CHAOS_CURIO_EXPIRE_DEPTH==6);
     {
         s_level special;
         memset(&special,0,sizeof special); fixture();
@@ -121,7 +169,7 @@ int main(int argc, char **argv) {
     generation(0,1,0); assert(!creates && u.curio.phase==CHAOS_CURIO_ADMITTED);
     rooms[0].rtype=OROOM; u.uz.dlevel=3; generation(0,1,0); assert(creates==1);
     fixture(); rooms[0].rtype=rooms[1].rtype=SHOPBASE;
-    generation(0,1,0); u.uz.dlevel=3; generation(0,1,0); chaos_curio_safe(-1);
+    generation(0,1,0); u.uz.dlevel=3; generation(0,1,0); u.uz.dlevel=6; chaos_curio_safe(-1);
     assert(!creates && u.curio.phase==CHAOS_CURIO_EXPIRED && u.chaos.spent==1);
     fixture(); fail_create=1; generation(0,1,0); assert(creates==1);
     assert(u.curio.phase==CHAOS_CURIO_EXPIRED && chaos_curio_valid(&u.curio));
