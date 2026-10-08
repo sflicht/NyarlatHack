@@ -34,6 +34,7 @@
   "hound_hits_pet": 5,
   "hound_misses_pet": 3,
   "you_hit_hound": 7,
+  "first_step_after_admission_median": 1.0,
   "accepted_turn_median": 7.0
  },
  "head": {
@@ -69,6 +70,7 @@
   "hound_hits_pet": 38,
   "hound_misses_pet": 67,
   "you_hit_hound": 40,
+  "first_step_after_admission_median": 1.0,
   "accepted_turn_median": 9
  }
 }

@@ -1,6 +1,10 @@
 """Pets never attack the echo hound: before/after summary.
 
-usage: analyze.py RESULTS.jsonl  -> prints JSON {main: ..., head: ...}
+usage: analyze.py GAMES.jsonl  -> prints JSON {<tree>: ...} in file order
+
+GAMES.jsonl is the committed per-game data: each row's "trace" holds the
+per-key top-line messages (with the turn) that mention the echo hound, the
+dog or a corpse, which is every message the rules below read.
 
 Attribution is #201's (`before_after.py`): "You kill echo hound" is the
 player; "<pet> kills echo hound", "Echo hound is killed!" and a pet eating a
@@ -62,6 +66,7 @@ def summ(rows):
         else [0] * 4000
     )
     dist = collections.Counter(min(s, 10) for s in steps)
+    first = [x["steps"][0] - x["accepted_turn"] for x in adm if x["steps"]]
     return dict(
         games=len(rows),
         errors=sum(1 for x in rows if x.get("error")),
@@ -88,6 +93,7 @@ def summ(rows):
         ),
         hound_misses_pet=msgs(adm, r"[Ee]cho hound misses the (?:little |large )?dog"),
         you_hit_hound=msgs(adm, r"You (?:hit|kill) echo hound"),
+        first_step_after_admission_median=statistics.median(first) if first else None,
         accepted_turn_median=(
             statistics.median(x["accepted_turn"] for x in adm) if adm else None
         ),
@@ -95,9 +101,7 @@ def summ(rows):
 
 
 rows = [json.loads(line) for line in open(sys.argv[1]) if line.strip()]
+trees = list(dict.fromkeys(x["tree"] for x in rows))
 print(
-    json.dumps(
-        {t: summ([x for x in rows if x["tree"] == t]) for t in ("main", "head")},
-        indent=1,
-    )
+    json.dumps({t: summ([x for x in rows if x["tree"] == t]) for t in trees}, indent=1)
 )

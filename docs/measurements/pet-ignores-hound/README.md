@@ -46,7 +46,10 @@ up after about 60 turns. This measurement checks what that does in real play.
 - **Run:** 2026-10-08, 11:58Z to 12:00Z, under hermes-heavy. Trees: main
   8715309f and head 807c7b79. The head tree is the engine change plus this
   preregistered protocol; later commits change only tests and this directory.
-- **Per-game data:** `games.jsonl`. Summary: `summary.json`, from `analyze.py`.
+- **Per-game data:** `games.jsonl`, including each game's per-key top-line
+  messages that mention the echo hound, the dog or a corpse (every message
+  `analyze.py` reads). `python3 analyze.py games.jsonl` reproduces
+  `summary.json` byte for byte.
 - **No model:** no hound lane appeared in any of the 100 games.
 
 | | main 8715309f | head 807c7b79 |
@@ -106,3 +109,26 @@ Live steps, distribution (number of admitted hounds; 10+ pooled):
 - `measure.py`'s raw-stream hit counters read 0 for every game: the terminal
   stream splits those messages with cursor moves. The table's hit counts come
   from the per-key top-line messages in the trace instead.
+
+## Run 2: the two-way truce (preregistered before any game was run)
+
+Sam's decision (2026-10-08, about 14:51Z): "Two-way truce". The admitted
+echo hound now never attacks a tame monster either (the steed included), so
+its turns should go into following the player's trail.
+
+- **Question:** what does the reverse truce add on top of run 1's head?
+- **Trees:** `prev` = 9a608714 (the run-1 change, as reviewed) against `head`
+  = the commit that adds this section (the reverse truce plus this
+  protocol). Same protocol as run 1: 50 games per tree, alternating, git
+  archive exports built with `make -j2`, hermes-heavy, no author settings.
+  Raw results go to `games-run2.jsonl`, the summary to `summary-run2.json`.
+- **Expected direction:**
+  - live steps rise (mean and median) on `head`;
+  - the hound biting the pet falls to 0 on `head` (from 38 in run 1);
+  - pet kills stay 0 on both trees.
+  - No direction expected for admission (placement is untouched).
+- **Also reported:** main 8715309f (run 1) against `head` (run 2). That
+  comparison is made **across separate runs**, so map draws and host load
+  differ, and is labelled as such.
+- **Added measure:** the per-hound median number of turns from admission to
+  the first live step.
