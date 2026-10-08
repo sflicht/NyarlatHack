@@ -28,13 +28,21 @@ def killer(x):
             return "pet", t["turn"]
         if re.search(r"[Ee]cho hound is (?:killed|destroyed)", m):
             return "pet", t["turn"]
-        if re.search(r"eats? .*named echo hound", m):
+        # Post-run correction (see README): a pet eating the corpse is a pet
+        # kill only when the player did not kill the hound.
+        if re.search(r"eats? .*named echo hound", m) and not (
+            x.get("kill") or ""
+        ).startswith("You"):
             return "pet", t["turn"]
     if x.get("kill"):
         return ("player" if x["kill"].startswith("You") else "pet"), None
     if x.get("killed_event"):
         return "killed, unattributed", x["killed_event"][0]
     return ("expired alive" if x.get("expired") else "alive at end"), None
+
+
+def msgs(rows, pat):
+    return sum(len(re.findall(pat, t["msg"] or "")) for x in rows for t in x["trace"])
 
 
 def summ(rows):
@@ -70,9 +78,16 @@ def summ(rows):
         lived_10_plus=sum(v >= 10 for v in life),
         life_median=statistics.median(life) if life else None,
         who=dict(who),
-        pet_hits_hound=sum(x.get("pet_hits_hound", 0) for x in adm),
-        hound_hits_pet=sum(x.get("hound_hits_pet", 0) for x in adm),
-        hound_hits_you=sum(x.get("hound_hits_you", 0) for x in adm),
+        # From the per-key top-line messages (the raw-stream counters in
+        # measure.py read 0: see README).
+        pet_hits_hound=msgs(
+            adm, r"[Tt]he (?:little |large )?dog (?:bites|hits) echo hound"
+        ),
+        hound_hits_pet=msgs(
+            adm, r"[Ee]cho hound (?:bites|hits) the (?:little |large )?dog"
+        ),
+        hound_misses_pet=msgs(adm, r"[Ee]cho hound misses the (?:little |large )?dog"),
+        you_hit_hound=msgs(adm, r"You (?:hit|kill) echo hound"),
         accepted_turn_median=(
             statistics.median(x["accepted_turn"] for x in adm) if adm else None
         ),
